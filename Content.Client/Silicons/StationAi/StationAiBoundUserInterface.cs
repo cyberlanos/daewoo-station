@@ -21,8 +21,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Client.UserInterface.Controls;
+using Content.Shared.Access;
+using Content.Shared.Access.Components;
 using Content.Shared.Silicons.StationAi;
+using Robust.Client.Player;
 using Robust.Client.UserInterface;
+using Robust.Shared.IoC;
+using Robust.Shared.Prototypes;
 
 namespace Content.Client.Silicons.StationAi;
 
@@ -33,6 +38,13 @@ public sealed class StationAiBoundUserInterface(EntityUid owner, Enum uiKey) : B
     protected override void Open()
     {
         base.Open();
+
+        #region DOWNSTREAM-TPirates: borg wireless access
+        // Syndicate borgs: open limited (two-action) radial and return.
+        // Everyone else falls through to the normal AI radial below.
+        if (CheckAccess())
+            return;
+        #endregion
 
         var ev = new GetStationAiRadialEvent();
         EntMan.EventBus.RaiseLocalEvent(Owner, ref ev);
@@ -65,4 +77,44 @@ public sealed class StationAiBoundUserInterface(EntityUid owner, Enum uiKey) : B
     {
         SendPredictedMessage(new StationAiRadialMessage { Event = p });
     }
+
+    #region DOWNSTREAM-TPirates: borg wireless access
+    private bool CheckAccess()
+    {
+        var playerMgr = IoCManager.Resolve<IPlayerManager>();
+        var controlled = playerMgr.LocalPlayer?.ControlledEntity;
+
+        if (controlled is null ||
+            !EntMan.TryGetComponent<AccessComponent>(controlled.Value, out var access))
+        {
+            return false;
+        }
+
+        var tags = access.Tags;
+        var groups = access.Groups;
+
+        var isSyndie =
+            tags.Contains("NuclearOperative") ||
+            tags.Contains("SyndicateAgent");
+
+        var hasAllAccessGroup =
+            groups.Contains(new ProtoId<AccessGroupPrototype>("AllAccess"));
+
+        if (!isSyndie || hasAllAccessGroup)
+        {
+            return false;
+        }
+
+        var ev = new GetStationAiLimitedAirlockRadialEvent();
+        EntMan.EventBus.RaiseLocalEvent(Owner, ref ev);
+
+        _menu = this.CreateWindow<SimpleRadialMenu>();
+        _menu.Track(Owner);
+        var buttonModels = ConvertToButtons(ev.Actions);
+        _menu.SetButtons(buttonModels);
+
+        _menu.Open();
+        return true;
+    }
+    #endregion
 }

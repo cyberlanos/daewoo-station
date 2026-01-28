@@ -33,6 +33,7 @@ using Content.Shared.Popups;
 using Content.Shared.Verbs;
 using Robust.Shared.Serialization;
 using Robust.Shared.Utility;
+using Content.Shared.Interaction.Components;
 
 namespace Content.Shared.Silicons.StationAi;
 
@@ -190,6 +191,7 @@ public abstract partial class SharedStationAiSystem
 
         if (!args.CanComplexInteract
             || !HasComp<StationAiHeldComponent>(args.User)
+            && !HasComp<RemoteInteractionComponent>(args.User) // DOWNSTREAM-TPirates: borg wireless access
             || !args.CanInteract)
         {
             return;
@@ -265,6 +267,15 @@ public abstract class BaseStationAiAction
 /// </summary>
 [ByRefEvent]
 public record struct GetStationAiRadialEvent()
+{
+    public List<StationAiRadial> Actions = new();
+}
+
+/// <summary>
+/// Grab actions for a limited airlock control radial (bolts & electrify only).
+/// </summary>
+[ByRefEvent]
+public record struct GetStationAiLimitedAirlockRadialEvent()
 {
     public List<StationAiRadial> Actions = new();
 }
