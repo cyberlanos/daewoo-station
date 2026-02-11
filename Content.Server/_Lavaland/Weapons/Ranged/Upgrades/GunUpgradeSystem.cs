@@ -36,6 +36,7 @@ using Content.Shared.Actions;
 using Content.Shared.Actions.Components;
 using Content.Shared.Hands.Components;
 using Content.Shared.Light.Components;
+using Content.Shared._Pirate.Weapons.Ranged.Upgrades;
 using Content.Shared.Toggleable;
 using Robust.Shared.GameObjects;
 #endregion

@@ -5,7 +5,7 @@
 using System.Numerics;
 using Robust.Shared.Utility;
 
-namespace Content.Shared._Lavaland.Weapons.Ranged.Upgrades.Components;
+namespace Content.Shared._Pirate.Weapons.Ranged.Upgrades.Components;
 
 /// <summary>
 /// Configures flashlight overlay visuals for a gun.

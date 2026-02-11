@@ -4,7 +4,7 @@
 
 using Robust.Shared.Serialization;
 
-namespace Content.Shared._Lavaland.Weapons.Ranged.Upgrades;
+namespace Content.Shared._Pirate.Weapons.Ranged.Upgrades;
 
 [Serializable, NetSerializable]
 public enum GunFlashlightVisuals : byte

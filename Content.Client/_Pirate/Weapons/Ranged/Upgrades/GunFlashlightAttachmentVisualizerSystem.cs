@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-using Content.Shared._Lavaland.Weapons.Ranged.Upgrades;
-using Content.Shared._Lavaland.Weapons.Ranged.Upgrades.Components;
+using Content.Shared._Pirate.Weapons.Ranged.Upgrades;
+using Content.Shared._Pirate.Weapons.Ranged.Upgrades.Components;
 using Robust.Client.GameObjects;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Serialization;
 
-namespace Content.Client._Lavaland.Weapons.Ranged.Upgrades;
+namespace Content.Client._Pirate.Weapons.Ranged.Upgrades;
 
 public sealed class GunFlashlightAttachmentVisualizerSystem : EntitySystem
 {
