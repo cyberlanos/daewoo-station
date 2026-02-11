@@ -26,11 +26,17 @@ using Content.Server._Lavaland.Weapons.Ranged.Upgrades.Components;
 using Content.Shared._Lavaland.Weapons.Ranged.Events;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades.Components;
+using Content.Shared.Actions;
+using Content.Shared.Actions.Components;
 using Content.Shared.EntityEffects;
+using Content.Shared.Hands.Components;
+using Content.Shared.Light.Components;
 using Content.Shared.Projectiles;
+using Content.Shared.Toggleable;
 using Content.Shared.Weapons.Melee.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Shared.Containers;
+using Robust.Shared.GameObjects;
 
 namespace Content.Server._Lavaland.Weapons.Ranged.Upgrades;
 
@@ -38,6 +44,10 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
 {
     [Dependency] private readonly PressureEfficiencyChangeSystem _pressure = default!;
     [Dependency] private readonly EntityEffectSystem _entityEffect = default!;
+    [Dependency] private readonly SharedActionsSystem _actions = default!;
+    [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
+    [Dependency] private readonly SharedContainerSystem _containers = default!;
 
     public override void Initialize()
     {
@@ -47,6 +57,10 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
         SubscribeLocalEvent<GunUpgradeDamageComponent, ProjectileShotEvent>(OnProjectileShot);
         SubscribeLocalEvent<GunUpgradePressureComponent, EntGotInsertedIntoContainerMessage>(OnPressureUpgradeInserted);
         SubscribeLocalEvent<GunUpgradePressureComponent, EntGotRemovedFromContainerMessage>(OnPressureUpgradeRemoved);
+        SubscribeLocalEvent<GunUpgradeFlashlightComponent, EntGotInsertedIntoContainerMessage>(OnFlashlightInserted);
+        SubscribeLocalEvent<GunUpgradeFlashlightComponent, EntGotRemovedFromContainerMessage>(OnFlashlightRemoved);
+        SubscribeLocalEvent<GunUpgradeFlashlightComponent, ToggleActionEvent>(OnFlashlightToggled,
+            after: new[] { typeof(Content.Server.Light.EntitySystems.HandheldLightSystem) });
 
         SubscribeLocalEvent<WeaponUpgradeEffectsComponent, MeleeHitEvent>(OnEffectsUpgradeHit);
     }
@@ -130,5 +144,99 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
                 _entityEffect.Effect(effect, new EntityEffectBaseArgs(hit, EntityManager));
             }
         }
+    }
+
+    private void OnFlashlightInserted(Entity<GunUpgradeFlashlightComponent> ent, ref EntGotInsertedIntoContainerMessage args)
+    {
+        if (args.Container.ID != "flashlight")
+            return;
+
+        if (!TryComp<UpgradeableWeaponComponent>(args.Container.Owner, out _))
+            return;
+
+        if (!TryComp<HandheldLightComponent>(ent, out var handheld)
+            || handheld.ToggleActionEntity == null)
+            return;
+
+        if (!TryComp<ActionComponent>(handheld.ToggleActionEntity.Value, out var action))
+            return;
+
+        _actions.SetEntityIcon((handheld.ToggleActionEntity.Value, action), args.Container.Owner);
+        _actions.SetItemIconStyle((handheld.ToggleActionEntity.Value, action), ItemActionIconStyle.BigItem);
+        _actions.SetUseDelay((handheld.ToggleActionEntity.Value, action), null);
+        SetGunFlashlightVisuals(args.Container.Owner, attached: true, on: handheld.Activated);
+        GrantUpgradeActionsIfHeld(args.Container.Owner);
+    }
+
+    private void OnFlashlightRemoved(Entity<GunUpgradeFlashlightComponent> ent, ref EntGotRemovedFromContainerMessage args)
+    {
+        if (args.Container.ID != "flashlight")
+            return;
+
+        if (!TryComp<HandheldLightComponent>(ent, out var handheld)
+            || handheld.ToggleActionEntity == null)
+            return;
+
+        if (!TryComp<ActionComponent>(handheld.ToggleActionEntity.Value, out var action))
+            return;
+
+        if (action.EntIcon == args.Container.Owner)
+            _actions.SetEntityIcon((handheld.ToggleActionEntity.Value, action), null);
+        SetGunFlashlightVisuals(args.Container.Owner, attached: false, on: false);
+    }
+
+    private void OnFlashlightToggled(Entity<GunUpgradeFlashlightComponent> ent, ref ToggleActionEvent args)
+    {
+        if (!TryComp<HandheldLightComponent>(ent, out var handheld))
+            return;
+
+        if (!TryGetContainingGun(ent.Owner, out var gun))
+            return;
+
+        SetGunFlashlightVisuals(gun, attached: true, on: handheld.Activated);
+    }
+
+    private bool TryGetContainingGun(EntityUid flashlight, out EntityUid gun)
+    {
+        gun = default;
+
+        if (!_containers.TryGetContainingContainer((flashlight, Transform(flashlight), MetaData(flashlight)), out var container))
+            return false;
+
+        if (container.ID != "flashlight")
+            return false;
+
+        if (!TryComp<UpgradeableWeaponComponent>(container.Owner, out _))
+            return false;
+
+        gun = container.Owner;
+        return true;
+    }
+
+    private void SetGunFlashlightVisuals(EntityUid gun, bool attached, bool on)
+    {
+        if (!TryComp<AppearanceComponent>(gun, out var appearance))
+            return;
+
+        _appearance.SetData(gun, GunFlashlightVisuals.Attached, attached, appearance);
+        _appearance.SetData(gun, GunFlashlightVisuals.LightOn, on, appearance);
+    }
+
+    private void GrantUpgradeActionsIfHeld(EntityUid gun)
+    {
+        if (!_containers.TryGetContainingContainer((gun, Transform(gun), MetaData(gun)), out var container))
+            return;
+
+        var holder = container.Owner;
+        if (!TryComp<HandsComponent>(holder, out _))
+            return;
+
+        var ev = new GetItemActionsEvent(_actionContainer, holder, gun);
+        RaiseLocalEvent(gun, ev);
+        if (ev.Actions.Count == 0)
+            return;
+
+        _actions.GrantActions((holder, CompOrNull<ActionsComponent>(holder)), ev.Actions, gun);
+        _actions.LoadActions(holder);
     }
 }

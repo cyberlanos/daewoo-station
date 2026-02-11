@@ -174,6 +174,8 @@
     - state: mag-unshaded-4
       map: ["enum.GunVisualLayers.MagUnshaded"]
       shader: unshaded
+  - type: GunFlashlightAttachment
+    offset: "0.0625, 0.15625"
   - type: Clothing
     sprite: _Pirate/Objects/Weapons/Guns/Battery/mini_energygun.rsi
   - type: Gun
@@ -219,6 +221,20 @@
       - state: mode-inhand-right
         shader: unshaded
   - type: Multishot
+  - type: UpgradeableWeapon
+  - type: ItemSlots
+    slots:
+      flashlight:
+        name: weapon-upgrade-slot-name-flashlight
+        priority: 5
+        ejectOnBreak: true
+        occludesLight: false
+        whitelist:
+          components:
+          - GunUpgradeFlashlight
+  - type: ContainerContainer
+    containers:
+      flashlight: !type:ContainerSlot
 
 - type: entity
   name: IK-60 laser carbine
@@ -298,6 +314,8 @@
     - state: mag-unshaded-4
       map: ["enum.GunVisualLayers.MagUnshaded"]
       shader: unshaded
+  - type: GunFlashlightAttachment
+    offset: "0.09375, 0.0625"
   - type: Clothing
     sprite: _Pirate/Objects/Weapons/Guns/Battery/energygun_pistol.rsi
   - type: Gun
@@ -343,6 +361,20 @@
       right:
       - state: mode-inhand-right
         shader: unshaded
+  - type: UpgradeableWeapon
+  - type: ItemSlots
+    slots:
+      flashlight:
+        name: weapon-upgrade-slot-name-flashlight
+        priority: 5
+        ejectOnBreak: true
+        occludesLight: false
+        whitelist:
+          components:
+          - GunUpgradeFlashlight
+  - type: ContainerContainer
+    containers:
+      flashlight: !type:ContainerSlot
   - type: StaticPrice
     price: 750
   - type: Multishot

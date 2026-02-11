@@ -269,6 +269,8 @@
     - state: mag-unshaded-0
       map: ["enum.GunVisualLayers.MagUnshaded"]
       shader: unshaded
+  - type: GunFlashlightAttachment
+    offset: "0.03125, 0.0625"
   - type: Clothing
     sprite: _EinsteinEngines/Objects/Weapons/Guns/Battery/ccdisabler.rsi
     quickEquip: false
@@ -282,6 +284,20 @@
   - type: BatterySelfRecharger
     autoRecharge: true
     autoRechargeRate: 40
+  - type: UpgradeableWeapon
+  - type: ItemSlots
+    slots:
+      flashlight:
+        name: weapon-upgrade-slot-name-flashlight
+        priority: 5
+        ejectOnBreak: true
+        occludesLight: false
+        whitelist:
+          components:
+          - GunUpgradeFlashlight
+  - type: ContainerContainer
+    containers:
+      flashlight: !type:ContainerSlot
 
 - type: entity
   name: syndicate disabler
@@ -396,6 +412,8 @@
     layers:
     - state: icon
       map: ["enum.GunVisualLayers.Base"]
+  - type: GunFlashlightAttachment
+    offset: "0.125, -0.03125"
   - type: Clothing
     quickEquip: false
     slots:
@@ -462,6 +480,20 @@
     keyPhrase: "lawbringer-phrase"
     listenRange: 1
     holderOnly: true
+  - type: UpgradeableWeapon
+  - type: ItemSlots
+    slots:
+      flashlight:
+        name: weapon-upgrade-slot-name-flashlight
+        priority: 5
+        ejectOnBreak: true
+        occludesLight: false
+        whitelist:
+          components:
+          - GunUpgradeFlashlight
+  - type: ContainerContainer
+    containers:
+      flashlight: !type:ContainerSlot
   - type: AccessReader
     access: [['HeadOfSecurity']]
   - type: ActiveListener
