@@ -1199,6 +1199,8 @@ public abstract class SharedActionsSystem : EntitySystem
         DirtyField(ent, ent.Comp, nameof(ActionComponent.IconColor));
     }
 
+
+    #region DOWNSTREAM-TPirates: gun flashlights
     public void SetItemIconStyle(Entity<ActionComponent?> ent, ItemActionIconStyle style)
     {
         if (!_actionQuery.Resolve(ent, ref ent.Comp) || ent.Comp.ItemIconStyle == style)
@@ -1207,6 +1209,7 @@ public abstract class SharedActionsSystem : EntitySystem
         ent.Comp.ItemIconStyle = style;
         DirtyField(ent, ent.Comp, nameof(ActionComponent.ItemIconStyle));
     }
+    #endregion
 
     /// <summary>
     /// Set the event of an action.

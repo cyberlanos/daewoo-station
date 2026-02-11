@@ -26,17 +26,19 @@ using Content.Server._Lavaland.Weapons.Ranged.Upgrades.Components;
 using Content.Shared._Lavaland.Weapons.Ranged.Events;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades.Components;
-using Content.Shared.Actions;
-using Content.Shared.Actions.Components;
 using Content.Shared.EntityEffects;
-using Content.Shared.Hands.Components;
-using Content.Shared.Light.Components;
 using Content.Shared.Projectiles;
-using Content.Shared.Toggleable;
 using Content.Shared.Weapons.Melee.Events;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Shared.Containers;
+#region DOWNSTREAM-TPirates: gun flashlights
+using Content.Shared.Actions;
+using Content.Shared.Actions.Components;
+using Content.Shared.Hands.Components;
+using Content.Shared.Light.Components;
+using Content.Shared.Toggleable;
 using Robust.Shared.GameObjects;
+#endregion
 
 namespace Content.Server._Lavaland.Weapons.Ranged.Upgrades;
 
@@ -57,10 +59,12 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
         SubscribeLocalEvent<GunUpgradeDamageComponent, ProjectileShotEvent>(OnProjectileShot);
         SubscribeLocalEvent<GunUpgradePressureComponent, EntGotInsertedIntoContainerMessage>(OnPressureUpgradeInserted);
         SubscribeLocalEvent<GunUpgradePressureComponent, EntGotRemovedFromContainerMessage>(OnPressureUpgradeRemoved);
+        #region DOWNSTREAM-TPirates: gun flashlights
         SubscribeLocalEvent<GunUpgradeFlashlightComponent, EntGotInsertedIntoContainerMessage>(OnFlashlightInserted);
         SubscribeLocalEvent<GunUpgradeFlashlightComponent, EntGotRemovedFromContainerMessage>(OnFlashlightRemoved);
         SubscribeLocalEvent<GunUpgradeFlashlightComponent, ToggleActionEvent>(OnFlashlightToggled,
             after: new[] { typeof(Content.Server.Light.EntitySystems.HandheldLightSystem) });
+        #endregion
 
         SubscribeLocalEvent<WeaponUpgradeEffectsComponent, MeleeHitEvent>(OnEffectsUpgradeHit);
     }
@@ -146,6 +150,7 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
         }
     }
 
+    #region DOWNSTREAM-TPirates: gun flashlights
     private void OnFlashlightInserted(Entity<GunUpgradeFlashlightComponent> ent, ref EntGotInsertedIntoContainerMessage args)
     {
         if (args.Container.ID != "flashlight")
@@ -239,4 +244,5 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
         _actions.GrantActions((holder, CompOrNull<ActionsComponent>(holder)), ev.Actions, gun);
         _actions.LoadActions(holder);
     }
+    #endregion
 }
