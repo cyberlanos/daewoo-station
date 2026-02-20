@@ -459,6 +459,7 @@
           - id: MobSharkSalvageShelledBlue
           - id: MobSharkSalvageShelledBrown
           - id: MobSharkSalvageShelledGreen
+          - id: MobPikeSalvage
         - !type:GroupSelector
           children:
           - id: MobCarpSalvage
