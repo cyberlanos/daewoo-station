@@ -1,10 +1,8 @@
 # Загальне
-ai-wire-snipped = Провід був перерізаний на {$coords}.
+ai-wire-snipped = Один із дротів ваших систем було перерізано у {$source}.
 wire-name-ai-vision-light = АІВ
 wire-name-ai-act-light = АІА
-station-ai-takeover = Захоплення станції ШІ
-
-# Радіальні дії
+station-ai-takeover = Захоплення ШІ
 ai-open = Відкрити дії
 ai-close = Закрити дії
 
@@ -43,3 +41,4 @@ station-ai-hologram-cat = Вигляд кота
 station-ai-hologram-dog = Вигляд коргі
 station-ai-hologram-kobold = Вигляд кобольда
 station-ai-hologram-monkey = Вигляд мавпи
+station-ai-eye-name = Око ШІ - {$name}

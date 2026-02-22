@@ -23,6 +23,7 @@
 
 using Content.Server._Lavaland.Pressure;
 using Content.Server._Lavaland.Weapons.Ranged.Upgrades.Components;
+using Content.Server.EntityEffects;
 using Content.Shared._Lavaland.Weapons.Ranged.Events;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades;
 using Content.Shared._Lavaland.Weapons.Ranged.Upgrades.Components;
@@ -51,6 +52,7 @@ public sealed class GunUpgradeSystem : SharedGunUpgradeSystem
     [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly SharedContainerSystem _containers = default!;
+    [Dependency] private readonly SharedEntityEffectSystem _entityEffect = default!;
 
     public override void Initialize()
     {

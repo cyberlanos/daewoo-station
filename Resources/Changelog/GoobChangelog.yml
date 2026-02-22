@@ -20488,3 +20488,130 @@ Entries:
       message: Додано рятувальні капсули на станції Delta.
   id: 2394
   time: '2026-02-09T07:54:00.0000000+00:00'
+- author: DeusMaldPr
+  changes:
+    - type: Add
+      message: >-
+        Зрадники знову можуть отримати герилья-рукавички, але тепер вони
+        дорожчі, мають затримку одягання й помітніший спрайт
+  id: 2395
+  time: '2026-02-09T20:02:36.0000000+00:00'
+- author: UmbiMax
+  changes:
+    - type: Add
+      message: >-
+        У ЕРТ тепер є власний спеціалізований фабрикатор спорядження,
+        розташований на їхньому шатлі.
+    - type: Tweak
+      message: >-
+        Невеликий рефіт шатла ЕРТ: зменшено безлад на борту та реорганізовано
+        простір для зберігання.
+  id: 2396
+  time: '2026-02-10T15:20:40.0000000+00:00'
+- author: Beanyboi69
+  changes:
+    - type: Tweak
+      message: Інженерний хардсьют тепер має трохи більше броні.
+  id: 2397
+  time: '2026-02-11T16:58:53.0000000+00:00'
+- author: JohnOakman
+  changes:
+    - type: Tweak
+      message: Вибухові заряди синдикату тепер справді завдають шкоди!
+    - type: Tweak
+      message: Вибухові заряди синдикату тепер можуть викликати ланцюгову реакцію! (Деталі у ПР)
+  id: 2398
+  time: '2026-02-11T17:03:23.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Add
+      message: >-
+        Апстрім уже тут, і попереду ще більше апстріму. Дивіться чейнджлог
+        Візден щодо геймплейних змін, а про баги повідомляйте в розділ ісьюзів
+        на Ґітхабі.
+  id: 2399
+  time: '2026-02-12T05:22:39.0000000+00:00'
+- author: gusxyz
+  changes:
+    - type: Add
+      message: >-
+        Апстрім уже тут, і попереду ще більше апстріму. Дивіться чейнджлог
+        Візден щодо геймплейних змін, а про баги повідомляйте в розділ ісьюзів
+        на Ґітхабі.
+  id: 2400
+  time: '2026-02-12T05:39:11.0000000+00:00'
+- author: Durk
+  changes:
+    - type: Fix
+      message: Клієнт більше не крашиться після мерджу апстріму.
+  id: 2401
+  time: '2026-02-12T06:18:22.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: BSO's command monitor displays command status correctly again.
+  id: 2402
+  time: '2026-02-12T11:51:35.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: Interacting on a crawling person no longer permastuns them.
+  id: 2403
+  time: '2026-02-12T11:54:46.0000000+00:00'
+- author: DeusMaldPr
+  changes:
+    - type: Tweak
+      message: >-
+        Мапінг Meta! Додано клонування на старті раунду та перенесено ксенобіо.
+        Також багато інших дрібних покращень.
+  id: 2404
+  time: '2026-02-12T15:33:47.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: Кріопод більше не призводить до крашу клієнта.
+  id: 2405
+  time: '2026-02-12T17:23:05.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: Підсічка CQC тепер знову підіймає вас на ноги.
+  id: 2406
+  time: '2026-02-12T20:50:13.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: Чейнджлінг, Космічний Культ та інші цільові здібності знову працюють.
+  id: 2407
+  time: '2026-02-12T20:50:44.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: Шахтарський шатл тепер виробляє достатньо енергії, щоб підтримувати себе.
+  id: 2408
+  time: '2026-02-12T20:52:35.0000000+00:00'
+- author: NotActuallyMarty
+  changes:
+    - type: Fix
+      message: >-
+        Гранати-снаряди, як-от stinger, більше не вибухають миттєво у руці.
+  id: 2409
+  time: '2026-02-12T20:58:33.0000000+00:00'
+- author: Androidonator
+  changes:
+    - type: Fix
+      message: Розряджені IPC більше не крашать сервер.
+  id: 2410
+  time: '2026-02-13T03:55:14.0000000+00:00'
+- author: Hardbassman
+  changes:
+    - type: Add
+      message: Оновлено спрайт "praetorian" модсьюта BSO для рептиліанців.
+  id: 2411
+  time: '2026-02-13T05:34:54.0000000+00:00'
+- author: 10kee
+  changes:
+    - type: Fix
+      message: Кістяна броня, BSO swathelm і пожежні костюми атмосу тепер мають спрайти Vox.
+  id: 2412
+  time: '2026-02-13T05:38:47.0000000+00:00'

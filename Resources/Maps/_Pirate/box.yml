@@ -87467,14 +87467,14 @@ entities:
     - type: Transform
       pos: 74.3515,-18.443996
       parent: 2
-- proto: DVSmartFridge
+- proto: SmartFridge
   entities:
   - uid: 13424
     components:
     - type: Transform
       pos: 41.5,-5.5
       parent: 2
-- proto: DVSmartFridgeMedical
+- proto: SmartFridgeMedical
   entities:
   - uid: 13425
     components:

@@ -66,7 +66,7 @@
       - PMCG
   # Pirate contractor end
   guides:
-  - BlueshieldOfficer SOP
+  - BlueshieldOfficerSOP
   - Command
   - Succession
   goobcoins: 45

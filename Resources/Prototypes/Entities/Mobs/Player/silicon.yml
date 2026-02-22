@@ -448,6 +448,7 @@
   - type: NoFTL
   - type: WarpPoint
     follow: true
+  - type: StationAiHolo # DOWNSTREAM-TPirates: ghost follow menu update
   - type: Eye
     pvsScale: 1.5
   - type: Visibility
@@ -470,6 +471,7 @@
     anchored: true
   - type: WarpPoint
     follow: true
+  - type: StationAiHolo # DOWNSTREAM-TPirates: ghost follow menu update
   - type: Eye
   - type: ContentEye
   - type: Examiner
