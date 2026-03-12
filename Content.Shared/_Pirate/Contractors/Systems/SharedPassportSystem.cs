@@ -21,7 +21,6 @@ namespace Content.Shared._Pirate.Contractors.Systems;
 
 public class SharedPassportSystem : EntitySystem
 {
-    public const int CurrentYear = 2468;
     const string PIDChars = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
 
     [Dependency] private readonly IGameTiming _timing = default!;
@@ -55,7 +54,7 @@ public class SharedPassportSystem : EntitySystem
         args.PushMarkup($"Стать: {component.OwnerProfile.Gender}", 48);
         args.PushMarkup($"Зріст: {MathF.Round(component.OwnerProfile.Height * species.AverageHeight)} cm", 47);
         args.PushMarkup($"Ширина: {MathF.Round(component.OwnerProfile.Width * species.AverageWidth)} cm", 46);
-        args.PushMarkup($"Дата народження: {CurrentYear - component.OwnerProfile.Age}", 45);
+        args.PushMarkup($"Дата народження: {PirateStationCalendar.CurrentYear - component.OwnerProfile.Age}", 45);
 
         args.PushMarkup(
             $"PID: {GenerateIdentityString(component.OwnerProfile.Name

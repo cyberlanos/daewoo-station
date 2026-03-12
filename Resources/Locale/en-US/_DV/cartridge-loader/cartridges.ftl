@@ -177,6 +177,8 @@ nano-chat-gallery-empty = Select a photo to preview
 nano-chat-attach-selected-photo = Attach selected photo
 nano-chat-delete-photo = Delete photo
 nano-chat-store-photo = Store photo
+# Pirate: nano chat photo upload verb
+nano-chat-upload-photo-verb = Scan photo
 nano-chat-photo-uploaded = Photo scanned
 nano-chat-photo-saved-to-gallery = Photo saved
 nano-chat-photo-upload-failed = Photo scan failed

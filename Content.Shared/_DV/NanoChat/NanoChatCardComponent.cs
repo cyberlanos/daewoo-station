@@ -51,6 +51,12 @@ public sealed partial class NanoChatCardComponent : Component
     public uint? CurrentChat;
 
     /// <summary>
+    ///     The currently selected gallery photo file name for external actions.
+    /// </summary>
+    [DataField]
+    public string? SelectedGalleryPhotoFileName; // Pirate: nano chat fax photo printing
+
+    /// <summary>
     ///     The maximum amount of recipients this card supports.
     /// </summary>
     [DataField]

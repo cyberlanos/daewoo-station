@@ -269,6 +269,30 @@ public abstract class SharedNanoChatSystem : EntitySystem
         return recipient.HasUnread;
     }
 
+    #region Pirate: nano chat fax photo printing
+    /// <summary>
+    ///     Gets the currently selected gallery photo file name for external actions.
+    /// </summary>
+    public string? GetSelectedGalleryPhoto(Entity<NanoChatCardComponent?> card)
+    {
+        if (!Resolve(card, ref card.Comp))
+            return null;
+
+        return card.Comp.SelectedGalleryPhotoFileName;
+    }
+
+    /// <summary>
+    ///     Sets the currently selected gallery photo file name for external actions.
+    /// </summary>
+    public void SetSelectedGalleryPhoto(Entity<NanoChatCardComponent?> card, string? fileName)
+    {
+        if (!Resolve(card, ref card.Comp) || card.Comp.SelectedGalleryPhotoFileName == fileName)
+            return;
+
+        card.Comp.SelectedGalleryPhotoFileName = fileName;
+    }
+    #endregion
+
     /// <summary>
     ///     Stores or overwrites a gallery photo by file name.
     /// </summary>
@@ -300,7 +324,13 @@ public abstract class SharedNanoChatSystem : EntitySystem
 
         var deleted = card.Comp.Photos.Remove(fileName);
         if (deleted)
+        {
+            #region Pirate: nano chat fax photo printing
+            if (card.Comp.SelectedGalleryPhotoFileName == fileName)
+                card.Comp.SelectedGalleryPhotoFileName = null;
+            #endregion
             Dirty(card);
+        }
 
         return deleted;
     }
@@ -317,6 +347,7 @@ public abstract class SharedNanoChatSystem : EntitySystem
         card.Comp.Recipients.Clear();
         card.Comp.Photos.Clear();
         card.Comp.CurrentChat = null;
+        card.Comp.SelectedGalleryPhotoFileName = null; // Pirate: nano chat fax photo printing
         Dirty(card);
     }
 

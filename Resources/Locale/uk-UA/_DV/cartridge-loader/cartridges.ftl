@@ -42,6 +42,8 @@ nano-chat-gallery-empty = Оберіть фото для перегляду
 nano-chat-attach-selected-photo = Додати вибране фото
 nano-chat-delete-photo = Видалити фото
 nano-chat-store-photo = Зберегти фото
+# Pirate: nano chat photo upload verb
+nano-chat-upload-photo-verb = Відсканувати фото
 nano-chat-photo-uploaded = Фото відскановано
 nano-chat-photo-saved-to-gallery = Фото збережено
 nano-chat-photo-upload-failed = Не вдалося відсканувати фото

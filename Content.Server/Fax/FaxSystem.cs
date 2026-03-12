@@ -126,6 +126,7 @@ using Content.Shared.DeviceNetwork;
 using Content.Shared.DeviceNetwork.Components;
 using Content.Shared.DeviceNetwork.Events;
 using Content.Shared.Emag.Systems;
+using Content.Shared._DV.CartridgeLoader.Cartridges; // Pirate: nano chat fax photo printing
 using Content.Shared.Fax;
 using Content.Shared.Fax.Components;
 using Content.Shared.Fax.Systems;
@@ -146,6 +147,7 @@ using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Content.Shared._Pirate.Photo; // Pirate: camera
 using Content.Server._Pirate.Photo; // Pirate: camera
+using System.IO; // Pirate: nano chat fax photo printing
 
 namespace Content.Server.Fax;
 
@@ -628,6 +630,70 @@ public sealed class FaxSystem : EntitySystem
             $"added print job to \"{component.FaxName}\" {ToPrettyString(uid):tool} " +
             $"of {nameWithLabel}: {args.Content}");
     }
+
+    #region Pirate: nano chat fax photo printing
+    public bool CanQueueNanoChatPhotoPrint(EntityUid uid, FaxMachineComponent? component = null)
+    {
+        if (!Resolve(uid, ref component))
+            return false;
+
+        if (TryComp<PhotoCardComponent>(component.PaperSlot.Item, out _))
+            return false;
+
+        if (component.SendTimeoutRemaining > 0 || component.InsertingTimeRemaining > 0)
+            return false;
+
+        return !TryComp<ApcPowerReceiverComponent>(uid, out var receiver) || receiver.Powered;
+    }
+
+    public bool TryQueueNanoChatPhotoPrint(
+        EntityUid uid,
+        EntityUid actor,
+        NanoChatPhotoData photo,
+        FaxMachineComponent? component = null)
+    {
+        if (!Resolve(uid, ref component) ||
+            !CanQueueNanoChatPhotoPrint(uid, component) ||
+            photo.ImageData is not { Length: > 0 } imageData)
+        {
+            return false;
+        }
+
+        #region Pirate: nano chat fax photo printing
+        var photoName = string.IsNullOrWhiteSpace(photo.FileName)
+            ? "PhotoCard"
+            : Path.GetFileNameWithoutExtension(photo.FileName);
+        #endregion
+        var photoDescription = string.IsNullOrWhiteSpace(photo.Description) ? null : photo.Description;
+        var photoContent = photoDescription ?? photo.Caption ?? string.Empty;
+        var printout = new FaxPrintout(
+            photoContent,
+            photoName,
+            null,
+            "PhotoCard",
+            photoImageData: imageData,
+            photoPreviewData: photo.PreviewData is { Length: > 0 } ? photo.PreviewData : imageData,
+            photoCustomName: photoName,
+            photoCustomDescription: photoDescription,
+            photoCaption: photo.Caption,
+            photoEntityDescription: photoDescription);
+
+        component.PrintingQueue.Enqueue(printout);
+        component.SendTimeoutRemaining += component.SendTimeout;
+        UpdateUserInterface(uid, component);
+
+        if (actor.IsValid())
+        {
+            _adminLogger.Add(LogType.Action,
+                LogImpact.Low,
+                $"{ToPrettyString(actor):actor} " +
+                $"added NanoChat photo print job to \"{component.FaxName}\" {ToPrettyString(uid):tool} " +
+                $"of {photoName}: {photoContent}");
+        }
+
+        return true;
+    }
+    #endregion
 
     /// <summary>
     ///     Copies the paper in the fax. A timeout is set after copying,

@@ -78,6 +78,7 @@ public enum NanoChatUiMessageType : byte
 {
     NewChat,
     SelectChat,
+    SelectGalleryPhoto, // Pirate: nano chat fax photo printing
     CloseChat,
     SendMessage,
     DeleteChat,

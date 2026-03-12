@@ -187,10 +187,15 @@
                                        HorizontalExpand="True"
                                        ClipText="True" />
                                 <Button Name="RemoveAttachmentButton"
-                                        Text="X"
+                                        ToolTip="{Loc nano-chat-delete}"
                                         MinSize="24 24"
                                         MaxSize="24 24"
-                                        StyleClasses="OpenBoth" />
+                                        StyleClasses="OpenBoth">
+                                    <TextureRect StyleClasses="ButtonSquare"
+                                                 TexturePath="/Textures/Interface/VerbIcons/delete_transparent.svg.192dpi.png"
+                                                 Stretch="KeepAspectCentered"
+                                                 MinSize="14 14" />
+                                </Button>
                             </BoxContainer>
                         </PanelContainer>
                         <BoxContainer Orientation="Horizontal"
@@ -232,10 +237,10 @@
                       Visible="False">
             <PanelContainer StyleClasses="PanelBackgroundBaseDark"
                             VerticalExpand="True"
-                            MinWidth="164"
-                            MaxWidth="164">
+                            MinWidth="188"
+                            MaxWidth="188">
                 <ScrollContainer VerticalExpand="True"
-                                 MinWidth="158"
+                                 MinWidth="182"
                                  HorizontalExpand="True"
                                  Margin="0"
                                  HScrollEnabled="False">
@@ -269,16 +274,15 @@
                                   MinSize="0 30"
                                   Margin="0 0 0 6">
                         <Label Name="GalleryPreviewName"
-                               Text="DEBUG GALLERY TITLE"
+                               StyleClasses="LabelBig"
                                HorizontalExpand="True"
-                               HorizontalAlignment="Left"
+                               HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
                                ClipText="True"
-                               ModulateSelfOverride="#ff3333"
-                               Margin="0 0 6 0" />
+                               Margin="0 0 2 0" />
                         <BoxContainer Orientation="Horizontal"
                                       VerticalAlignment="Center"
-                                      SeparationOverride="6">
+                                      SeparationOverride="4">
                             <Button Name="GalleryActionButton"
                                     Text="+"
                                     Visible="False"
@@ -287,12 +291,16 @@
                                     StyleClasses="OpenBoth"
                                     ToolTip="{Loc nano-chat-attach-selected-photo}" />
                             <Button Name="GalleryDeleteButton"
-                                    Text="X"
                                     Visible="False"
                                     MinSize="30 30"
                                     MaxSize="30 30"
                                     StyleClasses="OpenBoth"
-                                    ToolTip="{Loc nano-chat-delete-photo}" />
+                                    ToolTip="{Loc nano-chat-delete-photo}">
+                                <TextureRect StyleClasses="ButtonSquare"
+                                             TexturePath="/Textures/Interface/VerbIcons/delete_transparent.svg.192dpi.png"
+                                             Stretch="KeepAspectCentered"
+                                             MinSize="18 18" />
+                            </Button>
                         </BoxContainer>
                     </BoxContainer>
                     <Label Name="GalleryEmptyLabel"
@@ -308,11 +316,11 @@
                                      Visible="False"
                                      HScrollEnabled="False">
                         <TextureRect Name="GalleryPreviewImage"
-                                     HorizontalExpand="False"
+                                     HorizontalExpand="True"
                                      VerticalExpand="False"
                                      HorizontalAlignment="Center"
                                      Stretch="Scale"
-                                     MaxSize="248 4096"
+                                     MaxSize="640 4096"
                                      Visible="False"
                                      Margin="0 0 0 6" />
                     </ScrollContainer>
