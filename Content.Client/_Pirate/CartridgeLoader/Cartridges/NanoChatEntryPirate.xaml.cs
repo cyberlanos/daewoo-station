@@ -14,6 +14,7 @@ public sealed partial class NanoChatEntryPirate : BoxContainer
     private static readonly Color SelectedEntryColor = Color.FromHex("#4d5478d9");
     private static readonly Color UnreadIndicatorColor = Color.FromHex("#28d93e");
     private static readonly Color ActiveIndicatorColor = Color.FromHex("#7ea2ff");
+    private static readonly Color HiddenIndicatorColor = Color.Transparent;
 
     public event Action<uint>? OnPressed;
     private uint _number;
@@ -26,32 +27,60 @@ public sealed partial class NanoChatEntryPirate : BoxContainer
 
     public void SetRecipient(NanoChatRecipient recipient, uint number, bool isSelected)
     {
-        // Remove old handler if it exists
-        if (_pressHandler != null)
-            ChatButton.OnPressed -= _pressHandler;
-
-        _number = number;
-
-        // Create and store new handler
-        _pressHandler = _ => OnPressed?.Invoke(_number);
-        ChatButton.OnPressed += _pressHandler;
+        SetupPressHandler(number);
 
         NameLabel.Text = TruncateForEntry(recipient.Name, NameMaxChars) ?? string.Empty;
         NameLabel.ToolTip = recipient.Name;
+        JobLabel.ModulateSelfOverride = null;
 
         var jobTitle = recipient.JobTitle ?? string.Empty;
         JobLabel.Text = TruncateForEntry(jobTitle, JobMaxChars) ?? string.Empty;
         JobLabel.ToolTip = jobTitle;
         JobLabel.Visible = !string.IsNullOrWhiteSpace(jobTitle);
-        UnreadIndicator.Visible = recipient.HasUnread || isSelected;
+        UnreadIndicator.Visible = true;
         if (UnreadIndicator.PanelOverride is StyleBoxFlat indicatorStyle)
         {
-            var indicatorColor = recipient.HasUnread ? UnreadIndicatorColor : ActiveIndicatorColor;
+            var indicatorColor = recipient.HasUnread
+                ? UnreadIndicatorColor
+                : isSelected
+                    ? ActiveIndicatorColor
+                    : HiddenIndicatorColor;
             indicatorStyle.BackgroundColor = indicatorColor;
             indicatorStyle.BorderColor = indicatorColor;
         }
 
         ChatButton.ModulateSelfOverride = isSelected ? SelectedEntryColor : null;
+    }
+
+    public void SetGalleryItem(string fileName, uint index, bool isSelected)
+    {
+        SetupPressHandler(index);
+
+        NameLabel.Text = TruncateForEntry(fileName, NameMaxChars) ?? string.Empty;
+        NameLabel.ToolTip = fileName;
+        JobLabel.Text = " ";
+        JobLabel.ToolTip = null;
+        JobLabel.ModulateSelfOverride = Color.Transparent;
+        JobLabel.Visible = true;
+        UnreadIndicator.Visible = true;
+        if (UnreadIndicator.PanelOverride is StyleBoxFlat indicatorStyle)
+        {
+            var indicatorColor = isSelected ? ActiveIndicatorColor : HiddenIndicatorColor;
+            indicatorStyle.BackgroundColor = indicatorColor;
+            indicatorStyle.BorderColor = indicatorColor;
+        }
+
+        ChatButton.ModulateSelfOverride = isSelected ? SelectedEntryColor : null;
+    }
+
+    private void SetupPressHandler(uint number)
+    {
+        if (_pressHandler != null)
+            ChatButton.OnPressed -= _pressHandler;
+
+        _number = number;
+        _pressHandler = _ => OnPressed?.Invoke(_number);
+        ChatButton.OnPressed += _pressHandler;
     }
 
     private static string? TruncateForEntry(string? value, int maxChars)

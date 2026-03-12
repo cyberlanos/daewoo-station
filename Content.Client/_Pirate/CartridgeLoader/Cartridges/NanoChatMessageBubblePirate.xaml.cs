@@ -4,6 +4,8 @@ using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Utility;
+using System.IO;
+using System.Numerics;
 
 namespace Content.Client._Pirate.CartridgeLoader.Cartridges;
 
@@ -15,12 +17,21 @@ public sealed partial class NanoChatMessageBubblePirate : BoxContainer
     public static readonly Color TextColor = Color.FromHex("#e1e6f0");
     public static readonly Color ErrorColor = Color.FromHex("#cc3333");
     private bool? _previousIsOwnMessage;
+    private uint? _previousMessageId;
+
+    public event Action<uint>? OnStorePhotoPressed;
 
     public NanoChatMessageBubblePirate()
     {
         RobustXamlLoader.Load(this);
         MessageText.Modulate = TextColor;
         DeliveryFailedLabel.HorizontalAlignment = HAlignment.Right;
+        PhotoNameLabel.ModulateSelfOverride = TextColor.WithAlpha(0.8f);
+        StorePhotoButton.OnPressed += _ =>
+        {
+            if (_previousMessageId != null)
+                OnStorePhotoPressed?.Invoke(_previousMessageId.Value);
+        };
     }
 
     public void SetMessage(NanoChatMessage message, bool isOwnMessage)
@@ -33,7 +44,24 @@ public sealed partial class NanoChatMessageBubblePirate : BoxContainer
         style.BorderThickness = new Thickness(0);
 
         // Set message content
-        MessageText.Text = FormattedMessage.EscapeText(message.Content);
+        var hasText = !string.IsNullOrWhiteSpace(message.Content);
+        MessageText.Visible = hasText;
+        MessageText.Text = hasText ? FormattedMessage.EscapeText(message.Content) : string.Empty;
+
+        var hasPhoto = message.HasPhoto;
+        PhotoNameLabel.Visible = hasPhoto;
+        PhotoNameLabel.Text = hasPhoto ? message.Photo.FileName : string.Empty;
+        StorePhotoButton.Visible = hasPhoto && !isOwnMessage;
+        StorePhotoButton.Disabled = !StorePhotoButton.Visible;
+        StorePhotoButton.ToolTip = StorePhotoButton.Visible
+            ? Loc.GetString("nano-chat-store-photo")
+            : null;
+
+        if (_previousMessageId != message.Id)
+        {
+            ApplyPhotoPreview(message);
+            _previousMessageId = message.Id;
+        }
 
         // Show delivery failed text if needed (only for own messages)
         DeliveryFailedLabel.Visible = isOwnMessage && message.DeliveryFailed;
@@ -61,6 +89,45 @@ public sealed partial class NanoChatMessageBubblePirate : BoxContainer
             }
 
             _previousIsOwnMessage = isOwnMessage;
+        }
+    }
+
+    private void ApplyPhotoPreview(NanoChatMessage message)
+    {
+        PhotoPreview.Texture = null;
+        PhotoPreview.Visible = false;
+
+        if (!message.HasPhoto)
+            return;
+
+        var data = message.Photo.ImageData is { Length: > 0 } imageData
+            ? imageData
+            : message.Photo.PreviewData;
+
+        if (data is not { Length: > 0 })
+            return;
+
+        try
+        {
+            using var stream = new MemoryStream(data);
+            PhotoPreview.Texture = Texture.LoadFromPNGStream(stream, $"nanochat-photo-{message.Id}");
+            if (PhotoPreview.Texture != null)
+            {
+                const float maxWidth = 258f;
+                const float maxHeight = 258f;
+                var textureWidth = PhotoPreview.Texture.Size.X;
+                var textureHeight = PhotoPreview.Texture.Size.Y;
+                var scaledHeight = textureWidth > 0f
+                    ? MathF.Min(maxHeight, maxWidth * textureHeight / textureWidth)
+                    : 96f;
+                PhotoPreview.SetSize = new Vector2(maxWidth, scaledHeight);
+            }
+            PhotoPreview.Visible = true;
+        }
+        catch
+        {
+            PhotoPreview.Texture = null;
+            PhotoPreview.Visible = false;
         }
     }
 }

@@ -39,21 +39,37 @@ public sealed class NanoChatUiMessageEvent : CartridgeMessageEvent
     public readonly string? RecipientJob;
 
     /// <summary>
+    ///     The gallery file name associated with this action, if applicable.
+    /// </summary>
+    public readonly string? PhotoFileName;
+
+    /// <summary>
+    ///     The message id associated with this action, if applicable.
+    /// </summary>
+    public readonly uint? MessageId;
+
+    /// <summary>
     ///     Creates a new NanoChat UI message event.
     /// </summary>
     /// <param name="type">The type of message being sent</param>
     /// <param name="recipientNumber">Optional recipient number for the message</param>
     /// <param name="content">Optional content of the message</param>
     /// <param name="recipientJob">Optional job title for new chat creation</param>
+    /// <param name="photoFileName">Optional gallery file name for attachments and deletes</param>
+    /// <param name="messageId">Optional message id for message photo actions</param>
     public NanoChatUiMessageEvent(NanoChatUiMessageType type,
         uint? recipientNumber = null,
         string? content = null,
-        string? recipientJob = null)
+        string? recipientJob = null,
+        string? photoFileName = null,
+        uint? messageId = null)
     {
         Type = type;
         RecipientNumber = recipientNumber;
         Content = content;
         RecipientJob = recipientJob;
+        PhotoFileName = photoFileName;
+        MessageId = messageId;
     }
 }
 
@@ -67,6 +83,8 @@ public enum NanoChatUiMessageType : byte
     DeleteChat,
     ToggleMute,
     ToggleListNumber,
+    DeleteGalleryPhoto,
+    StoreMessagePhoto,
 }
 
 // putting this here because i can
@@ -110,9 +128,41 @@ public struct NanoChatRecipient
 }
 
 [Serializable, NetSerializable, DataRecord]
+public struct NanoChatPhotoData
+{
+    public string FileName;
+    public byte[]? ImageData;
+    public byte[]? PreviewData;
+    public string? Caption;
+    public string? Description;
+    public List<string> NamesSeen;
+
+    public NanoChatPhotoData(
+        string fileName,
+        byte[]? imageData,
+        byte[]? previewData = null,
+        string? caption = null,
+        string? description = null,
+        List<string>? namesSeen = null)
+    {
+        FileName = fileName;
+        ImageData = imageData;
+        PreviewData = previewData;
+        Caption = caption;
+        Description = description;
+        NamesSeen = namesSeen ?? new List<string>();
+    }
+}
+
+[Serializable, NetSerializable, DataRecord]
 public struct NanoChatMessage
 {
     public const int MaxContentLength = 256;
+
+    /// <summary>
+    ///     Unique id for this message on the local card copy.
+    /// </summary>
+    public uint Id;
 
     /// <summary>
     ///     When the message was sent.
@@ -136,18 +186,33 @@ public struct NanoChatMessage
     public bool DeliveryFailed;
 
     /// <summary>
+    ///     Whether the message contains a photo attachment.
+    /// </summary>
+    public bool HasPhoto;
+
+    /// <summary>
+    ///     Attached photo payload, when present.
+    /// </summary>
+    public NanoChatPhotoData Photo;
+
+    /// <summary>
     ///     Creates a new NanoChat message.
     /// </summary>
+    /// <param name="id">Unique id for this message on the local card</param>
     /// <param name="timestamp">When the message was sent</param>
     /// <param name="content">The content of the message</param>
     /// <param name="senderId">The sender's NanoChat number</param>
     /// <param name="deliveryFailed">Whether delivery to the recipient failed</param>
-    public NanoChatMessage(TimeSpan timestamp, string content, uint senderId, bool deliveryFailed = false)
+    /// <param name="photo">Optional photo attachment payload</param>
+    public NanoChatMessage(uint id, TimeSpan timestamp, string content, uint senderId, bool deliveryFailed = false, NanoChatPhotoData? photo = null)
     {
+        Id = id;
         Timestamp = timestamp;
         Content = content;
         SenderId = senderId;
         DeliveryFailed = deliveryFailed;
+        HasPhoto = photo != null;
+        Photo = photo ?? default;
     }
 }
 
@@ -159,11 +224,13 @@ public struct NanoChatMessage
 public readonly struct NanoChatData(
     Dictionary<uint, NanoChatRecipient> recipients,
     Dictionary<uint, List<NanoChatMessage>> messages,
+    Dictionary<string, NanoChatPhotoData> photos,
     uint? cardNumber,
     NetEntity card)
 {
     public Dictionary<uint, NanoChatRecipient> Recipients { get; } = recipients;
     public Dictionary<uint, List<NanoChatMessage>> Messages { get; } = messages;
+    public Dictionary<string, NanoChatPhotoData> Photos { get; } = photos;
     public uint? CardNumber { get; } = cardNumber;
     public NetEntity Card { get; } = card;
 }

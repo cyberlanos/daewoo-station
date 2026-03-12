@@ -13,17 +13,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Linq;
+using System.IO;
 using Content.Server.Administration.Logs;
 using Content.Server.CartridgeLoader;
+using Content.Server.DoAfter;
+using Content.Server.Popups;
 using Content.Server.Power.Components;
 using Content.Server.Radio;
 using Content.Server.Radio.Components;
 using Content.Server.Station.Systems;
+using Content.Server._Pirate.Photo;
 using Content.Shared.Access.Components;
 using Content.Shared.CartridgeLoader;
 using Content.Shared.Database;
 using Content.Shared._DV.CartridgeLoader.Cartridges;
 using Content.Shared._DV.NanoChat;
+using Content.Shared.DoAfter;
+using Content.Shared.Interaction;
 using Content.Shared.PDA;
 using Content.Shared.Radio.Components;
 using Robust.Shared.Audio; // Pirate: pda fix
@@ -47,10 +53,13 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
     [Dependency] private readonly SharedUserInterfaceSystem _ui = default!;
     [Dependency] private readonly IConfigurationManager _cfgManager = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!; // Pirate: pda fix
+    [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
+    [Dependency] private readonly PopupSystem _popup = default!;
 
     // Messages in notifications get cut off after this point
     // no point in storing it on the comp
     private const int NotificationMaxLength = 64;
+    private static readonly TimeSpan PhotoUploadDelay = TimeSpan.FromSeconds(0.8);
     #region Pirate: pda fix
     private static readonly SoundSpecifier SendSuccessSound = new SoundPathSpecifier("/Audio/_Pirate/Machines/terminal_success.ogg");
     private static readonly SoundSpecifier SendErrorSound = new SoundPathSpecifier("/Audio/_Pirate/Machines/terminal_error.ogg");
@@ -73,6 +82,8 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
 
         SubscribeLocalEvent<NanoChatCartridgeComponent, CartridgeUiReadyEvent>(OnUiReady);
         SubscribeLocalEvent<NanoChatCartridgeComponent, CartridgeMessageEvent>(OnMessage);
+        SubscribeLocalEvent<PdaComponent, InteractUsingEvent>(OnPdaInteractUsing);
+        SubscribeLocalEvent<PdaComponent, PdaPhotoUploadDoAfterEvent>(OnPdaPhotoUploadDoAfter);
 
         Subs.CVar(_cfgManager, CCVars.MaxNameLength, value => _maxNameLength = value, true);
         Subs.CVar(_cfgManager, CCVars.MaxIdJobLength, value => _maxIdJobLength = value, true);
@@ -157,6 +168,12 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
             case NanoChatUiMessageType.ToggleListNumber:
                 HandleToggleListNumber(card);
                 break;
+            case NanoChatUiMessageType.DeleteGalleryPhoto:
+                HandleDeleteGalleryPhoto(card, msg);
+                break;
+            case NanoChatUiMessageType.StoreMessagePhoto:
+                HandleStoreMessagePhoto(card, msg);
+                break;
         }
 
         UpdateUI(ent, GetEntity(args.LoaderUid));
@@ -182,6 +199,62 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
 
         card = (pda.ContainedId.Value, idCard);
         return true;
+    }
+
+    private void OnPdaInteractUsing(Entity<PdaComponent> ent, ref InteractUsingEvent args)
+    {
+        if (args.Handled ||
+            !TryComp<PhotoCardComponent>(args.Used, out _))
+        {
+            return;
+        }
+
+        if (!GetCardEntity(ent, out _))
+        {
+            ShowPhotoActionError(ent.Owner, args.User, "nano-chat-photo-upload-failed");
+            args.Handled = true;
+            return;
+        }
+
+        var doAfter = new DoAfterArgs(EntityManager, args.User, PhotoUploadDelay, new PdaPhotoUploadDoAfterEvent(), ent, target: ent, used: args.Used)
+        {
+            BreakOnMove = true,
+            BreakOnDamage = true,
+            NeedHand = true
+        };
+
+        if (_doAfter.TryStartDoAfter(doAfter))
+        {
+            args.Handled = true;
+            return;
+        }
+
+        ShowPhotoActionError(ent.Owner, args.User, "nano-chat-photo-upload-failed");
+        args.Handled = true;
+    }
+
+    private void OnPdaPhotoUploadDoAfter(Entity<PdaComponent> ent, ref PdaPhotoUploadDoAfterEvent args)
+    {
+        if (args.Handled)
+        {
+            return;
+        }
+
+        if (args.Cancelled ||
+            args.Used is not { } photoUid ||
+            !TryComp<PhotoCardComponent>(photoUid, out var photoCard) ||
+            !GetCardEntity(ent, out var card) ||
+            !TryCreateStoredPhoto(photoCard, out var storedPhoto))
+        {
+            ShowPhotoActionError(ent.Owner, args.User, "nano-chat-photo-upload-failed");
+            args.Handled = true;
+            return;
+        }
+
+        _nanoChat.StorePhoto((card, card.Comp), storedPhoto);
+        UpdateUIForCard(card);
+        ShowPhotoActionSuccess(card.Comp.PdaUid ?? card.Owner, args.User, "nano-chat-photo-uploaded");
+        args.Handled = true;
     }
 
     /// <summary>
@@ -288,6 +361,27 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         UpdateUIForAllCards();
     }
 
+    private void HandleDeleteGalleryPhoto(Entity<NanoChatCardComponent> card, NanoChatUiMessageEvent msg)
+    {
+        if (string.IsNullOrWhiteSpace(msg.PhotoFileName))
+            return;
+
+        if (_nanoChat.TryDeleteStoredPhoto((card, card.Comp), msg.PhotoFileName))
+            UpdateUIForCard(card);
+    }
+
+    private void HandleStoreMessagePhoto(Entity<NanoChatCardComponent> card, NanoChatUiMessageEvent msg)
+    {
+        if (msg.RecipientNumber == null || msg.MessageId == null)
+            return;
+
+        if (!TryStorePhotoFromMessage(card, msg.RecipientNumber.Value, msg.MessageId.Value, out _))
+            return;
+
+        UpdateUIForCard(card);
+        ShowPhotoActionSuccess(card.Comp.PdaUid ?? card.Owner, msg.Actor, "nano-chat-photo-saved-to-gallery");
+    }
+
     /// <summary>
     ///     Handles sending a new message in a chat conversation.
     /// </summary>
@@ -295,25 +389,43 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         Entity<NanoChatCardComponent> card,
         NanoChatUiMessageEvent msg)
     {
-        if (msg.RecipientNumber == null || msg.Content == null || card.Comp.Number == null)
+        if (msg.RecipientNumber == null || card.Comp.Number == null)
             return;
 
         if (!EnsureRecipientExists(card, msg.RecipientNumber.Value)) // Pirate: pda fix
             return;
 
-        var content = msg.Content;
+        NanoChatPhotoData? attachment = null;
+        if (!string.IsNullOrWhiteSpace(msg.PhotoFileName))
+        {
+            if (!_nanoChat.TryGetStoredPhoto((card, card.Comp), msg.PhotoFileName, out var storedPhoto))
+                return;
+
+            attachment = storedPhoto;
+        }
+
+        var content = msg.Content ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(content))
         {
             content = FormattedMessage.EscapeText(content.Trim()); // Goob Sanitize Text
             if (content.Length > NanoChatMessage.MaxContentLength)
                 content = content[..NanoChatMessage.MaxContentLength];
         }
+        else
+        {
+            content = string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(content) && attachment == null)
+            return;
 
         // Create and store message for sender
         var message = new NanoChatMessage(
+            _nanoChat.AllocateMessageId((card, card.Comp)),
             _timing.CurTime,
             content,
-            (uint)card.Comp.Number
+            (uint)card.Comp.Number,
+            photo: attachment
         );
 
         // Attempt delivery
@@ -329,10 +441,11 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         var recipientsText = recipients.Count > 0
             ? string.Join(", ", recipients.Select(r => ToPrettyString(r)))
             : $"#{msg.RecipientNumber:D4}";
+        var attachmentText = attachment is { } photo ? $" [PHOTO: {photo.FileName}]" : string.Empty;
 
         _adminLogger.Add(LogType.Chat,
             LogImpact.Low,
-            $"{ToPrettyString(msg.Actor):user} sent NanoChat message to {recipientsText}: {content}{(deliveryFailed ? " [DELIVERY FAILED]" : "")}");
+            $"{ToPrettyString(msg.Actor):user} sent NanoChat message to {recipientsText}: {content}{attachmentText}{(deliveryFailed ? " [DELIVERY FAILED]" : "")}");
 
         var msgEv = new NanoChatMessageReceivedEvent(card);
         RaiseLocalEvent(ref msgEv);
@@ -481,7 +594,13 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         if (!EnsureRecipientExists(recipient, senderNumber.Value))
             return;
 
-        _nanoChat.AddMessage((recipient, recipient.Comp), senderNumber.Value, message with { DeliveryFailed = false });
+        var deliveredMessage = message with
+        {
+            Id = _nanoChat.AllocateMessageId((recipient, recipient.Comp)),
+            DeliveryFailed = false
+        };
+
+        _nanoChat.AddMessage((recipient, recipient.Comp), senderNumber.Value, deliveredMessage);
 
         #region Pirate: pda fix
         var shouldNotifyUnread = recipient.Comp.IsClosed || _nanoChat.GetCurrentChat((recipient, recipient.Comp)) != senderNumber;
@@ -491,7 +610,7 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         #endregion
 
         if (shouldNotifyUnread) // Pirate: pda fix
-            HandleUnreadNotification(recipient, message, (uint) senderNumber);
+            HandleUnreadNotification(recipient, deliveredMessage, (uint) senderNumber);
 
         var msgEv = new NanoChatMessageReceivedEvent(recipient);
         RaiseLocalEvent(ref msgEv);
@@ -528,10 +647,26 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
 
         _cartridge.SendNotification(pdaUid,
             Loc.GetString("nano-chat-new-message-title", ("sender", senderName)),
-            Loc.GetString("nano-chat-new-message-body", ("message", TruncateMessage(message.Content))),
+            BuildNotificationBody(message),
             loader, // Pirate: pda fix
             playRingtone: false); // Pirate: pda fix
 
+    }
+
+    private string BuildNotificationBody(NanoChatMessage message)
+    {
+        if (!message.HasPhoto)
+            return Loc.GetString("nano-chat-new-message-body", ("message", TruncateMessage(message.Content)));
+
+        if (!string.IsNullOrWhiteSpace(message.Content))
+        {
+            return Loc.GetString("nano-chat-new-photo-message-body",
+                ("fileName", message.Photo.FileName),
+                ("message", TruncateMessage(message.Content)));
+        }
+
+        return Loc.GetString("nano-chat-new-photo-message-body-no-text",
+            ("fileName", message.Photo.FileName));
     }
 
     /// <summary>
@@ -601,6 +736,109 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
             : message[..(NotificationMaxLength - 4)] + " [...]";
     }
 
+    private bool TryStorePhotoFromMessage(Entity<NanoChatCardComponent> card, uint recipientNumber, uint messageId, out string fileName)
+    {
+        fileName = string.Empty;
+        var messages = _nanoChat.GetMessagesForRecipient((card, card.Comp), recipientNumber);
+        if (messages == null)
+            return false;
+
+        foreach (var message in messages)
+        {
+            if (message.Id != messageId || !message.HasPhoto)
+                continue;
+
+            _nanoChat.StorePhoto((card, card.Comp), message.Photo);
+            fileName = message.Photo.FileName;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ShowPhotoActionSuccess(EntityUid source, EntityUid user, string locId)
+    {
+        ShowPhotoActionFeedback(source, user, locId, SendSuccessSound);
+    }
+
+    private void ShowPhotoActionError(EntityUid source, EntityUid user, string locId)
+    {
+        ShowPhotoActionFeedback(source, user, locId, SendErrorSound);
+    }
+
+    private void ShowPhotoActionFeedback(EntityUid source, EntityUid user, string locId, SoundSpecifier sound)
+    {
+        if (Deleted(source) || Deleted(user))
+            return;
+
+        _popup.PopupEntity(Loc.GetString(locId), source, user);
+        _audio.PlayPvs(sound, source, SenderFeedbackAudioParams);
+    }
+
+    private static bool TryCreateStoredPhoto(PhotoCardComponent photoCard, out NanoChatPhotoData storedPhoto)
+    {
+        storedPhoto = default;
+        if (photoCard.ImageData is not { Length: > 0 } imageData)
+            return false;
+
+        var fileName = GetStoredPhotoFileName(photoCard);
+        storedPhoto = new NanoChatPhotoData(
+            fileName,
+            imageData,
+            photoCard.PreviewData is { Length: > 0 } ? photoCard.PreviewData : imageData,
+            photoCard.Caption,
+            ComposeStoredPhotoDescription(photoCard),
+            new List<string>(photoCard.NamesSeen));
+        return true;
+    }
+
+    private static string GetStoredPhotoFileName(PhotoCardComponent photoCard)
+    {
+        var baseName = SanitizeFileStem(photoCard.CustomName);
+        if (string.IsNullOrWhiteSpace(baseName))
+            return GenerateTimestampedPhotoFileName();
+
+        if (!baseName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            baseName += ".png";
+
+        return baseName;
+    }
+
+    private static string GenerateTimestampedPhotoFileName()
+    {
+        var now = DateTime.Now;
+        return $"2468{now:MMdd_HHmmss}.png";
+    }
+
+    private static string? SanitizeFileStem(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var sanitized = value.Trim();
+        foreach (var invalid in Path.GetInvalidFileNameChars())
+        {
+            sanitized = sanitized.Replace(invalid, '_');
+        }
+
+        sanitized = sanitized.Replace('/', '_').Replace('\\', '_');
+        return string.IsNullOrWhiteSpace(sanitized) ? null : sanitized;
+    }
+
+    private static string? ComposeStoredPhotoDescription(PhotoCardComponent photoCard)
+    {
+        if (!string.IsNullOrWhiteSpace(photoCard.CustomDescription) &&
+            !string.IsNullOrWhiteSpace(photoCard.BaseDescription))
+        {
+            return $"{photoCard.CustomDescription} - {photoCard.BaseDescription}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(photoCard.CustomDescription))
+            return photoCard.CustomDescription;
+
+        return string.IsNullOrWhiteSpace(photoCard.BaseDescription) ? null : photoCard.BaseDescription;
+    }
+
     private void OnUiReady(Entity<NanoChatCartridgeComponent> ent, ref CartridgeUiReadyEvent args)
     {
         _cartridge.RegisterBackgroundProgram(args.Loader, ent);
@@ -633,6 +871,7 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
 
         var recipients = new Dictionary<uint, NanoChatRecipient>();
         var messages = new Dictionary<uint, List<NanoChatMessage>>();
+        var photos = new Dictionary<string, NanoChatPhotoData>();
         uint? currentChat = null;
         uint ownNumber = 0;
         var maxRecipients = 50;
@@ -643,6 +882,7 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
         {
             recipients = card.Recipients;
             messages = card.Messages;
+            photos = card.Photos;
             currentChat = card.CurrentChat;
             ownNumber = card.Number ?? 0;
             maxRecipients = card.MaxRecipients;
@@ -652,6 +892,7 @@ public sealed class NanoChatCartridgeSystem : EntitySystem
 
         var state = new NanoChatUiState(recipients,
             messages,
+            photos,
             contacts,
             currentChat,
             ownNumber,

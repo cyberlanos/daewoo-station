@@ -160,11 +160,26 @@ nano-chat-message-too-long = Message too long ({$current}/{$max} characters)
 nano-chat-max-recipients = Maximum number of chats reached
 nano-chat-new-message-title = Message from {$sender}
 nano-chat-new-message-body = {$message}
+nano-chat-new-photo-message-body = {$fileName}: {$message}
+nano-chat-new-photo-message-body-no-text = Photo: {$fileName}
 nano-chat-toggle-mute = Mute notifications
 nano-chat-delivery-failed = Failed to deliver
 nano-chat-look-up-no-server = No valid telecommunications server found
 nano-chat-look-up = Look up numbers
 nano-chat-list-number = List number
+nano-chat-go-to-gallery = Gallery
+nano-chat-go-to-chat = Chat
+nano-chat-back = Back
+nano-chat-attach-photo = Attach photo
+nano-chat-attached-photo = Attached: {$fileName}
+nano-chat-gallery-no-photos = No photos stored
+nano-chat-gallery-empty = Select a photo to preview
+nano-chat-attach-selected-photo = Attach selected photo
+nano-chat-delete-photo = Delete photo
+nano-chat-store-photo = Store photo
+nano-chat-photo-uploaded = Photo scanned
+nano-chat-photo-saved-to-gallery = Photo saved
+nano-chat-photo-upload-failed = Photo scan failed
 
 # Create chat popup
 nano-chat-new-title = Add a new chat

@@ -39,6 +39,12 @@ public sealed partial class NanoChatCardComponent : Component
     public Dictionary<uint, List<NanoChatMessage>> Messages = new();
 
     /// <summary>
+    ///     Photos stored in PDA memory, keyed by file name.
+    /// </summary>
+    [DataField]
+    public Dictionary<string, NanoChatPhotoData> Photos = new();
+
+    /// <summary>
     ///     The currently selected chat recipient number.
     /// </summary>
     [DataField]
@@ -55,6 +61,12 @@ public sealed partial class NanoChatCardComponent : Component
     /// </summary>
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer)), AutoPausedField]
     public TimeSpan LastMessageTime; // TODO: actually use this, compare against actor and not the card
+
+    /// <summary>
+    ///     Monotonically increasing local message id source.
+    /// </summary>
+    [DataField]
+    public uint NextMessageId = 1;
 
     /// <summary>
     ///     Whether to send notifications.
