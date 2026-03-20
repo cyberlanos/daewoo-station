@@ -50,6 +50,16 @@ public sealed class CriminalRecordsConsoleBoundUserInterface : BoundUserInterfac
             SendMessage(new CriminalRecordChangeStatus(status, reason));
         _window.OnStatusFilterPressed += (statusFilter) =>
             SendMessage(new CriminalRecordSetStatusFilter(statusFilter));
+        #region Pirate: security record identity editor
+        _window.OnCreateRecord += name =>
+            SendMessage(new CriminalRecordCreateRecord(name));
+        _window.OnDeleteRecord += id =>
+            SendMessage(new DeleteStationRecord(id));
+        _window.OnIdentityInfoChanged += (species, nationality, employer, age, gender) =>
+            SendMessage(new CriminalRecordEditIdentity(species, nationality, employer, age, gender));
+        _window.OnForensicsInfoChanged += (fingerprint, dna) =>
+            SendMessage(new CriminalRecordEditForensics(fingerprint, dna));
+        #endregion
         #region Pirate: cameras (photo in records)
         _window.OnPrintPhoto += async () =>
         {

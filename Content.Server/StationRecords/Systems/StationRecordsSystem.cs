@@ -124,7 +124,9 @@ public sealed partial class StationRecordsSystem : SharedStationRecordsSystem
         TryComp<FingerprintComponent>(player, out var fingerprintComponent);
         TryComp<DnaComponent>(player, out var dnaComponent);
 
+        #region Pirate: security record identity editor
         CreateGeneralRecord(station, idUid.Value, profile.Name, profile.Age, profile.Species, profile.Gender, jobId, fingerprintComponent?.Fingerprint, dnaComponent?.DNA, profile, records);
+        #endregion
     }
 
 
@@ -187,6 +189,10 @@ public sealed partial class StationRecordsSystem : SharedStationRecordsSystem
             JobTitle = alternativeJobPrototype?.LocalizedJobName ?? jobPrototype.LocalizedName, // Pirate - Alternative Jobs
             JobIcon = alternativeJobPrototype?.JobIconProtoId ?? jobPrototype.Icon, // Pirate - Alternative Jobs
             JobPrototype = jobId,
+            #region Pirate: security record identity editor
+            Nationality = profile.Nationality,
+            Employer = profile.Employer,
+            #endregion
             Species = species,
             Gender = gender,
             DisplayPriority = jobPrototype.RealDisplayWeight,
@@ -242,6 +248,27 @@ public sealed partial class StationRecordsSystem : SharedStationRecordsSystem
 
         return false;
     }
+
+    #region Pirate: security record decoupling
+    /// <summary>
+    ///     Removes a single typed record entry from this station record key.
+    /// </summary>
+    public bool RemoveRecordEntry<T>(StationRecordKey key, StationRecordsComponent? records = null)
+    {
+        if (!Resolve(key.OriginStation, ref records))
+            return false;
+
+        if (!records.Records.RemoveRecordEntry<T>(key.Id))
+            return false;
+
+        if (records.Records.Keys.Contains(key.Id))
+            RaiseLocalEvent(new RecordModifiedEvent(key));
+        else
+            RaiseLocalEvent(new RecordRemovedEvent(key));
+
+        return true;
+    }
+    #endregion
 
     /// <summary>
     ///     Try to get a record from this station's record entries,
@@ -304,6 +331,26 @@ public sealed partial class StationRecordsSystem : SharedStationRecordsSystem
 
         return null;
     }
+
+    #region Pirate: security record decoupling
+    /// <summary>
+    /// Returns all general-record ids with the exact same name.
+    /// </summary>
+    public List<uint> GetRecordIdsByName(EntityUid station, string name, StationRecordsComponent? records = null)
+    {
+        if (!Resolve(station, ref records, false))
+            return new List<uint>();
+
+        var matches = new List<uint>();
+        foreach (var (id, record) in GetRecordsOfType<GeneralStationRecord>(station, records))
+        {
+            if (record.Name == name)
+                matches.Add(id);
+        }
+
+        return matches;
+    }
+    #endregion
 
     /// <summary>
     /// Get the name for a record, or an empty string if it has no record.

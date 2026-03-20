@@ -47,13 +47,32 @@ public sealed class CriminalRecordsSystem : SharedCriminalRecordsSystem
         SubscribeLocalEvent<WantedListCartridgeComponent, CriminalHistoryRemovedEvent>(OnHistoryRemoved);
     }
 
+    #region Pirate: security record decoupling
+    public void NotifyCriminalRecordDeleted(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+            UpdateCriminalIdentity(name, SecurityStatus.None);
+
+        var args = new CriminalRecordChangedEvent(new CriminalRecord());
+        var query = EntityQueryEnumerator<WantedListCartridgeComponent>();
+        while (query.MoveNext(out var readerUid, out _))
+        {
+            RaiseLocalEvent(readerUid, ref args);
+        }
+    }
+    #endregion
+
     private void OnGeneralRecordCreated(AfterGeneralRecordCreatedEvent ev)
     {
         #region Pirate: cameras (photo in records)
         var record = new CriminalRecord
         {
-            PortraitProfileSnapshot = new(ev.Profile)
+            // Pirate: general/security record decoupling
+            GeneralRecordSnapshot = ev.Record with { }
         };
+        if (!string.IsNullOrWhiteSpace(ev.Record.Species))
+            record.PortraitProfileSnapshot = new(ev.Profile);
+
         _records.AddRecordEntry(ev.Key, record);
         #endregion
         _records.Synchronize(ev.Key);

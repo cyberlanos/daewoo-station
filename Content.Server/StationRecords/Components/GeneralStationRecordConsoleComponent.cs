@@ -35,4 +35,12 @@ public sealed partial class GeneralStationRecordConsoleComponent : Component
     /// </summary>
     [DataField]
     public bool CanDeleteEntries;
+
+    #region Pirate: general/security record decoupling
+    /// <summary>
+    /// Max length of edited string fields.
+    /// </summary>
+    [DataField]
+    public uint MaxStringLength = 256;
+    #endregion
 }

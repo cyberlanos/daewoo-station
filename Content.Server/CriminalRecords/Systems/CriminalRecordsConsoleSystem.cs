@@ -33,6 +33,15 @@ using System.Diagnostics.CodeAnalysis;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Security.Components;
 using System.Linq;
+// Pirate: security record identity editor
+using Content.Shared.Customization.Systems;
+using Content.Shared.Humanoid;
+using Content.Shared.Humanoid.Prototypes;
+using Content.Shared.Preferences;
+using Content.Shared.Roles;
+using Content.Shared._Pirate.Contractors.Prototypes;
+using Robust.Shared.Enums;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Audio; // Pirate: cameras (photo in records)
 using Robust.Shared.Audio.Systems; // Pirate: cameras (photo in records)
 using Robust.Shared.Timing; // Pirate: cameras (photo in records)
@@ -54,29 +63,45 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
     [Dependency] private readonly StationRecordsSystem _records = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
+    #region Pirate: security record identity editor
+    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
+    #endregion
     [Dependency] private readonly SharedAudioSystem _audio = default!; // Pirate: cameras (photo in records)
     [Dependency] private readonly HandsSystem _hands = default!; // Pirate: cameras (photo in records)
     [Dependency] private readonly PhotoSystem _photoSystem = default!; // Pirate: cameras (photo in records)
     #region Pirate: cameras (photo in records)
     private readonly HashSet<EntityUid> _activePortraitPrintJobs = new();
     private static readonly SoundSpecifier PortraitPrintSound = new SoundPathSpecifier("/Audio/Machines/printer.ogg");
+    private static readonly SoundSpecifier PortraitUploadSound = new SoundPathSpecifier("/Audio/_Pirate/Machines/terminal_prompt_confirm.ogg");
     private static readonly TimeSpan PortraitPrintDelay = TimeSpan.FromSeconds(2.3f);
+    #endregion
+    #region Pirate: security record identity editor
+    private static readonly IReadOnlyDictionary<string, TimeSpan> EmptyPlayTimes = new Dictionary<string, TimeSpan>();
     #endregion
 
     public override void Initialize()
     {
         SubscribeLocalEvent<CriminalRecordsConsoleComponent, RecordModifiedEvent>(UpdateUserInterface);
         SubscribeLocalEvent<CriminalRecordsConsoleComponent, AfterGeneralRecordCreatedEvent>(UpdateUserInterface);
+        #region Pirate: security record identity editor
+        SubscribeLocalEvent<CriminalRecordsConsoleComponent, RecordRemovedEvent>(OnRecordRemoved);
+        #endregion
 
         Subs.BuiEvents<CriminalRecordsConsoleComponent>(CriminalRecordsConsoleKey.Key, subs =>
         {
             subs.Event<BoundUIOpenedEvent>(UpdateUserInterface);
             subs.Event<SelectStationRecord>(OnKeySelected);
             subs.Event<SetStationRecordFilter>(OnFiltersChanged);
+            #region Pirate: security record identity editor
+            subs.Event<CriminalRecordCreateRecord>(OnCreateRecord);
+            subs.Event<DeleteStationRecord>(OnDeleteRecord);
             subs.Event<CriminalRecordChangeStatus>(OnChangeStatus);
             subs.Event<CriminalRecordAddHistory>(OnAddHistory);
             subs.Event<CriminalRecordDeleteHistory>(OnDeleteHistory);
             subs.Event<CriminalRecordSetStatusFilter>(OnStatusFilterPressed);
+            subs.Event<CriminalRecordEditIdentity>(OnEditIdentity);
+            subs.Event<CriminalRecordEditForensics>(OnEditForensics);
+            #endregion
             #region Pirate: cameras (photo in records)
             subs.Event<CriminalRecordPrintPhoto>(OnPrintPhoto);
             subs.Event<CriminalRecordUploadPhoto>(OnUploadPhoto);
@@ -119,6 +144,114 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         }
     }
 
+    #region Pirate: security record identity editor
+    private void OnRecordRemoved(Entity<CriminalRecordsConsoleComponent> ent, ref RecordRemovedEvent args)
+    {
+        if (args.Key.OriginStation != _station.GetOwningStation(ent))
+            return;
+
+        if (ent.Comp.ActiveKey == args.Key.Id)
+            ent.Comp.ActiveKey = null;
+
+        UpdateUserInterface(ent);
+    }
+
+    private void OnCreateRecord(Entity<CriminalRecordsConsoleComponent> ent, ref CriminalRecordCreateRecord msg)
+    {
+        if (!_access.IsAllowed(msg.Actor, ent))
+            return;
+
+        if (_station.GetOwningStation(ent) is not { } station ||
+            !TryComp<StationRecordsComponent>(station, out var stationRecords))
+        {
+            return;
+        }
+
+        var name = msg.Name.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name.Length > ent.Comp.MaxStringLength)
+            return;
+
+        var matchingIds = _records.GetRecordIdsByName(station, name, stationRecords);
+        if (matchingIds.Count > 1)
+            return;
+
+        if (matchingIds.Count == 1)
+        {
+            var existingKey = new StationRecordKey(matchingIds[0], station);
+            if (_records.TryGetRecord<CriminalRecord>(existingKey, out _))
+            {
+                ent.Comp.ActiveKey = existingKey.Id;
+                UpdateUserInterface(ent);
+                return;
+            }
+
+            if (!_records.TryGetRecord<GeneralStationRecord>(existingKey, out var generalRecord))
+                return;
+
+            _records.AddRecordEntry(existingKey, CreateCriminalRecordFromGeneral(generalRecord));
+            ent.Comp.ActiveKey = existingKey.Id;
+            _records.Synchronize(existingKey);
+            UpdateUserInterface(ent);
+            return;
+        }
+
+        var profile = HumanoidCharacterProfile.DefaultWithSpecies(SharedHumanoidAppearanceSystem.DefaultSpecies)
+            .WithName(name)
+            .WithAge(18);
+
+        var record = new GeneralStationRecord
+        {
+            Name = name,
+            Age = 18,
+            JobTitle = Loc.GetString("suit-sensor-component-unknown-job"),
+            JobIcon = string.Empty,
+            JobPrototype = string.Empty,
+            Nationality = string.Empty,
+            Employer = string.Empty,
+            Species = string.Empty,
+            Gender = Gender.Male,
+            DisplayPriority = 0,
+            Fingerprint = null,
+            DNA = null,
+        };
+
+        var key = _records.AddRecordEntry(station, record, stationRecords);
+        if (!key.IsValid())
+            return;
+
+        ent.Comp.ActiveKey = key.Id;
+        RaiseLocalEvent(new AfterGeneralRecordCreatedEvent(key, record, profile));
+        UpdateUserInterface(ent);
+    }
+
+    private void OnDeleteRecord(Entity<CriminalRecordsConsoleComponent> ent, ref DeleteStationRecord msg)
+    {
+        if (!_access.IsAllowed(msg.Actor, ent))
+            return;
+
+        if (_station.GetOwningStation(ent) is not { } station)
+            return;
+
+        var key = new StationRecordKey(msg.Id, station);
+        if (!_records.TryGetRecord<CriminalRecord>(key, out var criminalRecord)
+            || !_records.RemoveRecordEntry<CriminalRecord>(key))
+        {
+            return;
+        }
+
+        var name = _records.TryGetRecord<GeneralStationRecord>(key, out var stationRecord)
+            ? stationRecord.Name
+            : criminalRecord.GeneralRecordSnapshot?.Name ?? string.Empty;
+
+        _criminalRecords.NotifyCriminalRecordDeleted(name);
+
+        if (ent.Comp.ActiveKey == msg.Id)
+            ent.Comp.ActiveKey = null;
+
+        UpdateUserInterface(ent);
+    }
+    #endregion
+
     private void GetOfficer(EntityUid uid, out string officer)
     {
         var tryGetIdentityShortInfoEvent = new TryGetIdentityShortInfoEvent(null, uid);
@@ -154,7 +287,7 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
 
         var oldStatus = record.Status;
 
-        var name = _records.RecordName(key.Value);
+        var name = record.GeneralRecordSnapshot?.Name ?? _records.RecordName(key.Value);
         GetOfficer(mob.Value, out var officer);
 
         // when arresting someone add it to history automatically
@@ -167,13 +300,16 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         }
 
         // will probably never fail given the checks above
-        name = _records.RecordName(key.Value);
+        name = record.GeneralRecordSnapshot?.Name ?? _records.RecordName(key.Value);
         officer = Loc.GetString("criminal-records-console-unknown-officer");
         var jobName = "Unknown";
 
         _records.TryGetRecord<GeneralStationRecord>(key.Value, out var entry);
         if (entry != null)
             jobName = entry.JobTitle;
+        else if (_records.TryGetRecord<CriminalRecord>(key.Value, out var criminalEntry)
+                 && criminalEntry.GeneralRecordSnapshot != null)
+            jobName = criminalEntry.GeneralRecordSnapshot.JobTitle;
 
         var tryGetIdentityShortInfoEvent = new TryGetIdentityShortInfoEvent(null, mob.Value);
         RaiseLocalEvent(tryGetIdentityShortInfoEvent);
@@ -262,6 +398,190 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         UpdateUserInterface(ent);
     }
 
+    #region Pirate: security record identity editor
+    private void OnEditIdentity(Entity<CriminalRecordsConsoleComponent> ent, ref CriminalRecordEditIdentity msg)
+    {
+        if (!CheckSelected(ent, msg.Actor, out _, out var key))
+            return;
+
+        if (!_records.TryGetRecord<CriminalRecord>(key.Value, out var criminalRecord))
+        {
+            return;
+        }
+
+        var stationRecord = _records.TryGetRecord<GeneralStationRecord>(key.Value, out var existingGeneral)
+            ? existingGeneral
+            : criminalRecord.GeneralRecordSnapshot is { } snapshot
+                ? snapshot with { }
+                : null;
+
+        if (stationRecord == null)
+            return;
+
+        if (!_prototypeManager.TryIndex<SpeciesPrototype>(msg.Species, out var speciesProto)
+            || !speciesProto.RoundStart)
+        {
+            return;
+        }
+
+        var age = Math.Clamp(msg.Age, speciesProto.MinAge, speciesProto.MaxAge);
+        var profile = BuildEditedProfile(stationRecord, criminalRecord, speciesProto.ID, age, msg.Gender);
+        var nationality = NormalizeNationality(msg.Nationality, profile);
+        profile = profile.WithNationality(nationality);
+        var employer = NormalizeEmployer(msg.Employer, profile);
+        profile = profile.WithEmployer(employer);
+
+        stationRecord.Species = speciesProto.ID;
+        stationRecord.Age = age;
+        stationRecord.Gender = msg.Gender;
+        stationRecord.Nationality = nationality;
+        stationRecord.Employer = employer;
+        criminalRecord.GeneralRecordSnapshot = stationRecord with { };
+
+        if (existingGeneral != null)
+        {
+            existingGeneral.Species = stationRecord.Species;
+            existingGeneral.Age = stationRecord.Age;
+            existingGeneral.Gender = stationRecord.Gender;
+            existingGeneral.Nationality = stationRecord.Nationality;
+            existingGeneral.Employer = stationRecord.Employer;
+        }
+
+        // Pirate: only records that already had a generated/live portrait snapshot keep auto portrait updates.
+        if (criminalRecord.PortraitProfileSnapshot != null || criminalRecord.PortraitImageData is { Length: > 0 })
+            criminalRecord.PortraitProfileSnapshot = profile;
+
+        _records.Synchronize(key.Value);
+    }
+
+    private void OnEditForensics(Entity<CriminalRecordsConsoleComponent> ent, ref CriminalRecordEditForensics msg)
+    {
+        if (!CheckSelected(ent, msg.Actor, out _, out var key))
+            return;
+
+        if (!_records.TryGetRecord<CriminalRecord>(key.Value, out var criminalRecord))
+            return;
+
+        var stationRecord = _records.TryGetRecord<GeneralStationRecord>(key.Value, out var existingGeneral)
+            ? existingGeneral
+            : criminalRecord.GeneralRecordSnapshot is { } snapshot
+                ? snapshot with { }
+                : null;
+
+        if (stationRecord == null)
+            return;
+
+        var fingerprint = msg.Fingerprint.Trim();
+        var dna = msg.Dna.Trim();
+        if (fingerprint.Length > ent.Comp.MaxStringLength || dna.Length > ent.Comp.MaxStringLength)
+            return;
+
+        stationRecord.Fingerprint = string.IsNullOrWhiteSpace(fingerprint)
+            ? null
+            : fingerprint;
+        stationRecord.DNA = string.IsNullOrWhiteSpace(dna)
+            ? null
+            : dna;
+        criminalRecord.GeneralRecordSnapshot = stationRecord with { };
+
+        if (existingGeneral != null)
+        {
+            existingGeneral.Fingerprint = stationRecord.Fingerprint;
+            existingGeneral.DNA = stationRecord.DNA;
+        }
+
+        _records.Synchronize(key.Value);
+    }
+
+    private HumanoidCharacterProfile BuildEditedProfile(
+        GeneralStationRecord stationRecord,
+        CriminalRecord criminalRecord,
+        string species,
+        int age,
+        Gender gender)
+    {
+        var sameSpeciesSnapshot = criminalRecord.PortraitProfileSnapshot != null
+            && criminalRecord.PortraitProfileSnapshot.Species == species;
+
+        var profile = sameSpeciesSnapshot
+            ? new HumanoidCharacterProfile(criminalRecord.PortraitProfileSnapshot!)
+            : HumanoidCharacterProfile.DefaultWithSpecies(species).WithName(stationRecord.Name);
+
+        return profile
+            .WithSpecies(species)
+            .WithAge(age)
+            .WithGender(gender)
+            .WithNationality(stationRecord.Nationality)
+            .WithEmployer(stationRecord.Employer);
+    }
+
+    private string NormalizeNationality(string requestedNationality, HumanoidCharacterProfile profile)
+    {
+        if (string.IsNullOrWhiteSpace(requestedNationality))
+            return string.Empty;
+
+        if (_prototypeManager.TryIndex<NationalityPrototype>(requestedNationality, out var nationality)
+            && RequirementsMet(nationality.Requirements, profile.WithNationality(requestedNationality)))
+        {
+            return requestedNationality;
+        }
+
+        if (_prototypeManager.TryIndex<NationalityPrototype>(SharedHumanoidAppearanceSystem.DefaultNationality, out var defaultNationality)
+            && RequirementsMet(defaultNationality.Requirements, profile.WithNationality(defaultNationality.ID)))
+        {
+            return defaultNationality.ID;
+        }
+
+        foreach (var prototype in _prototypeManager.EnumeratePrototypes<NationalityPrototype>())
+        {
+            if (RequirementsMet(prototype.Requirements, profile.WithNationality(prototype.ID)))
+                return prototype.ID;
+        }
+
+        return SharedHumanoidAppearanceSystem.DefaultNationality;
+    }
+
+    private string NormalizeEmployer(string requestedEmployer, HumanoidCharacterProfile profile)
+    {
+        if (string.IsNullOrWhiteSpace(requestedEmployer))
+            return string.Empty;
+
+        if (_prototypeManager.TryIndex<EmployerPrototype>(requestedEmployer, out var employer)
+            && RequirementsMet(employer.Requirements, profile.WithEmployer(requestedEmployer)))
+        {
+            return requestedEmployer;
+        }
+
+        if (_prototypeManager.TryIndex<EmployerPrototype>(SharedHumanoidAppearanceSystem.DefaultEmployer, out var defaultEmployer)
+            && RequirementsMet(defaultEmployer.Requirements, profile.WithEmployer(defaultEmployer.ID)))
+        {
+            return defaultEmployer.ID;
+        }
+
+        foreach (var prototype in _prototypeManager.EnumeratePrototypes<EmployerPrototype>())
+        {
+            if (RequirementsMet(prototype.Requirements, profile.WithEmployer(prototype.ID)))
+                return prototype.ID;
+        }
+
+        return SharedHumanoidAppearanceSystem.DefaultEmployer;
+    }
+
+    private bool RequirementsMet(IReadOnlyCollection<JobRequirement>? requirements, HumanoidCharacterProfile profile)
+    {
+        if (requirements == null || requirements.Count == 0)
+            return true;
+
+        foreach (var requirement in requirements)
+        {
+            if (!requirement.Check(EntityManager, _prototypeManager, profile, EmptyPlayTimes, out _))
+                return false;
+        }
+
+        return true;
+    }
+    #endregion
+
     #region Pirate: cameras (photo in records)
     private void OnPrintPhoto(Entity<CriminalRecordsConsoleComponent> ent, ref CriminalRecordPrintPhoto msg)
     {
@@ -315,6 +635,8 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         string? printedName = null;
         if (_records.TryGetRecord<GeneralStationRecord>(key.Value, out var stationRecord))
             printedName = stationRecord.Name;
+        else if (record.GeneralRecordSnapshot != null)
+            printedName = record.GeneralRecordSnapshot.Name;
 
         _activePortraitPrintJobs.Add(ent);
         _audio.PlayPvs(PortraitPrintSound, ent);
@@ -360,6 +682,9 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         record.PortraitImageData = [.. preparedImageData];
         record.PortraitPreviewData = preparedPreviewData == null ? null : [.. preparedPreviewData];
 
+        #region Pirate: cameras (photo in records)
+        _audio.PlayPvs(PortraitUploadSound, ent);
+        #endregion
         _records.Synchronize(key.Value);
         UpdateUserInterface(ent);
     }
@@ -441,7 +766,17 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         }
 
         // get the listing of records to display
-        var listing = _records.BuildListing((owningStation.Value, stationRecords), console.Filter);
+        // Pirate: general/security record decoupling
+        var listing = new Dictionary<uint, string>();
+        foreach (var (recordId, criminalRecord) in _records.GetRecordsOfType<CriminalRecord>(owningStation.Value, stationRecords))
+        {
+            var key = new StationRecordKey(recordId, owningStation.Value);
+            var effectiveRecord = TryGetEffectiveGeneralRecord(key, criminalRecord, stationRecords);
+            if (effectiveRecord == null || _records.IsSkipped(console.Filter, effectiveRecord))
+                continue;
+
+            listing[recordId] = effectiveRecord.Name;
+        }
 
         // filter the listing by the selected criminal record status
         //if NONE, dont filter by status, just show all crew
@@ -457,9 +792,16 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         {
             // get records to display when a crewmember is selected
             var key = new StationRecordKey(id, owningStation.Value);
-            _records.TryGetRecord(key, out state.StationRecord, stationRecords);
-            _records.TryGetRecord(key, out state.CriminalRecord, stationRecords);
-            state.SelectedKey = id;
+            if (_records.TryGetRecord(key, out state.CriminalRecord, stationRecords)
+                && TryGetEffectiveGeneralRecord(key, state.CriminalRecord, stationRecords) is { } stationRecord)
+            {
+                state.StationRecord = stationRecord;
+                state.SelectedKey = id;
+            }
+            else
+            {
+                console.ActiveKey = null;
+            }
         }
 
         // Set the Current Tab aka the filter status type for the records list
@@ -467,6 +809,60 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
 
         _ui.SetUiState(uid, CriminalRecordsConsoleKey.Key, state);
     }
+
+    #region Pirate: general/security record decoupling
+    private CriminalRecord CreateCriminalRecordFromGeneral(GeneralStationRecord record)
+    {
+        var criminalRecord = new CriminalRecord
+        {
+            GeneralRecordSnapshot = record with { }
+        };
+
+        if (!string.IsNullOrWhiteSpace(record.Species))
+            criminalRecord.PortraitProfileSnapshot = BuildProfileFromGeneralRecord(record);
+
+        return criminalRecord;
+    }
+
+    private HumanoidCharacterProfile BuildProfileFromGeneralRecord(GeneralStationRecord record)
+    {
+        var species = string.IsNullOrWhiteSpace(record.Species)
+            ? (string) SharedHumanoidAppearanceSystem.DefaultSpecies
+            : record.Species;
+
+        return HumanoidCharacterProfile.DefaultWithSpecies(species)
+            .WithName(record.Name)
+            .WithAge(record.Age <= 0 ? 18 : record.Age)
+            .WithGender(record.Gender)
+            .WithNationality(record.Nationality)
+            .WithEmployer(record.Employer);
+    }
+
+    private GeneralStationRecord? TryGetEffectiveGeneralRecord(
+        StationRecordKey key,
+        CriminalRecord criminalRecord,
+        StationRecordsComponent? stationRecords = null)
+    {
+        if (_records.TryGetRecord<GeneralStationRecord>(key, out var stationRecord, stationRecords))
+            return stationRecord;
+
+        return criminalRecord.GeneralRecordSnapshot is { } snapshot ? snapshot with { } : null;
+    }
+
+    private List<uint> GetCriminalRecordIdsByName(EntityUid station, string name, StationRecordsComponent? stationRecords = null)
+    {
+        var matches = new List<uint>();
+        foreach (var (recordId, criminalRecord) in _records.GetRecordsOfType<CriminalRecord>(station, stationRecords))
+        {
+            var key = new StationRecordKey(recordId, station);
+            var effectiveRecord = TryGetEffectiveGeneralRecord(key, criminalRecord, stationRecords);
+            if (effectiveRecord?.Name == name)
+                matches.Add(recordId);
+        }
+
+        return matches;
+    }
+    #endregion
 
     /// <summary>
     /// Boilerplate that most actions use, if they require that a record be selected.
@@ -507,10 +903,11 @@ public sealed partial class CriminalRecordsConsoleSystem : SharedCriminalRecords
         // TODO use the entity's station? Not the station of the map that it happens to currently be on?
         var station = _station.GetStationInMap(xform.MapID);
 
-        if (station != null && _records.GetRecordByName(station.Value, name) is { } id)
+        if (station != null)
         {
-            if (_records.TryGetRecord<CriminalRecord>(new StationRecordKey(id, station.Value),
-                    out var record))
+            var matches = GetCriminalRecordIdsByName(station.Value, name);
+            if (matches.Count == 1
+                && _records.TryGetRecord<CriminalRecord>(new StationRecordKey(matches[0], station.Value), out var record))
             {
                 if (record.Status != SecurityStatus.None)
                 {

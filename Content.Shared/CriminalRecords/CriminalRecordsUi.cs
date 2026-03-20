@@ -7,6 +7,8 @@
 
 using Content.Shared.Security;
 using Content.Shared.StationRecords;
+// Pirate: security record identity editor
+using Robust.Shared.Enums;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.CriminalRecords;
@@ -123,6 +125,51 @@ public sealed class CriminalRecordSetStatusFilter : BoundUserInterfaceMessage
         FilterStatus = newFilterStatus;
     }
 }
+
+#region Pirate: security record identity editor
+[Serializable, NetSerializable]
+public sealed class CriminalRecordEditIdentity : BoundUserInterfaceMessage
+{
+    public readonly string Species;
+    public readonly string Nationality;
+    public readonly string Employer;
+    public readonly int Age;
+    public readonly Gender Gender;
+
+    public CriminalRecordEditIdentity(string species, string nationality, string employer, int age, Gender gender)
+    {
+        Species = species;
+        Nationality = nationality;
+        Employer = employer;
+        Age = age;
+        Gender = gender;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CriminalRecordCreateRecord : BoundUserInterfaceMessage
+{
+    public readonly string Name;
+
+    public CriminalRecordCreateRecord(string name)
+    {
+        Name = name;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CriminalRecordEditForensics : BoundUserInterfaceMessage
+{
+    public readonly string Fingerprint;
+    public readonly string Dna;
+
+    public CriminalRecordEditForensics(string fingerprint, string dna)
+    {
+        Fingerprint = fingerprint;
+        Dna = dna;
+    }
+}
+#endregion
 
 #region Pirate: cameras (photo in records)
 [Serializable, NetSerializable]

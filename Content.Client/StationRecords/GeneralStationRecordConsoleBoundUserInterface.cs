@@ -35,7 +35,14 @@ public sealed class GeneralStationRecordConsoleBoundUserInterface : BoundUserInt
             SendMessage(new SelectStationRecord(key));
         _window.OnFiltersChanged += (type, filterValue) =>
             SendMessage(new SetStationRecordFilter(type, filterValue));
-        _window.OnDeleted += id => SendMessage(new DeleteStationRecord(id));
+        #region Pirate: general/security record decoupling
+        _window.OnDeleteRecord += id => SendMessage(new DeleteStationRecord(id));
+        _window.OnCreateRecord += name => SendMessage(new GeneralRecordCreateRecord(name));
+        _window.OnIdentityInfoChanged += (species, nationality, employer, age, gender) =>
+            SendMessage(new GeneralRecordEditIdentity(species, nationality, employer, age, gender));
+        _window.OnForensicsInfoChanged += (fingerprint, dna) =>
+            SendMessage(new GeneralRecordEditForensics(fingerprint, dna));
+        #endregion
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)
