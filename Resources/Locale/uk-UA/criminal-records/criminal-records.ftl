@@ -70,3 +70,8 @@ criminal-records-console-dangerous = {$officer} позначив {$name} ({$job}
 criminal-records-console-not-dangerous = {$officer} зняв статус загрози з {$name} ({$job}).
 criminal-records-job-filter = Робота
 criminal-records-species-filter = Вид
+# Pirate: cameras (photo in records) (start)
+criminal-records-console-photo-print-start = Printing photo copy...
+criminal-records-console-photo-print-complete = Photo copy printed.
+criminal-records-console-photo-print-busy = Printer is busy, wait for the current copy to finish.
+# Pirate: cameras (photo in records) (end)

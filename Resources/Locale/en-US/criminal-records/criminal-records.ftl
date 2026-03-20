@@ -84,3 +84,9 @@ criminal-records-species-filter = Species
 ## Arrest auto history lines
 criminal-records-console-auto-history = ARRESTED: {$reason}
 criminal-records-console-unspecified-reason = <unspecified reason>
+
+# Pirate: cameras (photo in records) (start)
+criminal-records-console-photo-print-start = Printing photo copy...
+criminal-records-console-photo-print-complete = Photo copy printed.
+criminal-records-console-photo-print-busy = Printer is busy, wait for the current copy to finish.
+# Pirate: cameras (photo in records) (end)

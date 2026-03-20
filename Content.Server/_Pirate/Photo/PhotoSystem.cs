@@ -61,6 +61,8 @@ public sealed partial class PhotoSystem : SharedPhotoSystem
     const int MAX_PREVIEW_WIDTH = 256;
     const int MAX_PREVIEW_HEIGHT = 256;
     const int MAX_PREVIEW_PIXELS = MAX_PREVIEW_WIDTH * MAX_PREVIEW_HEIGHT;
+    private const int PreviewSize = 8;
+    private const int PreviewSampleSize = 32;
     private const int MaxCustomNameLength = 32;
     private const int MaxCustomDescriptionLength = 128;
     private const int MaxCustomCaptionLength = 256;
@@ -314,6 +316,51 @@ public sealed partial class PhotoSystem : SharedPhotoSystem
         _appearance.SetData(uid, PhotoCardVisuals.PreviewImage, component.PreviewData ?? Array.Empty<byte>(), appearance);
     }
 
+    public bool TryPreparePhotoCardData(byte[] imageData, byte[]? previewData, out byte[] preparedImageData, out byte[]? preparedPreviewData)
+    {
+        preparedImageData = Array.Empty<byte>();
+        preparedPreviewData = null;
+
+        if (!ValidatePngData(imageData, MAX_SIZE, MAX_WIDTH, MAX_HEIGHT, MAX_PIXELS))
+            return false;
+
+        preparedImageData = [.. imageData];
+
+        if (previewData is { Length: > 0 } preview &&
+            ValidatePngData(preview, MAX_PREVIEW_SIZE, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, MAX_PREVIEW_PIXELS))
+        {
+            preparedPreviewData = [.. preview];
+            return true;
+        }
+
+        preparedPreviewData = GeneratePreviewData(preparedImageData);
+        return true;
+    }
+
+    public bool TrySetPhotoCardData(
+        EntityUid uid,
+        PhotoCardComponent component,
+        byte[] imageData,
+        byte[]? previewData,
+        string? customName = null,
+        string? customDescription = null,
+        string? caption = null)
+    {
+        if (!TryPreparePhotoCardData(imageData, previewData, out var preparedImageData, out var preparedPreviewData))
+            return false;
+
+        component.ImageData = preparedImageData;
+        component.PreviewData = preparedPreviewData;
+        component.CustomName = customName;
+        component.CustomDescription = customDescription;
+        component.Caption = caption;
+
+        UpdatePhotoCardAppearance(uid, component);
+        UpdatePhotoCardExamineDescription(uid, component);
+        UpdatePhotoCardInterface(uid, component);
+        return true;
+    }
+
     private bool CanPrintPhoto(EntityUid uid, PhotoCameraComponent component)
     {
         return IsValidCardCost(uid, component) &&
@@ -369,6 +416,94 @@ public sealed partial class PhotoSystem : SharedPhotoSystem
             Log.Debug($"Failed to parse PNG: {ex}");
             return false;
         }
+    }
+
+    private byte[]? GeneratePreviewData(byte[] imageData)
+    {
+        try
+        {
+            using var imageStream = new MemoryStream(imageData, writable: false);
+            using var image = Image.Load<Rgba32>(imageStream);
+            if (!image.DangerousTryGetSinglePixelMemory(out var imageMemory))
+                return null;
+
+            var stageOne = DownscaleBox(imageMemory.Span, image.Width, image.Height, PreviewSampleSize, PreviewSampleSize);
+            var stageTwo = DownscaleBox(stageOne, PreviewSampleSize, PreviewSampleSize, PreviewSize, PreviewSize);
+
+            using var miniature = new Image<Rgba32>(PreviewSize, PreviewSize);
+            if (!miniature.DangerousTryGetSinglePixelMemory(out var miniatureMemory))
+                return null;
+
+            stageTwo.CopyTo(miniatureMemory.Span);
+
+            using var previewStream = new MemoryStream();
+            miniature.SaveAsPng(previewStream);
+
+            var previewData = previewStream.ToArray();
+            return ValidatePngData(previewData, MAX_PREVIEW_SIZE, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, MAX_PREVIEW_PIXELS)
+                ? previewData
+                : null;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to generate photo preview PNG: {ex}");
+            return null;
+        }
+    }
+
+    private static Rgba32[] DownscaleBox(ReadOnlySpan<Rgba32> source, int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
+    {
+        var result = new Rgba32[targetWidth * targetHeight];
+
+        for (var y = 0; y < targetHeight; y++)
+        {
+            var sourceY0 = y * sourceHeight / targetHeight;
+            var sourceY1 = (y + 1) * sourceHeight / targetHeight;
+            if (sourceY1 <= sourceY0)
+                sourceY1 = sourceY0 + 1;
+
+            for (var x = 0; x < targetWidth; x++)
+            {
+                var sourceX0 = x * sourceWidth / targetWidth;
+                var sourceX1 = (x + 1) * sourceWidth / targetWidth;
+                if (sourceX1 <= sourceX0)
+                    sourceX1 = sourceX0 + 1;
+
+                var sumR = 0;
+                var sumG = 0;
+                var sumB = 0;
+                var sumA = 0;
+                var count = 0;
+
+                for (var sourceY = sourceY0; sourceY < sourceY1; sourceY++)
+                {
+                    var rowOffset = sourceY * sourceWidth;
+                    for (var sourceX = sourceX0; sourceX < sourceX1; sourceX++)
+                    {
+                        var pixel = source[rowOffset + sourceX];
+                        sumR += pixel.R;
+                        sumG += pixel.G;
+                        sumB += pixel.B;
+                        sumA += pixel.A;
+                        count++;
+                    }
+                }
+
+                if (count <= 0)
+                {
+                    result[y * targetWidth + x] = default;
+                    continue;
+                }
+
+                result[y * targetWidth + x] = new Rgba32(
+                    (byte) (sumR / count),
+                    (byte) (sumG / count),
+                    (byte) (sumB / count),
+                    (byte) (sumA / count));
+            }
+        }
+
+        return result;
     }
 
     private PhotoCaptureMetadata BuildPhotoMetadata(EntityUid photographer, IReadOnlyList<NetEntity> capturedEntities, Vector2 viewBox, float zoom)

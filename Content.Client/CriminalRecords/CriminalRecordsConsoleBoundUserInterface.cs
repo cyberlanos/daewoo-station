@@ -50,6 +50,18 @@ public sealed class CriminalRecordsConsoleBoundUserInterface : BoundUserInterfac
             SendMessage(new CriminalRecordChangeStatus(status, reason));
         _window.OnStatusFilterPressed += (statusFilter) =>
             SendMessage(new CriminalRecordSetStatusFilter(statusFilter));
+        #region Pirate: cameras (photo in records)
+        _window.OnPrintPhoto += async () =>
+        {
+            var message = await _window.BuildPrintPhotoMessage();
+            if (message != null)
+                SendMessage(message);
+        };
+        _window.OnUploadPhoto += () =>
+            SendMessage(new CriminalRecordUploadPhoto());
+        _window.OnStoreGeneratedPortrait += (recordKey, imageData) =>
+            SendMessage(new CriminalRecordStoreGeneratedPhoto(recordKey, imageData));
+        #endregion
         _window.OnHistoryUpdated += UpdateHistory;
         _window.OnHistoryClosed += () => _historyWindow?.Close();
         _window.OnClose += Close;

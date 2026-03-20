@@ -49,7 +49,13 @@ public sealed class CriminalRecordsSystem : SharedCriminalRecordsSystem
 
     private void OnGeneralRecordCreated(AfterGeneralRecordCreatedEvent ev)
     {
-        _records.AddRecordEntry(ev.Key, new CriminalRecord());
+        #region Pirate: cameras (photo in records)
+        var record = new CriminalRecord
+        {
+            PortraitProfileSnapshot = new(ev.Profile)
+        };
+        _records.AddRecordEntry(ev.Key, record);
+        #endregion
         _records.Synchronize(ev.Key);
     }
 

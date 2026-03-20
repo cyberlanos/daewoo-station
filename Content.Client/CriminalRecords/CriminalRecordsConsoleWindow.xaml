@@ -62,6 +62,57 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         HorizontalExpand="True"
                         Margin="5"
                         Visible="False">
+                    <!-- Pirate: cameras (photo in records) (start) -->
+                    <BoxContainer Orientation="Horizontal"
+                                  Margin="0 0 0 5"
+                                  HorizontalExpand="True">
+                        <BoxContainer Orientation="Vertical"
+                                      HorizontalExpand="True"
+                                      SizeFlagsStretchRatio="1">
+                            <LayoutContainer Name="PersonPortraitFrame"
+                                             HorizontalExpand="True"
+                                             MinSize="240 240"
+                                             RectClipContent="True">
+                                <TextureRect Name="PersonPortraitBackground"
+                                             LayoutContainer.AnchorRight="1"
+                                             LayoutContainer.AnchorBottom="1"
+                                             HorizontalExpand="True"
+                                             VerticalExpand="True"
+                                             CanShrink="True"
+                                             Stretch="KeepAspectCovered"
+                                             Visible="False" />
+                                <TextureRect Name="PersonPortraitTexture"
+                                             LayoutContainer.AnchorRight="1"
+                                             LayoutContainer.AnchorBottom="1"
+                                             HorizontalExpand="True"
+                                             VerticalExpand="True"
+                                             Stretch="KeepAspectCentered"
+                                             Visible="False" />
+                                <SpriteView Name="PersonPortrait"
+                                            LayoutContainer.AnchorRight="1"
+                                            LayoutContainer.AnchorBottom="1"
+                                            HorizontalExpand="True"
+                                            VerticalExpand="True"
+                                            Stretch="Fill"
+                                            Scale="5 5"
+                                            OverrideDirection="South" />
+                            </LayoutContainer>
+                            <BoxContainer Orientation="Horizontal"
+                                          HorizontalExpand="True">
+                                <Button Name="PrintPortraitButton"
+                                        Text="Print"
+                                        HorizontalExpand="True"
+                                        SizeFlagsStretchRatio="1" />
+                                <Button Name="UploadPortraitButton"
+                                        Text="Upload"
+                                        HorizontalExpand="True"
+                                        SizeFlagsStretchRatio="1" />
+                            </BoxContainer>
+                        </BoxContainer>
+                        <Control HorizontalExpand="True"
+                                 SizeFlagsStretchRatio="1" />
+                    </BoxContainer>
+                    <!-- Pirate: cameras (photo in records) (end) -->
                     <Label Name="PersonName"
                            Margin="0 0 0 5"
                            StyleClasses="LabelBig" />

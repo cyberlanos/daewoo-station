@@ -123,3 +123,34 @@ public sealed class CriminalRecordSetStatusFilter : BoundUserInterfaceMessage
         FilterStatus = newFilterStatus;
     }
 }
+
+#region Pirate: cameras (photo in records)
+[Serializable, NetSerializable]
+public sealed class CriminalRecordPrintPhoto : BoundUserInterfaceMessage
+{
+    public readonly uint RecordKey;
+    public readonly byte[]? GeneratedImageData;
+
+    public CriminalRecordPrintPhoto(uint recordKey, byte[]? generatedImageData = null)
+    {
+        RecordKey = recordKey;
+        GeneratedImageData = generatedImageData == null ? null : (byte[]) generatedImageData.Clone();
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CriminalRecordUploadPhoto : BoundUserInterfaceMessage;
+
+[Serializable, NetSerializable]
+public sealed class CriminalRecordStoreGeneratedPhoto : BoundUserInterfaceMessage
+{
+    public readonly uint RecordKey;
+    public readonly byte[] ImageData;
+
+    public CriminalRecordStoreGeneratedPhoto(uint recordKey, byte[] imageData)
+    {
+        RecordKey = recordKey;
+        ImageData = (byte[]) imageData.Clone();
+    }
+}
+#endregion
