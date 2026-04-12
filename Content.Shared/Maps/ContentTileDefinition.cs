@@ -175,6 +175,9 @@ namespace Content.Shared.Maps
         /// </summary>
         [DataField("indestructible")] public bool Indestructible = false;
 
+        [DataField]
+        public bool Transparent = false; // Pirate: multiz
+
         public void AssignTileId(ushort id)
         {
             TileId = id;

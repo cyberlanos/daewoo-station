@@ -19,6 +19,7 @@
 
 using System.Numerics;
 using Content.Client.Parallax.Managers;
+using Content.Client.Viewport;
 using Content.Shared.CCVar;
 using Content.Shared.Parallax.Biomes;
 using Robust.Client.GameObjects;
@@ -27,7 +28,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Timing;
+using Robust.Shared.Timing; // Pirate: multiz
 
 namespace Content.Client.Parallax;
 
@@ -55,6 +56,10 @@ public sealed class ParallaxOverlay : Overlay
     {
         if (args.MapId == MapId.Nullspace || _entManager.HasComponent<BiomeComponent>(_mapSystem.GetMapOrInvalid(args.MapId)))
             return false;
+
+        // Only draw parallax for the lowest visible Z-level to avoid duplicating the space background. Pirate: multiz
+        if (args.Viewport.Eye is ScalingViewport.ZEye zEye && zEye.Depth != zEye.LowestDepth) // Pirate: multiz
+            return false; // Pirate: multiz
 
         return true;
     }
