@@ -77,6 +77,7 @@ using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Timing;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Robust.Shared.Utility;
 using Content.Shared.Localizations;
 using Content.Shared.Power;
@@ -345,7 +346,15 @@ public sealed class ThrusterSystem : EntitySystem
 
         component.IsOn = true;
 
-        if (!TryComp(xform.GridUid, out ShuttleComponent? shuttleComponent))
+        var shuttleGridUid = xform.GridUid; // Pirate: multiz
+        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
+        if (shuttleGridUid != null && TryComp<CEZLinkedGridComponent>(shuttleGridUid, out var linked) && linked.Depth != 0)
+        {
+            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
+                shuttleGridUid = leaderGrid;
+        }
+        #endregion Pirate: multiz
+        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
             return;
 
         // Logger.DebugS("thruster", $"Enabled thruster {uid}");
@@ -442,6 +451,13 @@ public sealed class ThrusterSystem : EntitySystem
 
         component.IsOn = false;
 
+        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
+        if (gridId != null && TryComp<CEZLinkedGridComponent>(gridId, out var linked) && linked.Depth != 0)
+        {
+            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
+                gridId = leaderGrid;
+        }
+        #endregion Pirate: multiz
         if (!TryComp(gridId, out ShuttleComponent? shuttleComponent))
             return;
 

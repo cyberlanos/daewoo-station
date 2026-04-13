@@ -28,6 +28,7 @@ using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
 using Content.Shared._Mono.Radar;
+using Content.Shared._Pirate.ZLevels.Core.EntitySystems; // Pirate: multiz
 
 namespace Content.Client.Shuttles.UI;
 
@@ -75,6 +76,7 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
     public Action<EntityCoordinates>? OnRadarClick;
 
     private List<Entity<MapGridComponent>> _grids = new();
+    private HashSet<EntityUid> _zLevelGrids = new(); // Pirate: multiz - grids from adjacent Z-levels
 
     #region Mono
     // These 2 handle timing updates
@@ -312,6 +314,30 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         _grids.Clear();
         _mapManager.FindGridsIntersecting(xform.MapID, new Box2(mapPos.Position - MaxRadarRangeVector, mapPos.Position + MaxRadarRangeVector), ref _grids, approx: true, includeMap: false);
 
+        #region Pirate: multiz - query adjacent Z-level grids
+        _zLevelGrids.Clear();
+        var zLevels = EntManager.System<CESharedZLevelsSystem>();
+        if (xform.MapUid is { } radarMapUid)
+        {
+            for (var zOff = -1; zOff <= 1; zOff++)
+            {
+                if (zOff == 0)
+                    continue;
+                if (!zLevels.TryMapOffset(radarMapUid, zOff, out var adjMap))
+                    continue;
+                if (!EntManager.TryGetComponent<MapComponent>(adjMap.Value, out var adjMapComp))
+                    continue;
+                var adjGrids = new List<Entity<MapGridComponent>>();
+                _mapManager.FindGridsIntersecting(adjMapComp.MapId, new Box2(mapPos.Position - MaxRadarRangeVector, mapPos.Position + MaxRadarRangeVector), ref adjGrids, approx: true, includeMap: false);
+                foreach (var g in adjGrids)
+                {
+                    _zLevelGrids.Add(g.Owner);
+                    _grids.Add(g);
+                }
+            }
+        }
+        #endregion Pirate: multiz
+
         // Frontier - collect blip location data outside foreach - more changes ahead
         var blipDataList = new List<BlipData>();
 
@@ -332,6 +358,8 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             var curGridToView = curGridToWorld * worldToShuttle * shuttleToView;
 
             var labelColor = _shuttles.GetIFFColor(grid, self: false, iff);
+            if (_zLevelGrids.Contains(gUid)) // Pirate: multiz - dim Z-level grids
+                labelColor = labelColor.WithAlpha(labelColor.A * 0.4f); // Pirate: multiz
             var coordColor = new Color(labelColor.R * 0.8f, labelColor.G * 0.8f, labelColor.B * 0.8f, 0.5f);
 
             // Others default:

@@ -28,6 +28,8 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
+using Content.Shared.Shuttles.Components; // Pirate: multiz
+using Robust.Client.Player; // Pirate: multiz
 using Robust.Shared.Timing; // Pirate: multiz
 
 namespace Content.Client.Parallax;
@@ -39,7 +41,9 @@ public sealed class ParallaxOverlay : Overlay
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IParallaxManager _manager = default!;
+    [Dependency] private readonly IPlayerManager _player = default!; // Pirate: multiz
     private readonly SharedMapSystem _mapSystem;
+    private readonly SharedTransformSystem _xformSystem; // Pirate: multiz
     private readonly ParallaxSystem _parallax;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
@@ -49,6 +53,7 @@ public sealed class ParallaxOverlay : Overlay
         ZIndex = ParallaxSystem.ParallaxZIndex;
         IoCManager.InjectDependencies(this);
         _mapSystem = _entManager.System<SharedMapSystem>();
+        _xformSystem = _entManager.System<SharedTransformSystem>(); // Pirate: multiz
         _parallax = _entManager.System<ParallaxSystem>();
     }
 
@@ -57,12 +62,39 @@ public sealed class ParallaxOverlay : Overlay
         if (args.MapId == MapId.Nullspace || _entManager.HasComponent<BiomeComponent>(_mapSystem.GetMapOrInvalid(args.MapId)))
             return false;
 
-        // Only draw parallax for the lowest visible Z-level to avoid duplicating the space background. Pirate: multiz
-        if (args.Viewport.Eye is ScalingViewport.ZEye zEye && zEye.Depth != zEye.LowestDepth) // Pirate: multiz
-            return false; // Pirate: multiz
+        #region Pirate: multiz
+        if (args.Viewport.Eye is ScalingViewport.ZEye zEye)
+        {
+            // Always draw at the lowest depth (visible through floor).
+            if (zEye.Depth == zEye.LowestDepth)
+                return true;
+
+            // During FTL, also draw at depth 0 so hyperspace is visible through windows.
+            if (zEye.Depth == 0 && IsPlayerInFTL())
+                return true;
+
+            // Suppress all other depths.
+            return false;
+        }
+        #endregion Pirate: multiz
 
         return true;
     }
+
+    #region Pirate: multiz
+    private bool IsPlayerInFTL()
+    {
+        if (_player.LocalEntity is not { } player)
+            return false;
+
+        if (!_entManager.TryGetComponent(player, out TransformComponent? xform) || xform.GridUid == null)
+            return false;
+
+        // FTLComponent.State is not networked, so just check for component presence.
+        // FTLComponent is only added during FTL and removed after cooldown.
+        return _entManager.HasComponent<FTLComponent>(xform.GridUid.Value);
+    }
+    #endregion Pirate: multiz
 
     protected override void Draw(in OverlayDrawArgs args)
     {

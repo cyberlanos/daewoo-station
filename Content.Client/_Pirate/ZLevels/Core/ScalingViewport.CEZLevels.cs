@@ -3,6 +3,7 @@
  * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
  */
 
+using System.Linq;
 using System.Numerics;
 using Content.Client._Pirate.ZLevels.Core;
 using Content.Shared._Pirate.ZLevels.Core.Components;
@@ -11,6 +12,7 @@ using Content.Shared.Maps;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Graphics;
+using Robust.Shared.Log;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 
@@ -30,6 +32,10 @@ public sealed partial class ScalingViewport
     private EntityQuery<MapComponent>? _mapQuery;
 
     private IEye? _fallbackEye;
+
+    // ZRENDER diagnostic logging - remove after debugging
+    private static readonly ISawmill _zLog = Logger.GetSawmill("zrender");
+    private int _zLogCounter;
 
     /// <summary>
     /// We are looking for at least one empty tile on the screen.
@@ -89,6 +95,59 @@ public sealed partial class ScalingViewport
         return false;
     }
 
+    /// <summary>
+    /// Tries to find the map for a given depth offset.
+    /// Prioritizes the player's grid-specific peer links (CEZLinkedGridComponent) so that
+    /// shuttles always render their own Z-levels, even when docked at or arrived at a Z-leveled station.
+    /// Falls back to the map-level Z-network lookup for entities not on a linked grid.
+    /// </summary>
+    private bool TryResolveZMap(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out MapId mapId)
+    {
+        mapId = default;
+        var doLog = _zLogCounter % 600 == 0; // log once every ~10s at 60fps
+
+        // Primary path: grid-specific peer lookup (always shows the structure the player is on)
+        if (playerGridUid != null &&
+            _entityManager.TryGetComponent<CEZLinkedGridComponent>(playerGridUid.Value, out var linked))
+        {
+            var targetDepth = linked.Depth + depthOffset;
+            if (doLog)
+                _zLog.Warning($"ZRENDER TryResolve: grid={playerGridUid} linked.Depth={linked.Depth} offset={depthOffset} targetDepth={targetDepth} peerCount={linked.PeerGrids.Count} peers=[{string.Join(",", linked.PeerGrids.Select(p => $"{p.Key}:{p.Value}"))}]");
+
+            if (linked.PeerGrids.TryGetValue(targetDepth, out var peerGrid))
+            {
+                if (_xformQuery!.Value.TryComp(peerGrid, out var peerXform) &&
+                    peerXform.MapUid != null &&
+                    _mapQuery!.Value.TryComp(peerXform.MapUid.Value, out var peerMapComp))
+                {
+                    mapId = peerMapComp.MapId;
+                    if (doLog)
+                        _zLog.Warning($"ZRENDER TryResolve: PEER HIT depth={targetDepth} peerGrid={peerGrid} peerMap={peerXform.MapUid} mapId={mapId}");
+                    return true;
+                }
+
+                if (doLog)
+                    _zLog.Warning($"ZRENDER TryResolve: PEER MISS depth={targetDepth} peerGrid={peerGrid} peerXform.MapUid={(_xformQuery.Value.TryComp(peerGrid, out var dbgXform) ? dbgXform.MapUid?.ToString() : "no xform")}");
+            }
+        }
+
+        // Fallback: map-level Z-network lookup (for players not on a linked grid)
+        if (_zLevels!.TryMapOffset(playerMapUid, depthOffset, out var targetMap))
+        {
+            if (_mapQuery!.Value.TryComp(targetMap.Value, out var mapComp))
+            {
+                mapId = mapComp.MapId;
+                if (doLog)
+                    _zLog.Warning($"ZRENDER TryResolve: NETWORK HIT playerMap={playerMapUid} offset={depthOffset} targetMap={targetMap} mapId={mapId}");
+                return true;
+            }
+        }
+
+        if (doLog)
+            _zLog.Warning($"ZRENDER TryResolve: MISS playerMap={playerMapUid} grid={playerGridUid} offset={depthOffset}");
+        return false;
+    }
+
     private void RenderZLevels(IClydeViewport viewport)
     {
         if (_eye is null)
@@ -123,25 +182,22 @@ public sealed partial class ScalingViewport
             return;
 
         var lookUp = zLevelViewer.LookUp ? 1 : 0;
+        _zLogCounter++;
 
         var lowestDepth = 0;
         for (var i = 0; i >= -CESharedZLevelsSystem.MaxZLevelsBelowRendering; i--)
         {
-            var checkingMap = playerXform.MapUid.Value;
-
             if (i != 0)
             {
-                if (!_zLevels.TryMapOffset(playerXform.MapUid.Value, i, out var mapUidBelow))
+                if (!TryResolveZMap(playerXform.MapUid.Value, playerXform.GridUid, i, out _))
                     continue;
-
-                checkingMap = mapUidBelow.Value;
             }
-
-            if (!TryFindEmptyTiles(checkingMap))
-                continue;
 
             lowestDepth = i;
         }
+
+        if (_zLogCounter % 600 == 0)
+            _zLog.Warning($"ZRENDER Frame: playerMap={playerXform.MapUid} playerGrid={playerXform.GridUid} lowestDepth={lowestDepth} lookUp={lookUp} eyePos={_fallbackEye.Position}");
 
         for (var depth = lowestDepth; depth <= lookUp; depth++)
         {
@@ -159,10 +215,7 @@ public sealed partial class ScalingViewport
             }
             else
             {
-                if (!_zLevels.TryMapOffset(playerXform.MapUid.Value, depth, out var mapUidBelow))
-                    continue;
-
-                if (!_mapQuery.Value.TryComp(mapUidBelow.Value, out var mapComp))
+                if (!TryResolveZMap(playerXform.MapUid.Value, playerXform.GridUid, depth, out var targetMapId))
                     continue;
 
                 Angle rotation = _fallbackEye.Rotation * -1;
@@ -170,7 +223,7 @@ public sealed partial class ScalingViewport
 
                 viewport.Eye = new ZEye(lowestDepth, depth, lookUp)
                 {
-                    Position = new MapCoordinates(_fallbackEye.Position.Position, mapComp.MapId),
+                    Position = new MapCoordinates(_fallbackEye.Position.Position, targetMapId),
                     DrawFov = _fallbackEye.DrawFov && depth >= 0,
                     DrawLight = _fallbackEye.DrawLight,
                     Offset = _fallbackEye.Offset + offset,

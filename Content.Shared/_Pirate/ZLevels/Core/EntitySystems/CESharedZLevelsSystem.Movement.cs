@@ -7,6 +7,7 @@ using System.Numerics;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Chasm;
 using Content.Shared.Inventory;
+using Content.Shared.Movement.Components;
 using Content.Shared.Throwing;
 using JetBrains.Annotations;
 using Robust.Shared.Audio;
@@ -426,7 +427,49 @@ public abstract partial class CESharedZLevelsSystem
         var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetMap.Value.Comp.Depth);
         RaiseLocalEvent(ent, ref beforeEv);
 
-        _transform.SetMapCoordinates(ent, new MapCoordinates(_transform.GetWorldPosition(ent), targetMapComp.MapId));
+        var worldPos = _transform.GetWorldPosition(ent);
+        var worldRot = _transform.GetWorldRotation(ent);
+
+        // Save mover eye rotation state before the move.
+        // OnInputParentChange resets RelativeRotation on map change, causing an eye snap.
+        // We compensate for the change in relative entity to keep eye orientation seamless.
+        Angle savedRelativeRot = default;
+        Angle savedTargetRelativeRot = default;
+        EntityUid? oldRelativeEntity = null;
+        var hasMover = TryComp<InputMoverComponent>(ent, out var mover);
+        if (hasMover)
+        {
+            savedRelativeRot = mover!.RelativeRotation;
+            savedTargetRelativeRot = mover.TargetRelativeRotation;
+            oldRelativeEntity = mover.RelativeEntity;
+        }
+
+        // SetMapCoordinates doesn't preserve rotation when reparenting across maps.
+        // We save world rotation and restore it after the move.
+        _transform.SetMapCoordinates(ent, new MapCoordinates(worldPos, targetMapComp.MapId));
+        // Force set both local rotation and world rotation to ensure consistency.
+        var xform = Transform(ent);
+        var parentRot = _transform.GetWorldRotation(xform.ParentUid);
+        _transform.SetLocalRotation(ent, worldRot - parentRot);
+
+        // Restore mover eye rotation to preserve visual orientation across Z-level transition.
+        // Eye angle = WorldRotation(RelativeEntity) + RelativeRotation, so we adjust
+        // RelativeRotation by the difference between old and new relative entity rotations.
+        if (hasMover && TryComp<InputMoverComponent>(ent, out var moverAfter))
+        {
+            var oldRelRot = oldRelativeEntity != null
+                ? _transform.GetWorldRotation(oldRelativeEntity.Value)
+                : Angle.Zero;
+            var newRelative = xform.GridUid ?? xform.MapUid;
+            var newRelRot = newRelative != null
+                ? _transform.GetWorldRotation(newRelative.Value)
+                : Angle.Zero;
+            var diff = newRelRot - oldRelRot;
+
+            moverAfter.RelativeRotation = savedRelativeRot - diff;
+            moverAfter.TargetRelativeRotation = savedTargetRelativeRot - diff;
+            Dirty(ent, moverAfter);
+        }
 
         var ev = new CEZLevelMapMoveEvent(offset, targetMap.Value.Comp.Depth);
         RaiseLocalEvent(ent, ref ev);
