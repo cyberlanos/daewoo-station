@@ -73,6 +73,15 @@ public sealed partial class CEZLevelsSystem
 
         RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());
 
+        try
+        {
+            LinkNetworkGrids(network);
+        }
+        catch (Exception e)
+        {
+            Log.Error($"LinkNetworkGrids crashed: {e}");
+        }
+
         return success;
     }
 }

@@ -25,6 +25,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
     {
         base.Initialize();
         InitView();
+        InitGridSync();
 
         SubscribeLocalEvent<CEStationZLevelsComponent, StationPostInitEvent>(OnStationPostInit);
     }
@@ -56,6 +57,16 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         Dictionary<EntityUid, int> dict = new();
         dict.Add(mainMap.Value, 0);
 
+        // Collect grid UIDs per depth for direct linking
+        var gridsByDepth = new Dictionary<int, EntityUid>();
+
+        // Get the main grid from the station
+        foreach (var grid in stationData!.Grids)
+        {
+            gridsByDepth[0] = grid;
+            break;
+        }
+
         //Loading maps below first
         var depth = ent.Comp.MapsBelow.Count * -1;
         foreach (var mapBelow in ent.Comp.MapsBelow)
@@ -69,7 +80,11 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             Log.Info($"Created map {mapEnt.Value.Comp.MapId} for Station zNetwork at level {depth}");
             _map.InitializeMap(mapEnt.Value.Comp.MapId);
             _meta.SetEntityName(mapEnt.Value, $"{stationName} [{depth}]");
-            foreach (var grid in mapGrids!) { _station.AddGridToStation(ent, grid); } // Pirate: multiz
+            foreach (var grid in mapGrids!) // Pirate: multiz
+            {
+                _station.AddGridToStation(ent, grid);
+                gridsByDepth.TryAdd(depth, grid);
+            }
             dict.Add(mapEnt.Value, depth);
             depth++;
         }
@@ -87,12 +102,17 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             Log.Info($"Created map {mapEnt.Value.Comp.MapId} for Station zNetwork at level {depth}");
             _map.InitializeMap(mapEnt.Value.Comp.MapId);
             _meta.SetEntityName(mapEnt.Value, $"{stationName} [{depth}]");
-            foreach (var grid in mapGrids!) { _station.AddGridToStation(ent, grid); } // Pirate: multiz
+            foreach (var grid in mapGrids!) // Pirate: multiz
+            {
+                _station.AddGridToStation(ent, grid);
+                gridsByDepth.TryAdd(depth, grid);
+            }
             dict.Add(mapEnt.Value, depth);
             depth++;
         }
 
         TryAddMapsIntoZNetwork(stationNetwork, dict);
+        LinkGridsDirectly(stationNetwork, gridsByDepth);
     }
 
     public override void Update(float frameTime)
@@ -100,5 +120,6 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         base.Update(frameTime);
 
         UpdateView(frameTime);
+        UpdateGridSync(frameTime);
     }
 }

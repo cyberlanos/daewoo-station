@@ -99,11 +99,8 @@ public sealed partial class ScalingViewport
 
         _fallbackEye = _eye;
 
-        // Cache frequently accessed components/systems
         _xformQuery ??= _entityManager.GetEntityQuery<TransformComponent>();
         _mapQuery ??= _entityManager.GetEntityQuery<MapComponent>();
-
-        // Cache systems and components
         _zLevels ??= _entityManager.System<CEClientZLevelsSystem>();
         _mapSystem ??= _entityManager.System<SharedMapSystem>();
 
@@ -140,17 +137,26 @@ public sealed partial class ScalingViewport
                 checkingMap = mapUidBelow.Value;
             }
 
-            lowestDepth = i;
-
             if (!TryFindEmptyTiles(checkingMap))
-                break;
+                continue;
+
+            lowestDepth = i;
         }
 
-        //From the lowest depth to the highest, render each level
         for (var depth = lowestDepth; depth <= lookUp; depth++)
         {
             if (depth == 0)
-                viewport.Eye = _fallbackEye;
+            {
+                viewport.Eye = new ZEye(lowestDepth, 0, lookUp)
+                {
+                    Position = _fallbackEye.Position,
+                    DrawFov = _fallbackEye.DrawFov,
+                    DrawLight = _fallbackEye.DrawLight,
+                    Offset = _fallbackEye.Offset,
+                    Rotation = _fallbackEye.Rotation,
+                    Scale = _fallbackEye.Scale,
+                };
+            }
             else
             {
                 if (!_zLevels.TryMapOffset(playerXform.MapUid.Value, depth, out var mapUidBelow))
@@ -177,7 +183,6 @@ public sealed partial class ScalingViewport
             viewport.Render();
         }
 
-        // Restore the Eye
         Eye = _fallbackEye;
         viewport.Eye = Eye;
     }
