@@ -72,4 +72,9 @@ public sealed partial class FTLComponent : Component
 
     [DataField]
     public EntityUid? TravelStream;
+
+    /// <summary>
+    /// Maps peer grid EntityUid → original map EntityUid, used to restore Z-level peers after FTL.
+    /// </summary>
+    public Dictionary<EntityUid, EntityUid>? ZPeerOriginalMaps; // Pirate: multiz
 }

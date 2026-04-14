@@ -101,6 +101,7 @@ using Content.Shared.Shuttles.Components;
 using Content.Shared.Shuttles.Systems;
 using Content.Shared.StatusEffect;
 using Content.Shared.Timing;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.Whitelist;
 using JetBrains.Annotations;
 using Robust.Shared.Audio;
@@ -503,6 +504,41 @@ public sealed partial class ShuttleSystem
 
         // Reset rotation so they always face the same direction.
         xform.LocalRotation = Angle.Zero;
+
+        #region Pirate: multiz
+        // Handle Z-level peer grids during FTL:
+        // - Save each peer's original map so it can be restored at arrival.
+        // - Move each peer to ftlStart.Position on its own map (same world origin as main grid).
+        // - Give each peer the same initial velocity as the main grid so they visually track during transit.
+        // - Peers stay on their own maps (not the FTL map) to avoid physical collisions.
+        // NOTE: the main grid (uid) is NOT saved here; FTL handles it and places it on the destination map.
+        if (TryComp<CEZLinkedGridComponent>(uid, out var linked))
+        {
+            comp.ZPeerOriginalMaps = new Dictionary<EntityUid, EntityUid>();
+
+            foreach (var (_, peerUid) in linked.PeerGrids)
+            {
+                if (!_xformQuery.TryGetComponent(peerUid, out var peerXform) || peerXform.MapUid == null)
+                    continue;
+
+                comp.ZPeerOriginalMaps[peerUid] = peerXform.MapUid.Value;
+
+                // Place peer at the same world-space origin as the main grid on its own map.
+                // ftlStart.Position is the world position of the main grid's local origin on the FTL map.
+                _transform.SetCoordinates(peerUid, peerXform,
+                    new EntityCoordinates(peerXform.MapUid.Value, ftlStart.Position));
+                peerXform.LocalRotation = Angle.Zero;
+
+                // Match the main grid's initial FTL velocity so the peer visually tracks during transit.
+                if (_physicsQuery.TryGetComponent(peerUid, out var peerBody))
+                {
+                    _physics.SetLinearVelocity(peerUid, new Vector2(0f, 20f), body: peerBody);
+                    _physics.SetAngularVelocity(peerUid, 0f, body: peerBody);
+                }
+            }
+        }
+        #endregion Pirate: multiz
+
         _index += width + Buffer;
         comp.StateTime = StartEndTime.FromCurTime(_gameTiming, comp.TravelTime - (entity.Comp3.Data.ArrivalTime ?? DefaultArrivalTime)); // Frontier edit
 
@@ -607,6 +643,37 @@ public sealed partial class ShuttleSystem
             mapId = _transform.GetMapId(target);
             _transform.SetCoordinates(uid, xform, target, rotation: entity.Comp1.TargetAngle);
         }
+
+        #region Pirate: multiz
+        // Restore peer Z-level grids to their own maps at the arrival world position.
+        // The main grid (uid) was already placed on the destination map by the FTL system.
+        if (comp.ZPeerOriginalMaps != null)
+        {
+            var arrivalPos = _transform.GetWorldPosition(xform);
+            var arrivalRot = _transform.GetWorldRotation(xform);
+
+            foreach (var (gridUid, originalMapUid) in comp.ZPeerOriginalMaps)
+            {
+                if (!_xformQuery.TryGetComponent(gridUid, out var gridXform))
+                    continue;
+
+                if (!Exists(originalMapUid))
+                    continue;
+
+                _transform.SetCoordinates(gridUid, gridXform,
+                    new EntityCoordinates(originalMapUid, arrivalPos),
+                    rotation: arrivalRot);
+
+                if (_physicsQuery.TryGetComponent(gridUid, out var gridBody))
+                {
+                    _physics.SetLinearVelocity(gridUid, Vector2.Zero, body: gridBody);
+                    _physics.SetAngularVelocity(gridUid, 0f, body: gridBody);
+                }
+            }
+
+            comp.ZPeerOriginalMaps = null;
+        }
+        #endregion Pirate: multiz
 
         if (_physicsQuery.TryGetComponent(uid, out body))
         {

@@ -24,6 +24,7 @@ public sealed partial class ScalingViewport
     [Dependency] private readonly IEyeManager _eyeManager = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly ITileDefinitionManager _tile = default!;
+    [Dependency] private readonly IOverlayManager _overlayManager = default!; // Pirate: multiz
 
     private CEClientZLevelsSystem? _zLevels;
     private SharedMapSystem? _mapSystem;
@@ -32,6 +33,9 @@ public sealed partial class ScalingViewport
     private EntityQuery<MapComponent>? _mapQuery;
 
     private IEye? _fallbackEye;
+
+    // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
+    private Overlay? _cachedPlacementOverlay; // Pirate: multiz
 
     // ZRENDER diagnostic logging - remove after debugging
     private static readonly ISawmill _zLog = Logger.GetSawmill("zrender");
@@ -199,6 +203,11 @@ public sealed partial class ScalingViewport
         if (_zLogCounter % 600 == 0)
             _zLog.Warning($"ZRENDER Frame: playerMap={playerXform.MapUid} playerGrid={playerXform.GridUid} lowestDepth={lowestDepth} lookUp={lookUp} eyePos={_fallbackEye.Position}");
 
+        // Find the engine's PlacementOverlay once and cache it. Pirate: multiz
+        // It must not render during secondary (non-depth-0) passes to avoid duplicate placement previews. Pirate: multiz
+        _cachedPlacementOverlay ??= _overlayManager.AllOverlays // Pirate: multiz
+            .FirstOrDefault(o => o.GetType().FullName == "Robust.Client.Placement.PlacementManager+PlacementOverlay"); // Pirate: multiz
+
         for (var depth = lowestDepth; depth <= lookUp; depth++)
         {
             if (depth == 0)
@@ -233,7 +242,18 @@ public sealed partial class ScalingViewport
             }
 
             viewport.ClearColor = depth == lowestDepth ? Color.Black : null;
+
+            #region Pirate: multiz
+            // Hide placement overlay on non-primary passes to prevent duplicate previews.
+            var hidePlacement = depth != 0 && _cachedPlacementOverlay != null;
+            if (hidePlacement)
+                _overlayManager.RemoveOverlay(_cachedPlacementOverlay!);
+
             viewport.Render();
+
+            if (hidePlacement)
+                _overlayManager.AddOverlay(_cachedPlacementOverlay!);
+            #endregion Pirate: multiz
         }
 
         Eye = _fallbackEye;
