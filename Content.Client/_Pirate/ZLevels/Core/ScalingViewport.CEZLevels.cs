@@ -12,7 +12,6 @@ using Content.Shared.Maps;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Graphics;
-using Robust.Shared.Log;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 
@@ -28,6 +27,8 @@ public sealed partial class ScalingViewport
 
     private CEClientZLevelsSystem? _zLevels;
     private SharedMapSystem? _mapSystem;
+    // Lazily resolved so secondary z-level passes can convert the current eye between linked deck grid spaces.
+    private SharedTransformSystem? _transform;
 
     private EntityQuery<TransformComponent>? _xformQuery;
     private EntityQuery<MapComponent>? _mapQuery;
@@ -36,10 +37,6 @@ public sealed partial class ScalingViewport
 
     // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
     private Overlay? _cachedPlacementOverlay; // Pirate: multiz
-
-    // ZRENDER diagnostic logging - remove after debugging
-    private static readonly ISawmill _zLog = Logger.GetSawmill("zrender");
-    private int _zLogCounter;
 
     /// <summary>
     /// We are looking for at least one empty tile on the screen.
@@ -104,19 +101,21 @@ public sealed partial class ScalingViewport
     /// Prioritizes the player's grid-specific peer links (CEZLinkedGridComponent) so that
     /// shuttles always render their own Z-levels, even when docked at or arrived at a Z-leveled station.
     /// Falls back to the map-level Z-network lookup for entities not on a linked grid.
+    /// Also returns the resolved peer grid entity when available, used for correct ZEye positioning.
     /// </summary>
     private bool TryResolveZMap(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out MapId mapId)
+        => TryResolveZMap(playerMapUid, playerGridUid, depthOffset, out mapId, out _);
+
+    private bool TryResolveZMap(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out MapId mapId, out EntityUid? peerGridUid) // Pirate: multiz
     {
         mapId = default;
-        var doLog = _zLogCounter % 600 == 0; // log once every ~10s at 60fps
+        peerGridUid = null; // Pirate: multiz
 
         // Primary path: grid-specific peer lookup (always shows the structure the player is on)
         if (playerGridUid != null &&
             _entityManager.TryGetComponent<CEZLinkedGridComponent>(playerGridUid.Value, out var linked))
         {
             var targetDepth = linked.Depth + depthOffset;
-            if (doLog)
-                _zLog.Warning($"ZRENDER TryResolve: grid={playerGridUid} linked.Depth={linked.Depth} offset={depthOffset} targetDepth={targetDepth} peerCount={linked.PeerGrids.Count} peers=[{string.Join(",", linked.PeerGrids.Select(p => $"{p.Key}:{p.Value}"))}]");
 
             if (linked.PeerGrids.TryGetValue(targetDepth, out var peerGrid))
             {
@@ -125,13 +124,9 @@ public sealed partial class ScalingViewport
                     _mapQuery!.Value.TryComp(peerXform.MapUid.Value, out var peerMapComp))
                 {
                     mapId = peerMapComp.MapId;
-                    if (doLog)
-                        _zLog.Warning($"ZRENDER TryResolve: PEER HIT depth={targetDepth} peerGrid={peerGrid} peerMap={peerXform.MapUid} mapId={mapId}");
+                    peerGridUid = peerGrid; // Pirate: multiz
                     return true;
                 }
-
-                if (doLog)
-                    _zLog.Warning($"ZRENDER TryResolve: PEER MISS depth={targetDepth} peerGrid={peerGrid} peerXform.MapUid={(_xformQuery.Value.TryComp(peerGrid, out var dbgXform) ? dbgXform.MapUid?.ToString() : "no xform")}");
             }
         }
 
@@ -141,15 +136,35 @@ public sealed partial class ScalingViewport
             if (_mapQuery!.Value.TryComp(targetMap.Value, out var mapComp))
             {
                 mapId = mapComp.MapId;
-                if (doLog)
-                    _zLog.Warning($"ZRENDER TryResolve: NETWORK HIT playerMap={playerMapUid} offset={depthOffset} targetMap={targetMap} mapId={mapId}");
                 return true;
             }
         }
 
-        if (doLog)
-            _zLog.Warning($"ZRENDER TryResolve: MISS playerMap={playerMapUid} grid={playerGridUid} offset={depthOffset}");
         return false;
+    }
+
+    // Reproject the current eye into the peer grid's world space so linked shuttle decks render from the correct relative viewpoint.
+    private MapCoordinates GetResolvedEyePosition(TransformComponent playerXform, EntityUid? peerGridUid, MapId targetMapId)
+    {
+        _transform ??= _entityManager.System<SharedTransformSystem>();
+        var rawEyePosition = _fallbackEye?.Position.Position ?? _eye?.Position.Position ?? _transform.GetWorldPosition(playerXform);
+
+        if (peerGridUid is not { } peerGrid ||
+            playerXform.GridUid is not { } currentGridUid)
+        {
+            return new MapCoordinates(rawEyePosition, targetMapId);
+        }
+
+        var currentGridMatrix = _transform.GetWorldMatrix(currentGridUid);
+        var peerGridMatrix = _transform.GetWorldMatrix(peerGrid);
+
+        if (!Matrix3x2.Invert(currentGridMatrix, out var inverseCurrentGrid))
+            return new MapCoordinates(rawEyePosition, targetMapId);
+
+        var eyeLocalToCurrentGrid = Vector2.Transform(rawEyePosition, inverseCurrentGrid);
+        var targetWorldPosition = Vector2.Transform(eyeLocalToCurrentGrid, peerGridMatrix);
+
+        return new MapCoordinates(targetWorldPosition, targetMapId);
     }
 
     private void RenderZLevels(IClydeViewport viewport)
@@ -186,7 +201,6 @@ public sealed partial class ScalingViewport
             return;
 
         var lookUp = zLevelViewer.LookUp ? 1 : 0;
-        _zLogCounter++;
 
         var lowestDepth = 0;
         for (var i = 0; i >= -CESharedZLevelsSystem.MaxZLevelsBelowRendering; i--)
@@ -199,9 +213,6 @@ public sealed partial class ScalingViewport
 
             lowestDepth = i;
         }
-
-        if (_zLogCounter % 600 == 0)
-            _zLog.Warning($"ZRENDER Frame: playerMap={playerXform.MapUid} playerGrid={playerXform.GridUid} lowestDepth={lowestDepth} lookUp={lookUp} eyePos={_fallbackEye.Position}");
 
         // Find the engine's PlacementOverlay once and cache it. Pirate: multiz
         // It must not render during secondary (non-depth-0) passes to avoid duplicate placement previews. Pirate: multiz
@@ -224,15 +235,17 @@ public sealed partial class ScalingViewport
             }
             else
             {
-                if (!TryResolveZMap(playerXform.MapUid.Value, playerXform.GridUid, depth, out var targetMapId))
+                if (!TryResolveZMap(playerXform.MapUid.Value, playerXform.GridUid, depth, out var targetMapId, out var peerGridUid))
                     continue;
 
                 Angle rotation = _fallbackEye.Rotation * -1;
                 var offset = rotation.ToWorldVec() * CEClientZLevelsSystem.ZLevelOffset * depth;
+                // Secondary passes need a peer-aware eye position; otherwise linked decks render as if they shared the root grid's world transform.
+                var eyePosition = GetResolvedEyePosition(playerXform, peerGridUid, targetMapId);
 
                 viewport.Eye = new ZEye(lowestDepth, depth, lookUp)
                 {
-                    Position = new MapCoordinates(_fallbackEye.Position.Position, targetMapId),
+                    Position = eyePosition,
                     DrawFov = _fallbackEye.DrawFov && depth >= 0,
                     DrawLight = _fallbackEye.DrawLight,
                     Offset = _fallbackEye.Offset + offset,

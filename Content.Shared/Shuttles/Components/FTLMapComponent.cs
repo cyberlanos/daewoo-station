@@ -14,6 +14,13 @@ namespace Content.Shared.Shuttles.Components;
 public sealed partial class FTLMapComponent : Component
 {
     /// <summary>
+    /// Relative Z-depth for this hyperspace map.
+    /// Depth 0 is the primary FTL map used by ordinary shuttles.
+    /// Runtime-assigned by EnsureFTLMap; not YAML-configurable. // Pirate: multiz
+    /// </summary>
+    public int Depth; // Pirate: multiz
+
+    /// <summary>
     /// Offset for FTLing shuttles so they don't overlap each other.
     /// </summary>
     [DataField]

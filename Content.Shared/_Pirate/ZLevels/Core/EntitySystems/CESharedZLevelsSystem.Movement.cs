@@ -410,25 +410,89 @@ public abstract partial class CESharedZLevelsSystem
         DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.Velocity));
     }
 
+    /// <summary>
+    /// Resolves a vertical move target by preferring linked shuttle peer grids.
+    /// This keeps ghost and manual z-moves working while multiz shuttles are temporarily sitting on FTL maps.
+    /// </summary>
+    private bool TryResolveLinkedMoveTarget(EntityUid ent, int offset, out MapId targetMapId, out int targetZLevel, out EntityUid? peerGridUid)
+    {
+        targetMapId = default;
+        targetZLevel = default;
+        peerGridUid = null;
+
+        var xform = Transform(ent);
+        if (xform.GridUid is not { } currentGridUid ||
+            !TryComp<CEZLinkedGridComponent>(currentGridUid, out var linked))
+        {
+            return false;
+        }
+
+        targetZLevel = linked.Depth + offset;
+        if (!linked.PeerGrids.TryGetValue(targetZLevel, out var targetPeerGridUid))
+            return false;
+
+        if (Transform(targetPeerGridUid).MapUid is not { } targetMapUid ||
+            !_mapQuery.TryComp(targetMapUid, out var targetMapComp))
+        {
+            return false;
+        }
+
+        peerGridUid = targetPeerGridUid;
+        targetMapId = targetMapComp.MapId;
+        return true;
+    }
+
+    /// <summary>
+    /// Preserves the mover's local position inside the multiz structure when transitioning between linked grids.
+    /// </summary>
+    private Vector2 GetLinkedMoveTargetPosition(EntityUid ent, EntityUid peerGridUid, Vector2 fallbackWorldPosition)
+    {
+        var xform = Transform(ent);
+        if (xform.GridUid is not { } currentGridUid)
+            return fallbackWorldPosition;
+
+        var currentGridMatrix = _transform.GetWorldMatrix(currentGridUid);
+        var peerGridMatrix = _transform.GetWorldMatrix(peerGridUid);
+
+        if (!Matrix3x2.Invert(currentGridMatrix, out var inverseCurrentGrid))
+            return fallbackWorldPosition;
+
+        var localToCurrentGrid = Vector2.Transform(fallbackWorldPosition, inverseCurrentGrid);
+        return Vector2.Transform(localToCurrentGrid, peerGridMatrix);
+    }
+
     [PublicAPI]
     public bool TryMove(EntityUid ent, int offset, Entity<CEZLevelMapComponent?>? map = null)
     {
-        map ??= Transform(ent).MapUid;
+        MapId targetMapId;
+        int targetZLevel;
+        EntityUid? peerGridUid;
 
-        if (map is null)
-            return false;
+        if (!TryResolveLinkedMoveTarget(ent, offset, out targetMapId, out targetZLevel, out peerGridUid))
+        {
+            map ??= Transform(ent).MapUid;
 
-        if (!TryMapOffset(map.Value, offset, out var targetMap))
-            return false;
+            if (map is null)
+                return false;
 
-        if (!_mapQuery.TryComp(targetMap, out var targetMapComp))
-            return false;
+            if (!TryMapOffset(map.Value, offset, out var targetMap))
+                return false;
 
-        var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetMap.Value.Comp.Depth);
+            if (!_mapQuery.TryComp(targetMap, out var targetMapComp))
+                return false;
+
+            targetMapId = targetMapComp.MapId;
+            targetZLevel = targetMap.Value.Comp.Depth;
+        }
+
+        var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref beforeEv);
 
         var worldPos = _transform.GetWorldPosition(ent);
         var worldRot = _transform.GetWorldRotation(ent);
+        var targetWorldPos = peerGridUid != null
+            ? GetLinkedMoveTargetPosition(ent, peerGridUid.Value, worldPos)
+            : worldPos;
 
         // Save mover eye rotation state before the move.
         // OnInputParentChange resets RelativeRotation on map change, causing an eye snap.
@@ -446,7 +510,7 @@ public abstract partial class CESharedZLevelsSystem
 
         // SetMapCoordinates doesn't preserve rotation when reparenting across maps.
         // We save world rotation and restore it after the move.
-        _transform.SetMapCoordinates(ent, new MapCoordinates(worldPos, targetMapComp.MapId));
+        _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
         // Force set both local rotation and world rotation to ensure consistency.
         var xform = Transform(ent);
         var parentRot = _transform.GetWorldRotation(xform.ParentUid);
@@ -471,7 +535,7 @@ public abstract partial class CESharedZLevelsSystem
             Dirty(ent, moverAfter);
         }
 
-        var ev = new CEZLevelMapMoveEvent(offset, targetMap.Value.Comp.Depth);
+        var ev = new CEZLevelMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref ev);
 
         return true;

@@ -117,6 +117,7 @@ using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Events;
 using Content.Server.Station.Systems;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared._NF.Shuttles.Events;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Alert;
@@ -230,15 +231,35 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         var exclusions = new List<ShuttleExclusionObject>();
         GetExclusions(ref exclusions);
         _consoles.Clear();
-        _lookup.GetChildEntities(gridUid, _consoles);
         DockingInterfaceState? dockState = null;
+
+        #region Pirate: multiz
+        // When the root shuttle changes FTL state, consoles mounted on linked peer decks need the same refresh to avoid stale UI.
+        var refreshGridUids = new ValueList<EntityUid>();
+        refreshGridUids.Add(gridUid);
+
+        if (TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
+        {
+            foreach (var (_, peerGridUid) in linked.PeerGrids)
+            {
+                refreshGridUids.Add(peerGridUid);
+            }
+        }
+
+        foreach (var refreshGridUid in refreshGridUids)
+        {
+            if (!Exists(refreshGridUid))
+                continue;
+
+            _lookup.GetChildEntities(refreshGridUid, _consoles);
+            _dockingConsole.UpdateConsolesUsing(refreshGridUid); // Lavaland Change: FTL
+        }
+        #endregion Pirate: multiz
 
         foreach (var entity in _consoles)
         {
             UpdateState(entity, ref dockState);
         }
-
-        _dockingConsole.UpdateConsolesUsing(gridUid); // Lavaland Change: FTL
     }
 
     /// <summary>
@@ -379,6 +400,12 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
 
         TryComp(entity, out TransformComponent? consoleXform);
         var shuttleGridUid = consoleXform?.GridUid;
+        #region Pirate: multiz
+        // A console may live on an upper or lower deck, but its displayed FTL state must come from the root shuttle that owns the jump lifecycle.
+        EntityUid? ftlStateGridUid = shuttleGridUid != null
+            ? _shuttle.ResolveFTLShuttle(shuttleGridUid.Value)
+            : null;
+        #endregion Pirate: multiz
 
         NavInterfaceState navState;
         ShuttleMapInterfaceState mapState;
@@ -387,7 +414,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         if (shuttleGridUid != null && entity != null)
         {
             navState = GetNavState(entity.Value, dockState.Docks);
-            mapState = GetMapState(shuttleGridUid.Value);
+            mapState = GetMapState(ftlStateGridUid ?? shuttleGridUid.Value);
         }
         else
         {
