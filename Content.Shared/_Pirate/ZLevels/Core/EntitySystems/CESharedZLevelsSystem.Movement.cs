@@ -84,16 +84,86 @@ public abstract partial class CESharedZLevelsSystem
     {
         var oldGroundHeight = ent.Comp.CurrentGroundHeight;
         var oldSticky = ent.Comp.CurrentStickyGround;
+        var oldSupportBelow = ent.Comp.CurrentHasSupportBelow;
+        var oldHighGroundBelow = ent.Comp.CurrentHighGroundBelow;
+
         ent.Comp.CurrentGroundHeight = ComputeGroundHeightInternal((ent, ent), out var sticky);
         ent.Comp.CurrentStickyGround = sticky;
+        ent.Comp.CurrentHasSupportBelow = ComputeHasSupportBelow(ent, Transform(ent), out var isHighGround);
+        ent.Comp.CurrentHighGroundBelow = isHighGround;
 
         if (ZDebugEnabled &&
-            (MathF.Abs(oldGroundHeight - ent.Comp.CurrentGroundHeight) > 0.01f || oldSticky != ent.Comp.CurrentStickyGround))
+            (MathF.Abs(oldGroundHeight - ent.Comp.CurrentGroundHeight) > 0.01f ||
+             oldSticky != ent.Comp.CurrentStickyGround ||
+             oldSupportBelow != ent.Comp.CurrentHasSupportBelow ||
+             oldHighGroundBelow != ent.Comp.CurrentHighGroundBelow))
         {
             DebugZ(ent,
                 $"movement cache updated at tile={_transform.GetGridOrMapTilePosition(ent)} world={_transform.GetWorldPosition(ent)} " +
-                $"ground {oldGroundHeight:0.00}->{ent.Comp.CurrentGroundHeight:0.00} sticky {oldSticky}->{ent.Comp.CurrentStickyGround}");
+                $"ground {oldGroundHeight:0.00}->{ent.Comp.CurrentGroundHeight:0.00} sticky {oldSticky}->{ent.Comp.CurrentStickyGround} " +
+                $"supportBelow {oldSupportBelow}->{ent.Comp.CurrentHasSupportBelow} highGroundBelow {oldHighGroundBelow}->{ent.Comp.CurrentHighGroundBelow}");
         }
+    }
+
+    /// <summary>
+    /// Checks whether the Z-level directly below has support at this entity's XY position.
+    /// <paramref name="isHighGround"/> is true when that support is a CEZLevelHighGround
+    /// entity (stairs/ladder) rather than a plain floor tile.
+    /// </summary>
+    private bool ComputeHasSupportBelow(EntityUid ent, TransformComponent xform, out bool isHighGround)
+    {
+        isHighGround = false;
+
+        if (xform.MapUid is not { } mapUid || !_zMapQuery.TryComp(mapUid, out var zMapComp))
+            return false;
+
+        if (!TryMapOffset((mapUid, zMapComp), -1, out _))
+            return false; // No Z-level below at all
+
+        if (!TryResolveGridForMapOffset(ent, xform, -1, out var belowGridUid, out var belowGrid))
+            return false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+        while (anchoredQuery.MoveNext(out var uid))
+        {
+            if (_highgroundQuery.HasComp(uid.Value))
+            {
+                isHighGround = true;
+                return true;
+            }
+        }
+
+        return _map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty;
+    }
+
+    /// <summary>
+    /// Returns true when the entity is allowed to automatically descend to the Z-level below.
+    /// Rules:
+    /// - Sticky surface (currently on a ladder) → always allow.
+    /// - High-ground (stairs/ladder) directly below → always allow; stair traversal works
+    ///   even in weightless areas so the player can walk down from a space-walk to an airlock deck.
+    /// - Regular floor below + gravity active → allow (falling through a deck hole).
+    /// - Anything else → block (entity floats on current level).
+    /// </summary>
+    private bool CanAutoDescend(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform, PhysicsComponent physics)
+    {
+        // Currently on a sticky surface (e.g. already mid-ladder)
+        if (zPhys.CurrentStickyGround)
+            return true;
+
+        // No floor at this XY on the level below — never descend
+        if (!zPhys.CurrentHasSupportBelow)
+            return false;
+
+        // Stairs or ladder below — allow descent regardless of gravity
+        if (zPhys.CurrentHighGroundBelow)
+            return true;
+
+        // Plain floor below — only fall if under gravity (prevents drifting into lower deck in vacuum)
+        return !_gravity.IsWeightless(uid, physics, xform);
     }
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
@@ -193,19 +263,39 @@ public abstract partial class CESharedZLevelsSystem
                 }
             }
 
-            if (zPhys.LocalPosition < 0) //Need teleport to ZLevel down
+            if (zPhys.LocalPosition < 0) // Need to descend to Z-level below
             {
-                if (ZDebugEnabled)
-                    DebugZ(uid, "local position dropped below 0, attempting move down or chasm");
-                if (TryMoveDownOrChasm(uid))
+                if (CanAutoDescend(uid, zPhys, xform, physics))
                 {
-                    zPhys.LocalPosition += 1;
+                    if (ZDebugEnabled)
+                        DebugZ(uid, "local position dropped below 0, gravity+support present, attempting move down");
 
-                    if (!zPhys.CurrentStickyGround)
+                    if (TryMoveDown(uid))
                     {
-                        var fallEv = new CEZLevelFallMapEvent();
-                        RaiseLocalEvent(uid, ref fallEv);
+                        zPhys.LocalPosition += 1;
+
+                        if (!zPhys.CurrentStickyGround)
+                        {
+                            var fallEv = new CEZLevelFallMapEvent();
+                            RaiseLocalEvent(uid, ref fallEv);
+                        }
                     }
+                    else
+                    {
+                        // Level below exists but transfer failed — stop cleanly
+                        if (ZDebugEnabled)
+                            DebugZ(uid, "move down failed despite support below, clamping to 0");
+                        zPhys.LocalPosition = 0f;
+                        if (zPhys.Velocity < 0f) zPhys.Velocity = 0f;
+                    }
+                }
+                else
+                {
+                    // Weightless or no floor below — clamp and float on current level
+                    if (ZDebugEnabled)
+                        DebugZ(uid, $"descent blocked (weightless or no floor below), clamping to 0 — supportBelow={zPhys.CurrentHasSupportBelow}");
+                    zPhys.LocalPosition = 0f;
+                    if (zPhys.Velocity < 0f) zPhys.Velocity = 0f;
                 }
             }
 

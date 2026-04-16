@@ -50,6 +50,21 @@ public sealed partial class CEZPhysicsComponent : Component
     [DataField]
     public bool CurrentStickyGround;
 
+    /// <summary>
+    /// Cached flag: true when the Z-level directly below has a real floor or high-ground entity
+    /// at this entity's XY tile position. Updated on MoveEvent / TileChangedEvent.
+    /// </summary>
+    [DataField]
+    public bool CurrentHasSupportBelow;
+
+    /// <summary>
+    /// Cached flag: true when the support found directly below is a CEZLevelHighGround entity
+    /// (stairs or ladder), rather than a plain tile. When true, descent is always permitted
+    /// regardless of gravity, so stair/ladder traversal works even in weightless zones.
+    /// </summary>
+    [DataField]
+    public bool CurrentHighGroundBelow;
+
     // Physics
 
     [DataField, AutoNetworkedField]

@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.ActionBlocker;
+using Content.Shared.Gravity;
 using Content.Shared.Popups;
 using JetBrains.Annotations;
 using Robust.Shared.Audio.Systems;
@@ -24,6 +25,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly SharedGravitySystem _gravity = default!;
 
     private EntityQuery<MapComponent> _mapQuery;
     private EntityQuery<CEZLevelMapComponent> _zMapQuery;
