@@ -40,6 +40,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         _gridQuery = GetEntityQuery<MapGridComponent>();
         ZPhyzQuery = GetEntityQuery<CEZPhysicsComponent>();
 
+        InitializeDebug();
         InitMovement();
         InitView();
         InitializeActivation();

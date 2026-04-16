@@ -56,14 +56,16 @@ public abstract partial class CESharedZLevelsSystem
 
         var xform = Transform(ent);
 
-        if (xform.ParentUid != xform.MapUid)
+        if (xform.ParentUid != xform.MapUid && xform.ParentUid != xform.GridUid)
         {
+            DebugZ(ent, "z-physics inactive: parent is neither the map nor the grid");
             SetActiveStatus(ent, false);
             return;
         }
 
         if (xform.Anchored)
         {
+            DebugZ(ent, "z-physics inactive: entity is anchored");
             SetActiveStatus(ent, false);
             return;
         }
@@ -72,11 +74,13 @@ public abstract partial class CESharedZLevelsSystem
         {
             if (physics.BodyType == BodyType.Static)
             {
+                DebugZ(ent, "z-physics inactive: body type is static");
                 SetActiveStatus(ent, false);
                 return;
             }
         }
 
+        DebugZ(ent, "z-physics active");
         SetActiveStatus(ent, true);
     }
 

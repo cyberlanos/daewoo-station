@@ -23,6 +23,10 @@ public abstract partial class CESharedZLevelsSystem
 
     private const float ZGravityForce = 9.8f;
     private const float ZVelocityLimit = 20.0f;
+    private const float StairUpTransferHeightThreshold = 1f;
+    private const float StairUpLandingForwardNudge = 0.5f;
+    private const float StairDownLandingForwardNudge = 0f;
+    private const float StairDirectionMinimumSpeed = 0.01f;
 
     /// <summary>
     /// The minimum speed required to trigger LandEvent events.
@@ -78,8 +82,18 @@ public abstract partial class CESharedZLevelsSystem
 
     private void CacheMovement(Entity<CEZPhysicsComponent> ent)
     {
+        var oldGroundHeight = ent.Comp.CurrentGroundHeight;
+        var oldSticky = ent.Comp.CurrentStickyGround;
         ent.Comp.CurrentGroundHeight = ComputeGroundHeightInternal((ent, ent), out var sticky);
         ent.Comp.CurrentStickyGround = sticky;
+
+        if (ZDebugEnabled &&
+            (MathF.Abs(oldGroundHeight - ent.Comp.CurrentGroundHeight) > 0.01f || oldSticky != ent.Comp.CurrentStickyGround))
+        {
+            DebugZ(ent,
+                $"movement cache updated at tile={_transform.GetGridOrMapTilePosition(ent)} world={_transform.GetWorldPosition(ent)} " +
+                $"ground {oldGroundHeight:0.00}->{ent.Comp.CurrentGroundHeight:0.00} sticky {oldSticky}->{ent.Comp.CurrentStickyGround}");
+        }
     }
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
@@ -126,33 +140,63 @@ public abstract partial class CESharedZLevelsSystem
             zPhys.LocalPosition += zPhys.Velocity * frameTime;
 
             var distanceToGround = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
+            var snappedUpToGround = false;
+            var snappedDownToStickyGround = false;
 
             // AutoStep: lift entity up if floor is higher
             if (zPhys.AutoStep && distanceToGround < 0)
-                zPhys.LocalPosition -= distanceToGround; //Lift up
+            {
+                zPhys.LocalPosition = zPhys.CurrentGroundHeight;
+                distanceToGround = 0f;
+                snappedUpToGround = true;
+                if (ZDebugEnabled &&
+                    (zPhys.CurrentGroundHeight > 0.01f || zPhys.CurrentStickyGround || zPhys.LocalPosition > 0.01f))
+                    DebugZVerbose(uid, $"autostep snapped entity to ground at local={zPhys.LocalPosition:0.00}");
+            }
 
             // Sticky ground: only pull down when slowly falling on sticky surfaces (ladders)
-            if (zPhys.CurrentStickyGround)
-                zPhys.LocalPosition -= distanceToGround; //Sticky move down
+            if (zPhys.CurrentStickyGround && distanceToGround > 0)
+            {
+                zPhys.LocalPosition = zPhys.CurrentGroundHeight;
+                distanceToGround = 0f;
+                snappedDownToStickyGround = true;
+                if (ZDebugEnabled)
+                    DebugZVerbose(uid, $"sticky ground snapped entity to local={zPhys.LocalPosition:0.00}");
+            }
 
             if (zPhys.Velocity < 0) //Falling down
             {
                 if (distanceToGround <= 0.05f) //There`s a ground
                 {
-                    if (MathF.Abs(zPhys.Velocity) >= ImpactVelocityLimit)
-                    {
-                        var ev = new CEZLevelHitEvent(-zPhys.Velocity);
-                        RaiseLocalEvent(uid, ref ev);
-                        var land = new LandEvent(null, true);
-                        RaiseLocalEvent(uid, ref land);
-                    }
+                    var suppressBounce = snappedDownToStickyGround ||
+                                         snappedUpToGround && zPhys.CurrentGroundHeight > 0.01f;
 
-                    zPhys.Velocity = -zPhys.Velocity * zPhys.Bounciness;
+                    if (suppressBounce)
+                    {
+                        if (ZDebugEnabled)
+                            DebugZVerbose(uid, $"suppressed bounce on stair contact at ground={zPhys.CurrentGroundHeight:0.00}");
+
+                        zPhys.Velocity = 0f;
+                    }
+                    else
+                    {
+                        if (MathF.Abs(zPhys.Velocity) >= ImpactVelocityLimit)
+                        {
+                            var ev = new CEZLevelHitEvent(-zPhys.Velocity);
+                            RaiseLocalEvent(uid, ref ev);
+                            var land = new LandEvent(null, true);
+                            RaiseLocalEvent(uid, ref land);
+                        }
+
+                        zPhys.Velocity = -zPhys.Velocity * zPhys.Bounciness;
+                    }
                 }
             }
 
             if (zPhys.LocalPosition < 0) //Need teleport to ZLevel down
             {
+                if (ZDebugEnabled)
+                    DebugZ(uid, "local position dropped below 0, attempting move down or chasm");
                 if (TryMoveDownOrChasm(uid))
                 {
                     zPhys.LocalPosition += 1;
@@ -165,10 +209,14 @@ public abstract partial class CESharedZLevelsSystem
                 }
             }
 
-            if (zPhys.LocalPosition >= 1) //Need teleport to ZLevel up
+            var upwardTransferThreshold = StairUpTransferHeightThreshold;
+            if (zPhys.LocalPosition >= upwardTransferThreshold) //Need teleport to ZLevel up
             {
-                if (HasTileAbove(uid)) //Hit roof
+                var hasTileAbove = HasTileAbove(uid);
+                if (hasTileAbove) //Hit roof
                 {
+                    if (ZDebugEnabled)
+                        DebugZ(uid, "upward move blocked by tile above");
                     if (MathF.Abs(zPhys.Velocity) >= ImpactVelocityLimit)
                     {
                         var ev = new CEZLevelHitEvent(zPhys.Velocity);
@@ -177,18 +225,30 @@ public abstract partial class CESharedZLevelsSystem
                         RaiseLocalEvent(uid, ref land);
                     }
 
-                    zPhys.LocalPosition = 1;
+                    zPhys.LocalPosition = upwardTransferThreshold;
                     zPhys.Velocity = -zPhys.Velocity * zPhys.Bounciness;
                 }
                 else //Move up
                 {
-                    if (TryMoveUp(uid))
+                    var movedUp = TryMoveUp(uid);
+                    if (ZDebugEnabled)
+                        DebugZ(uid, $"upward transfer attempted, success={movedUp}");
+                    if (movedUp)
                         zPhys.LocalPosition -= 1;
                 }
             }
 
             if (Math.Abs(zPhys.Velocity) > ZVelocityLimit)
                 zPhys.Velocity = MathF.Sign(zPhys.Velocity) * ZVelocityLimit;
+
+            if (ZDebugEnabled && ShouldLogMovementTick(zPhys, oldHeight))
+            {
+                var finalDistanceToGround = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
+                DebugZVerbose(uid,
+                    $"tick frame={frameTime:0.000} body={physics.BodyStatus} " +
+                    $"pos {oldHeight:0.00}->{zPhys.LocalPosition:0.00} vel {oldVelocity:0.00}->{zPhys.Velocity:0.00} " +
+                    $"dist={finalDistanceToGround:0.00}");
+            }
 
             if (Math.Abs(oldVelocity - zPhys.Velocity) > 0.01f)
                 DirtyField(uid, zPhys, nameof(CEZPhysicsComponent.Velocity));
@@ -211,6 +271,415 @@ public abstract partial class CESharedZLevelsSystem
         return target.Comp.LocalPosition - target.Comp.CurrentGroundHeight;
     }
 
+    private bool TryResolveAnyGridOnMap(EntityUid mapUid, out EntityUid gridUid, out MapGridComponent gridComp)
+    {
+        var gridQuery = EntityQueryEnumerator<MapGridComponent, TransformComponent>();
+        while (gridQuery.MoveNext(out var uid, out var grid, out var xform))
+        {
+            if (xform.MapUid != mapUid)
+                continue;
+
+            gridUid = uid;
+            gridComp = grid;
+            return true;
+        }
+
+        if (_gridQuery.TryComp(mapUid, out var mapAsGrid))
+        {
+            gridUid = mapUid;
+            gridComp = mapAsGrid;
+            return true;
+        }
+
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+        return false;
+    }
+
+    private bool TryResolveGridForMapOffset(EntityUid ent, TransformComponent xform, int offset, out EntityUid gridUid, out MapGridComponent gridComp)
+    {
+        if (offset == 0)
+        {
+            if (xform.GridUid is { } currentGridUid &&
+                _gridQuery.TryComp(currentGridUid, out var currentGrid))
+            {
+                gridUid = currentGridUid;
+                gridComp = currentGrid;
+                return true;
+            }
+
+            if (xform.MapUid is { } currentMapUid &&
+                TryResolveAnyGridOnMap(currentMapUid, out gridUid, out gridComp))
+            {
+                return true;
+            }
+
+            gridUid = EntityUid.Invalid;
+            gridComp = default!;
+            return false;
+        }
+
+        if (xform.GridUid is { } sourceGridUid &&
+            TryComp<CEZLinkedGridComponent>(sourceGridUid, out var linked))
+        {
+            var targetDepth = linked.Depth + offset;
+            if (linked.PeerGrids.TryGetValue(targetDepth, out var peerGridUid) &&
+                _gridQuery.TryComp(peerGridUid, out var peerGrid))
+            {
+                DebugZVerbose(ent, $"resolved grid for offset={offset} via linked peer grid {ToPrettyString(peerGridUid)}");
+
+                gridUid = peerGridUid;
+                gridComp = peerGrid;
+                return true;
+            }
+
+            DebugZVerbose(ent, $"no linked peer grid found for offset={offset} targetDepth={targetDepth}");
+        }
+
+        if (xform.MapUid is { } sourceMapUid &&
+            TryMapOffset(sourceMapUid, offset, out var targetMap) &&
+            TryResolveAnyGridOnMap(targetMap.Value.Owner, out gridUid, out gridComp))
+        {
+            if (offset != 0)
+                DebugZVerbose(ent, $"resolved grid for offset={offset} via z-level map {targetMap.Value.Owner} using grid {ToPrettyString(gridUid)}");
+
+            return true;
+        }
+
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+        return false;
+    }
+
+    private bool TryGetForwardLandingPosition(EntityUid ent, int offset, Vector2 baseTargetWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos)
+    {
+        landingWorldPos = baseTargetWorldPos;
+
+        if (!TryComp<CEZPhysicsComponent>(ent, out var zPhys))
+            return false;
+
+        var resolvedByTransferHint = TryGetStairTransferDirection(ent, offset, out var forwardDir);
+        TryGetTileLocalPositionForTarget(baseTargetWorldPos, targetGridUid, targetMapId, out var local);
+
+        // Only apply the forward step-off behavior for staircase/slope transitions.
+        if (offset > 0)
+        {
+            if (zPhys.CurrentGroundHeight <= 0.01f)
+            {
+                DebugZVerbose(ent, $"stair exit nudge skipped for upward move: current ground {zPhys.CurrentGroundHeight:0.00} is not elevated");
+                return false;
+            }
+
+            var distanceToEdge = GetDirectionalDistanceToNextTileEdge(local, forwardDir);
+            landingWorldPos += forwardDir.ToVec() * (distanceToEdge + StairUpLandingForwardNudge);
+        }
+        else if (offset < 0)
+        {
+            if (!resolvedByTransferHint)
+            {
+                DebugZVerbose(ent, "stair exit nudge skipped for downward move: no stair or movement direction was resolved");
+                return false;
+            }
+
+            landingWorldPos += forwardDir.ToVec() * StairDownLandingForwardNudge;
+        }
+        else
+        {
+            return false;
+        }
+
+        DebugZVerbose(ent, $"computed stair exit nudge offset={offset} dir={forwardDir} landing={landingWorldPos}");
+        if (!resolvedByTransferHint)
+            DebugZVerbose(ent, $"stair exit nudge fell back to facing direction {forwardDir}");
+
+        return true;
+    }
+
+    private static Vector2 GetTileLocalPosition(Vector2 localPos)
+    {
+        return new Vector2((localPos.X % 1 + 1) % 1, (localPos.Y % 1 + 1) % 1);
+    }
+
+    private bool TryGetTileLocalPositionForTarget(Vector2 worldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 tileLocal)
+    {
+        if (targetGridUid is { } gridUid &&
+            _gridQuery.HasComp(gridUid))
+        {
+            tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(gridUid)));
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var mapUid) &&
+            TryResolveAnyGridOnMap(mapUid.Value, out var resolvedGridUid, out _))
+        {
+            tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(resolvedGridUid)));
+            return true;
+        }
+
+        tileLocal = GetTileLocalPosition(worldPos);
+        return false;
+    }
+
+    private static float GetDirectionalDistanceToNextTileEdge(Vector2 local, Direction dir)
+    {
+        return dir switch
+        {
+            Direction.East => 1f - local.X,
+            Direction.West => local.X,
+            Direction.North => 1f - local.Y,
+            Direction.South => local.Y,
+            _ => 0.5f,
+        };
+    }
+
+    private readonly struct GroundSupportSample
+    {
+        public readonly EntityUid GridUid;
+        public readonly int FloorOffset;
+        public readonly EntityUid SupportUid;
+        public readonly Direction SurfaceDirection;
+        public readonly Vector2 TileLocal;
+        public readonly float Sample;
+        public readonly float GroundHeight;
+        public readonly bool Sticky;
+        public readonly bool IsHighGround;
+
+        public GroundSupportSample(
+            EntityUid gridUid,
+            int floorOffset,
+            EntityUid supportUid,
+            Direction surfaceDirection,
+            Vector2 tileLocal,
+            float sample,
+            float groundHeight,
+            bool sticky,
+            bool isHighGround)
+        {
+            GridUid = gridUid;
+            FloorOffset = floorOffset;
+            SupportUid = supportUid;
+            SurfaceDirection = surfaceDirection;
+            TileLocal = tileLocal;
+            Sample = sample;
+            GroundHeight = groundHeight;
+            Sticky = sticky;
+            IsHighGround = isHighGround;
+        }
+    }
+
+    private bool TrySampleHighGround(
+        Entity<CEZPhysicsComponent?> target,
+        EntityUid checkingGridUid,
+        int floor,
+        Vector2 tileLocal,
+        EntityUid supportUid,
+        CEZLevelHighGroundComponent heightComp,
+        out GroundSupportSample sample,
+        bool logProbe = false)
+    {
+        sample = default;
+
+        var dir = _transform.GetWorldRotation(supportUid).GetCardinalDir();
+        var t = dir switch
+        {
+            Direction.East => heightComp.Corner ? (tileLocal.X + 1f - tileLocal.Y) / 2f : tileLocal.X,
+            Direction.West => heightComp.Corner ? (1f - tileLocal.X + tileLocal.Y) / 2f : 1f - tileLocal.X,
+            Direction.North => heightComp.Corner ? (tileLocal.X + tileLocal.Y) / 2f : tileLocal.Y,
+            Direction.South => heightComp.Corner ? (1f - tileLocal.X + 1f - tileLocal.Y) / 2f : 1f - tileLocal.Y,
+            _ => 0.5f,
+        };
+
+        t = Math.Clamp(t, 0f, 1f);
+
+        var curve = heightComp.HeightCurve;
+        if (curve.Count == 0)
+            return false;
+
+        var groundY = curve.Count == 1
+            ? curve[0]
+            : InterpolateHeightCurve(curve, t);
+
+        var sticky = target.Comp != null &&
+                     target.Comp.Velocity < 0 &&
+                     target.Comp.Velocity > -2f &&
+                     heightComp.Stick;
+
+        var groundHeight = -floor + groundY;
+        sample = new GroundSupportSample(
+            checkingGridUid,
+            floor,
+            supportUid,
+            dir,
+            tileLocal,
+            t,
+            groundHeight,
+            sticky,
+            true);
+
+        if (logProbe)
+        {
+            DebugZVerbose(target.Owner,
+                $"ground probe hit highground {ToPrettyString(supportUid)} floorOffset=-{floor} dir={dir} " +
+                $"local=({tileLocal.X:0.00}, {tileLocal.Y:0.00}) sample={t:0.00} result={groundHeight:0.00} sticky={sticky} curvePts={curve.Count}");
+        }
+
+        return true;
+    }
+
+    private static float InterpolateHeightCurve(List<float> curve, float t)
+    {
+        var step = 1f / (curve.Count - 1);
+        var index = (int) (t / step);
+        var frac = (t - index * step) / step;
+
+        var y0 = curve[Math.Clamp(index, 0, curve.Count - 1)];
+        var y1 = curve[Math.Clamp(index + 1, 0, curve.Count - 1)];
+
+        return MathHelper.Lerp(y0, y1, frac);
+    }
+
+    private bool TryGetGroundSupportSample(Entity<CEZPhysicsComponent?> target, out GroundSupportSample support, int maxFloors = 1, bool logProbe = false)
+    {
+        support = default;
+
+        if (!Resolve(target, ref target.Comp, false))
+            return false;
+
+        var xform = Transform(target);
+        if (xform.MapUid is not { } currentMapUid ||
+            !_zMapQuery.TryComp(currentMapUid, out var zMapComp))
+        {
+            if (logProbe)
+                DebugZVerbose(target.Owner, "ground probe failed: entity is not on a z-level map");
+            return false;
+        }
+
+        if (!TryResolveGridForMapOffset(target.Owner, xform, 0, out var mapGridUid, out var mapGrid))
+        {
+            if (logProbe)
+                DebugZVerbose(target.Owner, "ground probe failed: could not resolve current grid");
+            return false;
+        }
+
+        var worldPos = _transform.GetWorldPosition(target);
+
+        var checkingGridUid = mapGridUid;
+        var checkingGrid = mapGrid;
+
+        for (var floor = 0; floor <= maxFloors; floor++)
+        {
+            if (floor != 0)
+            {
+                if (!TryMapOffset((currentMapUid, zMapComp), -floor, out var tempCheckingMap))
+                {
+                    if (logProbe)
+                        DebugZVerbose(target.Owner, $"ground probe skipped floor={floor}: no z-level map below");
+                    continue;
+                }
+
+                if (!TryResolveGridForMapOffset(target.Owner, xform, -floor, out var tempCheckingGridUid, out var tempCheckingGrid))
+                {
+                    if (logProbe)
+                        DebugZVerbose(target.Owner, $"ground probe skipped floor={floor}: could not resolve grid below");
+                    continue;
+                }
+
+                checkingGridUid = tempCheckingGridUid;
+                checkingGrid = tempCheckingGrid;
+            }
+
+            var tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(checkingGridUid)));
+            var tileIndices = _map.WorldToTile(checkingGridUid, checkingGrid, worldPos);
+
+            var foundHighGround = false;
+            var bestHighGround = default(GroundSupportSample);
+            var query = _map.GetAnchoredEntitiesEnumerator(checkingGridUid, checkingGrid, tileIndices);
+            while (query.MoveNext(out var uid))
+            {
+                if (!_highgroundQuery.TryComp(uid, out var heightComp))
+                    continue;
+
+                if (!TrySampleHighGround(target, checkingGridUid, floor, tileLocal, uid.Value, heightComp, out var candidate, logProbe))
+                    continue;
+
+                if (!foundHighGround || candidate.GroundHeight > bestHighGround.GroundHeight)
+                {
+                    bestHighGround = candidate;
+                    foundHighGround = true;
+                }
+            }
+
+            if (foundHighGround)
+            {
+                support = bestHighGround;
+                return true;
+            }
+
+            if (_map.TryGetTileRef(checkingGridUid, checkingGrid, worldPos, out var tileRef) &&
+                !tileRef.Tile.IsEmpty)
+            {
+                support = new GroundSupportSample(
+                    checkingGridUid,
+                    floor,
+                    EntityUid.Invalid,
+                    Direction.Invalid,
+                    tileLocal,
+                    0f,
+                    -floor,
+                    false,
+                    false);
+
+                if (logProbe)
+                {
+                    DebugZVerbose(target.Owner,
+                        $"ground probe hit tile floorOffset=-{floor} grid={ToPrettyString(checkingGridUid)} tile={tileIndices} result={-floor:0.00}");
+                }
+
+                return true;
+            }
+        }
+
+        if (logProbe)
+            DebugZVerbose(target.Owner, $"ground probe found no support within {maxFloors} floor(s), returning {-maxFloors:0.00}");
+
+        return false;
+    }
+
+    private bool TryGetMovementDirection(EntityUid ent, out Direction direction)
+    {
+        if (TryComp<PhysicsComponent>(ent, out var physics) &&
+            physics.LinearVelocity.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
+        {
+            direction = physics.LinearVelocity.ToWorldAngle().GetCardinalDir();
+            return true;
+        }
+
+        if (TryComp<InputMoverComponent>(ent, out var mover) &&
+            mover.WishDir.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
+        {
+            direction = mover.WishDir.ToWorldAngle().GetCardinalDir();
+            return true;
+        }
+
+        direction = _transform.GetWorldRotation(ent).GetCardinalDir();
+        return false;
+    }
+
+    private bool TryGetStairTransferDirection(EntityUid ent, int offset, out Direction direction)
+    {
+        if (ZPhyzQuery.TryComp(ent, out var zComp) &&
+            TryGetGroundSupportSample((ent, zComp), out var support, Math.Abs(offset), false) &&
+            support.IsHighGround)
+        {
+            direction = offset > 0
+                ? support.SurfaceDirection.GetOpposite()
+                : support.SurfaceDirection;
+            return true;
+        }
+
+        return TryGetMovementDirection(ent, out direction);
+    }
+
     /// <summary>
     /// Computes the "ground height" relative to the entity's current Z-level.
     /// Returns values where 0 means ground on the same level, -1 means ground one level below,
@@ -219,90 +688,11 @@ public abstract partial class CESharedZLevelsSystem
     private float ComputeGroundHeightInternal(Entity<CEZPhysicsComponent?> target, out bool stickyGround, int maxFloors = 1)
     {
         stickyGround = false;
-        if (!Resolve(target, ref target.Comp, false))
-            return 0;
+        if (!TryGetGroundSupportSample(target, out var support, maxFloors, true))
+            return -maxFloors;
 
-        var xform = Transform(target);
-        if (!_zMapQuery.TryComp(xform.MapUid, out var zMapComp))
-            return 0;
-        if (!_gridQuery.TryComp(xform.MapUid, out var mapGrid))
-            return 0;
-
-        var worldPosI = _transform.GetGridOrMapTilePosition(target);
-        var worldPos = _transform.GetWorldPosition(target);
-
-        //Select current map by default
-        Entity<CEZLevelMapComponent> checkingMap = (xform.MapUid.Value, zMapComp);
-        var checkingGrid = mapGrid;
-
-        for (var floor = 0; floor <= maxFloors; floor++)
-        {
-            if (floor != 0) //Select map below
-            {
-                if (!TryMapOffset((checkingMap.Owner, checkingMap.Comp), -floor, out var tempCheckingMap))
-                    continue;
-                if (!_gridQuery.TryComp(tempCheckingMap, out var tempCheckingGrid))
-                    continue;
-
-                checkingMap = tempCheckingMap.Value;
-                checkingGrid = tempCheckingGrid;
-            }
-
-            //Check all types of ZHeight entities
-            var query = _map.GetAnchoredEntitiesEnumerator(checkingMap, checkingGrid, worldPosI);
-            while (query.MoveNext(out var uid))
-            {
-                if (!_highgroundQuery.TryComp(uid, out var heightComp))
-                    continue;
-
-                var dir = _transform.GetWorldRotation(uid.Value).GetCardinalDir();
-
-                var local = new Vector2((worldPos.X % 1 + 1) % 1, (worldPos.Y % 1 + 1) % 1);
-
-                var t = dir switch
-                {
-                    Direction.East => heightComp.Corner ? (local.X + 1f - local.Y) / 2f : local.X,
-                    Direction.West => heightComp.Corner ? (1f - local.X + local.Y) / 2f : 1f - local.X,
-                    Direction.North => heightComp.Corner ? (local.X + local.Y) / 2f : local.Y,
-                    Direction.South => heightComp.Corner ? (1f - local.X + 1f - local.Y) / 2f : 1f - local.Y,
-                    _ => 0.5f,
-                };
-
-                t = Math.Clamp(t, 0f, 1f);
-
-                var curve = heightComp.HeightCurve;
-                if (curve.Count == 0)
-                    continue;
-
-                if (curve.Count == 1)
-                {
-                    var groundY = curve[0];
-                    // groundHeight is negative downwards: -floor + groundY
-                    return -floor + groundY;
-                }
-
-                var step = 1f / (curve.Count - 1);
-                var index = (int)(t / step);
-                var frac = (t - index * step) / step;
-
-                var y0 = curve[Math.Clamp(index, 0, curve.Count - 1)];
-                var y1 = curve[Math.Clamp(index + 1, 0, curve.Count - 1)];
-
-                var groundYInterp = MathHelper.Lerp(y0, y1, frac);
-
-                if (target.Comp.Velocity < 0 && target.Comp.Velocity > -2f && heightComp.Stick)
-                    stickyGround = true;
-
-                return -floor + groundYInterp;
-            }
-
-            //No ZEntities found, check floor tiles
-            if (_map.TryGetTileRef(checkingMap, checkingGrid, worldPosI, out var tileRef) &&
-                !tileRef.Tile.IsEmpty)
-                return -floor; // tile ground has groundY == 0 -> -floor
-        }
-
-        return -maxFloors;
+        stickyGround = support.Sticky;
+        return support.GroundHeight;
     }
 
     /// <summary>
@@ -315,19 +705,31 @@ public abstract partial class CESharedZLevelsSystem
         currentMapUid ??= Transform(ent).MapUid;
 
         if (currentMapUid is null)
+        {
+            DebugZVerbose(ent, "roof check failed: entity has no current map");
             return false;
+        }
 
         if (!TryMapUp(currentMapUid.Value, out var mapAboveUid))
+        {
+            DebugZVerbose(ent, "roof check: no z-level map above");
             return false;
+        }
 
-        if (!_gridQuery.TryComp(mapAboveUid.Value, out var mapAboveGrid))
+        var xform = Transform(ent);
+        if (!TryResolveGridForMapOffset(ent, xform, 1, out var mapAboveGridUid, out var mapAboveGrid))
+        {
+            DebugZVerbose(ent, "roof check failed: could not resolve grid above");
             return false;
+        }
 
-        if (_map.TryGetTileRef(mapAboveUid.Value, mapAboveGrid, _transform.GetWorldPosition(ent), out var tileRef) &&
-            !tileRef.Tile.IsEmpty)
-            return true;
+        var hasTileAbove =
+            _map.TryGetTileRef(mapAboveGridUid, mapAboveGrid, _transform.GetWorldPosition(ent), out var tileRef) &&
+            !tileRef.Tile.IsEmpty;
 
-        return false;
+        DebugZVerbose(ent, $"roof check on map {mapAboveUid.Value.Owner} grid {ToPrettyString(mapAboveGridUid)} result={hasTileAbove}");
+
+        return hasTileAbove;
     }
 
     /// <summary>
@@ -343,10 +745,10 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryMapUp(map, out var mapAboveUid))
             return false;
 
-        if (!_gridQuery.TryComp(mapAboveUid.Value, out var mapAboveGrid))
+        if (!TryResolveAnyGridOnMap(mapAboveUid.Value.Owner, out var mapAboveGridUid, out var mapAboveGrid))
             return false;
 
-        if (_map.TryGetTileRef(mapAboveUid.Value, mapAboveGrid, indices, out var tileRef) &&
+        if (_map.TryGetTileRef(mapAboveGridUid, mapAboveGrid, indices, out var tileRef) &&
             !tileRef.Tile.IsEmpty)
             return true;
 
@@ -429,11 +831,15 @@ public abstract partial class CESharedZLevelsSystem
 
         targetZLevel = linked.Depth + offset;
         if (!linked.PeerGrids.TryGetValue(targetZLevel, out var targetPeerGridUid))
+        {
+            DebugZVerbose(ent, $"linked move target missing for offset={offset} targetZ={targetZLevel}");
             return false;
+        }
 
         if (Transform(targetPeerGridUid).MapUid is not { } targetMapUid ||
             !_mapQuery.TryComp(targetMapUid, out var targetMapComp))
         {
+            DebugZVerbose(ent, $"linked move target grid {ToPrettyString(targetPeerGridUid)} has no valid target map");
             return false;
         }
 
@@ -467,76 +873,114 @@ public abstract partial class CESharedZLevelsSystem
         MapId targetMapId;
         int targetZLevel;
         EntityUid? peerGridUid;
+        var worldPos = _transform.GetWorldPosition(ent);
+        var worldRot = _transform.GetWorldRotation(ent);
 
         if (!TryResolveLinkedMoveTarget(ent, offset, out targetMapId, out targetZLevel, out peerGridUid))
         {
             map ??= Transform(ent).MapUid;
 
             if (map is null)
+            {
+                if (ZDebugEnabled)
+                    DebugZ(ent, $"move failed: no current map for offset={offset}");
                 return false;
+            }
 
             if (!TryMapOffset(map.Value, offset, out var targetMap))
+            {
+                if (ZDebugEnabled)
+                    DebugZ(ent, $"move failed: no target map at offset={offset}");
                 return false;
+            }
 
             if (!_mapQuery.TryComp(targetMap, out var targetMapComp))
+            {
+                if (ZDebugEnabled)
+                    DebugZ(ent, $"move failed: target map {targetMap.Value.Owner} has no map component");
                 return false;
+            }
 
             targetMapId = targetMapComp.MapId;
             targetZLevel = targetMap.Value.Comp.Depth;
         }
 
+        if (ZDebugEnabled)
+            DebugZ(ent, $"attempting move offset={offset} targetMapId={targetMapId} targetZ={targetZLevel} peerGrid={peerGridUid} sourceWorld={worldPos}");
+
         var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref beforeEv);
 
-        var worldPos = _transform.GetWorldPosition(ent);
-        var worldRot = _transform.GetWorldRotation(ent);
         var targetWorldPos = peerGridUid != null
             ? GetLinkedMoveTargetPosition(ent, peerGridUid.Value, worldPos)
             : worldPos;
+
+        if (TryGetForwardLandingPosition(ent, offset, targetWorldPos, peerGridUid, targetMapId, out var forwardLandingWorldPos))
+        {
+            DebugZVerbose(ent, $"using stair exit nudge landing at {forwardLandingWorldPos} for offset={offset}");
+
+            targetWorldPos = forwardLandingWorldPos;
+        }
 
         // Save mover eye rotation state before the move.
         // OnInputParentChange resets RelativeRotation on map change, causing an eye snap.
         // We compensate for the change in relative entity to keep eye orientation seamless.
         Angle savedRelativeRot = default;
         Angle savedTargetRelativeRot = default;
-        EntityUid? oldRelativeEntity = null;
+        Angle savedEyeWorldRot = worldRot;
+        Angle savedTargetEyeWorldRot = worldRot;
         var hasMover = TryComp<InputMoverComponent>(ent, out var mover);
         if (hasMover)
         {
             savedRelativeRot = mover!.RelativeRotation;
             savedTargetRelativeRot = mover.TargetRelativeRotation;
-            oldRelativeEntity = mover.RelativeEntity;
+            if (mover.RelativeEntity is { } oldRelativeEntity)
+            {
+                var oldRelativeWorldRot = _transform.GetWorldRotation(oldRelativeEntity);
+                savedEyeWorldRot = oldRelativeWorldRot + savedRelativeRot;
+                savedTargetEyeWorldRot = oldRelativeWorldRot + savedTargetRelativeRot;
+            }
         }
 
         // SetMapCoordinates doesn't preserve rotation when reparenting across maps.
         // We save world rotation and restore it after the move.
-        _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
+        if (peerGridUid is { } targetPeerGridUid)
+        {
+            var peerGridCoordinates = new EntityCoordinates(
+                targetPeerGridUid,
+                Vector2.Transform(targetWorldPos, _transform.GetInvWorldMatrix(targetPeerGridUid)));
+            _transform.SetCoordinates(ent, peerGridCoordinates);
+        }
+        else
+        {
+            _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
+        }
         // Force set both local rotation and world rotation to ensure consistency.
         var xform = Transform(ent);
         var parentRot = _transform.GetWorldRotation(xform.ParentUid);
         _transform.SetLocalRotation(ent, worldRot - parentRot);
 
         // Restore mover eye rotation to preserve visual orientation across Z-level transition.
-        // Eye angle = WorldRotation(RelativeEntity) + RelativeRotation, so we adjust
-        // RelativeRotation by the difference between old and new relative entity rotations.
+        // Preserve the current eye world rotation directly instead of diffing parent rotations,
+        // which is more stable when linked-grid transitions trigger multiple parent changes.
         if (hasMover && TryComp<InputMoverComponent>(ent, out var moverAfter))
         {
-            var oldRelRot = oldRelativeEntity != null
-                ? _transform.GetWorldRotation(oldRelativeEntity.Value)
-                : Angle.Zero;
             var newRelative = xform.GridUid ?? xform.MapUid;
             var newRelRot = newRelative != null
                 ? _transform.GetWorldRotation(newRelative.Value)
                 : Angle.Zero;
-            var diff = newRelRot - oldRelRot;
 
-            moverAfter.RelativeRotation = savedRelativeRot - diff;
-            moverAfter.TargetRelativeRotation = savedTargetRelativeRot - diff;
+            moverAfter.RelativeEntity = newRelative;
+            moverAfter.RelativeRotation = savedEyeWorldRot - newRelRot;
+            moverAfter.TargetRelativeRotation = savedTargetEyeWorldRot - newRelRot;
             Dirty(ent, moverAfter);
         }
 
         var ev = new CEZLevelMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref ev);
+
+        if (ZDebugEnabled)
+            DebugZ(ent, $"move succeeded offset={offset} newZ={targetZLevel} landing={targetWorldPos}");
 
         return true;
     }
@@ -557,23 +1001,38 @@ public abstract partial class CESharedZLevelsSystem
     public bool TryMoveDownOrChasm(EntityUid ent)
     {
         if (TryMoveDown(ent))
+        {
+            if (ZDebugEnabled)
+                DebugZ(ent, "downward transfer completed");
             return true;
+        }
 
         //welp, that default Chasm behavior. Not really good, but ok for now.
         if (HasComp<ChasmFallingComponent>(ent))
+        {
+            if (ZDebugEnabled)
+                DebugZ(ent, "downward transfer failed and entity is already in chasm fall");
             return false; //Already falling
+        }
 
         var attempt = new CEZLevelChasmAttempt(ent);
         RaiseLocalEvent(ent, attempt);
 
         if (attempt.Cancelled)
+        {
+            if (ZDebugEnabled)
+                DebugZ(ent, "downward transfer failed and chasm fallback was cancelled");
             return false;
+        }
 
         var audio = new SoundPathSpecifier("/Audio/Effects/falling.ogg");
         _audio.PlayPredicted(audio, Transform(ent).Coordinates, ent);
         var falling = AddComp<ChasmFallingComponent>(ent);
         falling.NextDeletionTime = _timing.CurTime + falling.DeletionTime;
         _blocker.UpdateCanMove(ent);
+
+        if (ZDebugEnabled)
+            DebugZ(ent, "downward transfer failed; entity entered chasm fall");
 
         return false;
     }

@@ -38,7 +38,7 @@ public sealed class CEZLevelDebugOverlay : Overlay
         var query = _entityManager.EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var zPhys, out _, out var xform))
         {
-            if (xform.MapUid != xform.ParentUid)
+            if (xform.ParentUid != xform.MapUid && xform.ParentUid != xform.GridUid)
                 continue;
 
             var worldPos = _transform.GetWorldPosition(uid);

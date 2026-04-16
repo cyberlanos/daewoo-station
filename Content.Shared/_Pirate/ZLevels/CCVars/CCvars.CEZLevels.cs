@@ -24,4 +24,10 @@ public sealed partial class CCVars
 
     public static readonly CVarDef<bool>
         CEPostProcess = CVarDef.Create("shaders.ce_post_process", true, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    public static readonly CVarDef<bool>
+        CEDebugMovement = CVarDef.Create("zlevels.ce_debug_movement", false, CVar.SERVERONLY | CVar.ARCHIVE);
+
+    public static readonly CVarDef<bool>
+        CEDebugMovementVerbose = CVarDef.Create("zlevels.ce_debug_movement_verbose", false, CVar.SERVERONLY | CVar.ARCHIVE);
 }
