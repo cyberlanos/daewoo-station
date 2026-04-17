@@ -336,13 +336,7 @@ public abstract partial class CESharedZLevelsSystem
                     if (ZDebugEnabled)
                         DebugZ(uid, $"upward transfer attempted, success={movedUp}");
                     if (movedUp)
-                    {
                         zPhys.LocalPosition -= 1;
-                        // Kill any downward velocity so accumulated gravity doesn't
-                        // push LocalPosition below 0 and trigger an immediate re-descent.
-                        if (zPhys.Velocity < 0f)
-                            zPhys.Velocity = 0f;
-                    }
                 }
             }
 
