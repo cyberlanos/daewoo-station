@@ -24,10 +24,15 @@ public abstract partial class CESharedZLevelsSystem
     private const float ZGravityForce = 9.8f;
     private const float ZVelocityLimit = 20.0f;
     private const float StairUpTransferHeightThreshold = 1f;
-    private const float StairUpLandingForwardNudge = 0.5f;
-    // Target t-offset from the high end of the stair where the entity lands after descending.
-    // Must be > 0.5 so the entity lands past the high zone of curve [1.05, 1.0, 0.1] (h<1.0 at t>0.5).
-    private const float StairDownLandingForwardNudge = 0.6f;
+    // Transfer up when the mover's sampled center reaches late stair 3.
+    // In practice the player's center never reaches the geometric 0.3125 cutoff because the
+    // stair collision stops the body slightly earlier, so we use a center-sample threshold that
+    // matches the reachable point seen in live traces.
+    private const float StairUpTransferSampleThreshold = 0.36f;
+    // Place the mover just inside the next tile after climbing so it will not immediately re-trigger descent.
+    private const float StairUpLandingForwardNudge = 0.05f;
+    // Place the mover at the start of stair 3 after descending so it does not instantly climb back up.
+    private const float StairDownLandingForwardNudge = 0.5f;
     private const float StairDirectionMinimumSpeed = 0.01f;
 
     /// <summary>
@@ -277,7 +282,15 @@ public abstract partial class CESharedZLevelsSystem
 
             if (zPhys.LocalPosition < 0) // Need to descend to Z-level below
             {
-                if (CanAutoDescend(uid, zPhys, xform, physics))
+                var isWeightless = _gravity.IsWeightless(uid, physics, xform);
+                var canAutoDescend = CanAutoDescend(uid, zPhys, xform, physics);
+
+                DebugZStairCsv(uid,
+                    "down_check",
+                    $"allow={StairCsvBool(canAutoDescend)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},weightless={StairCsvBool(isWeightless)}",
+                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{StairCsvBool(isWeightless)}");
+
+                if (canAutoDescend)
                 {
                     if (ZDebugEnabled)
                         DebugZ(uid, "local position dropped below 0, gravity+support present, attempting move down");
@@ -312,7 +325,7 @@ public abstract partial class CESharedZLevelsSystem
             }
 
             var upwardTransferThreshold = StairUpTransferHeightThreshold;
-            if (zPhys.LocalPosition >= upwardTransferThreshold) //Need teleport to ZLevel up
+            if (ShouldAttemptUpwardTransfer(uid, zPhys, upwardTransferThreshold)) //Need teleport to ZLevel up
             {
                 var hasTileAbove = HasTileAbove(uid);
                 if (hasTileAbove) //Hit roof
@@ -399,8 +412,89 @@ public abstract partial class CESharedZLevelsSystem
         return false;
     }
 
+    private bool TryResolveGridAtWorldPositionOnMap(EntityUid mapUid, Vector2 worldPos, out EntityUid gridUid, out MapGridComponent gridComp)
+    {
+        var bestNonEmptyGridUid = EntityUid.Invalid;
+        MapGridComponent? bestNonEmptyGrid = null;
+        var bestNonEmptyArea = float.MaxValue;
+
+        var bestTileGridUid = EntityUid.Invalid;
+        MapGridComponent? bestTileGrid = null;
+        var bestTileArea = float.MaxValue;
+
+        var bestBoundsGridUid = EntityUid.Invalid;
+        MapGridComponent? bestBoundsGrid = null;
+        var bestBoundsArea = float.MaxValue;
+
+        var gridQuery = EntityQueryEnumerator<MapGridComponent, TransformComponent>();
+        while (gridQuery.MoveNext(out var uid, out var grid, out var xform))
+        {
+            if (xform.MapUid != mapUid)
+                continue;
+
+            var gridWorldPos = _transform.GetWorldPosition(uid);
+            var gridWorldRot = _transform.GetWorldRotation(uid);
+            var worldAabb = new Box2Rotated(grid.LocalAABB.Translated(gridWorldPos), gridWorldRot, gridWorldPos).CalcBoundingBox();
+
+            if (!worldAabb.Contains(worldPos))
+                continue;
+
+            var area = worldAabb.Size.X * worldAabb.Size.Y;
+
+            if (_map.TryGetTileRef(uid, grid, worldPos, out var tileRef))
+            {
+                if (!tileRef.Tile.IsEmpty && area < bestNonEmptyArea)
+                {
+                    bestNonEmptyArea = area;
+                    bestNonEmptyGridUid = uid;
+                    bestNonEmptyGrid = grid;
+                }
+                else if (area < bestTileArea)
+                {
+                    bestTileArea = area;
+                    bestTileGridUid = uid;
+                    bestTileGrid = grid;
+                }
+            }
+
+            if (area < bestBoundsArea)
+            {
+                bestBoundsArea = area;
+                bestBoundsGridUid = uid;
+                bestBoundsGrid = grid;
+            }
+        }
+
+        if (bestNonEmptyGridUid != EntityUid.Invalid && bestNonEmptyGrid != null)
+        {
+            gridUid = bestNonEmptyGridUid;
+            gridComp = bestNonEmptyGrid;
+            return true;
+        }
+
+        if (bestTileGridUid != EntityUid.Invalid && bestTileGrid != null)
+        {
+            gridUid = bestTileGridUid;
+            gridComp = bestTileGrid;
+            return true;
+        }
+
+        if (bestBoundsGridUid != EntityUid.Invalid && bestBoundsGrid != null)
+        {
+            gridUid = bestBoundsGridUid;
+            gridComp = bestBoundsGrid;
+            return true;
+        }
+
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+        return false;
+    }
+
     private bool TryResolveGridForMapOffset(EntityUid ent, TransformComponent xform, int offset, out EntityUid gridUid, out MapGridComponent gridComp)
     {
+        var worldPos = _transform.GetWorldPosition(ent);
+
         if (offset == 0)
         {
             if (xform.GridUid is { } currentGridUid &&
@@ -412,7 +506,8 @@ public abstract partial class CESharedZLevelsSystem
             }
 
             if (xform.MapUid is { } currentMapUid &&
-                TryResolveAnyGridOnMap(currentMapUid, out gridUid, out gridComp))
+                (TryResolveGridAtWorldPositionOnMap(currentMapUid, worldPos, out gridUid, out gridComp) ||
+                 TryResolveAnyGridOnMap(currentMapUid, out gridUid, out gridComp)))
             {
                 return true;
             }
@@ -441,7 +536,8 @@ public abstract partial class CESharedZLevelsSystem
 
         if (xform.MapUid is { } sourceMapUid &&
             TryMapOffset(sourceMapUid, offset, out var targetMap) &&
-            TryResolveAnyGridOnMap(targetMap.Value.Owner, out gridUid, out gridComp))
+            (TryResolveGridAtWorldPositionOnMap(targetMap.Value.Owner, worldPos, out gridUid, out gridComp) ||
+             TryResolveAnyGridOnMap(targetMap.Value.Owner, out gridUid, out gridComp)))
         {
             if (offset != 0)
                 DebugZVerbose(ent, $"resolved grid for offset={offset} via z-level map {targetMap.Value.Owner} using grid {ToPrettyString(gridUid)}");
@@ -510,6 +606,10 @@ public abstract partial class CESharedZLevelsSystem
         if (!resolvedByTransferHint)
             DebugZVerbose(ent, $"stair exit nudge fell back to facing direction {forwardDir}");
 
+        DebugZStairCsv(ent,
+            offset > 0 ? "land_up" : "land_down",
+            $"dir={forwardDir},local_x={StairCsvFloat(local.X)},local_y={StairCsvFloat(local.Y)},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}");
+
         return true;
     }
 
@@ -528,7 +628,8 @@ public abstract partial class CESharedZLevelsSystem
         }
 
         if (_map.TryGetMap(targetMapId, out var mapUid) &&
-            TryResolveAnyGridOnMap(mapUid.Value, out var resolvedGridUid, out _))
+            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, worldPos, out var resolvedGridUid, out _) ||
+             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
         {
             tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(resolvedGridUid)));
             return true;
@@ -548,6 +649,93 @@ public abstract partial class CESharedZLevelsSystem
             Direction.South => local.Y,
             _ => 0.5f,
         };
+    }
+
+    private bool TryGetMovementIntentVector(EntityUid ent, out Vector2 direction)
+    {
+        if (TryComp<PhysicsComponent>(ent, out var physics) &&
+            physics.LinearVelocity.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
+        {
+            direction = physics.LinearVelocity;
+            return true;
+        }
+
+        if (TryComp<InputMoverComponent>(ent, out var mover) &&
+            mover.WishDir.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
+        {
+            direction = mover.WishDir;
+            return true;
+        }
+
+        direction = Vector2.Zero;
+        return false;
+    }
+
+    private bool ShouldAttemptUpwardTransfer(EntityUid ent, CEZPhysicsComponent zPhys, float upwardTransferThreshold)
+    {
+        if (zPhys.LocalPosition < upwardTransferThreshold)
+            return false;
+
+        var reason = "non_highground";
+        var allow = true;
+        var sample = 0f;
+        var moveDot = 0f;
+        var moveIntentFound = false;
+        var supportDirection = Direction.Invalid;
+        var upwardDirection = Direction.Invalid;
+
+        if (!TryGetGroundSupportSample((ent, zPhys), out var support, 0, false) ||
+            !support.IsHighGround)
+        {
+            DebugZStairCsv(ent,
+                "up_check",
+                $"allow={StairCsvBool(allow)},reason={reason},sample=na,sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent=na");
+            return true;
+        }
+
+        sample = support.Sample;
+        supportDirection = support.SurfaceDirection;
+
+        if (!TryGetStairTransferDirection(ent, 1, out upwardDirection))
+        {
+            allow = false;
+            reason = "no_up_dir";
+            DebugZStairCsv(ent,
+                "up_check",
+                $"allow={StairCsvBool(allow)},reason={reason},sample={StairCsvFloat(sample)},sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent=na",
+                $"{reason}|{StairCsvFloat(MathF.Round(sample, 2))}|{supportDirection}|{upwardDirection}");
+            return false;
+        }
+
+        // Only trigger when the mover is actually progressing toward the stair's high end.
+        moveIntentFound = TryGetMovementIntentVector(ent, out var movementIntent);
+        if (moveIntentFound)
+            moveDot = Vector2.Dot(Vector2.Normalize(movementIntent), upwardDirection.ToVec());
+
+        if (!moveIntentFound)
+        {
+            allow = false;
+            reason = "no_move_intent";
+            DebugZStairCsv(ent,
+                "up_check",
+                $"allow={StairCsvBool(allow)},reason={reason},sample={StairCsvFloat(sample)},sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent={StairCsvBool(moveIntentFound)}",
+                $"{reason}|{StairCsvFloat(MathF.Round(sample, 2))}|{supportDirection}|{upwardDirection}");
+            return false;
+        }
+
+        allow = moveDot > 0.25f && support.Sample <= StairUpTransferSampleThreshold;
+        reason = moveDot <= 0.25f
+            ? "move_dir_gate"
+            : allow
+                ? "sample_pass"
+                : "sample_gate";
+
+        DebugZStairCsv(ent,
+            "up_check",
+            $"allow={StairCsvBool(allow)},reason={reason},sample={StairCsvFloat(sample)},sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot={StairCsvFloat(moveDot)},move_intent={StairCsvBool(moveIntentFound)}",
+            $"{reason}|{StairCsvFloat(MathF.Round(sample, 2))}|{StairCsvFloat(MathF.Round(moveDot, 2))}|{supportDirection}|{upwardDirection}|{StairCsvBool(moveIntentFound)}");
+
+        return allow;
     }
 
     private readonly struct GroundSupportSample
@@ -1075,6 +1263,14 @@ public abstract partial class CESharedZLevelsSystem
                 Vector2.Transform(targetWorldPos, _transform.GetInvWorldMatrix(targetPeerGridUid)));
             _transform.SetCoordinates(ent, peerGridCoordinates);
         }
+        else if (_map.TryGetMap(targetMapId, out var targetMapUid) &&
+                 TryResolveGridAtWorldPositionOnMap(targetMapUid.Value, targetWorldPos, out var landingGridUid, out _))
+        {
+            var gridCoordinates = new EntityCoordinates(
+                landingGridUid,
+                Vector2.Transform(targetWorldPos, _transform.GetInvWorldMatrix(landingGridUid)));
+            _transform.SetCoordinates(ent, gridCoordinates);
+        }
         else
         {
             _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
@@ -1105,6 +1301,13 @@ public abstract partial class CESharedZLevelsSystem
 
         if (ZDebugEnabled)
             DebugZ(ent, $"move succeeded offset={offset} newZ={targetZLevel} landing={targetWorldPos}");
+
+        if (offset != 0)
+        {
+            DebugZStairCsv(ent,
+                offset > 0 ? "up_move" : "down_move",
+                $"target_z={targetZLevel},landing_x={StairCsvFloat(targetWorldPos.X)},landing_y={StairCsvFloat(targetWorldPos.Y)},peer_grid={(peerGridUid is null ? "null" : ToPrettyString(peerGridUid.Value))}");
+        }
 
         return true;
     }

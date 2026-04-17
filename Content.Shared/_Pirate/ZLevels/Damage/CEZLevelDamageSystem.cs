@@ -4,12 +4,12 @@
  */
 
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
-using Content.Shared.CCVar;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Effects;
 using Content.Shared.Stunnable;
+using SharedCCVars = Content.Shared.CCVar.CCVars;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 using Robust.Shared.Physics.Components;
@@ -44,10 +44,10 @@ public sealed class CEZLevelDamageSystem : EntitySystem
 
         SubscribeLocalEvent<PhysicsComponent, CEZLevelHitEvent>(OnFallDamage);
 
-        _config.OnValueChanged(CCVars.CEBaseFallingDamage, i => BaseFallingDamage = i, true);
-        _config.OnValueChanged(CCVars.CEBaseFallingOtherDamage, i => BaseFallingOtherDamage = i, true);
-        _config.OnValueChanged(CCVars.CEBaseFallingStunTime, i => BaseFallingStunTime = i, true);
-        _config.OnValueChanged(CCVars.CEBaseFallingOtherStunTime, i => BaseFallingOtherStunTime = i, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingDamage, i => BaseFallingDamage = i, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherDamage, i => BaseFallingOtherDamage = i, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingStunTime, i => BaseFallingStunTime = i, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherStunTime, i => BaseFallingOtherStunTime = i, true);
     }
 
     private void OnFallDamage(Entity<PhysicsComponent> ent, ref CEZLevelHitEvent args)
