@@ -563,14 +563,13 @@
         color: "#263E5D" # Pirate bluesec
         sprite: _Goobstation/Clothing/Uniforms/Jumpskirt/color/color.rsi # Goob
       - state: overlay-inhand-left
-        sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/security.rsi # Pirate bluesec
+        sprite: _Goobstation/Clothing/Uniforms/Jumpsuit/Security/security.rsi # Goob
       right:
       - state: inhand-right
         color: "#263E5D" # Pirate bluesec
         sprite: _Goobstation/Clothing/Uniforms/Jumpskirt/color/color.rsi # Goob
       - state: overlay-inhand-right
-        sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/security.rsi # Pirate bluesec
-
+        sprite: _Goobstation/Clothing/Uniforms/Jumpsuit/Security/security.rsi # Goob
 
 - type: entity
   parent: [ClothingUniformSkirtBase, ClothingUniformFoldableBase, BaseSecurityContraband]

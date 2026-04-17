@@ -83,7 +83,6 @@
   startingGear: LawyerGear
   icon: "JobIconLawyer"
   supervisors: job-supervisors-hop
-  whitelisted: true # Pirate
   guides: # goobstation
   - SpaceLaw
   - LegalSOP

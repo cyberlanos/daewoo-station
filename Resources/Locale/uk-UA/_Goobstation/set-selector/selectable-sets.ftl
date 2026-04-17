@@ -1,3 +1,16 @@
+## Command - Командування
+# Captain - Капітан
+
+selectable-set-captain-sabre-name = Капітанська шабля
+selectable-set-captain-sabre-description = Стандартна, сучасного дизайну шабля. 
+
+selectable-set-captain-sabre-heavy-name = Важка шабля
+selectable-set-captain-sabre-heavy-description = Важка та товста що не дає їй змоги різати, але має чудову пробивну силу, що пробиває навіть самі товсті скафандри ваших ворогів.
+
+selectable-set-captain-sabre-shashka-name = Шашка
+selectable-set-captain-sabre-shashka-description = Легка швидка та гостра, але має погане пробиття.
+
+
 # Thief
 
 selectable-set-thief-anatomy-name = Набір «Анатомія»
@@ -102,6 +115,12 @@ selectable-set-blueshield-cqc-name = набір «Ближній бій»
 selectable-set-blueshield-cqc-description = Іноді доводиться бруднити руки.
     Включає: книгу, здатну навчити користувача
     просунутому ближньому бою.
+
+#region Pirate: katana
+selectable-set-blueshield-kendo-name = набір «Кендо»
+selectable-set-blueshield-kendo-description = Набір мечника, зосереджений на терпінні та захисті. Клинок може блокувати й відбивати удари, а потім відповідати сильнішими атаками, коли його сила зростає.
+    Включає: піхви та учігатану.
+#endregion Pirate: katana
 
 selectable-set-blueshield-chester-name = набір «Честер»
 selectable-set-blueshield-chester-description = Готові до полювання?
