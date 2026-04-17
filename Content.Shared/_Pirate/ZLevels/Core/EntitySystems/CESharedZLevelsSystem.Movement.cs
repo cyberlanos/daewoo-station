@@ -25,7 +25,9 @@ public abstract partial class CESharedZLevelsSystem
     private const float ZVelocityLimit = 20.0f;
     private const float StairUpTransferHeightThreshold = 1f;
     private const float StairUpLandingForwardNudge = 0.5f;
-    private const float StairDownLandingForwardNudge = 0f;
+    // Target t-offset from the high end of the stair where the entity lands after descending.
+    // Must be > 0.5 so the entity lands past the high zone of curve [1.05, 1.0, 0.1] (h<1.0 at t>0.5).
+    private const float StairDownLandingForwardNudge = 0.6f;
     private const float StairDirectionMinimumSpeed = 0.01f;
 
     /// <summary>
@@ -84,23 +86,27 @@ public abstract partial class CESharedZLevelsSystem
     {
         var oldGroundHeight = ent.Comp.CurrentGroundHeight;
         var oldSticky = ent.Comp.CurrentStickyGround;
+        var oldFromBelow = ent.Comp.CurrentGroundFromBelowLevel;
         var oldSupportBelow = ent.Comp.CurrentHasSupportBelow;
         var oldHighGroundBelow = ent.Comp.CurrentHighGroundBelow;
 
-        ent.Comp.CurrentGroundHeight = ComputeGroundHeightInternal((ent, ent), out var sticky);
+        ent.Comp.CurrentGroundHeight = ComputeGroundHeightInternal((ent, ent), out var sticky, out var fromBelow);
         ent.Comp.CurrentStickyGround = sticky;
+        ent.Comp.CurrentGroundFromBelowLevel = fromBelow;
         ent.Comp.CurrentHasSupportBelow = ComputeHasSupportBelow(ent, Transform(ent), out var isHighGround);
         ent.Comp.CurrentHighGroundBelow = isHighGround;
 
         if (ZDebugEnabled &&
             (MathF.Abs(oldGroundHeight - ent.Comp.CurrentGroundHeight) > 0.01f ||
              oldSticky != ent.Comp.CurrentStickyGround ||
+             oldFromBelow != ent.Comp.CurrentGroundFromBelowLevel ||
              oldSupportBelow != ent.Comp.CurrentHasSupportBelow ||
              oldHighGroundBelow != ent.Comp.CurrentHighGroundBelow))
         {
             DebugZ(ent,
                 $"movement cache updated at tile={_transform.GetGridOrMapTilePosition(ent)} world={_transform.GetWorldPosition(ent)} " +
                 $"ground {oldGroundHeight:0.00}->{ent.Comp.CurrentGroundHeight:0.00} sticky {oldSticky}->{ent.Comp.CurrentStickyGround} " +
+                $"fromBelow {oldFromBelow}->{ent.Comp.CurrentGroundFromBelowLevel} " +
                 $"supportBelow {oldSupportBelow}->{ent.Comp.CurrentHasSupportBelow} highGroundBelow {oldHighGroundBelow}->{ent.Comp.CurrentHighGroundBelow}");
         }
     }
@@ -197,12 +203,16 @@ public abstract partial class CESharedZLevelsSystem
             var oldVelocity = zPhys.Velocity;
             var oldHeight = zPhys.LocalPosition;
 
-            if (physics.BodyStatus == BodyStatus.OnGround)
+            // Apply Z-gravity unless the entity is resting on an actual floor of the current level.
+            // Entities parented to map (no grid) are always BodyStatus.InAir in SS14 physics, so
+            // we cannot use physics.BodyStatus to detect ground rest.
+            var restingOnGround = !zPhys.CurrentGroundFromBelowLevel
+                                  && (zPhys.LocalPosition - zPhys.CurrentGroundHeight) <= 0.001f
+                                  && zPhys.Velocity <= 0f;
+            if (!restingOnGround)
             {
-                //Velocity application
                 var velocityEv = new CEGetZVelocityEvent((uid, zPhys));
                 RaiseLocalEvent(uid, velocityEv);
-
                 zPhys.Velocity += velocityEv.VelocityDelta * frameTime;
             }
 
@@ -213,8 +223,10 @@ public abstract partial class CESharedZLevelsSystem
             var snappedUpToGround = false;
             var snappedDownToStickyGround = false;
 
-            // AutoStep: lift entity up if floor is higher
-            if (zPhys.AutoStep && distanceToGround < 0)
+            // AutoStep: lift entity up if floor is higher.
+            // Skip when ground came from the level below — a stair peak poking above this level's
+            // floor plane should not trap the entity; let gravity pull it through to the lower level.
+            if (zPhys.AutoStep && distanceToGround < 0 && !zPhys.CurrentGroundFromBelowLevel)
             {
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
                 distanceToGround = 0f;
@@ -236,7 +248,7 @@ public abstract partial class CESharedZLevelsSystem
 
             if (zPhys.Velocity < 0) //Falling down
             {
-                if (distanceToGround <= 0.05f) //There`s a ground
+                if (distanceToGround <= 0.05f && !zPhys.CurrentGroundFromBelowLevel) //There`s a ground
                 {
                     var suppressBounce = snappedDownToStickyGround ||
                                          snappedUpToGround && zPhys.CurrentGroundHeight > 0.01f;
@@ -324,7 +336,13 @@ public abstract partial class CESharedZLevelsSystem
                     if (ZDebugEnabled)
                         DebugZ(uid, $"upward transfer attempted, success={movedUp}");
                     if (movedUp)
+                    {
                         zPhys.LocalPosition -= 1;
+                        // Kill any downward velocity so accumulated gravity doesn't
+                        // push LocalPosition below 0 and trigger an immediate re-descent.
+                        if (zPhys.Velocity < 0f)
+                            zPhys.Velocity = 0f;
+                    }
                 }
             }
 
@@ -335,9 +353,10 @@ public abstract partial class CESharedZLevelsSystem
             {
                 var finalDistanceToGround = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
                 DebugZVerbose(uid,
-                    $"tick frame={frameTime:0.000} body={physics.BodyStatus} " +
+                    $"tick frame={frameTime:0.000} " +
                     $"pos {oldHeight:0.00}->{zPhys.LocalPosition:0.00} vel {oldVelocity:0.00}->{zPhys.Velocity:0.00} " +
-                    $"dist={finalDistanceToGround:0.00}");
+                    $"dist={finalDistanceToGround:0.00} ground={zPhys.CurrentGroundHeight:0.00} " +
+                    $"fromBelow={zPhys.CurrentGroundFromBelowLevel} resting={restingOnGround}");
             }
 
             if (Math.Abs(oldVelocity - zPhys.Velocity) > 0.01f)
@@ -471,7 +490,22 @@ public abstract partial class CESharedZLevelsSystem
                 return false;
             }
 
-            landingWorldPos += forwardDir.ToVec() * StairDownLandingForwardNudge;
+            // Compute how far the entity already is from the stair's high end.
+            // forwardDir points from high end toward low end, so the component of
+            // tileLocal along forwardDir equals t (distance from the high end).
+            var localAlongForward = forwardDir switch
+            {
+                Direction.North => local.Y,
+                Direction.South => 1f - local.Y,
+                Direction.East => local.X,
+                Direction.West => 1f - local.X,
+                _ => 0.5f,
+            };
+
+            // Only nudge the amount needed to reach the target t; never overshoot.
+            var neededClearance = StairDownLandingForwardNudge - localAlongForward;
+            if (neededClearance > 0)
+                landingWorldPos += forwardDir.ToVec() * neededClearance;
         }
         else
         {
@@ -774,14 +808,20 @@ public abstract partial class CESharedZLevelsSystem
     /// Computes the "ground height" relative to the entity's current Z-level.
     /// Returns values where 0 means ground on the same level, -1 means ground one level below,
     /// and intermediate values are possible for high ground entities (stairs).
+    /// <paramref name="fromBelowLevel"/> is true when the nearest support was found on the
+    /// Z-level below rather than on the current one (FloorOffset > 0). When true, AutoStep
+    /// and Bounce are suppressed so a stair peak that pokes above the current-level floor plane
+    /// does not trap the entity instead of letting it fall through.
     /// </summary>
-    private float ComputeGroundHeightInternal(Entity<CEZPhysicsComponent?> target, out bool stickyGround, int maxFloors = 1)
+    private float ComputeGroundHeightInternal(Entity<CEZPhysicsComponent?> target, out bool stickyGround, out bool fromBelowLevel, int maxFloors = 1)
     {
         stickyGround = false;
+        fromBelowLevel = false;
         if (!TryGetGroundSupportSample(target, out var support, maxFloors, true))
             return -maxFloors;
 
         stickyGround = support.Sticky;
+        fromBelowLevel = support.FloorOffset > 0;
         return support.GroundHeight;
     }
 

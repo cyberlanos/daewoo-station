@@ -4,6 +4,7 @@
  */
 
 using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared._Pirate.ZLevels.Ghost;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
@@ -53,6 +54,13 @@ public abstract partial class CESharedZLevelsSystem
     {
         if (TerminatingOrDeleted(ent))
             return;
+
+        // Ghost movers use actions only — exclude from automatic Z-physics entirely
+        if (HasComp<CEZLevelGhostMoverComponent>(ent))
+        {
+            SetActiveStatus(ent, false);
+            return;
+        }
 
         var xform = Transform(ent);
 

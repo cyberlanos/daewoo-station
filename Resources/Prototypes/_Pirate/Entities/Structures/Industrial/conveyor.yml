@@ -1,0 +1,41 @@
+- type: entity
+  id: CEConveyorLadder
+  name: conveyor ladder
+  parent: ConveyorBelt
+  description: A conveyor ladder that can carry items and support multiz traversal.
+  components:
+  - type: Sprite
+    drawdepth: Mobs
+    sprite: _Pirate/Structures/Industrial/Conveyor/ladder.rsi
+    state: base
+  - type: CEZLevelHighGround
+    stick: true
+    heightCurve:
+    - 1.05
+    - 1.05
+    - 0.1
+    - 0.1
+  - type: GenericVisualizer
+    visuals:
+      enum.ConveyorVisuals.State:
+        enum.ConveyorState.Off:
+          Off: { state: base }
+          Forward: { state: moving_forward }
+          Reverse: { state: moving_backward }
+  - type: Conveyor
+    speed: 3
+
+- type: entity
+  id: CEConveyorLadderReverse
+  parent: CEConveyorLadder
+  suffix: Reverse
+  components:
+  - type: Sprite
+    sprite: _Pirate/Structures/Industrial/Conveyor/ladder_inversed.rsi
+  - type: CEZLevelHighGround
+    stick: true
+    heightCurve:
+    - 0.1
+    - 0.1
+    - 1.05
+    - 1.05

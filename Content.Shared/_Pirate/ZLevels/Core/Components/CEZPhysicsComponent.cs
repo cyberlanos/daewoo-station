@@ -65,6 +65,15 @@ public sealed partial class CEZPhysicsComponent : Component
     [DataField]
     public bool CurrentHighGroundBelow;
 
+    /// <summary>
+    /// Cached flag: true when the nearest ground found by ComputeGroundHeightInternal came
+    /// from the Z-level BELOW the current one (floor scan offset > 0).
+    /// When true, AutoStep and Bounce are suppressed so the entity falls through naturally
+    /// instead of being held up by a stair peak that pokes above the current-level floor plane.
+    /// </summary>
+    [DataField]
+    public bool CurrentGroundFromBelowLevel;
+
     // Physics
 
     [DataField, AutoNetworkedField]
