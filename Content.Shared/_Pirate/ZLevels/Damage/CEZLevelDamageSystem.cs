@@ -16,6 +16,7 @@ using Robust.Shared.Physics.Components;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
+using System.Globalization;
 
 namespace Content.Shared._Pirate.ZLevels.Damage;
 
@@ -29,6 +30,8 @@ public sealed class CEZLevelDamageSystem : EntitySystem
     [Dependency] private readonly INetManager _net = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedColorFlashEffectSystem _color = default!;
+
+    private bool _zDebugStairsEnabled;
 
     public float BaseFallingDamage { get; private set; }
     public float BaseFallingOtherDamage { get; private set; }
@@ -48,6 +51,14 @@ public sealed class CEZLevelDamageSystem : EntitySystem
         _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherDamage, i => BaseFallingOtherDamage = i, true);
         _config.OnValueChanged(SharedCCVars.CEBaseFallingStunTime, i => BaseFallingStunTime = i, true);
         _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherStunTime, i => BaseFallingOtherStunTime = i, true);
+
+        if (_net.IsServer)
+            _config.OnValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged, true);
+    }
+
+    private void OnStairDebugChanged(bool enabled)
+    {
+        _zDebugStairsEnabled = enabled;
     }
 
     private void OnFallDamage(Entity<PhysicsComponent> ent, ref CEZLevelHitEvent args)
@@ -109,8 +120,26 @@ public sealed class CEZLevelDamageSystem : EntitySystem
         if (knockdownTime > 0)
             _stun.TryKnockdown(ent.Owner, TimeSpan.FromSeconds(knockdownTime));
 
+        DebugZStairCsv(ent.Owner,
+            "damage_apply",
+            $"impact={StairCsvFloat(args.ImpactPower)},self_damage={StairCsvFloat(damageAmount)},self_stun={StairCsvFloat(knockdownTime)},other_damage={StairCsvFloat(otherDamage)},other_stun={StairCsvFloat(otherStun)},targets={entitiesAround.Count},mass={StairCsvFloat(ent.Comp.Mass)}");
+
         if (_net.IsClient && _timing.IsFirstTimePredicted) //Only visuals so client only
             SpawnAtPosition(FallVFX, Transform(ent).Coordinates);
+    }
+
+    private static string StairCsvFloat(float value)
+    {
+        return value.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
+    private void DebugZStairCsv(EntityUid ent, string eventName, string payload)
+    {
+        if (!_net.IsServer || !_zDebugStairsEnabled)
+            return;
+
+        var xform = Transform(ent);
+        Log.Info($"[CEZStairCsv] event={eventName},uid={ToPrettyString(ent)},parent={xform.ParentUid},grid={xform.GridUid},map={xform.MapUid},{payload}");
     }
 }
 

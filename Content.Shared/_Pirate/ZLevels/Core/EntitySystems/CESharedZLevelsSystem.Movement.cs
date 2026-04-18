@@ -32,8 +32,10 @@ public abstract partial class CESharedZLevelsSystem
     // Place the mover just inside the next tile after climbing so it will not immediately re-trigger descent.
     private const float StairUpLandingForwardNudge = 0.05f;
     // Place the mover at the start of stair 3 after descending so it does not instantly climb back up.
-    private const float StairDownLandingForwardNudge = 0.5f;
+    private const float StairDownLandingSample = 0.5f;
     private const float StairDirectionMinimumSpeed = 0.01f;
+    private const float StairTransferGraceSeconds = 0.2f;
+    private const float FlatGroundSettleVelocityThreshold = 1.0f;
 
     /// <summary>
     /// The minimum speed required to trigger LandEvent events.
@@ -207,6 +209,7 @@ public abstract partial class CESharedZLevelsSystem
 
             var oldVelocity = zPhys.Velocity;
             var oldHeight = zPhys.LocalPosition;
+            var startedOnElevatedGround = zPhys.CurrentStickyGround || zPhys.CurrentGroundHeight > 0.01f;
 
             // Apply Z-gravity unless the entity is resting on an actual floor of the current level.
             // Entities parented to map (no grid) are always BodyStatus.InAir in SS14 physics, so
@@ -225,6 +228,7 @@ public abstract partial class CESharedZLevelsSystem
             zPhys.LocalPosition += zPhys.Velocity * frameTime;
 
             var distanceToGround = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
+            var distanceToGroundBeforeSnap = distanceToGround;
             var snappedUpToGround = false;
             var snappedDownToStickyGround = false;
 
@@ -236,6 +240,10 @@ public abstract partial class CESharedZLevelsSystem
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
                 distanceToGround = 0f;
                 snappedUpToGround = true;
+                DebugZStairCsv(uid,
+                    "snap_up",
+                    $"dist_before={StairCsvFloat(distanceToGroundBeforeSnap)},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}",
+                    $"{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}|{StairCsvFloat(MathF.Round(distanceToGroundBeforeSnap, 2))}|{StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}");
                 if (ZDebugEnabled &&
                     (zPhys.CurrentGroundHeight > 0.01f || zPhys.CurrentStickyGround || zPhys.LocalPosition > 0.01f))
                     DebugZVerbose(uid, $"autostep snapped entity to ground at local={zPhys.LocalPosition:0.00}");
@@ -247,6 +255,10 @@ public abstract partial class CESharedZLevelsSystem
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
                 distanceToGround = 0f;
                 snappedDownToStickyGround = true;
+                DebugZStairCsv(uid,
+                    "snap_sticky",
+                    $"dist_before={StairCsvFloat(distanceToGroundBeforeSnap)},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}",
+                    $"{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}|{StairCsvFloat(MathF.Round(distanceToGroundBeforeSnap, 2))}|{StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}");
                 if (ZDebugEnabled)
                     DebugZVerbose(uid, $"sticky ground snapped entity to local={zPhys.LocalPosition:0.00}");
             }
@@ -255,11 +267,24 @@ public abstract partial class CESharedZLevelsSystem
             {
                 if (distanceToGround <= 0.05f && !zPhys.CurrentGroundFromBelowLevel) //There`s a ground
                 {
+                    var impactPower = MathF.Abs(zPhys.Velocity);
                     var suppressBounce = snappedDownToStickyGround ||
-                                         snappedUpToGround && zPhys.CurrentGroundHeight > 0.01f;
+                                         snappedUpToGround &&
+                                         (zPhys.CurrentGroundHeight > 0.01f ||
+                                          impactPower <= FlatGroundSettleVelocityThreshold ||
+                                          startedOnElevatedGround);
+
+                    DebugZStairCsv(uid,
+                        "ground_contact",
+                        $"dist={StairCsvFloat(distanceToGround)},suppress={StairCsvBool(suppressBounce)},impact={StairCsvFloat(impactPower)},snap_up={StairCsvBool(snappedUpToGround)},snap_sticky={StairCsvBool(snappedDownToStickyGround)},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}",
+                        $"{StairCsvBool(suppressBounce)}|{StairCsvFloat(MathF.Round(impactPower, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}|{StairCsvBool(snappedUpToGround)}|{StairCsvBool(snappedDownToStickyGround)}");
 
                     if (suppressBounce)
                     {
+                        DebugZStairCsv(uid,
+                            "ground_settle",
+                            $"impact={StairCsvFloat(impactPower)},mode={(snappedDownToStickyGround ? "sticky" : "stair")},ground={StairCsvFloat(zPhys.CurrentGroundHeight)}",
+                            $"{(snappedDownToStickyGround ? "sticky" : "stair")}|{StairCsvFloat(MathF.Round(impactPower, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}");
                         if (ZDebugEnabled)
                             DebugZVerbose(uid, $"suppressed bounce on stair contact at ground={zPhys.CurrentGroundHeight:0.00}");
 
@@ -267,15 +292,25 @@ public abstract partial class CESharedZLevelsSystem
                     }
                     else
                     {
-                        if (MathF.Abs(zPhys.Velocity) >= ImpactVelocityLimit)
+                        var preBounceVelocity = zPhys.Velocity;
+
+                        if (impactPower >= ImpactVelocityLimit)
                         {
+                            DebugZStairCsv(uid,
+                                "impact_hit",
+                                $"impact={StairCsvFloat(impactPower)},threshold={StairCsvFloat(ImpactVelocityLimit)},ground={StairCsvFloat(zPhys.CurrentGroundHeight)},bounciness={StairCsvFloat(zPhys.Bounciness)}",
+                                $"{StairCsvFloat(MathF.Round(impactPower, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}|{StairCsvFloat(MathF.Round(zPhys.Bounciness, 2))}");
                             var ev = new CEZLevelHitEvent(-zPhys.Velocity);
                             RaiseLocalEvent(uid, ref ev);
                             var land = new LandEvent(null, true);
                             RaiseLocalEvent(uid, ref land);
                         }
 
-                        zPhys.Velocity = -zPhys.Velocity * zPhys.Bounciness;
+                        zPhys.Velocity = -preBounceVelocity * zPhys.Bounciness;
+                        DebugZStairCsv(uid,
+                            "impact_bounce",
+                            $"old_vel={StairCsvFloat(preBounceVelocity)},new_vel={StairCsvFloat(zPhys.Velocity)},ground={StairCsvFloat(zPhys.CurrentGroundHeight)},bounciness={StairCsvFloat(zPhys.Bounciness)}",
+                            $"{StairCsvFloat(MathF.Round(preBounceVelocity, 2))}|{StairCsvFloat(MathF.Round(zPhys.Velocity, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}");
                     }
                 }
             }
@@ -283,12 +318,13 @@ public abstract partial class CESharedZLevelsSystem
             if (zPhys.LocalPosition < 0) // Need to descend to Z-level below
             {
                 var isWeightless = _gravity.IsWeightless(uid, physics, xform);
-                var canAutoDescend = CanAutoDescend(uid, zPhys, xform, physics);
+                var downBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
+                var canAutoDescend = !downBlocked && CanAutoDescend(uid, zPhys, xform, physics);
 
                 DebugZStairCsv(uid,
                     "down_check",
-                    $"allow={StairCsvBool(canAutoDescend)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},weightless={StairCsvBool(isWeightless)}",
-                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{StairCsvBool(isWeightless)}");
+                    $"allow={StairCsvBool(canAutoDescend)},blocked={StairCsvBool(downBlocked)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},weightless={StairCsvBool(isWeightless)}",
+                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(downBlocked)}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{StairCsvBool(isWeightless)}");
 
                 if (canAutoDescend)
                 {
@@ -297,7 +333,9 @@ public abstract partial class CESharedZLevelsSystem
 
                     if (TryMoveDown(uid))
                     {
-                        zPhys.LocalPosition += 1;
+                        zPhys.LocalPosition = MathF.Max(0f, zPhys.CurrentGroundHeight);
+                        zPhys.Velocity = 0f;
+                        zPhys.AutoUpBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
 
                         if (!zPhys.CurrentStickyGround)
                         {
@@ -318,7 +356,7 @@ public abstract partial class CESharedZLevelsSystem
                 {
                     // Weightless or no floor below — clamp and float on current level
                     if (ZDebugEnabled)
-                        DebugZ(uid, $"descent blocked (weightless or no floor below), clamping to 0 — supportBelow={zPhys.CurrentHasSupportBelow}");
+                        DebugZ(uid, $"descent blocked (blocked={downBlocked}, weightless={isWeightless}, supportBelow={zPhys.CurrentHasSupportBelow}), clamping to 0");
                     zPhys.LocalPosition = 0f;
                     if (zPhys.Velocity < 0f) zPhys.Velocity = 0f;
                 }
@@ -349,7 +387,11 @@ public abstract partial class CESharedZLevelsSystem
                     if (ZDebugEnabled)
                         DebugZ(uid, $"upward transfer attempted, success={movedUp}");
                     if (movedUp)
-                        zPhys.LocalPosition -= 1;
+                    {
+                        zPhys.LocalPosition = MathF.Max(0f, zPhys.CurrentGroundHeight);
+                        zPhys.Velocity = 0f;
+                        zPhys.AutoDownBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
+                    }
                 }
             }
 
@@ -580,22 +622,21 @@ public abstract partial class CESharedZLevelsSystem
                 return false;
             }
 
-            // Compute how far the entity already is from the stair's high end.
-            // forwardDir points from high end toward low end, so the component of
-            // tileLocal along forwardDir equals t (distance from the high end).
-            var localAlongForward = forwardDir switch
+            if (!TryComp<CEZPhysicsComponent>(ent, out var sourceZPhys) ||
+                !TryGetGroundSupportSample((ent, sourceZPhys), out var support, 1, false) ||
+                !support.IsHighGround ||
+                support.SurfaceDirection != forwardDir ||
+                !TrySetTileLocalForStairSample(local, forwardDir, StairDownLandingSample, out var targetLocal))
             {
-                Direction.North => local.Y,
-                Direction.South => 1f - local.Y,
-                Direction.East => local.X,
-                Direction.West => 1f - local.X,
-                _ => 0.5f,
-            };
+                DebugZVerbose(ent, "stair exit placement skipped for downward move: no straight stair sample could be resolved");
+                return false;
+            }
 
-            // Only nudge the amount needed to reach the target t; never overshoot.
-            var neededClearance = StairDownLandingForwardNudge - localAlongForward;
-            if (neededClearance > 0)
-                landingWorldPos += forwardDir.ToVec() * neededClearance;
+            if (!TrySetTileLocalWorldPosition(targetLocal, baseTargetWorldPos, targetGridUid, targetMapId, out landingWorldPos))
+            {
+                DebugZVerbose(ent, "stair exit placement skipped for downward move: failed to convert target stair sample to world position");
+                return false;
+            }
         }
         else
         {
@@ -651,6 +692,58 @@ public abstract partial class CESharedZLevelsSystem
         };
     }
 
+    private static bool TrySetTileLocalForStairSample(Vector2 currentLocal, Direction dir, float sample, out Vector2 targetLocal)
+    {
+        targetLocal = currentLocal;
+        sample = Math.Clamp(sample, 0f, 1f);
+
+        switch (dir)
+        {
+            case Direction.East:
+                targetLocal.X = sample;
+                return true;
+            case Direction.West:
+                targetLocal.X = 1f - sample;
+                return true;
+            case Direction.North:
+                targetLocal.Y = sample;
+                return true;
+            case Direction.South:
+                targetLocal.Y = 1f - sample;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool TrySetTileLocalWorldPosition(Vector2 targetLocal, Vector2 fallbackWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos)
+    {
+        if (targetGridUid is { } gridUid &&
+            _gridQuery.HasComp(gridUid))
+        {
+            var localFallback = Vector2.Transform(fallbackWorldPos, _transform.GetInvWorldMatrix(gridUid));
+            var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
+            var localPos = tileOrigin + targetLocal;
+            landingWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(gridUid));
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var mapUid) &&
+            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out var resolvedGridUid, out _) ||
+             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
+        {
+            var localFallback = Vector2.Transform(fallbackWorldPos, _transform.GetInvWorldMatrix(resolvedGridUid));
+            var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
+            var localPos = tileOrigin + targetLocal;
+            landingWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(resolvedGridUid));
+            return true;
+        }
+
+        var worldTileOrigin = new Vector2(MathF.Floor(fallbackWorldPos.X), MathF.Floor(fallbackWorldPos.Y));
+        landingWorldPos = worldTileOrigin + targetLocal;
+        return true;
+    }
+
     private bool TryGetMovementIntentVector(EntityUid ent, out Vector2 direction)
     {
         if (TryComp<PhysicsComponent>(ent, out var physics) &&
@@ -676,8 +769,17 @@ public abstract partial class CESharedZLevelsSystem
         if (zPhys.LocalPosition < upwardTransferThreshold)
             return false;
 
+        if (_timing.CurTime < zPhys.AutoUpBlockedUntil)
+        {
+            DebugZStairCsv(ent,
+                "up_check",
+                $"allow=0,reason=blocked,sample=na,sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={Direction.Invalid},up_dir={Direction.Invalid},move_dot=na,move_intent=na",
+                "blocked");
+            return false;
+        }
+
         var reason = "non_highground";
-        var allow = true;
+        var allow = false;
         var sample = 0f;
         var moveDot = 0f;
         var moveIntentFound = false;
@@ -687,10 +789,11 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryGetGroundSupportSample((ent, zPhys), out var support, 0, false) ||
             !support.IsHighGround)
         {
+            reason = "no_highground";
             DebugZStairCsv(ent,
                 "up_check",
                 $"allow={StairCsvBool(allow)},reason={reason},sample=na,sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent=na");
-            return true;
+            return false;
         }
 
         sample = support.Sample;
@@ -805,10 +908,7 @@ public abstract partial class CESharedZLevelsSystem
             ? curve[0]
             : InterpolateHeightCurve(curve, t);
 
-        var sticky = target.Comp != null &&
-                     target.Comp.Velocity < 0 &&
-                     target.Comp.Velocity > -2f &&
-                     heightComp.Stick;
+        var sticky = floor == 0 && heightComp.Stick;
 
         var groundHeight = -floor + groundY;
         sample = new GroundSupportSample(
@@ -1275,8 +1375,20 @@ public abstract partial class CESharedZLevelsSystem
         {
             _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
         }
-        // Force set both local rotation and world rotation to ensure consistency.
+
         var xform = Transform(ent);
+        if (xform.GridUid == null &&
+            _map.TryGetMap(targetMapId, out var reattachMapUid) &&
+            TryResolveGridAtWorldPositionOnMap(reattachMapUid.Value, targetWorldPos, out var reattachGridUid, out _))
+        {
+            var gridCoordinates = new EntityCoordinates(
+                reattachGridUid,
+                Vector2.Transform(targetWorldPos, _transform.GetInvWorldMatrix(reattachGridUid)));
+            _transform.SetCoordinates(ent, gridCoordinates);
+            xform = Transform(ent);
+        }
+
+        // Force set both local rotation and world rotation to ensure consistency.
         var parentRot = _transform.GetWorldRotation(xform.ParentUid);
         _transform.SetLocalRotation(ent, worldRot - parentRot);
 

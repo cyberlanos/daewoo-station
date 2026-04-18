@@ -6,6 +6,7 @@
 using System.Numerics;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Robust.Shared.GameStates;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
 namespace Content.Shared._Pirate.ZLevels.Core.Components;
 
@@ -81,6 +82,18 @@ public sealed partial class CEZPhysicsComponent : Component
 
     [DataField, AutoNetworkedField]
     public float GravityMultiplier = 1f;
+
+    /// <summary>
+    /// Short grace window after an automatic move down to prevent immediately re-triggering a move up on the same stair.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    public TimeSpan AutoUpBlockedUntil;
+
+    /// <summary>
+    /// Short grace window after an automatic move up to prevent immediately re-triggering a move down on the same stair.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    public TimeSpan AutoDownBlockedUntil;
 
     // Visuals
 
