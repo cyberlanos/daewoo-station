@@ -20,10 +20,15 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
     [Dependency] private readonly TransformSystem _transform = default!;
     [Dependency] private readonly MetaDataSystem _meta = default!;
     [Dependency] private readonly StationSystem _station = default!;
+    private bool _serverInitialized;
 
     public override void Initialize()
     {
+        if (_serverInitialized)
+            return;
+
         base.Initialize();
+        _serverInitialized = true;
         InitView();
         InitGridSync();
 

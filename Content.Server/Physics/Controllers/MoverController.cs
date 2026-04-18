@@ -58,6 +58,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
+using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Friction;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
@@ -334,6 +335,14 @@ public sealed class MoverController : SharedMoverController
             if (!TryComp(consoleEnt, out TransformComponent? xform)) continue;
 
             var gridId = xform.GridUid;
+            if (gridId != null &&
+                TryComp<CEZLinkedGridComponent>(gridId, out var linked) &&
+                linked.Depth != 0 &&
+                linked.PeerGrids.TryGetValue(0, out var leaderGrid))
+            {
+                gridId = leaderGrid;
+            }
+
             // This tries to see if the grid is a shuttle and if the console should work.
             if (!TryComp<MapGridComponent>(gridId, out var _) ||
                 !shuttleQuery.TryGetComponent(gridId, out var shuttleComponent) ||

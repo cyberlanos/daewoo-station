@@ -32,12 +32,17 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     private EntityQuery<CEZLevelMapComponent> _zMapQuery;
     private EntityQuery<FTLMapComponent> _ftlMapQuery;
     private EntityQuery<MapGridComponent> _gridQuery;
+    private bool _sharedInitialized;
 
     protected EntityQuery<CEZPhysicsComponent> ZPhyzQuery;
 
     public override void Initialize()
     {
+        if (_sharedInitialized)
+            return;
+
         base.Initialize();
+        _sharedInitialized = true;
 
         _mapQuery = GetEntityQuery<MapComponent>();
         _zMapQuery = GetEntityQuery<CEZLevelMapComponent>();

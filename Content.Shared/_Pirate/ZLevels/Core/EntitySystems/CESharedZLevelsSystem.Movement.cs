@@ -64,7 +64,8 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentInit>(OnActiveInit);
 
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
-        SubscribeLocalEvent<MapGridComponent, MoveEvent>(OnGridMove);
+        SubscribeLocalEvent<MapGridComponent, EntParentChangedMessage>(OnGridParentChanged);
+        SubscribeLocalEvent<MapGridComponent, MapUidChangedEvent>(OnGridMapUidChanged);
         SubscribeLocalEvent<CEZLevelMapComponent, TileChangedEvent>(OnTileChanged);
     }
 
@@ -305,11 +306,13 @@ public abstract partial class CESharedZLevelsSystem
         CacheMovement(ent);
     }
 
-    private void OnGridMove(Entity<MapGridComponent> ent, ref MoveEvent args)
+    private void OnGridParentChanged(Entity<MapGridComponent> ent, ref EntParentChangedMessage args)
     {
-        if (!args.ParentChanged)
-            return;
+        RefreshAttachedZPhysics(ent.Owner);
+    }
 
+    private void OnGridMapUidChanged(Entity<MapGridComponent> ent, ref MapUidChangedEvent args)
+    {
         RefreshAttachedZPhysics(ent.Owner);
     }
 

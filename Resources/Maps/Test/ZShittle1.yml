@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 04/13/2026 19:56:10
-  entityCount: 154
+  time: 04/17/2026 20:03:13
+  entityCount: 160
 maps:
 - 3
 grids:
@@ -81,6 +81,7 @@ entities:
         chunkSize: 4
     - type: GasTileOverlay
     - type: RadiationGridResistance
+    - type: NavMap
   - uid: 3
     components:
     - type: MetaData
@@ -568,6 +569,28 @@ entities:
     - type: Transform
       pos: 6.5,-1.5
       parent: 2
+- proto: GeneratorRTG
+  entities:
+  - uid: 157
+    components:
+    - type: Transform
+      pos: -3.5,-2.5
+      parent: 2
+  - uid: 158
+    components:
+    - type: Transform
+      pos: -2.5,-2.5
+      parent: 2
+  - uid: 159
+    components:
+    - type: Transform
+      pos: -1.5,-2.5
+      parent: 2
+  - uid: 160
+    components:
+    - type: Transform
+      pos: -0.5,-2.5
+      parent: 2
 - proto: GravityGeneratorMini
   entities:
   - uid: 97
@@ -666,6 +689,18 @@ entities:
       rot: -1.5707963267948966 rad
       pos: -5.5,-0.5
       parent: 2
+- proto: SpawnMobHumanNinjaArmor
+  entities:
+  - uid: 155
+    components:
+    - type: Transform
+      pos: 2.5,0.5
+      parent: 2
+  - uid: 156
+    components:
+    - type: Transform
+      pos: 2.5,-2.5
+      parent: 2
 - proto: SpawnPointLatejoin
   entities:
   - uid: 1
@@ -686,6 +721,8 @@ entities:
     - type: Transform
       pos: -1.5,2.5
       parent: 2
+    - type: Thruster
+      enabled: False
   - uid: 111
     components:
     - type: Transform
