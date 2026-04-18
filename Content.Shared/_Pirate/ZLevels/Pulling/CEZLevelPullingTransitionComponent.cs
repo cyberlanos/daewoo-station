@@ -30,6 +30,12 @@ public sealed partial class CEZLevelPullingTransitionComponent : Component
     public Vector2 TargetPosition;
 
     /// <summary>
+    /// The desired horizontal offset from the puller after the z-transition completes.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public Vector2 FollowOffset;
+
+    /// <summary>
     /// Reference to the puller entity.
     /// </summary>
     [DataField, AutoNetworkedField]
@@ -42,10 +48,22 @@ public sealed partial class CEZLevelPullingTransitionComponent : Component
     public int TargetZLevel;
 
     /// <summary>
+    /// How many z-levels the pulled entity still needs to move to reunite with the puller.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public int TargetOffset;
+
+    /// <summary>
     /// Time when the transition should be complete.
     /// </summary>
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer)), AutoNetworkedField]
     public TimeSpan? NextTransition;
+
+    /// <summary>
+    /// Ensures the cross-z move is only attempted once per transition.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool TransferAttempted;
 
     /// <summary>
     /// How fast the entity moves during z-level transition (units per second).

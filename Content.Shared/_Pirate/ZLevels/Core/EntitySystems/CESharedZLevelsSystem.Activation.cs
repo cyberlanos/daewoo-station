@@ -13,6 +13,8 @@ namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 public abstract partial class CESharedZLevelsSystem
 {
+    private static readonly TimeSpan StartupActivationDelay = TimeSpan.FromSeconds(0.5);
+
     private void InitializeActivation()
     {
         SubscribeLocalEvent<CEZPhysicsComponent, MapInitEvent>(OnMapInit);
@@ -28,12 +30,13 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnMapInit(Entity<CEZPhysicsComponent> ent, ref MapInitEvent args)
     {
+        ent.Comp.StartupSuppressedUntil = _timing.CurTime + StartupActivationDelay;
         CheckActivation(ent);
 
-        if (!TryComp<CEZLevelMapComponent>(Transform(ent).MapUid, out var zLevelMap))
+        if (!TryGetTraversalDepth(Transform(ent), out var depth))
             return;
 
-        ent.Comp.CurrentZLevel = zLevelMap.Depth;
+        ent.Comp.CurrentZLevel = depth;
         DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.CurrentZLevel));
     }
 

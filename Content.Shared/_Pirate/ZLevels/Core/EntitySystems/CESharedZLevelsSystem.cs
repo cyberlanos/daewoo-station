@@ -9,6 +9,7 @@ using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Gravity;
 using Content.Shared.Popups;
+using Content.Shared.Shuttles.Components;
 using JetBrains.Annotations;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map.Components;
@@ -29,6 +30,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
 
     private EntityQuery<MapComponent> _mapQuery;
     private EntityQuery<CEZLevelMapComponent> _zMapQuery;
+    private EntityQuery<FTLMapComponent> _ftlMapQuery;
     private EntityQuery<MapGridComponent> _gridQuery;
 
     protected EntityQuery<CEZPhysicsComponent> ZPhyzQuery;
@@ -39,12 +41,14 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
 
         _mapQuery = GetEntityQuery<MapComponent>();
         _zMapQuery = GetEntityQuery<CEZLevelMapComponent>();
+        _ftlMapQuery = GetEntityQuery<FTLMapComponent>();
         _gridQuery = GetEntityQuery<MapGridComponent>();
         ZPhyzQuery = GetEntityQuery<CEZPhysicsComponent>();
 
         InitializeDebug();
         InitMovement();
         InitView();
+        InitOccluders();
         InitializeActivation();
     }
 
@@ -129,6 +133,75 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         [NotNullWhen(true)] out Entity<CEZLevelMapComponent>? belowMapUid)
     {
         return TryMapOffset(inputMapUid, -1, out belowMapUid);
+    }
+
+    private bool TryResolveTraversalMapOffset(EntityUid currentMapUid, int offset, out EntityUid targetMapUid, out int targetDepth)
+    {
+        targetMapUid = EntityUid.Invalid;
+        targetDepth = default;
+
+        if (_zMapQuery.TryComp(currentMapUid, out var zMapComp) &&
+            TryMapOffset((currentMapUid, zMapComp), offset, out var targetMap))
+        {
+            targetMapUid = targetMap.Value.Owner;
+            targetDepth = targetMap.Value.Comp.Depth;
+            return true;
+        }
+
+        if (!_ftlMapQuery.TryComp(currentMapUid, out var ftlMapComp))
+            return false;
+
+        targetDepth = ftlMapComp.Depth + offset;
+        var query = EntityQueryEnumerator<FTLMapComponent>();
+        while (query.MoveNext(out var uid, out var candidate))
+        {
+            if (candidate.Depth != targetDepth)
+                continue;
+
+            targetMapUid = uid;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryGetTraversalDepth(TransformComponent xform, out int depth)
+    {
+        if (xform.MapUid is { } mapUid)
+        {
+            if (_zMapQuery.TryComp(mapUid, out var zMapComp))
+            {
+                depth = zMapComp.Depth;
+                return true;
+            }
+
+            if (_ftlMapQuery.TryComp(mapUid, out var ftlMapComp))
+            {
+                depth = ftlMapComp.Depth;
+                return true;
+            }
+        }
+
+        if (xform.GridUid is { } gridUid &&
+            TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
+        {
+            depth = linked.Depth;
+            return true;
+        }
+
+        depth = default;
+        return false;
+    }
+
+    private bool HasTraversalContext(TransformComponent xform)
+    {
+        if (xform.MapUid is { } mapUid &&
+            (_zMapQuery.HasComp(mapUid) || _ftlMapQuery.HasComp(mapUid)))
+        {
+            return true;
+        }
+
+        return xform.GridUid is { } gridUid && HasComp<CEZLinkedGridComponent>(gridUid);
     }
 
     /// <summary>

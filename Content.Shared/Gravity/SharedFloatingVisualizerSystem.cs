@@ -18,6 +18,7 @@
 using System.Numerics;
 using Robust.Shared.Map;
 using Content.Shared._EinsteinEngines.Flight.Events; // Goobstation
+using Content.Shared._Pirate.ZLevels.Core.EntitySystems; // Pirate: multiz
 
 namespace Content.Shared.Gravity;
 
@@ -52,6 +53,14 @@ public abstract class SharedFloatingVisualizerSystem : EntitySystem
             return false;
 
         component.CanFloat = GravitySystem.IsWeightless(uid, xform: transform);
+
+        if (component.CanFloat && // Pirate: multiz
+            EntityManager.TrySystem<CESharedZLevelsSystem>(out var zLevels) &&
+            zLevels.HasEffectiveGravityFromBelow(uid, transform))
+        {
+            component.CanFloat = false; // Pirate: multiz
+        }
+
         Dirty(uid, component);
         return component.CanFloat;
     }

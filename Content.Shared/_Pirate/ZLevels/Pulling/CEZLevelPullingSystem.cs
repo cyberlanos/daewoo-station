@@ -15,23 +15,21 @@ namespace Content.Shared._Pirate.ZLevels.Pulling;
 
 public sealed class CEZLevelPullingSystem : EntitySystem
 {
+    private const float MinimumFollowSeparation = 0.6f;
+    private const float MinimumSupportedFollowSeparation = 0.35f;
+    private const float SupportedFollowSearchStep = 0.1f;
+
     [Dependency] private readonly PullingSystem _pulling = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlocker = default!;
-
-    private EntityQuery<CEZLevelPullingTransitionComponent> _transitionQuery;
-    private EntityQuery<CEZPhysicsComponent> _zPhysicsQuery;
+    [Dependency] private readonly CESharedZLevelsSystem _zLevels = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
-        _transitionQuery = GetEntityQuery<CEZLevelPullingTransitionComponent>();
-        _zPhysicsQuery = GetEntityQuery<CEZPhysicsComponent>();
-
         SubscribeLocalEvent<ActivePullerComponent, CEZLevelBeforeMapMoveEvent>(OnPullerMove);
-        SubscribeLocalEvent<CEZLevelPullingTransitionComponent, CEZLevelMapMoveEvent>(OnPulledEntityMove);
     }
 
     public override void Update(float frameTime)
@@ -44,32 +42,40 @@ public sealed class CEZLevelPullingSystem : EntitySystem
         var query = EntityQueryEnumerator<CEZLevelPullingTransitionComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
-            if (comp.NextTransition is null)
-                continue;
-
-            if (comp.TargetPuller is null)
-                continue;
-
-            if (comp.NextTransition < _timing.CurTime)
+            if (!Exists(uid) || comp.TargetPuller is not { } puller || !Exists(puller))
             {
-                FinishTransition(uid, comp);
+                RemComp<CEZLevelPullingTransitionComponent>(uid);
                 continue;
             }
 
-            // Move entity towards target position (saved position of puller at transition start)
-            var currentPos = _transform.GetWorldPosition(uid);
-            var direction = (comp.TargetPosition - currentPos).Normalized();
-            var distance = (comp.TargetPosition - currentPos).Length();
-            var moveDistance = comp.TransitionSpeed * frameTime;
+            if (comp.NextTransition is { } deadline && deadline < _timing.CurTime)
+            {
+                RemComp<CEZLevelPullingTransitionComponent>(uid);
+                continue;
+            }
 
-            if (moveDistance >= distance)
+            if (!comp.TransferAttempted)
             {
-                _transform.SetWorldPosition(uid, comp.TargetPosition);
+                if (!TryComp<CEZPhysicsComponent>(puller, out var pullerZ) || pullerZ.CurrentZLevel != comp.TargetZLevel)
+                    continue;
+
+                if (!_zLevels.TryMove(uid, comp.TargetOffset))
+                    continue;
+
+                _zLevels.NormalizeTransferredPullable(uid, comp.TargetOffset);
+                comp.TransferAttempted = true;
+                comp.TargetPosition = GetDesiredFollowPosition(uid, puller, comp);
+                Dirty(uid, comp);
             }
-            else
-            {
-                _transform.SetWorldPosition(uid, currentPos + direction * moveDistance);
-            }
+
+            if (Transform(uid).MapUid != Transform(puller).MapUid)
+                continue;
+
+            comp.TargetPosition = GetDesiredFollowPosition(uid, puller, comp);
+            Dirty(uid, comp);
+
+            _transform.SetWorldPosition(uid, comp.TargetPosition);
+            TryResumePulling(uid, comp);
         }
     }
 
@@ -85,73 +91,99 @@ public sealed class CEZLevelPullingSystem : EntitySystem
 
         // Get the current position of the puller before transition
         var pullerPos = _transform.GetWorldPosition(ent);
+        var pulledPos = _transform.GetWorldPosition(pulledEntity);
+        var followOffset = pulledPos - pullerPos;
+        if (followOffset.LengthSquared() < 0.0001f)
+        {
+            followOffset = -Transform(ent).LocalRotation.ToWorldVec() * MinimumFollowSeparation;
+        }
+        else if (followOffset.Length() < MinimumFollowSeparation)
+        {
+            followOffset = Vector2.Normalize(followOffset) * MinimumFollowSeparation;
+        }
 
         // Add transition component to the pulled entity
         var transComp = EnsureComp<CEZLevelPullingTransitionComponent>(pulledEntity);
         transComp.TargetPuller = ent;
-        transComp.StartPosition = _transform.GetWorldPosition(pulledEntity);
-        transComp.TargetPosition = pullerPos;  // Save puller's position at the moment of transition
-        transComp.TargetZLevel = args.CurrentZLevel + args.Offset;
+        transComp.StartPosition = pulledPos;
+        transComp.TargetPosition = pullerPos;
+        transComp.FollowOffset = followOffset;
+        transComp.TargetZLevel = args.CurrentZLevel;
+        transComp.TargetOffset = args.Offset;
+        transComp.TransferAttempted = false;
 
         var distance = Vector2.Distance(transComp.StartPosition, transComp.TargetPosition);
-        var duration = TimeSpan.FromSeconds(distance / transComp.TransitionSpeed);
-        transComp.NextTransition = _timing.CurTime + duration;
+        var duration = TimeSpan.FromSeconds(Math.Max(0.25f, distance / transComp.TransitionSpeed));
+        transComp.NextTransition = _timing.CurTime + duration + TimeSpan.FromSeconds(0.75f);
 
         Dirty(pulledEntity, transComp);
     }
 
-    private void OnPulledEntityMove(Entity<CEZLevelPullingTransitionComponent> ent, ref CEZLevelMapMoveEvent args)
-    {
-        if (!_timing.IsFirstTimePredicted)
-            return;
-
-        // Check if the pulled entity reached the target z-level
-        if (args.CurrentZLevel != ent.Comp.TargetZLevel)
-            return;
-
-        TryResumePulling(ent, ent.Comp);
-    }
-
-    private void FinishTransition(EntityUid uid, CEZLevelPullingTransitionComponent comp)
-    {
-        comp.NextTransition = null;
-        Dirty(uid, comp);
-
-        // If still transitioning and entity didn't move to target level, stop transition
-        if (!Exists(uid) || !_transitionQuery.HasComp(uid))
-            return;
-
-        TryResumePulling(uid, comp);
-    }
-
     /// <summary>
-    /// Attempts to resume pulling after the transition is complete (either by time or z-level change).
-    /// Removes the transition component whether pulling succeeds or not.
+    /// Attempts to resume pulling after the pulled entity has been moved to the puller's z-level.
     /// </summary>
     private void TryResumePulling(EntityUid uid, CEZLevelPullingTransitionComponent comp)
     {
-        // Check if puller still exists
-        if (!Exists(comp.TargetPuller))
+        if (comp.TargetPuller is not { } puller || !Exists(puller))
         {
             RemComp<CEZLevelPullingTransitionComponent>(uid);
             return;
         }
 
-        // Check if both entities are on the same map
-        if (Transform(uid).MapUid != Transform(comp.TargetPuller.Value).MapUid)
+        if (Transform(uid).MapUid != Transform(puller).MapUid)
+            return;
+
+        if (!_actionBlocker.CanInteract(puller, uid))
+            return;
+
+        if (TryComp<PullableComponent>(uid, out var pullable) &&
+            pullable.Puller == puller &&
+            pullable.PullJointId != null)
         {
             RemComp<CEZLevelPullingTransitionComponent>(uid);
             return;
         }
 
-        if (!_actionBlocker.CanInteract(comp.TargetPuller.Value, uid))
+        if (TryComp<PullableComponent>(uid, out pullable) &&
+            pullable.Puller != null)
         {
-            RemComp<CEZLevelPullingTransitionComponent>(uid);
-            return;
+            _pulling.TryStopPull(uid, pullable, puller, true);
         }
 
-        // Try to resume pulling from the puller
-        _pulling.TryStartPull(comp.TargetPuller.Value, uid);
-        RemComp<CEZLevelPullingTransitionComponent>(uid);
+        if (_pulling.TryStartPull(puller, uid, force: true))
+            RemComp<CEZLevelPullingTransitionComponent>(uid);
+    }
+
+    private Vector2 GetDesiredFollowPosition(EntityUid pulled, EntityUid puller, CEZLevelPullingTransitionComponent comp)
+    {
+        var pullerPos = _transform.GetWorldPosition(puller);
+        var currentPos = _transform.GetWorldPosition(pulled);
+        var desiredOffset = comp.FollowOffset;
+        var desiredDistance = desiredOffset.Length();
+
+        if (desiredDistance < 0.0001f)
+        {
+            desiredOffset = -Transform(puller).LocalRotation.ToWorldVec() * MinimumFollowSeparation;
+            desiredDistance = MinimumFollowSeparation;
+        }
+
+        var desiredPos = pullerPos + desiredOffset;
+        if (_zLevels.HasSupportAtWorldPositionOnCurrentLevel(pulled, desiredPos))
+            return desiredPos;
+
+        var followDir = Vector2.Normalize(desiredOffset);
+        for (var distance = MinimumSupportedFollowSeparation;
+             distance < desiredDistance;
+             distance += SupportedFollowSearchStep)
+        {
+            var candidatePos = pullerPos + followDir * distance;
+            if (_zLevels.HasSupportAtWorldPositionOnCurrentLevel(pulled, candidatePos))
+                return candidatePos;
+        }
+
+        if (_zLevels.HasSupportAtWorldPositionOnCurrentLevel(pulled, currentPos))
+            return currentPos;
+
+        return desiredPos;
     }
 }

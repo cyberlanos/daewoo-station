@@ -27,15 +27,19 @@ public abstract partial class CESharedZLevelsSystem
     // Transfer up when the mover's sampled center reaches late stair 3.
     // In practice the player's center never reaches the geometric 0.3125 cutoff because the
     // stair collision stops the body slightly earlier, so we use a center-sample threshold that
-    // matches the reachable point seen in live traces.
-    private const float StairUpTransferSampleThreshold = 0.36f;
+    // matches the reachable point seen in live traces while still leaving enough separation from
+    // the downward landing sample to avoid reintroducing up/down stair loops.
+    // Keep a tiny tolerance here because the same stair path can stabilize around ~0.381-0.383
+    // after a full up/down cycle due to landing and collision quantization.
+    private const float StairUpTransferSampleThreshold = 0.39f;
     // Place the mover just inside the next tile after climbing so it will not immediately re-trigger descent.
     private const float StairUpLandingForwardNudge = 0.05f;
     // Place the mover at the start of stair 3 after descending so it does not instantly climb back up.
-    private const float StairDownLandingSample = 0.5f;
+    private const float StairDownLandingSample = 0.64f;
     private const float StairDirectionMinimumSpeed = 0.01f;
     private const float StairTransferGraceSeconds = 0.2f;
     private const float FlatGroundSettleVelocityThreshold = 1.0f;
+    private static readonly float[] StairUpLandingSearchSamples = [0.05f, 0.15f, 0.25f, 0.35f, 0.45f];
 
     /// <summary>
     /// The minimum speed required to trigger LandEvent events.
@@ -43,6 +47,13 @@ public abstract partial class CESharedZLevelsSystem
     private const float ImpactVelocityLimit = 3f;
 
     private EntityQuery<CEZLevelHighGroundComponent> _highgroundQuery;
+
+    private enum AutoDescendMode
+    {
+        None,
+        ControlledStep,
+        FreeFall
+    }
 
     private void InitMovement()
     {
@@ -53,6 +64,7 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentInit>(OnActiveInit);
 
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
+        SubscribeLocalEvent<MapGridComponent, MoveEvent>(OnGridMove);
         SubscribeLocalEvent<CEZLevelMapComponent, TileChangedEvent>(OnTileChanged);
     }
 
@@ -127,12 +139,6 @@ public abstract partial class CESharedZLevelsSystem
     {
         isHighGround = false;
 
-        if (xform.MapUid is not { } mapUid || !_zMapQuery.TryComp(mapUid, out var zMapComp))
-            return false;
-
-        if (!TryMapOffset((mapUid, zMapComp), -1, out _))
-            return false; // No Z-level below at all
-
         if (!TryResolveGridForMapOffset(ent, xform, -1, out var belowGridUid, out var belowGrid))
             return false;
 
@@ -153,30 +159,145 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
+    /// Resolves whether there is actual support directly below this entity on the next z-level.
+    /// Returns the supporting grid uid so callers can inspect the lower deck's gravity state live,
+    /// which is important for moving linked shuttle grids.
+    /// </summary>
+    private bool TryGetSupportBelow(EntityUid ent, TransformComponent xform, out EntityUid belowGridUid, out bool isHighGround)
+    {
+        belowGridUid = EntityUid.Invalid;
+        isHighGround = false;
+
+        if (!TryResolveGridForMapOffset(ent, xform, -1, out belowGridUid, out var belowGrid))
+            return false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+        while (anchoredQuery.MoveNext(out var uid))
+        {
+            if (_highgroundQuery.HasComp(uid.Value))
+            {
+                isHighGround = true;
+                return true;
+            }
+        }
+
+        return _map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty;
+    }
+
+    /// <summary>
+    /// Returns true when the tile or high-ground directly below this entity belongs to a grid/map that currently has gravity.
+    /// This is evaluated live from world position instead of using cached movement state, so it stays correct for moving shuttles.
+    /// </summary>
+    [PublicAPI]
+    public bool HasEffectiveGravityFromBelow(EntityUid ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out _))
+            return false;
+
+        return _gravity.EntityGridOrMapHaveGravity((belowGridUid, Transform(belowGridUid)));
+    }
+
+    private bool TryFindSupportedLevelBelow(EntityUid ent, TransformComponent xform, out int supportOffset, out EntityUid supportGridUid, out bool isHighGround)
+    {
+        supportOffset = 0;
+        supportGridUid = EntityUid.Invalid;
+        isHighGround = false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+
+        for (var offset = 1; ; offset++)
+        {
+            if (!TryResolveGridForMapOffset(ent, xform, -offset, out var belowGridUid, out var belowGrid))
+                break;
+
+            var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+            var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+            while (anchoredQuery.MoveNext(out var uid))
+            {
+                if (!_highgroundQuery.HasComp(uid.Value))
+                    continue;
+
+                supportOffset = offset;
+                supportGridUid = belowGridUid;
+                isHighGround = true;
+                return true;
+            }
+
+            if (!_map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) || tileRef.Tile.IsEmpty)
+                continue;
+
+            supportOffset = offset;
+            supportGridUid = belowGridUid;
+            return true;
+        }
+
+        return false;
+    }
+
+    private AutoDescendMode GetAutoDescendMode(EntityUid uid,
+        CEZPhysicsComponent zPhys,
+        TransformComponent xform,
+        out int supportOffset,
+        out bool supportIsHighGround,
+        out bool effectiveGravityBelow)
+    {
+        supportOffset = 0;
+        supportIsHighGround = false;
+        effectiveGravityBelow = false;
+
+        if (zPhys.CurrentStickyGround)
+        {
+            if (TryResolveGridForMapOffset(uid, xform, -1, out _, out _))
+                return AutoDescendMode.ControlledStep;
+
+            return AutoDescendMode.None;
+        }
+
+        if (!TryFindSupportedLevelBelow(uid, xform, out supportOffset, out var supportGridUid, out supportIsHighGround))
+            return AutoDescendMode.None;
+
+        effectiveGravityBelow = _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
+
+        if (supportOffset == 1 && supportIsHighGround)
+            return AutoDescendMode.ControlledStep;
+
+        if (effectiveGravityBelow)
+            return AutoDescendMode.FreeFall;
+
+        return AutoDescendMode.None;
+    }
+
+    /// <summary>
     /// Returns true when the entity is allowed to automatically descend to the Z-level below.
     /// Rules:
     /// - Sticky surface (currently on a ladder) → always allow.
     /// - High-ground (stairs/ladder) directly below → always allow; stair traversal works
     ///   even in weightless areas so the player can walk down from a space-walk to an airlock deck.
-    /// - Regular floor below + gravity active → allow (falling through a deck hole).
+    /// - Regular floor below + effective gravity from that lower support → allow.
     /// - Anything else → block (entity floats on current level).
     /// </summary>
-    private bool CanAutoDescend(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform, PhysicsComponent physics)
+    private bool CanAutoDescend(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform)
     {
         // Currently on a sticky surface (e.g. already mid-ladder)
         if (zPhys.CurrentStickyGround)
             return true;
 
         // No floor at this XY on the level below — never descend
-        if (!zPhys.CurrentHasSupportBelow)
+        if (!TryGetSupportBelow(uid, xform, out _, out var isHighGround))
             return false;
 
         // Stairs or ladder below — allow descent regardless of gravity
-        if (zPhys.CurrentHighGroundBelow)
+        if (isHighGround)
             return true;
 
-        // Plain floor below — only fall if under gravity (prevents drifting into lower deck in vacuum)
-        return !_gravity.IsWeightless(uid, physics, xform);
+        // Plain floor below — only fall if that lower support actually has gravity
+        return HasEffectiveGravityFromBelow(uid, xform);
     }
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
@@ -184,10 +305,52 @@ public abstract partial class CESharedZLevelsSystem
         CacheMovement(ent);
     }
 
+    private void OnGridMove(Entity<MapGridComponent> ent, ref MoveEvent args)
+    {
+        if (!args.ParentChanged)
+            return;
+
+        RefreshAttachedZPhysics(ent.Owner);
+    }
+
+    private void RefreshAttachedZPhysics(EntityUid rootUid)
+    {
+        var stack = new Stack<EntityUid>();
+        stack.Push(rootUid);
+
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            var xform = Transform(current);
+            using var children = xform.ChildEnumerator;
+            while (children.MoveNext(out var child))
+            {
+                stack.Push(child);
+
+                if (!ZPhyzQuery.TryComp(child, out var zPhys))
+                    continue;
+
+                CacheMovement((child, zPhys));
+
+                if (TryGetTraversalDepth(Transform(child), out var depth) &&
+                    zPhys.CurrentZLevel != depth)
+                {
+                    zPhys.CurrentZLevel = depth;
+                    DirtyField(child, zPhys, nameof(CEZPhysicsComponent.CurrentZLevel));
+                }
+
+                zPhys.StartupSuppressedUntil = _timing.CurTime + StartupActivationDelay;
+            }
+        }
+    }
+
     private void OnZLevelMapMove(Entity<CEZPhysicsComponent> ent, ref CEZLevelMapMoveEvent args)
     {
-        ent.Comp.CurrentZLevel = args.CurrentZLevel;
-        DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.CurrentZLevel));
+        if (ent.Comp.CurrentZLevel != args.CurrentZLevel)
+        {
+            ent.Comp.CurrentZLevel = args.CurrentZLevel;
+            DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.CurrentZLevel));
+        }
         // Update cached ground height when entity moves between Z-level maps
         CacheMovement(ent);
     }
@@ -204,12 +367,31 @@ public abstract partial class CESharedZLevelsSystem
         var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent, PhysicsComponent>();
         while (query.MoveNext(out var uid, out var zPhys, out _, out var xform, out var physics))
         {
-            if (!_zMapQuery.HasComp(xform.MapUid))
+            if (!HasTraversalContext(xform))
                 continue;
 
             var oldVelocity = zPhys.Velocity;
             var oldHeight = zPhys.LocalPosition;
             var startedOnElevatedGround = zPhys.CurrentStickyGround || zPhys.CurrentGroundHeight > 0.01f;
+
+            if (_timing.CurTime < zPhys.StartupSuppressedUntil)
+            {
+                CacheMovement((uid, zPhys));
+
+                if (!zPhys.CurrentGroundFromBelowLevel && zPhys.LocalPosition < zPhys.CurrentGroundHeight)
+                    zPhys.LocalPosition = zPhys.CurrentGroundHeight;
+
+                if (zPhys.Velocity != 0f)
+                    zPhys.Velocity = 0f;
+
+                if (Math.Abs(oldVelocity - zPhys.Velocity) > 0.01f)
+                    DirtyField(uid, zPhys, nameof(CEZPhysicsComponent.Velocity));
+
+                if (Math.Abs(oldHeight - zPhys.LocalPosition) > 0.01f)
+                    DirtyField(uid, zPhys, nameof(CEZPhysicsComponent.LocalPosition));
+
+                continue;
+            }
 
             // Apply Z-gravity unless the entity is resting on an actual floor of the current level.
             // Entities parented to map (no grid) are always BodyStatus.InAir in SS14 physics, so
@@ -319,25 +501,38 @@ public abstract partial class CESharedZLevelsSystem
             {
                 var isWeightless = _gravity.IsWeightless(uid, physics, xform);
                 var downBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
-                var canAutoDescend = !downBlocked && CanAutoDescend(uid, zPhys, xform, physics);
+                var supportOffset = 0;
+                var supportIsHighGround = false;
+                var effectiveGravityBelow = false;
+                var descendMode = downBlocked
+                    ? AutoDescendMode.None
+                    : GetAutoDescendMode(uid, zPhys, xform, out supportOffset, out supportIsHighGround, out effectiveGravityBelow);
+                var canAutoDescend = descendMode != AutoDescendMode.None;
 
                 DebugZStairCsv(uid,
                     "down_check",
-                    $"allow={StairCsvBool(canAutoDescend)},blocked={StairCsvBool(downBlocked)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},weightless={StairCsvBool(isWeightless)}",
-                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(downBlocked)}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{StairCsvBool(isWeightless)}");
+                    $"allow={StairCsvBool(canAutoDescend)},blocked={StairCsvBool(downBlocked)},mode={descendMode},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},support_offset={supportOffset},support_highground={StairCsvBool(supportIsHighGround)},weightless={StairCsvBool(isWeightless)},effective_gravity_below={StairCsvBool(effectiveGravityBelow)}",
+                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(downBlocked)}|{descendMode}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{supportOffset}|{StairCsvBool(supportIsHighGround)}|{StairCsvBool(isWeightless)}|{StairCsvBool(effectiveGravityBelow)}");
 
                 if (canAutoDescend)
                 {
                     if (ZDebugEnabled)
-                        DebugZ(uid, "local position dropped below 0, gravity+support present, attempting move down");
+                        DebugZ(uid, $"local position dropped below 0, attempting move down in mode={descendMode}");
 
                     if (TryMoveDown(uid))
                     {
-                        zPhys.LocalPosition = MathF.Max(0f, zPhys.CurrentGroundHeight);
-                        zPhys.Velocity = 0f;
-                        zPhys.AutoUpBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
+                        if (descendMode == AutoDescendMode.ControlledStep)
+                        {
+                            zPhys.LocalPosition = MathF.Max(0f, zPhys.CurrentGroundHeight);
+                            zPhys.Velocity = 0f;
+                            zPhys.AutoUpBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
+                        }
+                        else
+                        {
+                            zPhys.LocalPosition += 1f;
+                        }
 
-                        if (!zPhys.CurrentStickyGround)
+                        if (descendMode == AutoDescendMode.FreeFall || !zPhys.CurrentStickyGround)
                         {
                             var fallEv = new CEZLevelFallMapEvent();
                             RaiseLocalEvent(uid, ref fallEv);
@@ -347,7 +542,7 @@ public abstract partial class CESharedZLevelsSystem
                     {
                         // Level below exists but transfer failed — stop cleanly
                         if (ZDebugEnabled)
-                            DebugZ(uid, "move down failed despite support below, clamping to 0");
+                            DebugZ(uid, $"move down failed in mode={descendMode}, clamping to 0");
                         zPhys.LocalPosition = 0f;
                         if (zPhys.Velocity < 0f) zPhys.Velocity = 0f;
                     }
@@ -577,12 +772,12 @@ public abstract partial class CESharedZLevelsSystem
         }
 
         if (xform.MapUid is { } sourceMapUid &&
-            TryMapOffset(sourceMapUid, offset, out var targetMap) &&
-            (TryResolveGridAtWorldPositionOnMap(targetMap.Value.Owner, worldPos, out gridUid, out gridComp) ||
-             TryResolveAnyGridOnMap(targetMap.Value.Owner, out gridUid, out gridComp)))
+            TryResolveTraversalMapOffset(sourceMapUid, offset, out var targetMapUid, out _) &&
+            (TryResolveGridAtWorldPositionOnMap(targetMapUid, worldPos, out gridUid, out gridComp) ||
+             TryResolveAnyGridOnMap(targetMapUid, out gridUid, out gridComp)))
         {
             if (offset != 0)
-                DebugZVerbose(ent, $"resolved grid for offset={offset} via z-level map {targetMap.Value.Owner} using grid {ToPrettyString(gridUid)}");
+                DebugZVerbose(ent, $"resolved grid for offset={offset} via traversal map {targetMapUid} using grid {ToPrettyString(gridUid)}");
 
             return true;
         }
@@ -611,8 +806,11 @@ public abstract partial class CESharedZLevelsSystem
                 return false;
             }
 
-            var distanceToEdge = GetDirectionalDistanceToNextTileEdge(local, forwardDir);
-            landingWorldPos += forwardDir.ToVec() * (distanceToEdge + StairUpLandingForwardNudge);
+            if (!TryGetSupportedNextTileLandingPosition(forwardDir, local, baseTargetWorldPos, targetGridUid, targetMapId, out landingWorldPos))
+            {
+                DebugZVerbose(ent, "stair exit landing skipped for upward move: failed to resolve supported tile ahead");
+                return false;
+            }
         }
         else if (offset < 0)
         {
@@ -626,7 +824,8 @@ public abstract partial class CESharedZLevelsSystem
                 !TryGetGroundSupportSample((ent, sourceZPhys), out var support, 1, false) ||
                 !support.IsHighGround ||
                 support.SurfaceDirection != forwardDir ||
-                !TrySetTileLocalForStairSample(local, forwardDir, StairDownLandingSample, out var targetLocal))
+                !TryGetLocalDirectionForTarget(forwardDir, targetGridUid, targetMapId, baseTargetWorldPos, out var targetLocalDir) ||
+                !TrySetTileLocalForStairSample(local, targetLocalDir, StairDownLandingSample, out var targetLocal))
             {
                 DebugZVerbose(ent, "stair exit placement skipped for downward move: no straight stair sample could be resolved");
                 return false;
@@ -692,6 +891,125 @@ public abstract partial class CESharedZLevelsSystem
         };
     }
 
+    private Direction GetGridLocalDirection(EntityUid gridUid, Direction worldDir)
+    {
+        if (!_gridQuery.HasComp(gridUid))
+            return worldDir;
+
+        var worldVector = worldDir.ToVec();
+        var inverseRotation = Matrix3Helpers.CreateRotation(-_transform.GetWorldRotation(gridUid));
+        var localVector = Vector2.TransformNormal(worldVector, inverseRotation);
+        return localVector.ToWorldAngle().GetCardinalDir();
+    }
+
+    private bool TryGetLocalDirectionForTarget(Direction worldDir, EntityUid? targetGridUid, MapId targetMapId, Vector2 fallbackWorldPos, out Direction localDir)
+    {
+        if (targetGridUid is { } gridUid &&
+            _gridQuery.HasComp(gridUid))
+        {
+            localDir = GetGridLocalDirection(gridUid, worldDir);
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var mapUid) &&
+            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out var resolvedGridUid, out _) ||
+             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
+        {
+            localDir = GetGridLocalDirection(resolvedGridUid, worldDir);
+            return true;
+        }
+
+        localDir = worldDir;
+        return true;
+    }
+
+    private bool TryResolveLandingGrid(EntityUid? targetGridUid, MapId targetMapId, Vector2 fallbackWorldPos, out EntityUid resolvedGridUid, out MapGridComponent resolvedGrid)
+    {
+        if (targetGridUid is { } explicitGridUid &&
+            _gridQuery.TryComp(explicitGridUid, out var explicitGrid))
+        {
+            resolvedGridUid = explicitGridUid;
+            resolvedGrid = explicitGrid;
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var mapUid) &&
+            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out resolvedGridUid, out resolvedGrid) ||
+             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out resolvedGrid)))
+        {
+            return true;
+        }
+
+        resolvedGridUid = EntityUid.Invalid;
+        resolvedGrid = default!;
+        return false;
+    }
+
+    private bool HasSupportAtWorldPositionOnGrid(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
+    {
+        var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);
+        while (anchoredQuery.MoveNext(out var uid))
+        {
+            if (_highgroundQuery.HasComp(uid.Value))
+                return true;
+        }
+
+        return _map.TryGetTileRef(gridUid, grid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty;
+    }
+
+    [PublicAPI]
+    public bool HasSupportAtWorldPositionOnCurrentLevel(EntityUid ent, Vector2 worldPos, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false) ||
+            xform.MapUid is not { } currentMapUid ||
+            !TryResolveGridAtWorldPositionOnMap(currentMapUid, worldPos, out var gridUid, out var grid))
+        {
+            return false;
+        }
+
+        return HasSupportAtWorldPositionOnGrid(gridUid, grid, worldPos);
+    }
+
+    private bool TryGetSupportedNextTileLandingPosition(Direction forwardDir, Vector2 currentLocal, Vector2 fallbackWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos)
+    {
+        landingWorldPos = fallbackWorldPos;
+
+        if (!TryResolveLandingGrid(targetGridUid, targetMapId, fallbackWorldPos, out var resolvedGridUid, out var resolvedGrid) ||
+            !TryGetLocalDirectionForTarget(forwardDir, resolvedGridUid, targetMapId, fallbackWorldPos, out var localDir))
+        {
+            return false;
+        }
+
+        var localFallback = Vector2.Transform(fallbackWorldPos, _transform.GetInvWorldMatrix(resolvedGridUid));
+        var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
+        var nextTileOrigin = tileOrigin + localDir.ToVec();
+        var foundFallback = false;
+
+        foreach (var sample in StairUpLandingSearchSamples)
+        {
+            if (!TrySetTileLocalForStairSample(currentLocal, localDir, sample, out var targetLocal))
+                continue;
+
+            var localPos = nextTileOrigin + targetLocal;
+            var candidateWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(resolvedGridUid));
+
+            if (!foundFallback)
+            {
+                landingWorldPos = candidateWorldPos;
+                foundFallback = true;
+            }
+
+            if (HasSupportAtWorldPositionOnGrid(resolvedGridUid, resolvedGrid, candidateWorldPos))
+            {
+                landingWorldPos = candidateWorldPos;
+                return true;
+            }
+        }
+
+        return foundFallback;
+    }
+
     private static bool TrySetTileLocalForStairSample(Vector2 currentLocal, Direction dir, float sample, out Vector2 targetLocal)
     {
         targetLocal = currentLocal;
@@ -746,17 +1064,17 @@ public abstract partial class CESharedZLevelsSystem
 
     private bool TryGetMovementIntentVector(EntityUid ent, out Vector2 direction)
     {
-        if (TryComp<PhysicsComponent>(ent, out var physics) &&
-            physics.LinearVelocity.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
-        {
-            direction = physics.LinearVelocity;
-            return true;
-        }
-
         if (TryComp<InputMoverComponent>(ent, out var mover) &&
             mover.WishDir.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
         {
             direction = mover.WishDir;
+            return true;
+        }
+
+        if (TryComp<PhysicsComponent>(ent, out var physics) &&
+            physics.LinearVelocity.LengthSquared() > StairDirectionMinimumSpeed * StairDirectionMinimumSpeed)
+        {
+            direction = physics.LinearVelocity;
             return true;
         }
 
@@ -888,8 +1206,9 @@ public abstract partial class CESharedZLevelsSystem
     {
         sample = default;
 
-        var dir = _transform.GetWorldRotation(supportUid).GetCardinalDir();
-        var t = dir switch
+        var worldDir = _transform.GetWorldRotation(supportUid).GetCardinalDir();
+        var sampleDir = GetGridLocalDirection(checkingGridUid, worldDir);
+        var t = sampleDir switch
         {
             Direction.East => heightComp.Corner ? (tileLocal.X + 1f - tileLocal.Y) / 2f : tileLocal.X,
             Direction.West => heightComp.Corner ? (1f - tileLocal.X + tileLocal.Y) / 2f : 1f - tileLocal.X,
@@ -915,7 +1234,7 @@ public abstract partial class CESharedZLevelsSystem
             checkingGridUid,
             floor,
             supportUid,
-            dir,
+            worldDir,
             tileLocal,
             t,
             groundHeight,
@@ -925,7 +1244,7 @@ public abstract partial class CESharedZLevelsSystem
         if (logProbe)
         {
             DebugZVerbose(target.Owner,
-                $"ground probe hit highground {ToPrettyString(supportUid)} floorOffset=-{floor} dir={dir} " +
+                $"ground probe hit highground {ToPrettyString(supportUid)} floorOffset=-{floor} dir={worldDir} sample_dir={sampleDir} " +
                 $"local=({tileLocal.X:0.00}, {tileLocal.Y:0.00}) sample={t:0.00} result={groundHeight:0.00} sticky={sticky} curvePts={curve.Count}");
         }
 
@@ -952,11 +1271,10 @@ public abstract partial class CESharedZLevelsSystem
             return false;
 
         var xform = Transform(target);
-        if (xform.MapUid is not { } currentMapUid ||
-            !_zMapQuery.TryComp(currentMapUid, out var zMapComp))
+        if (!HasTraversalContext(xform))
         {
             if (logProbe)
-                DebugZVerbose(target.Owner, "ground probe failed: entity is not on a z-level map");
+                DebugZVerbose(target.Owner, "ground probe failed: entity has no traversal context");
             return false;
         }
 
@@ -976,13 +1294,6 @@ public abstract partial class CESharedZLevelsSystem
         {
             if (floor != 0)
             {
-                if (!TryMapOffset((currentMapUid, zMapComp), -floor, out var tempCheckingMap))
-                {
-                    if (logProbe)
-                        DebugZVerbose(target.Owner, $"ground probe skipped floor={floor}: no z-level map below");
-                    continue;
-                }
-
                 if (!TryResolveGridForMapOffset(target.Owner, xform, -floor, out var tempCheckingGridUid, out var tempCheckingGrid))
                 {
                     if (logProbe)
@@ -1114,20 +1425,6 @@ public abstract partial class CESharedZLevelsSystem
     [PublicAPI]
     public bool HasTileAbove(EntityUid ent, Entity<CEZLevelMapComponent?>? currentMapUid = null)
     {
-        currentMapUid ??= Transform(ent).MapUid;
-
-        if (currentMapUid is null)
-        {
-            DebugZVerbose(ent, "roof check failed: entity has no current map");
-            return false;
-        }
-
-        if (!TryMapUp(currentMapUid.Value, out var mapAboveUid))
-        {
-            DebugZVerbose(ent, "roof check: no z-level map above");
-            return false;
-        }
-
         var xform = Transform(ent);
         if (!TryResolveGridForMapOffset(ent, xform, 1, out var mapAboveGridUid, out var mapAboveGrid))
         {
@@ -1139,7 +1436,7 @@ public abstract partial class CESharedZLevelsSystem
             _map.TryGetTileRef(mapAboveGridUid, mapAboveGrid, _transform.GetWorldPosition(ent), out var tileRef) &&
             !tileRef.Tile.IsEmpty;
 
-        DebugZVerbose(ent, $"roof check on map {mapAboveUid.Value.Owner} grid {ToPrettyString(mapAboveGridUid)} result={hasTileAbove}");
+        DebugZVerbose(ent, $"roof check on grid {ToPrettyString(mapAboveGridUid)} result={hasTileAbove}");
 
         return hasTileAbove;
     }
@@ -1290,31 +1587,30 @@ public abstract partial class CESharedZLevelsSystem
 
         if (!TryResolveLinkedMoveTarget(ent, offset, out targetMapId, out targetZLevel, out peerGridUid))
         {
-            map ??= Transform(ent).MapUid;
+            var currentMapUid = map?.Owner ?? Transform(ent).MapUid;
 
-            if (map is null)
+            if (currentMapUid is null)
             {
                 if (ZDebugEnabled)
                     DebugZ(ent, $"move failed: no current map for offset={offset}");
                 return false;
             }
 
-            if (!TryMapOffset(map.Value, offset, out var targetMap))
+            if (!TryResolveTraversalMapOffset(currentMapUid.Value, offset, out var targetMapUid, out targetZLevel))
             {
                 if (ZDebugEnabled)
                     DebugZ(ent, $"move failed: no target map at offset={offset}");
                 return false;
             }
 
-            if (!_mapQuery.TryComp(targetMap, out var targetMapComp))
+            if (!_mapQuery.TryComp(targetMapUid, out var targetMapComp))
             {
                 if (ZDebugEnabled)
-                    DebugZ(ent, $"move failed: target map {targetMap.Value.Owner} has no map component");
+                    DebugZ(ent, $"move failed: target map {targetMapUid} has no map component");
                 return false;
             }
 
             targetMapId = targetMapComp.MapId;
-            targetZLevel = targetMap.Value.Comp.Depth;
         }
 
         if (ZDebugEnabled)
@@ -1434,6 +1730,30 @@ public abstract partial class CESharedZLevelsSystem
     public bool TryMoveDown(EntityUid ent)
     {
         return TryMove(ent, -1);
+    }
+
+    [PublicAPI]
+    public void NormalizeTransferredPullable(EntityUid ent, int offset)
+    {
+        if (!ZPhyzQuery.TryComp(ent, out var zPhys))
+            return;
+
+        var oldVelocity = zPhys.Velocity;
+        var oldLocalPosition = zPhys.LocalPosition;
+
+        zPhys.LocalPosition = MathF.Max(0f, zPhys.CurrentGroundHeight);
+        zPhys.Velocity = 0f;
+
+        if (offset > 0)
+            zPhys.AutoDownBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
+        else if (offset < 0)
+            zPhys.AutoUpBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(StairTransferGraceSeconds);
+
+        if (Math.Abs(oldVelocity - zPhys.Velocity) > 0.01f)
+            DirtyField(ent, zPhys, nameof(CEZPhysicsComponent.Velocity));
+
+        if (Math.Abs(oldLocalPosition - zPhys.LocalPosition) > 0.01f)
+            DirtyField(ent, zPhys, nameof(CEZPhysicsComponent.LocalPosition));
     }
 
     [PublicAPI]

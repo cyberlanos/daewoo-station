@@ -95,6 +95,13 @@ public sealed partial class CEZPhysicsComponent : Component
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
     public TimeSpan AutoDownBlockedUntil;
 
+    /// <summary>
+    /// Short startup freeze window for map-loaded entities so z-physics does not begin falling
+    /// before adjacent z-level maps, linked grids, and movement caches have all stabilized.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    public TimeSpan StartupSuppressedUntil;
+
     // Visuals
 
     /// <summary>

@@ -75,7 +75,8 @@ namespace Content.Shared.Gravity
         {
             entity.Comp ??= Transform(entity);
 
-            return _gravityQuery.HasComp(entity.Comp.GridUid) ||
+            return _gravityQuery.HasComp(entity.Owner) || // Pirate: multiz
+                   _gravityQuery.HasComp(entity.Comp.GridUid) ||
                    _gravityQuery.HasComp(entity.Comp.MapUid);
         }
 
@@ -87,7 +88,8 @@ namespace Content.Shared.Gravity
         {
             entity.Comp ??= Transform(entity);
 
-            return _gravityQuery.TryComp(entity.Comp.GridUid, out var gravity) && gravity.Enabled ||
+            return _gravityQuery.TryComp(entity.Owner, out var selfGravity) && selfGravity.Enabled || // Pirate: multiz
+                   _gravityQuery.TryComp(entity.Comp.GridUid, out var gravity) && gravity.Enabled ||
                    _gravityQuery.TryComp(entity.Comp.MapUid, out var mapGravity) && mapGravity.Enabled;
         }
 
