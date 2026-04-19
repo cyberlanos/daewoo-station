@@ -316,6 +316,93 @@ public abstract partial class CESharedZLevelsSystem
         RefreshAttachedZPhysics(ent.Owner);
     }
 
+    private bool ShouldStayAttachedToCarrierGrid(CEZPhysicsComponent zPhys)
+    {
+        return zPhys.CurrentStickyGround ||
+               zPhys.CurrentHasSupportBelow ||
+               zPhys.CurrentHighGroundBelow ||
+               zPhys.CurrentGroundFromBelowLevel ||
+               zPhys.CurrentGroundHeight > 0.01f ||
+               zPhys.LocalPosition < 0f;
+    }
+
+    private bool TryResolveCurrentLinkedGrid(EntityUid ent, TransformComponent xform, out EntityUid gridUid, out CEZLinkedGridComponent linked)
+    {
+        gridUid = EntityUid.Invalid;
+        linked = default!;
+
+        if (xform.GridUid is { } currentGridUid &&
+            TryComp<CEZLinkedGridComponent>(currentGridUid, out var currentLinked))
+        {
+            gridUid = currentGridUid;
+            linked = currentLinked;
+            return true;
+        }
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        if (xform.MapUid is { } currentMapUid &&
+            TryResolveGridAtWorldPositionOnMap(currentMapUid, worldPos, out var worldGridUid, out _) &&
+            TryComp<CEZLinkedGridComponent>(worldGridUid, out var worldLinked))
+        {
+            gridUid = worldGridUid;
+            linked = worldLinked;
+            return true;
+        }
+
+        if (xform.MapUid is not { } fallbackMapUid ||
+            !TryGetTraversalDepth(xform, out var depth))
+        {
+            return false;
+        }
+
+        var found = false;
+        var bestDistance = float.MaxValue;
+        var query = EntityQueryEnumerator<CEZLinkedGridComponent, TransformComponent>();
+        while (query.MoveNext(out var candidateUid, out var candidateLinked, out var candidateXform))
+        {
+            if (candidateLinked.Depth != depth ||
+                candidateXform.MapUid != fallbackMapUid)
+            {
+                continue;
+            }
+
+            var candidateDistance = Vector2.DistanceSquared(_transform.GetWorldPosition(candidateUid), worldPos);
+            if (found && candidateDistance >= bestDistance)
+                continue;
+
+            found = true;
+            bestDistance = candidateDistance;
+            gridUid = candidateUid;
+            linked = candidateLinked;
+        }
+
+        if (found)
+            return true;
+
+        return false;
+    }
+
+    private bool TryAttachToCarrierGrid(EntityUid ent, CEZPhysicsComponent zPhys, ref TransformComponent xform)
+    {
+        if (xform.GridUid != null ||
+            !ShouldStayAttachedToCarrierGrid(zPhys) ||
+            !TryResolveCurrentLinkedGrid(ent, xform, out var carrierGridUid, out _))
+        {
+            return false;
+        }
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        var carrierLocal = Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(carrierGridUid));
+        _transform.SetCoordinates(ent, new EntityCoordinates(carrierGridUid, carrierLocal));
+        xform = Transform(ent);
+        CacheMovement((ent, zPhys));
+
+        if (ZDebugEnabled)
+            DebugZVerbose(ent, $"reattached mover to carrier grid {ToPrettyString(carrierGridUid)} while preserving world position {worldPos}");
+
+        return true;
+    }
+
     private void RefreshAttachedZPhysics(EntityUid rootUid)
     {
         var stack = new Stack<EntityUid>();
@@ -372,6 +459,8 @@ public abstract partial class CESharedZLevelsSystem
         {
             if (!HasTraversalContext(xform))
                 continue;
+
+            TryAttachToCarrierGrid(uid, zPhys, ref xform);
 
             var oldVelocity = zPhys.Velocity;
             var oldHeight = zPhys.LocalPosition;
@@ -1535,8 +1624,7 @@ public abstract partial class CESharedZLevelsSystem
         peerGridUid = null;
 
         var xform = Transform(ent);
-        if (xform.GridUid is not { } currentGridUid ||
-            !TryComp<CEZLinkedGridComponent>(currentGridUid, out var linked))
+        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out var linked))
         {
             return false;
         }
@@ -1566,7 +1654,7 @@ public abstract partial class CESharedZLevelsSystem
     private Vector2 GetLinkedMoveTargetPosition(EntityUid ent, EntityUid peerGridUid, Vector2 fallbackWorldPosition)
     {
         var xform = Transform(ent);
-        if (xform.GridUid is not { } currentGridUid)
+        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out _))
             return fallbackWorldPosition;
 
         var currentGridMatrix = _transform.GetWorldMatrix(currentGridUid);
@@ -1580,7 +1668,7 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     [PublicAPI]
-    public bool TryMove(EntityUid ent, int offset, Entity<CEZLevelMapComponent?>? map = null)
+    public bool TryMove(EntityUid ent, int offset, Entity<CEZLevelMapComponent?>? map = null, Vector2? targetWorldPositionOverride = null, bool allowStairExitLanding = true)
     {
         MapId targetMapId;
         int targetZLevel;
@@ -1622,11 +1710,12 @@ public abstract partial class CESharedZLevelsSystem
         var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref beforeEv);
 
-        var targetWorldPos = peerGridUid != null
+        var targetWorldPos = targetWorldPositionOverride ?? (peerGridUid != null
             ? GetLinkedMoveTargetPosition(ent, peerGridUid.Value, worldPos)
-            : worldPos;
+            : worldPos);
 
-        if (TryGetForwardLandingPosition(ent, offset, targetWorldPos, peerGridUid, targetMapId, out var forwardLandingWorldPos))
+        if (allowStairExitLanding &&
+            TryGetForwardLandingPosition(ent, offset, targetWorldPos, peerGridUid, targetMapId, out var forwardLandingWorldPos))
         {
             DebugZVerbose(ent, $"using stair exit nudge landing at {forwardLandingWorldPos} for offset={offset}");
 
@@ -1733,6 +1822,24 @@ public abstract partial class CESharedZLevelsSystem
     public bool TryMoveDown(EntityUid ent)
     {
         return TryMove(ent, -1);
+    }
+
+    [PublicAPI]
+    public void TeleportToZLevelCoordinates(EntityUid ent, EntityCoordinates targetCoordinates, int targetZLevel, int offset)
+    {
+        var worldRot = _transform.GetWorldRotation(ent);
+
+        var beforeEv = new CEZLevelBeforeMapMoveEvent(offset, targetZLevel);
+        RaiseLocalEvent(ent, ref beforeEv);
+
+        _transform.SetCoordinates(ent, targetCoordinates);
+
+        var xform = Transform(ent);
+        var parentRot = _transform.GetWorldRotation(xform.ParentUid);
+        _transform.SetLocalRotation(ent, worldRot - parentRot);
+
+        var ev = new CEZLevelMapMoveEvent(offset, targetZLevel);
+        RaiseLocalEvent(ent, ref ev);
     }
 
     [PublicAPI]

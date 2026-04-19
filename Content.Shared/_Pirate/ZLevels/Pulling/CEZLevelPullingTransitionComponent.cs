@@ -30,10 +30,18 @@ public sealed partial class CEZLevelPullingTransitionComponent : Component
     public Vector2 TargetPosition;
 
     /// <summary>
-    /// The desired horizontal offset from the puller after the z-transition completes.
+    /// The normalized world-space direction from the puller to the pulled entity before the z-transition.
+    /// Used to restore the original pull spacing after both entities reunite on the new level.
     /// </summary>
     [DataField, AutoNetworkedField]
-    public Vector2 FollowOffset;
+    public Vector2 PullDirection;
+
+    /// <summary>
+    /// The separation distance between puller and pulled entity before the z-transition.
+    /// The resumed pull joint should preserve this spacing instead of inheriting the temporary stacked landing.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public float PullDistance;
 
     /// <summary>
     /// Reference to the puller entity.

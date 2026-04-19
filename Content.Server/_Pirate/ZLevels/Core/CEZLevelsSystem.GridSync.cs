@@ -98,8 +98,8 @@ public sealed partial class CEZLevelsSystem
 
     /// <summary>
     /// Syncs position, rotation, and velocity from the leader grid (depth 0) to all peers.
-    /// Also propagates velocity changes from non-leader grids to the leader, so impacts
-    /// on any Z-level affect the whole structure.
+    /// This is intentionally one-way: feeding peer velocity back into the leader every frame
+    /// cancels freshly-applied shuttle thrust before the peers have caught up.
     /// </summary>
     private void UpdateGridSync(float frameTime)
     {
@@ -118,28 +118,6 @@ public sealed partial class CEZLevelsSystem
 
                 if (linked.PeerGrids.Count == 0)
                     continue;
-
-                // First pass: aggregate velocity deltas from peers.
-                // If a non-leader grid was hit by an impulse (meteor, collision, etc.),
-                // its velocity will differ from the leader. Propagate that delta to the leader
-                // so the whole structure reacts.
-                var totalLinearDelta = Vector2.Zero;
-                var totalAngularDelta = 0f;
-
-                foreach (var (_, peerUid) in linked.PeerGrids)
-                {
-                    if (!TryComp<PhysicsComponent>(peerUid, out var peerBody))
-                        continue;
-
-                    totalLinearDelta += peerBody.LinearVelocity - body.LinearVelocity;
-                    totalAngularDelta += peerBody.AngularVelocity - body.AngularVelocity;
-                }
-
-                if (totalLinearDelta.LengthSquared() > 0.0001f)
-                    _physics.SetLinearVelocity(uid, body.LinearVelocity + totalLinearDelta, body: body);
-
-                if (MathF.Abs(totalAngularDelta) > 0.0001f)
-                    _physics.SetAngularVelocity(uid, body.AngularVelocity + totalAngularDelta, body: body);
 
                 // Second pass: sync all peers to leader's state
                 foreach (var (_, peerUid) in linked.PeerGrids)
