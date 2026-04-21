@@ -9,6 +9,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Numerics;
 
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
@@ -105,6 +106,11 @@ public abstract partial class CESharedZLevelsSystem
     protected static string StairCsvBool(bool value)
     {
         return value ? "1" : "0";
+    }
+
+    protected static string StairCsvVec2(Vector2 value)
+    {
+        return $"{StairCsvFloat(value.X)}:{StairCsvFloat(value.Y)}";
     }
 
     protected void DebugZStairCsv(EntityUid ent, string eventName, string payload, string? dedupeKey = null)

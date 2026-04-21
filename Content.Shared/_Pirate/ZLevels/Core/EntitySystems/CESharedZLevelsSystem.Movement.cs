@@ -245,22 +245,24 @@ public abstract partial class CESharedZLevelsSystem
         CEZPhysicsComponent zPhys,
         TransformComponent xform,
         out int supportOffset,
+        out EntityUid supportGridUid,
         out bool supportIsHighGround,
         out bool effectiveGravityBelow)
     {
         supportOffset = 0;
+        supportGridUid = EntityUid.Invalid;
         supportIsHighGround = false;
         effectiveGravityBelow = false;
 
         if (zPhys.CurrentStickyGround)
         {
-            if (TryResolveGridForMapOffset(uid, xform, -1, out _, out _))
+            if (TryResolveGridForMapOffset(uid, xform, -1, out supportGridUid, out _))
                 return AutoDescendMode.ControlledStep;
 
             return AutoDescendMode.None;
         }
 
-        if (!TryFindSupportedLevelBelow(uid, xform, out supportOffset, out var supportGridUid, out supportIsHighGround))
+        if (!TryFindSupportedLevelBelow(uid, xform, out supportOffset, out supportGridUid, out supportIsHighGround))
             return AutoDescendMode.None;
 
         effectiveGravityBelow = _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
@@ -397,6 +399,17 @@ public abstract partial class CESharedZLevelsSystem
         xform = Transform(ent);
         CacheMovement((ent, zPhys));
 
+        if (ZDebugStairsEnabled)
+        {
+            var carrierVelocity = TryGetLinearVelocity(carrierGridUid, out var velocity)
+                ? StairCsvVec2(velocity)
+                : "na";
+            DebugZStairCsv(ent,
+                "carrier_attach",
+                $"carrier={ToPrettyString(carrierGridUid)},world={StairCsvVec2(worldPos)},local={StairCsvVec2(carrierLocal)},carrier_vel={carrierVelocity}",
+                $"{ToPrettyString(carrierGridUid)}|{StairCsvVec2(carrierLocal)}|{carrierVelocity}");
+        }
+
         if (ZDebugEnabled)
             DebugZVerbose(ent, $"reattached mover to carrier grid {ToPrettyString(carrierGridUid)} while preserving world position {worldPos}");
 
@@ -441,6 +454,10 @@ public abstract partial class CESharedZLevelsSystem
             ent.Comp.CurrentZLevel = args.CurrentZLevel;
             DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.CurrentZLevel));
         }
+
+        DebugZStairCsv(ent,
+            "zlevel_event",
+            $"offset={args.Offset},current_z={args.CurrentZLevel}");
         // Update cached ground height when entity moves between Z-level maps
         CacheMovement(ent);
     }
@@ -594,24 +611,37 @@ public abstract partial class CESharedZLevelsSystem
                 var isWeightless = _gravity.IsWeightless(uid, physics, xform);
                 var downBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
                 var supportOffset = 0;
+                var supportGridUid = EntityUid.Invalid;
                 var supportIsHighGround = false;
                 var effectiveGravityBelow = false;
                 var descendMode = downBlocked
                     ? AutoDescendMode.None
-                    : GetAutoDescendMode(uid, zPhys, xform, out supportOffset, out supportIsHighGround, out effectiveGravityBelow);
+                    : GetAutoDescendMode(uid, zPhys, xform, out supportOffset, out supportGridUid, out supportIsHighGround, out effectiveGravityBelow);
                 var canAutoDescend = descendMode != AutoDescendMode.None;
+                var gridVelocity = xform.GridUid != null && TryGetLinearVelocity(xform.GridUid.Value, out var currentGridVelocity)
+                    ? StairCsvVec2(currentGridVelocity)
+                    : "na";
+                var supportGridVelocity = supportGridUid != EntityUid.Invalid && TryGetLinearVelocity(supportGridUid, out var belowGridVelocity)
+                    ? StairCsvVec2(belowGridVelocity)
+                    : "na";
 
                 DebugZStairCsv(uid,
                     "down_check",
-                    $"allow={StairCsvBool(canAutoDescend)},blocked={StairCsvBool(downBlocked)},mode={descendMode},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},support_offset={supportOffset},support_highground={StairCsvBool(supportIsHighGround)},weightless={StairCsvBool(isWeightless)},effective_gravity_below={StairCsvBool(effectiveGravityBelow)}",
-                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(downBlocked)}|{descendMode}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{supportOffset}|{StairCsvBool(supportIsHighGround)}|{StairCsvBool(isWeightless)}|{StairCsvBool(effectiveGravityBelow)}");
+                    $"allow={StairCsvBool(canAutoDescend)},blocked={StairCsvBool(downBlocked)},mode={descendMode},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},support_grid_vel={supportGridVelocity},support_highground={StairCsvBool(supportIsHighGround)},weightless={StairCsvBool(isWeightless)},effective_gravity_below={StairCsvBool(effectiveGravityBelow)},grid_vel={gridVelocity}",
+                    $"{StairCsvBool(canAutoDescend)}|{StairCsvBool(downBlocked)}|{descendMode}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{StairCsvBool(zPhys.CurrentHighGroundBelow)}|{supportOffset}|{(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))}|{supportGridVelocity}|{StairCsvBool(supportIsHighGround)}|{StairCsvBool(isWeightless)}|{StairCsvBool(effectiveGravityBelow)}|{gridVelocity}");
 
                 if (canAutoDescend)
                 {
                     if (ZDebugEnabled)
                         DebugZ(uid, $"local position dropped below 0, attempting move down in mode={descendMode}");
 
-                    if (TryMoveDown(uid))
+                    var movedDown = TryMoveDown(uid);
+                    DebugZStairCsv(uid,
+                        "down_result",
+                        $"success={StairCsvBool(movedDown)},mode={descendMode},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},grid_vel={gridVelocity},support_grid_vel={supportGridVelocity}",
+                        $"{StairCsvBool(movedDown)}|{descendMode}|{supportOffset}|{(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))}|{gridVelocity}|{supportGridVelocity}");
+
+                    if (movedDown)
                     {
                         if (descendMode == AutoDescendMode.ControlledStep)
                         {
@@ -633,6 +663,10 @@ public abstract partial class CESharedZLevelsSystem
                     else
                     {
                         // Level below exists but transfer failed — stop cleanly
+                        DebugZStairCsv(uid,
+                            "down_clamp",
+                            $"reason=move_failed,mode={descendMode},grid_vel={gridVelocity},support_grid_vel={supportGridVelocity}",
+                            $"move_failed|{descendMode}|{gridVelocity}|{supportGridVelocity}");
                         if (ZDebugEnabled)
                             DebugZ(uid, $"move down failed in mode={descendMode}, clamping to 0");
                         zPhys.LocalPosition = 0f;
@@ -642,6 +676,10 @@ public abstract partial class CESharedZLevelsSystem
                 else
                 {
                     // Weightless or no floor below — clamp and float on current level
+                    DebugZStairCsv(uid,
+                        "down_clamp",
+                        $"reason=blocked,blocked={StairCsvBool(downBlocked)},weightless={StairCsvBool(isWeightless)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},grid_vel={gridVelocity}",
+                        $"blocked|{StairCsvBool(downBlocked)}|{StairCsvBool(isWeightless)}|{StairCsvBool(zPhys.CurrentHasSupportBelow)}|{(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))}|{gridVelocity}");
                     if (ZDebugEnabled)
                         DebugZ(uid, $"descent blocked (blocked={downBlocked}, weightless={isWeightless}, supportBelow={zPhys.CurrentHasSupportBelow}), clamping to 0");
                     zPhys.LocalPosition = 0f;
@@ -655,6 +693,10 @@ public abstract partial class CESharedZLevelsSystem
                 var hasTileAbove = HasTileAbove(uid);
                 if (hasTileAbove) //Hit roof
                 {
+                    DebugZStairCsv(uid,
+                        "up_result",
+                        "success=0,reason=tile_above",
+                        "0|tile_above");
                     if (ZDebugEnabled)
                         DebugZ(uid, "upward move blocked by tile above");
                     if (MathF.Abs(zPhys.Velocity) >= ImpactVelocityLimit)
@@ -671,6 +713,10 @@ public abstract partial class CESharedZLevelsSystem
                 else //Move up
                 {
                     var movedUp = TryMoveUp(uid);
+                    DebugZStairCsv(uid,
+                        "up_result",
+                        $"success={StairCsvBool(movedUp)},reason={(movedUp ? "ok" : "move_failed")}",
+                        $"{StairCsvBool(movedUp)}|{(movedUp ? "ok" : "move_failed")}");
                     if (ZDebugEnabled)
                         DebugZ(uid, $"upward transfer attempted, success={movedUp}");
                     if (movedUp)
@@ -818,6 +864,36 @@ public abstract partial class CESharedZLevelsSystem
         gridUid = EntityUid.Invalid;
         gridComp = default!;
         return false;
+    }
+
+    private bool TryGetLinearVelocity(EntityUid uid, out Vector2 velocity)
+    {
+        if (TryComp<PhysicsComponent>(uid, out var physics))
+        {
+            velocity = physics.LinearVelocity;
+            return true;
+        }
+
+        velocity = Vector2.Zero;
+        return false;
+    }
+
+    private string GetEntityVelocityCsv(EntityUid? uid)
+    {
+        if (uid is not { } resolvedUid)
+            return "na";
+
+        return TryGetLinearVelocity(resolvedUid, out var velocity)
+            ? StairCsvVec2(velocity)
+            : "na";
+    }
+
+    private string GetEntityWorldPositionCsv(EntityUid? uid)
+    {
+        if (uid is not { } resolvedUid)
+            return "na";
+
+        return StairCsvVec2(_transform.GetWorldPosition(resolvedUid));
     }
 
     private bool TryResolveGridForMapOffset(EntityUid ent, TransformComponent xform, int offset, out EntityUid gridUid, out MapGridComponent gridComp)
@@ -1675,13 +1751,24 @@ public abstract partial class CESharedZLevelsSystem
         EntityUid? peerGridUid;
         var worldPos = _transform.GetWorldPosition(ent);
         var worldRot = _transform.GetWorldRotation(ent);
+        var xform = Transform(ent);
+        var sourceGridVelocity = xform.GridUid != null && TryGetLinearVelocity(xform.GridUid.Value, out var sourceGridVel)
+            ? StairCsvVec2(sourceGridVel)
+            : "na";
+        var sourceParentUid = xform.ParentUid;
+        var sourceParentWorld = GetEntityWorldPositionCsv(sourceParentUid);
+        var sourceParentVelocity = GetEntityVelocityCsv(sourceParentUid);
 
         if (!TryResolveLinkedMoveTarget(ent, offset, out targetMapId, out targetZLevel, out peerGridUid))
         {
-            var currentMapUid = map?.Owner ?? Transform(ent).MapUid;
+            var currentMapUid = map?.Owner ?? xform.MapUid;
 
             if (currentMapUid is null)
             {
+                DebugZStairCsv(ent,
+                    "move_fail",
+                    $"offset={offset},reason=no_current_map,source_world={StairCsvVec2(worldPos)},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_grid_vel={sourceGridVelocity}",
+                    $"{offset}|no_current_map|{(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))}|{sourceGridVelocity}");
                 if (ZDebugEnabled)
                     DebugZ(ent, $"move failed: no current map for offset={offset}");
                 return false;
@@ -1689,6 +1776,10 @@ public abstract partial class CESharedZLevelsSystem
 
             if (!TryResolveTraversalMapOffset(currentMapUid.Value, offset, out var targetMapUid, out targetZLevel))
             {
+                DebugZStairCsv(ent,
+                    "move_fail",
+                    $"offset={offset},reason=no_target_map,source_world={StairCsvVec2(worldPos)},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_grid_vel={sourceGridVelocity}",
+                    $"{offset}|no_target_map|{(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))}|{sourceGridVelocity}");
                 if (ZDebugEnabled)
                     DebugZ(ent, $"move failed: no target map at offset={offset}");
                 return false;
@@ -1696,6 +1787,10 @@ public abstract partial class CESharedZLevelsSystem
 
             if (!_mapQuery.TryComp(targetMapUid, out var targetMapComp))
             {
+                DebugZStairCsv(ent,
+                    "move_fail",
+                    $"offset={offset},reason=missing_target_map_component,target_map={targetMapUid},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_grid_vel={sourceGridVelocity}",
+                    $"{offset}|missing_target_map_component|{targetMapUid}|{sourceGridVelocity}");
                 if (ZDebugEnabled)
                     DebugZ(ent, $"move failed: target map {targetMapUid} has no map component");
                 return false;
@@ -1703,6 +1798,10 @@ public abstract partial class CESharedZLevelsSystem
 
             targetMapId = targetMapComp.MapId;
         }
+
+        DebugZStairCsv(ent,
+            "move_attempt",
+            $"offset={offset},target_z={targetZLevel},source_world={StairCsvVec2(worldPos)},source_parent={sourceParentUid},source_parent_world={sourceParentWorld},source_parent_vel={sourceParentVelocity},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_map={(xform.MapUid == null ? "null" : xform.MapUid.Value.ToString())},source_grid_vel={sourceGridVelocity},peer_grid={(peerGridUid == null ? "null" : ToPrettyString(peerGridUid.Value))},allow_stair_landing={StairCsvBool(allowStairExitLanding)}");
 
         if (ZDebugEnabled)
             DebugZ(ent, $"attempting move offset={offset} targetMapId={targetMapId} targetZ={targetZLevel} peerGrid={peerGridUid} sourceWorld={worldPos}");
@@ -1721,6 +1820,8 @@ public abstract partial class CESharedZLevelsSystem
 
             targetWorldPos = forwardLandingWorldPos;
         }
+
+        var plannedTargetWorldPos = targetWorldPos;
 
         // Save mover eye rotation state before the move.
         // OnInputParentChange resets RelativeRotation on map change, causing an eye snap.
@@ -1764,7 +1865,10 @@ public abstract partial class CESharedZLevelsSystem
             _transform.SetMapCoordinates(ent, new MapCoordinates(targetWorldPos, targetMapId));
         }
 
-        var xform = Transform(ent);
+        xform = Transform(ent);
+        var transferMode = peerGridUid != null
+            ? "peer_grid"
+            : "map_or_grid";
         if (xform.GridUid == null &&
             _map.TryGetMap(targetMapId, out var reattachMapUid) &&
             TryResolveGridAtWorldPositionOnMap(reattachMapUid.Value, targetWorldPos, out var reattachGridUid, out _))
@@ -1774,6 +1878,7 @@ public abstract partial class CESharedZLevelsSystem
                 Vector2.Transform(targetWorldPos, _transform.GetInvWorldMatrix(reattachGridUid)));
             _transform.SetCoordinates(ent, gridCoordinates);
             xform = Transform(ent);
+            transferMode = "map_reattach";
         }
 
         // Force set both local rotation and world rotation to ensure consistency.
@@ -1798,6 +1903,17 @@ public abstract partial class CESharedZLevelsSystem
 
         var ev = new CEZLevelMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref ev);
+
+        var actualWorldPos = _transform.GetWorldPosition(ent);
+        var finalLocal = xform.GridUid != null
+            ? StairCsvVec2(Vector2.Transform(actualWorldPos, _transform.GetInvWorldMatrix(xform.GridUid.Value)))
+            : "na";
+        var finalParentUid = xform.ParentUid;
+        var finalParentWorld = GetEntityWorldPositionCsv(finalParentUid);
+        var finalParentVelocity = GetEntityVelocityCsv(finalParentUid);
+        DebugZStairCsv(ent,
+            "move_commit",
+            $"offset={offset},target_z={targetZLevel},mode={transferMode},planned_world={StairCsvVec2(plannedTargetWorldPos)},actual_world={StairCsvVec2(actualWorldPos)},final_parent={finalParentUid},final_parent_world={finalParentWorld},final_parent_vel={finalParentVelocity},final_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},final_map={(xform.MapUid == null ? "null" : xform.MapUid.Value.ToString())},final_local={finalLocal}");
 
         if (ZDebugEnabled)
             DebugZ(ent, $"move succeeded offset={offset} newZ={targetZLevel} landing={targetWorldPos}");
