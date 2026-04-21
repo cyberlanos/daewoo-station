@@ -33,4 +33,13 @@ public sealed partial class CCVars
 
     public static readonly CVarDef<bool>
         CEDebugStairs = CVarDef.Create("zlevels.ce_debug_stairs", false, CVar.SERVERONLY | CVar.ARCHIVE);
+
+    public static readonly CVarDef<bool>
+        CEDebugMovementClient = CVarDef.Create("zlevels.ce_debug_movement_client", false, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    public static readonly CVarDef<bool>
+        CEDebugMovementVerboseClient = CVarDef.Create("zlevels.ce_debug_movement_verbose_client", false, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    public static readonly CVarDef<bool>
+        CEDebugStairsClient = CVarDef.Create("zlevels.ce_debug_stairs_client", false, CVar.CLIENTONLY | CVar.ARCHIVE);
 }

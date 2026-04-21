@@ -7,6 +7,7 @@ using Content.Shared._Pirate.ZLevels.Core.Components;
 using SharedCCVars = Content.Shared.CCVar.CCVars;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
@@ -18,22 +19,35 @@ public abstract partial class CESharedZLevelsSystem
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly INetManager _net = default!;
 
+    private static readonly TimeSpan StairDebugRepeatWindow = TimeSpan.FromSeconds(0.5);
+
     private bool _zDebugEnabled;
     private bool _zDebugVerboseEnabled;
     private bool _zDebugStairsEnabled;
-    private readonly Dictionary<(EntityUid Uid, string EventName), string> _stairDebugKeys = new();
+    private readonly Dictionary<(EntityUid Uid, string EventName, string DedupeKey), TimeSpan> _stairDebugKeys = new();
 
     private void InitializeDebug()
     {
-        if (!_net.IsServer)
+        if (_net.IsServer)
+        {
+            _zDebugEnabled = _config.GetCVar(SharedCCVars.CEDebugMovement);
+            _zDebugVerboseEnabled = _config.GetCVar(SharedCCVars.CEDebugMovementVerbose);
+            _zDebugStairsEnabled = _config.GetCVar(SharedCCVars.CEDebugStairs);
+            _config.OnValueChanged(SharedCCVars.CEDebugMovement, OnMovementDebugChanged);
+            _config.OnValueChanged(SharedCCVars.CEDebugMovementVerbose, OnMovementVerboseDebugChanged);
+            _config.OnValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged);
+            return;
+        }
+
+        if (!_net.IsClient)
             return;
 
-        _zDebugEnabled = _config.GetCVar(SharedCCVars.CEDebugMovement);
-        _zDebugVerboseEnabled = _config.GetCVar(SharedCCVars.CEDebugMovementVerbose);
-        _zDebugStairsEnabled = _config.GetCVar(SharedCCVars.CEDebugStairs);
-        _config.OnValueChanged(SharedCCVars.CEDebugMovement, OnMovementDebugChanged);
-        _config.OnValueChanged(SharedCCVars.CEDebugMovementVerbose, OnMovementVerboseDebugChanged);
-        _config.OnValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged);
+        _zDebugEnabled = _config.GetCVar(SharedCCVars.CEDebugMovementClient);
+        _zDebugVerboseEnabled = _config.GetCVar(SharedCCVars.CEDebugMovementVerboseClient);
+        _zDebugStairsEnabled = _config.GetCVar(SharedCCVars.CEDebugStairsClient);
+        _config.OnValueChanged(SharedCCVars.CEDebugMovementClient, OnMovementDebugChanged);
+        _config.OnValueChanged(SharedCCVars.CEDebugMovementVerboseClient, OnMovementVerboseDebugChanged);
+        _config.OnValueChanged(SharedCCVars.CEDebugStairsClient, OnStairDebugChanged);
     }
 
     private void OnMovementDebugChanged(bool enabled)
@@ -42,7 +56,7 @@ public abstract partial class CESharedZLevelsSystem
             return;
 
         _zDebugEnabled = enabled;
-        Log.Info($"[CEZDebug] movement logging {(enabled ? "enabled" : "disabled")} via cvar {SharedCCVars.CEDebugMovement.Name}");
+        Log.Info($"[CEZDebug] movement logging {(enabled ? "enabled" : "disabled")} via cvar {GetMovementDebugName()}");
     }
 
     private void OnMovementVerboseDebugChanged(bool enabled)
@@ -51,7 +65,7 @@ public abstract partial class CESharedZLevelsSystem
             return;
 
         _zDebugVerboseEnabled = enabled;
-        Log.Info($"[CEZDebug] verbose movement logging {(enabled ? "enabled" : "disabled")} via cvar {SharedCCVars.CEDebugMovementVerbose.Name}");
+        Log.Info($"[CEZDebug] verbose movement logging {(enabled ? "enabled" : "disabled")} via cvar {GetMovementVerboseDebugName()}");
     }
 
     private void OnStairDebugChanged(bool enabled)
@@ -61,12 +75,50 @@ public abstract partial class CESharedZLevelsSystem
 
         _zDebugStairsEnabled = enabled;
         _stairDebugKeys.Clear();
-        Log.Info($"[CEZStairCsv] stair logging {(enabled ? "enabled" : "disabled")} via cvar {SharedCCVars.CEDebugStairs.Name}");
+        Log.Info($"[CEZStairCsv] stair logging {(enabled ? "enabled" : "disabled")} via cvar {GetStairDebugName()}");
     }
 
-    protected bool ZDebugEnabled => _net.IsServer && _zDebugEnabled;
+    protected bool ZDebugEnabled => _zDebugEnabled;
     protected bool ZDebugVerboseEnabled => ZDebugEnabled && _zDebugVerboseEnabled;
-    protected bool ZDebugStairsEnabled => _net.IsServer && _zDebugStairsEnabled;
+    protected bool ZDebugStairsEnabled => _zDebugStairsEnabled;
+
+    private string GetMovementDebugName()
+    {
+        return _net.IsServer
+            ? SharedCCVars.CEDebugMovement.Name
+            : SharedCCVars.CEDebugMovementClient.Name;
+    }
+
+    private string GetMovementVerboseDebugName()
+    {
+        return _net.IsServer
+            ? SharedCCVars.CEDebugMovementVerbose.Name
+            : SharedCCVars.CEDebugMovementVerboseClient.Name;
+    }
+
+    private string GetStairDebugName()
+    {
+        return _net.IsServer
+            ? SharedCCVars.CEDebugStairs.Name
+            : SharedCCVars.CEDebugStairsClient.Name;
+    }
+
+    protected string StairCsvSide()
+    {
+        if (_net.IsServer)
+            return "server";
+
+        if (_net.IsClient)
+            return "client";
+
+        return "unknown";
+    }
+
+    protected string StairCsvRemainingTime(TimeSpan targetTime)
+    {
+        var remaining = targetTime - _timing.CurTime;
+        return StairCsvFloat((float) Math.Max(0, remaining.TotalSeconds));
+    }
 
     protected static bool ShouldLogMovementTick(CEZPhysicsComponent zPhys, float oldHeight)
     {
@@ -120,11 +172,12 @@ public abstract partial class CESharedZLevelsSystem
 
         if (dedupeKey != null)
         {
-            var key = (ent, eventName);
-            if (_stairDebugKeys.TryGetValue(key, out var previous) && previous == dedupeKey)
+            var key = (ent, eventName, dedupeKey);
+            if (_stairDebugKeys.TryGetValue(key, out var previousTime) &&
+                _timing.CurTime - previousTime < StairDebugRepeatWindow)
                 return;
 
-            _stairDebugKeys[key] = dedupeKey;
+            _stairDebugKeys[key] = _timing.CurTime;
         }
 
         var xform = Transform(ent);
@@ -134,8 +187,10 @@ public abstract partial class CESharedZLevelsSystem
         if (ZPhyzQuery.TryComp(ent, out var zPhys))
         {
             basePayload +=
-                $",local={StairCsvFloat(zPhys.LocalPosition)},vel={StairCsvFloat(zPhys.Velocity)},ground={StairCsvFloat(zPhys.CurrentGroundHeight)},sticky={StairCsvBool(zPhys.CurrentStickyGround)}";
+                $",local={StairCsvFloat(zPhys.LocalPosition)},vel={StairCsvFloat(zPhys.Velocity)},ground={StairCsvFloat(zPhys.CurrentGroundHeight)},sticky={StairCsvBool(zPhys.CurrentStickyGround)},current_z={zPhys.CurrentZLevel},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},up_block_rem={StairCsvRemainingTime(zPhys.AutoUpBlockedUntil)},down_block_rem={StairCsvRemainingTime(zPhys.AutoDownBlockedUntil)},startup_block_rem={StairCsvRemainingTime(zPhys.StartupSuppressedUntil)}";
         }
+
+        basePayload += $",side={StairCsvSide()},first_pred={StairCsvBool(_timing.IsFirstTimePredicted)},applying_state={StairCsvBool(_timing.ApplyingState)}";
 
         Log.Info($"[CEZStairCsv] event={eventName},{basePayload},{payload}");
     }

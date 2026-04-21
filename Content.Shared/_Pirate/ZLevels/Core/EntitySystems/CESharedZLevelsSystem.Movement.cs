@@ -328,16 +328,18 @@ public abstract partial class CESharedZLevelsSystem
                zPhys.LocalPosition < 0f;
     }
 
-    private bool TryResolveCurrentLinkedGrid(EntityUid ent, TransformComponent xform, out EntityUid gridUid, out CEZLinkedGridComponent linked)
+    private bool TryResolveCurrentLinkedGrid(EntityUid ent, TransformComponent xform, out EntityUid gridUid, out CEZLinkedGridComponent linked, out string resolutionSource)
     {
         gridUid = EntityUid.Invalid;
         linked = default!;
+        resolutionSource = "none";
 
         if (xform.GridUid is { } currentGridUid &&
             TryComp<CEZLinkedGridComponent>(currentGridUid, out var currentLinked))
         {
             gridUid = currentGridUid;
             linked = currentLinked;
+            resolutionSource = "parent_grid";
             return true;
         }
 
@@ -348,6 +350,7 @@ public abstract partial class CESharedZLevelsSystem
         {
             gridUid = worldGridUid;
             linked = worldLinked;
+            resolutionSource = "world_grid";
             return true;
         }
 
@@ -379,16 +382,44 @@ public abstract partial class CESharedZLevelsSystem
         }
 
         if (found)
+        {
+            resolutionSource = "nearest_linked";
             return true;
+        }
 
         return false;
     }
 
     private bool TryAttachToCarrierGrid(EntityUid ent, CEZPhysicsComponent zPhys, ref TransformComponent xform)
     {
+        var shouldAttach = ShouldStayAttachedToCarrierGrid(zPhys);
+        var resolvedCarrier = TryResolveCurrentLinkedGrid(ent, xform, out var carrierGridUid, out _, out var carrierResolveSource);
+        var descentCandidate = zPhys.CurrentGroundFromBelowLevel || zPhys.LocalPosition < 0f;
+
+        if (_net.IsServer && xform.GridUid == null)
+        {
+            DebugZStairCsv(ent,
+                "carrier_check",
+                $"has_grid=0,should_attach={StairCsvBool(shouldAttach)},descent_candidate={StairCsvBool(descentCandidate)},resolved={StairCsvBool(resolvedCarrier)},resolve_source={carrierResolveSource},carrier={(resolvedCarrier ? ToPrettyString(carrierGridUid) : "null")},world={StairCsvVec2(_transform.GetWorldPosition(ent))}",
+                $"0|{StairCsvBool(shouldAttach)}|{StairCsvBool(descentCandidate)}|{StairCsvBool(resolvedCarrier)}|{carrierResolveSource}|{(resolvedCarrier ? ToPrettyString(carrierGridUid) : "null")}");
+        }
+
+        if (_net.IsServer &&
+            xform.GridUid == null &&
+            descentCandidate &&
+            shouldAttach &&
+            resolvedCarrier)
+        {
+            DebugZStairCsv(ent,
+                "carrier_skip",
+                $"reason=descent_candidate,carrier={ToPrettyString(carrierGridUid)},resolve_source={carrierResolveSource},local={StairCsvFloat(zPhys.LocalPosition)},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}",
+                $"descent_candidate|{ToPrettyString(carrierGridUid)}|{carrierResolveSource}|{StairCsvBool(zPhys.CurrentGroundFromBelowLevel)}|{StairCsvFloat(zPhys.LocalPosition)}");
+        }
+
         if (xform.GridUid != null ||
-            !ShouldStayAttachedToCarrierGrid(zPhys) ||
-            !TryResolveCurrentLinkedGrid(ent, xform, out var carrierGridUid, out _))
+            descentCandidate ||
+            !shouldAttach ||
+            !resolvedCarrier)
         {
             return false;
         }
@@ -399,15 +430,15 @@ public abstract partial class CESharedZLevelsSystem
         xform = Transform(ent);
         CacheMovement((ent, zPhys));
 
-        if (ZDebugStairsEnabled)
+        if (_net.IsServer && ZDebugStairsEnabled)
         {
             var carrierVelocity = TryGetLinearVelocity(carrierGridUid, out var velocity)
                 ? StairCsvVec2(velocity)
                 : "na";
             DebugZStairCsv(ent,
                 "carrier_attach",
-                $"carrier={ToPrettyString(carrierGridUid)},world={StairCsvVec2(worldPos)},local={StairCsvVec2(carrierLocal)},carrier_vel={carrierVelocity}",
-                $"{ToPrettyString(carrierGridUid)}|{StairCsvVec2(carrierLocal)}|{carrierVelocity}");
+                $"carrier={ToPrettyString(carrierGridUid)},resolve_source={carrierResolveSource},world={StairCsvVec2(worldPos)},local={StairCsvVec2(carrierLocal)},carrier_vel={carrierVelocity}",
+                $"{ToPrettyString(carrierGridUid)}|{carrierResolveSource}|{StairCsvVec2(carrierLocal)}|{carrierVelocity}");
         }
 
         if (ZDebugEnabled)
@@ -963,7 +994,7 @@ public abstract partial class CESharedZLevelsSystem
             return false;
 
         var resolvedByTransferHint = TryGetStairTransferDirection(ent, offset, out var forwardDir);
-        TryGetTileLocalPositionForTarget(baseTargetWorldPos, targetGridUid, targetMapId, out var local);
+        TryGetTileLocalPositionForTarget(baseTargetWorldPos, targetGridUid, targetMapId, out var local, out var localGridUid, out var localGridSource);
 
         // Only apply the forward step-off behavior for staircase/slope transitions.
         if (offset > 0)
@@ -992,17 +1023,24 @@ public abstract partial class CESharedZLevelsSystem
                 !TryGetGroundSupportSample((ent, sourceZPhys), out var support, 1, false) ||
                 !support.IsHighGround ||
                 support.SurfaceDirection != forwardDir ||
-                !TryGetLocalDirectionForTarget(forwardDir, targetGridUid, targetMapId, baseTargetWorldPos, out var targetLocalDir) ||
+                !TryGetLocalDirectionForTarget(forwardDir, targetGridUid, targetMapId, baseTargetWorldPos, out var targetLocalDir, out var targetDirectionGridUid, out var targetDirectionGridSource) ||
                 !TrySetTileLocalForStairSample(local, targetLocalDir, StairDownLandingSample, out var targetLocal))
             {
                 DebugZVerbose(ent, "stair exit placement skipped for downward move: no straight stair sample could be resolved");
                 return false;
             }
 
-            if (!TrySetTileLocalWorldPosition(targetLocal, baseTargetWorldPos, targetGridUid, targetMapId, out landingWorldPos))
+            if (!TrySetTileLocalWorldPosition(ent, targetLocal, baseTargetWorldPos, targetGridUid, targetMapId, out landingWorldPos, out var landingGridUid, out var landingGridSource))
             {
                 DebugZVerbose(ent, "stair exit placement skipped for downward move: failed to convert target stair sample to world position");
                 return false;
+            }
+
+            if (_net.IsServer)
+            {
+                DebugZStairCsv(ent,
+                    "land_down_probe",
+                    $"dir={forwardDir},base_local={StairCsvVec2(local)},base_local_grid={(localGridUid == EntityUid.Invalid ? "null" : ToPrettyString(localGridUid))},base_local_source={localGridSource},support_floor={support.FloorOffset},support_grid={ToPrettyString(support.GridUid)},support_uid={(support.SupportUid == EntityUid.Invalid ? "null" : ToPrettyString(support.SupportUid))},support_sample={StairCsvFloat(support.Sample)},support_ground={StairCsvFloat(support.GroundHeight)},target_dir_grid={(targetDirectionGridUid == EntityUid.Invalid ? "null" : ToPrettyString(targetDirectionGridUid))},target_dir_source={targetDirectionGridSource},target_local_dir={targetLocalDir},target_local={StairCsvVec2(targetLocal)},landing_grid={(landingGridUid == EntityUid.Invalid ? "null" : ToPrettyString(landingGridUid))},landing_grid_source={landingGridSource},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}");
             }
         }
         else
@@ -1026,24 +1064,36 @@ public abstract partial class CESharedZLevelsSystem
         return new Vector2((localPos.X % 1 + 1) % 1, (localPos.Y % 1 + 1) % 1);
     }
 
-    private bool TryGetTileLocalPositionForTarget(Vector2 worldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 tileLocal)
+    private bool TryGetTileLocalPositionForTarget(Vector2 worldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 tileLocal, out EntityUid resolvedGridUid, out string resolutionSource)
     {
         if (targetGridUid is { } gridUid &&
             _gridQuery.HasComp(gridUid))
         {
             tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(gridUid)));
+            resolvedGridUid = gridUid;
+            resolutionSource = "explicit_grid";
             return true;
         }
 
         if (_map.TryGetMap(targetMapId, out var mapUid) &&
-            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, worldPos, out var resolvedGridUid, out _) ||
-             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
+            TryResolveGridAtWorldPositionOnMap(mapUid.Value, worldPos, out resolvedGridUid, out _))
         {
             tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(resolvedGridUid)));
+            resolutionSource = "map_world_grid";
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var fallbackMapUid) &&
+            TryResolveAnyGridOnMap(fallbackMapUid.Value, out resolvedGridUid, out _))
+        {
+            tileLocal = GetTileLocalPosition(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(resolvedGridUid)));
+            resolutionSource = "map_any_grid";
             return true;
         }
 
         tileLocal = GetTileLocalPosition(worldPos);
+        resolvedGridUid = EntityUid.Invalid;
+        resolutionSource = "world_fallback";
         return false;
     }
 
@@ -1070,24 +1120,36 @@ public abstract partial class CESharedZLevelsSystem
         return localVector.ToWorldAngle().GetCardinalDir();
     }
 
-    private bool TryGetLocalDirectionForTarget(Direction worldDir, EntityUid? targetGridUid, MapId targetMapId, Vector2 fallbackWorldPos, out Direction localDir)
+    private bool TryGetLocalDirectionForTarget(Direction worldDir, EntityUid? targetGridUid, MapId targetMapId, Vector2 fallbackWorldPos, out Direction localDir, out EntityUid resolvedGridUid, out string resolutionSource)
     {
         if (targetGridUid is { } gridUid &&
             _gridQuery.HasComp(gridUid))
         {
             localDir = GetGridLocalDirection(gridUid, worldDir);
+            resolvedGridUid = gridUid;
+            resolutionSource = "explicit_grid";
             return true;
         }
 
         if (_map.TryGetMap(targetMapId, out var mapUid) &&
-            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out var resolvedGridUid, out _) ||
-             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
+            TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out resolvedGridUid, out _))
         {
             localDir = GetGridLocalDirection(resolvedGridUid, worldDir);
+            resolutionSource = "map_world_grid";
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var fallbackMapUid) &&
+            TryResolveAnyGridOnMap(fallbackMapUid.Value, out resolvedGridUid, out _))
+        {
+            localDir = GetGridLocalDirection(resolvedGridUid, worldDir);
+            resolutionSource = "map_any_grid";
             return true;
         }
 
         localDir = worldDir;
+        resolvedGridUid = EntityUid.Invalid;
+        resolutionSource = "world_fallback";
         return true;
     }
 
@@ -1144,7 +1206,7 @@ public abstract partial class CESharedZLevelsSystem
         landingWorldPos = fallbackWorldPos;
 
         if (!TryResolveLandingGrid(targetGridUid, targetMapId, fallbackWorldPos, out var resolvedGridUid, out var resolvedGrid) ||
-            !TryGetLocalDirectionForTarget(forwardDir, resolvedGridUid, targetMapId, fallbackWorldPos, out var localDir))
+            !TryGetLocalDirectionForTarget(forwardDir, resolvedGridUid, targetMapId, fallbackWorldPos, out var localDir, out _, out _))
         {
             return false;
         }
@@ -1202,7 +1264,7 @@ public abstract partial class CESharedZLevelsSystem
         }
     }
 
-    private bool TrySetTileLocalWorldPosition(Vector2 targetLocal, Vector2 fallbackWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos)
+    private bool TrySetTileLocalWorldPosition(EntityUid ent, Vector2 targetLocal, Vector2 fallbackWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos, out EntityUid resolvedGridUid, out string resolutionSource)
     {
         if (targetGridUid is { } gridUid &&
             _gridQuery.HasComp(gridUid))
@@ -1211,22 +1273,38 @@ public abstract partial class CESharedZLevelsSystem
             var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
             var localPos = tileOrigin + targetLocal;
             landingWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(gridUid));
+            resolvedGridUid = gridUid;
+            resolutionSource = "explicit_grid";
             return true;
         }
 
         if (_map.TryGetMap(targetMapId, out var mapUid) &&
-            (TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out var resolvedGridUid, out _) ||
-             TryResolveAnyGridOnMap(mapUid.Value, out resolvedGridUid, out _)))
+            TryResolveGridAtWorldPositionOnMap(mapUid.Value, fallbackWorldPos, out resolvedGridUid, out _))
         {
             var localFallback = Vector2.Transform(fallbackWorldPos, _transform.GetInvWorldMatrix(resolvedGridUid));
             var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
             var localPos = tileOrigin + targetLocal;
             landingWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(resolvedGridUid));
+            resolutionSource = "map_world_grid";
+            return true;
+        }
+
+        if (_map.TryGetMap(targetMapId, out var fallbackMapUid) &&
+            TryResolveAnyGridOnMap(fallbackMapUid.Value, out resolvedGridUid, out _))
+        {
+            var localFallback = Vector2.Transform(fallbackWorldPos, _transform.GetInvWorldMatrix(resolvedGridUid));
+            var tileOrigin = new Vector2(MathF.Floor(localFallback.X), MathF.Floor(localFallback.Y));
+            var localPos = tileOrigin + targetLocal;
+            landingWorldPos = Vector2.Transform(localPos, _transform.GetWorldMatrix(resolvedGridUid));
+            resolutionSource = "map_any_grid";
             return true;
         }
 
         var worldTileOrigin = new Vector2(MathF.Floor(fallbackWorldPos.X), MathF.Floor(fallbackWorldPos.Y));
         landingWorldPos = worldTileOrigin + targetLocal;
+        resolvedGridUid = EntityUid.Invalid;
+        resolutionSource = "world_tile_origin";
+        DebugZVerbose(ent, $"tile-local world landing fell back to world origin for target {targetLocal} at {fallbackWorldPos}");
         return true;
     }
 
@@ -1700,8 +1778,12 @@ public abstract partial class CESharedZLevelsSystem
         peerGridUid = null;
 
         var xform = Transform(ent);
-        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out var linked))
+        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out var linked, out var resolutionSource))
         {
+            DebugZStairCsv(ent,
+                "move_target",
+                $"success=0,reason=no_current_linked,offset={offset},source_grid=null,source_resolve={resolutionSource}",
+                $"0|no_current_linked|{offset}|{resolutionSource}");
             return false;
         }
 
@@ -1709,6 +1791,10 @@ public abstract partial class CESharedZLevelsSystem
         if (!linked.PeerGrids.TryGetValue(targetZLevel, out var targetPeerGridUid))
         {
             DebugZVerbose(ent, $"linked move target missing for offset={offset} targetZ={targetZLevel}");
+            DebugZStairCsv(ent,
+                "move_target",
+                $"success=0,reason=missing_peer,offset={offset},source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},target_z={targetZLevel},z_network={linked.ZNetwork}",
+                $"0|missing_peer|{offset}|{ToPrettyString(currentGridUid)}|{resolutionSource}|{targetZLevel}");
             return false;
         }
 
@@ -1716,11 +1802,19 @@ public abstract partial class CESharedZLevelsSystem
             !_mapQuery.TryComp(targetMapUid, out var targetMapComp))
         {
             DebugZVerbose(ent, $"linked move target grid {ToPrettyString(targetPeerGridUid)} has no valid target map");
+            DebugZStairCsv(ent,
+                "move_target",
+                $"success=0,reason=invalid_target_map,offset={offset},source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},target_z={targetZLevel},peer_grid={ToPrettyString(targetPeerGridUid)}",
+                $"0|invalid_target_map|{offset}|{ToPrettyString(currentGridUid)}|{resolutionSource}|{ToPrettyString(targetPeerGridUid)}");
             return false;
         }
 
         peerGridUid = targetPeerGridUid;
         targetMapId = targetMapComp.MapId;
+        DebugZStairCsv(ent,
+            "move_target",
+            $"success=1,offset={offset},source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},target_z={targetZLevel},peer_grid={ToPrettyString(targetPeerGridUid)},target_map={targetMapUid},z_network={linked.ZNetwork}",
+            $"1|{offset}|{ToPrettyString(currentGridUid)}|{resolutionSource}|{targetZLevel}|{ToPrettyString(targetPeerGridUid)}|{targetMapUid}");
         return true;
     }
 
@@ -1730,7 +1824,7 @@ public abstract partial class CESharedZLevelsSystem
     private Vector2 GetLinkedMoveTargetPosition(EntityUid ent, EntityUid peerGridUid, Vector2 fallbackWorldPosition)
     {
         var xform = Transform(ent);
-        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out _))
+        if (!TryResolveCurrentLinkedGrid(ent, xform, out var currentGridUid, out _, out var resolutionSource))
             return fallbackWorldPosition;
 
         var currentGridMatrix = _transform.GetWorldMatrix(currentGridUid);
@@ -1740,7 +1834,14 @@ public abstract partial class CESharedZLevelsSystem
             return fallbackWorldPosition;
 
         var localToCurrentGrid = Vector2.Transform(fallbackWorldPosition, inverseCurrentGrid);
-        return Vector2.Transform(localToCurrentGrid, peerGridMatrix);
+        var targetWorldPosition = Vector2.Transform(localToCurrentGrid, peerGridMatrix);
+        if (_net.IsServer)
+        {
+            DebugZStairCsv(ent,
+                "move_target_transform",
+                $"source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},peer_grid={ToPrettyString(peerGridUid)},source_world={StairCsvVec2(fallbackWorldPosition)},source_local={StairCsvVec2(localToCurrentGrid)},target_world={StairCsvVec2(targetWorldPosition)}");
+        }
+        return targetWorldPosition;
     }
 
     [PublicAPI]
@@ -1754,6 +1855,9 @@ public abstract partial class CESharedZLevelsSystem
         var xform = Transform(ent);
         var sourceGridVelocity = xform.GridUid != null && TryGetLinearVelocity(xform.GridUid.Value, out var sourceGridVel)
             ? StairCsvVec2(sourceGridVel)
+            : "na";
+        var sourceLocal = xform.GridUid != null
+            ? StairCsvVec2(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(xform.GridUid.Value)))
             : "na";
         var sourceParentUid = xform.ParentUid;
         var sourceParentWorld = GetEntityWorldPositionCsv(sourceParentUid);
@@ -1801,7 +1905,7 @@ public abstract partial class CESharedZLevelsSystem
 
         DebugZStairCsv(ent,
             "move_attempt",
-            $"offset={offset},target_z={targetZLevel},source_world={StairCsvVec2(worldPos)},source_parent={sourceParentUid},source_parent_world={sourceParentWorld},source_parent_vel={sourceParentVelocity},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_map={(xform.MapUid == null ? "null" : xform.MapUid.Value.ToString())},source_grid_vel={sourceGridVelocity},peer_grid={(peerGridUid == null ? "null" : ToPrettyString(peerGridUid.Value))},allow_stair_landing={StairCsvBool(allowStairExitLanding)}");
+            $"offset={offset},target_z={targetZLevel},source_world={StairCsvVec2(worldPos)},source_local={sourceLocal},source_parent={sourceParentUid},source_parent_world={sourceParentWorld},source_parent_vel={sourceParentVelocity},source_grid={(xform.GridUid == null ? "null" : ToPrettyString(xform.GridUid.Value))},source_map={(xform.MapUid == null ? "null" : xform.MapUid.Value.ToString())},source_grid_vel={sourceGridVelocity},peer_grid={(peerGridUid == null ? "null" : ToPrettyString(peerGridUid.Value))},allow_stair_landing={StairCsvBool(allowStairExitLanding)}");
 
         if (ZDebugEnabled)
             DebugZ(ent, $"attempting move offset={offset} targetMapId={targetMapId} targetZ={targetZLevel} peerGrid={peerGridUid} sourceWorld={worldPos}");

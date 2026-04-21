@@ -48,6 +48,10 @@ public abstract partial class CESharedZLevelsSystem
     private void OnParentChanged(Entity<CEZPhysicsComponent> ent, ref EntParentChangedMessage args)
     {
         CheckActivation(ent);
+
+        if (_net.IsClient && !_timing.ApplyingState)
+            return;
+
         var oldParentWorld = GetEntityWorldPositionCsv(args.OldParent);
         var oldParentVelocity = GetEntityVelocityCsv(args.OldParent);
         var newParentUid = Transform(ent).ParentUid;

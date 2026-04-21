@@ -3,10 +3,13 @@
  * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
  */
 
+using System;
 using System.Globalization;
 using System.Linq;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
+using SharedCCVars = Content.Shared.CCVar.CCVars;
+using Robust.Shared.Configuration;
 using Robust.Client.Player;
 using Robust.Shared.Console;
 using Robust.Shared.GameObjects;
@@ -110,5 +113,76 @@ public sealed class CEZDebugSelfCommand : LocalizedCommands
     private static string Fmt(float value)
     {
         return value.ToString("0.00", CultureInfo.InvariantCulture);
+    }
+}
+
+public sealed class CEZDebugAllCommand : LocalizedCommands
+{
+    [Dependency] private readonly IConfigurationManager _config = default!;
+
+    public override string Command => "cezdebugall";
+    public override string Description => "Enables or disables slim z-level debug logs on both client and server. Usage: cezdebugall [on|off|full]";
+
+    public override void Execute(IConsoleShell shell, string argStr, string[] args)
+    {
+        var enabled = true;
+        var verbose = false;
+
+        if (args.Length > 1)
+        {
+            shell.WriteError("Usage: cezdebugall [on|off|full]");
+            return;
+        }
+
+        if (args.Length == 1)
+        {
+            if (string.Equals(args[0], "full", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(args[0], "verbose", StringComparison.OrdinalIgnoreCase))
+            {
+                enabled = true;
+                verbose = true;
+            }
+            else if (!TryParseEnabled(args[0], out enabled))
+            {
+                shell.WriteError("Expected 'on', 'off', or 'full'.");
+                return;
+            }
+        }
+
+        _config.SetCVar(SharedCCVars.CEDebugMovementClient, enabled);
+        _config.SetCVar(SharedCCVars.CEDebugMovementVerboseClient, enabled && verbose);
+        _config.SetCVar(SharedCCVars.CEDebugStairsClient, enabled);
+
+        var boolText = enabled ? "true" : "false";
+        var verboseText = enabled && verbose ? "true" : "false";
+        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugMovement.Name} {boolText}");
+        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugMovementVerbose.Name} {verboseText}");
+        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugStairs.Name} {boolText}");
+
+        shell.WriteLine($"Z-level debug logging {(enabled ? "enabled" : "disabled")} in {(verbose ? "full" : "slim")} mode on client; matching server cvars requested remotely.");
+    }
+
+    private static bool TryParseEnabled(string value, out bool enabled)
+    {
+        switch (value.ToLowerInvariant())
+        {
+            case "1":
+            case "on":
+            case "true":
+            case "enable":
+            case "enabled":
+                enabled = true;
+                return true;
+            case "0":
+            case "off":
+            case "false":
+            case "disable":
+            case "disabled":
+                enabled = false;
+                return true;
+            default:
+                enabled = false;
+                return false;
+        }
     }
 }

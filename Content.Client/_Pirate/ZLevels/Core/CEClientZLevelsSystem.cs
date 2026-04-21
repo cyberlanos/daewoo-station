@@ -11,6 +11,7 @@ using Content.Shared.Camera;
 using Content.Shared.Damage.Components;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Client.Player;
 
 namespace Content.Client._Pirate.ZLevels.Core;
 
@@ -19,7 +20,10 @@ namespace Content.Client._Pirate.ZLevels.Core;
 /// </summary>
 public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
 {
+    private bool _clientInitialized;
+
     [Dependency] private readonly IOverlayManager _overlay = default!;
+    [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly SpriteSystem _sprite = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly AnimationPlayerSystem _animation = default!;
@@ -29,9 +33,15 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
     public override void Initialize()
     {
         base.Initialize();
+
+        if (_clientInitialized)
+            return;
+
+        _clientInitialized = true;
         _overlay.AddOverlay(new CEZLevelBlurOverlay());
 
         SubscribeLocalEvent<CEZPhysicsComponent, ComponentStartup>(OnStartup);
+        SubscribeLocalEvent<CEZPhysicsComponent, AfterAutoHandleStateEvent>(OnZPhysicsHandleState);
         SubscribeLocalEvent<CEZPhysicsComponent, GetEyeOffsetEvent>(OnEyeOffset);
     }
 
@@ -54,6 +64,20 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         ent.Comp.NoRotDefault = sprite.NoRotation;
         ent.Comp.DrawDepthDefault = sprite.DrawDepth;
         ent.Comp.SpriteOffsetDefault = sprite.Offset;
+    }
+
+    private void OnZPhysicsHandleState(Entity<CEZPhysicsComponent> ent, ref AfterAutoHandleStateEvent args)
+    {
+        if (!ZDebugStairsEnabled ||
+            _player.LocalEntity != ent.Owner)
+        {
+            return;
+        }
+
+        DebugZStairCsv(ent,
+            "client_z_state_handle",
+            $"state={args.State.GetType().Name},local={StairCsvFloat(ent.Comp.LocalPosition)},vel={StairCsvFloat(ent.Comp.Velocity)},current_z={ent.Comp.CurrentZLevel}",
+            $"{args.State.GetType().Name}|{StairCsvFloat(ent.Comp.LocalPosition)}|{StairCsvFloat(ent.Comp.Velocity)}|{ent.Comp.CurrentZLevel}|{Transform(ent).ParentUid}|{Transform(ent).GridUid}|{Transform(ent).MapUid}");
     }
 
     public override void Update(float frameTime)
