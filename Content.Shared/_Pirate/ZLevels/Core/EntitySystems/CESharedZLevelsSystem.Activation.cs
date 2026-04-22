@@ -49,18 +49,20 @@ public abstract partial class CESharedZLevelsSystem
     {
         CheckActivation(ent);
 
+        var xform = Transform(ent);
+
         if (_net.IsClient && !_timing.ApplyingState)
             return;
 
         var oldParentWorld = GetEntityWorldPositionCsv(args.OldParent);
         var oldParentVelocity = GetEntityVelocityCsv(args.OldParent);
-        var newParentUid = Transform(ent).ParentUid;
+        var newParentUid = xform.ParentUid;
         var newParentWorld = GetEntityWorldPositionCsv(newParentUid);
         var newParentVelocity = GetEntityVelocityCsv(newParentUid);
 
         DebugZStairCsv(ent,
             "parent_change",
-            $"old_parent={args.OldParent},old_parent_world={oldParentWorld},old_parent_vel={oldParentVelocity},new_parent={newParentUid},new_parent_world={newParentWorld},new_parent_vel={newParentVelocity},new_grid={Transform(ent).GridUid},new_map={Transform(ent).MapUid}");
+            $"old_parent={args.OldParent},old_parent_world={oldParentWorld},old_parent_vel={oldParentVelocity},new_parent={newParentUid},new_parent_world={newParentWorld},new_parent_vel={newParentVelocity},new_grid={xform.GridUid},new_map={xform.MapUid}");
 
         if (ZPhyzQuery.TryComp(args.OldParent, out var oldParentZPhys))
             SetZPosition((ent, ent), oldParentZPhys.LocalPosition);

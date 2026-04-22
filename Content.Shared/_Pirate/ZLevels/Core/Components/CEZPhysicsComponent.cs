@@ -102,6 +102,16 @@ public sealed partial class CEZPhysicsComponent : Component
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
     public TimeSpan StartupSuppressedUntil;
 
+    /// <summary>
+    /// Runtime cache of the last upper-grid local XY while detaching to the map for descent.
+    /// This keeps moving-stair landings anchored to the deck frame that the mover actually left.
+    /// </summary>
+    [DataField]
+    public EntityUid DetachedCarrierGridUid = EntityUid.Invalid;
+
+    [DataField]
+    public Vector2 DetachedCarrierLocalPosition = Vector2.Zero;
+
     // Visuals
 
     /// <summary>
