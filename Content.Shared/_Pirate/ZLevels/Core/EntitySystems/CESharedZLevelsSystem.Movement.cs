@@ -262,6 +262,20 @@ public abstract partial class CESharedZLevelsSystem
             return AutoDescendMode.None;
         }
 
+        // When the mover has already slipped off the current deck and the cached probe says the
+        // immediate level below is a stair, prefer that snapshot over a second live lookup.
+        // On moving shuttles the live probe can miss the stair for one tick while map-parented,
+        // which incorrectly downgrades a stair descent into a free-fall drop.
+        if (zPhys.CurrentGroundFromBelowLevel &&
+            zPhys.CurrentHighGroundBelow &&
+            TryResolveGridForMapOffset(uid, xform, -1, out supportGridUid, out _))
+        {
+            supportOffset = 1;
+            supportIsHighGround = true;
+            effectiveGravityBelow = _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
+            return AutoDescendMode.ControlledStep;
+        }
+
         if (!TryFindSupportedLevelBelow(uid, xform, out supportOffset, out supportGridUid, out supportIsHighGround))
             return AutoDescendMode.None;
 
@@ -1019,10 +1033,22 @@ public abstract partial class CESharedZLevelsSystem
                 return false;
             }
 
-            if (!TryComp<CEZPhysicsComponent>(ent, out var sourceZPhys) ||
-                !TryGetGroundSupportSample((ent, sourceZPhys), out var support, 1, false) ||
-                !support.IsHighGround ||
-                support.SurfaceDirection != forwardDir ||
+            var cachedBelowHighGround = zPhys.CurrentGroundFromBelowLevel && zPhys.CurrentHighGroundBelow;
+
+            var supportResolved = false;
+            GroundSupportSample support = default;
+            var supportMatchesDirection = false;
+
+            if (TryComp<CEZPhysicsComponent>(ent, out var sourceZPhys) &&
+                TryGetGroundSupportSample((ent, sourceZPhys), out support, 1, false) &&
+                support.IsHighGround)
+            {
+                supportResolved = true;
+                supportMatchesDirection = support.SurfaceDirection == forwardDir;
+            }
+
+            if ((!supportResolved && !cachedBelowHighGround) ||
+                (supportResolved && !supportMatchesDirection) ||
                 !TryGetLocalDirectionForTarget(forwardDir, targetGridUid, targetMapId, baseTargetWorldPos, out var targetLocalDir, out var targetDirectionGridUid, out var targetDirectionGridSource) ||
                 !TrySetTileLocalForStairSample(local, targetLocalDir, StairDownLandingSample, out var targetLocal))
             {
@@ -1040,7 +1066,7 @@ public abstract partial class CESharedZLevelsSystem
             {
                 DebugZStairCsv(ent,
                     "land_down_probe",
-                    $"dir={forwardDir},base_local={StairCsvVec2(local)},base_local_grid={(localGridUid == EntityUid.Invalid ? "null" : ToPrettyString(localGridUid))},base_local_source={localGridSource},support_floor={support.FloorOffset},support_grid={ToPrettyString(support.GridUid)},support_uid={(support.SupportUid == EntityUid.Invalid ? "null" : ToPrettyString(support.SupportUid))},support_sample={StairCsvFloat(support.Sample)},support_ground={StairCsvFloat(support.GroundHeight)},target_dir_grid={(targetDirectionGridUid == EntityUid.Invalid ? "null" : ToPrettyString(targetDirectionGridUid))},target_dir_source={targetDirectionGridSource},target_local_dir={targetLocalDir},target_local={StairCsvVec2(targetLocal)},landing_grid={(landingGridUid == EntityUid.Invalid ? "null" : ToPrettyString(landingGridUid))},landing_grid_source={landingGridSource},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}");
+                    $"dir={forwardDir},base_local={StairCsvVec2(local)},base_local_grid={(localGridUid == EntityUid.Invalid ? "null" : ToPrettyString(localGridUid))},base_local_source={localGridSource},support_source={(supportResolved ? "live" : cachedBelowHighGround ? "cache" : "none")},support_floor={(supportResolved ? support.FloorOffset : 1)},support_grid={(supportResolved ? ToPrettyString(support.GridUid) : targetGridUid is { } explicitTargetGrid ? ToPrettyString(explicitTargetGrid) : "null")},support_uid={(supportResolved && support.SupportUid != EntityUid.Invalid ? ToPrettyString(support.SupportUid) : "null")},support_sample={(supportResolved ? StairCsvFloat(support.Sample) : "na")},support_ground={(supportResolved ? StairCsvFloat(support.GroundHeight) : StairCsvFloat(zPhys.CurrentGroundHeight))},target_dir_grid={(targetDirectionGridUid == EntityUid.Invalid ? "null" : ToPrettyString(targetDirectionGridUid))},target_dir_source={targetDirectionGridSource},target_local_dir={targetLocalDir},target_local={StairCsvVec2(targetLocal)},landing_grid={(landingGridUid == EntityUid.Invalid ? "null" : ToPrettyString(landingGridUid))},landing_grid_source={landingGridSource},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}");
             }
         }
         else
