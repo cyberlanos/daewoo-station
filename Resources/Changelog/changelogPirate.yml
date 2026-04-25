@@ -1142,3 +1142,15 @@ Entries:
       message: набір з катаною на тандердромі має міні стімпаки замість звичайних
   id: 96
   time: '2026-04-23T22:53:54.0000000+00:00'
+- author: AgentMaper
+  changes:
+    - type: Add
+      message: Додана нова мапа - Perdition Island
+    - type: Add
+      message: Додані нові шлюзи
+    - type: Tweak
+      message: Оновлена мапа GateTP
+    - type: Fix
+      message: Виправлені дрібні помилки
+  id: 97
+  time: '2026-04-25T09:52:05.0000000+00:00'
