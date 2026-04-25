@@ -412,6 +412,11 @@ public abstract partial class CESharedZLevelsSystem
             return false;
         }
 
+        // Once the mover has detached from the upper linked grid, the cached carrier-local
+        // coordinate lets the client predict the same peer-grid landing as the server.
+        if (TryGetDetachedCarrierLocalReference(zPhys, out _, out _))
+            return false;
+
         return supportVelocity.LengthSquared() > 0.01f * 0.01f;
     }
 
