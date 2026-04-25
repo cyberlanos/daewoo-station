@@ -125,17 +125,35 @@ public sealed partial class CEZLevelsSystem
                     if (!TryComp<TransformComponent>(peerUid, out var peerXform))
                         continue;
 
+                    TryComp<PhysicsComponent>(peerUid, out PhysicsComponent? peerBody);
+                    var watchedPair = IsGridSyncPairWatched(uid, peerUid);
+                    var transformMismatch = peerXform.LocalPosition != xform.LocalPosition ||
+                                            peerXform.LocalRotation != xform.LocalRotation;
+                    var leaderVelocity = body.LinearVelocity;
+                    var velocityMismatch = peerBody != null && peerBody.LinearVelocity != leaderVelocity;
+
+                    if (watchedPair &&
+                        (transformMismatch || velocityMismatch))
+                    {
+                        var dedupeKey =
+                            $"{StairCsvDedupeVec2(xform.LocalPosition, 2)}|{StairCsvDedupeFloat((float) xform.LocalRotation.Degrees, 3)}|{StairCsvDedupeVec2(leaderVelocity, 3)}|" +
+                            $"{StairCsvDedupeVec2(peerXform.LocalPosition, 2)}|{StairCsvDedupeFloat((float) peerXform.LocalRotation.Degrees, 3)}|{(peerBody != null ? StairCsvDedupeVec2(peerBody.LinearVelocity, 3) : "na")}";
+                        DebugZStairCsv(uid,
+                            "grid_sync_pair",
+                            $"leader={ToPrettyString(uid)},peer={ToPrettyString(peerUid)},leader_local={StairCsvVec2(xform.LocalPosition)},leader_rot={StairCsvFloat((float) xform.LocalRotation.Degrees)},leader_vel={StairCsvVec2(leaderVelocity)},peer_local={StairCsvVec2(peerXform.LocalPosition)},peer_rot={StairCsvFloat((float) peerXform.LocalRotation.Degrees)},peer_vel={(peerBody != null ? StairCsvVec2(peerBody.LinearVelocity) : "na")},transform_mismatch={StairCsvBool(transformMismatch)},velocity_mismatch={StairCsvBool(velocityMismatch)}",
+                            dedupeKey);
+                    }
+
                     // Sync local position and rotation (relative to parent map)
-                    if (peerXform.LocalPosition != xform.LocalPosition ||
-                        peerXform.LocalRotation != xform.LocalRotation)
+                    if (transformMismatch)
                     {
                         _transform.SetLocalPositionRotation(peerUid, xform.LocalPosition, xform.LocalRotation, peerXform);
                     }
 
                     // Sync velocities
-                    if (TryComp<PhysicsComponent>(peerUid, out var peerBody))
+                    if (peerBody != null)
                     {
-                        if (peerBody.LinearVelocity != body.LinearVelocity)
+                        if (velocityMismatch)
                             _physics.SetLinearVelocity(peerUid, body.LinearVelocity, body: peerBody);
 
                         if (peerBody.AngularVelocity != body.AngularVelocity)

@@ -48,7 +48,15 @@ public abstract partial class CESharedZLevelsSystem
     /// </summary>
     private const float ImpactVelocityLimit = 3f;
 
+    private readonly Dictionary<EntityUid, DeferredClientMovingStairDescent> _deferredClientMovingStairDescents = new();
     private EntityQuery<CEZLevelHighGroundComponent> _highgroundQuery;
+
+    private struct DeferredClientMovingStairDescent
+    {
+        public TimeSpan ExpiresAt;
+        public EntityUid SourceMapUid;
+        public EntityUid SupportGridUid;
+    }
 
     private enum AutoDescendMode
     {
@@ -321,6 +329,8 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
     {
+        PruneDeferredClientMovingStairDescent(ent, Transform(ent));
+
         if (args.ParentChanged &&
             (_net.IsServer ||
              _net.IsClient && !_timing.ApplyingState))
@@ -331,6 +341,10 @@ public abstract partial class CESharedZLevelsSystem
             {
                 ent.Comp.DetachedCarrierGridUid = args.OldPosition.EntityId;
                 ent.Comp.DetachedCarrierLocalPosition = args.OldPosition.Position;
+                DebugZStairCsv(ent,
+                    "detached_cache_capture",
+                    $"carrier_grid={ToPrettyString(args.OldPosition.EntityId)},cached_local={StairCsvVec2(args.OldPosition.Position)},carrier_world={GetEntityWorldPositionCsv(args.OldPosition.EntityId)},carrier_rot={StairCsvFloat((float) _transform.GetWorldRotation(args.OldPosition.EntityId).Degrees)},carrier_vel={GetEntityVelocityCsv(args.OldPosition.EntityId)},target_map={args.NewPosition.EntityId}",
+                    $"{ToPrettyString(args.OldPosition.EntityId)}|{args.NewPosition.EntityId}|{StairCsvDedupeVec2(args.OldPosition.Position, 2)}");
             }
             else
             {
@@ -398,12 +412,52 @@ public abstract partial class CESharedZLevelsSystem
             return false;
         }
 
-        if (TryGetDetachedCarrierLocalReference(zPhys, out _, out _))
+        return supportVelocity.LengthSquared() > 0.01f * 0.01f;
+    }
+
+    private void RefreshDeferredClientMovingStairDescent(EntityUid uid, EntityUid sourceMapUid, EntityUid supportGridUid)
+    {
+        if (!_net.IsClient ||
+            sourceMapUid == EntityUid.Invalid ||
+            supportGridUid == EntityUid.Invalid)
         {
-            return false;
+            return;
         }
 
-        return supportVelocity.LengthSquared() > 0.01f * 0.01f;
+        _deferredClientMovingStairDescents[uid] = new DeferredClientMovingStairDescent
+        {
+            ExpiresAt = _timing.CurTime + TimeSpan.FromSeconds(StairTransferMovingGridGraceMaxSeconds),
+            SourceMapUid = sourceMapUid,
+            SupportGridUid = supportGridUid
+        };
+    }
+
+    private void PruneDeferredClientMovingStairDescent(EntityUid uid, TransformComponent xform)
+    {
+        if (!_net.IsClient ||
+            !_deferredClientMovingStairDescents.TryGetValue(uid, out var deferred))
+        {
+            return;
+        }
+
+        if (_timing.CurTime > deferred.ExpiresAt ||
+            xform.MapUid != deferred.SourceMapUid ||
+            xform.GridUid == deferred.SupportGridUid)
+        {
+            _deferredClientMovingStairDescents.Remove(uid);
+        }
+    }
+
+    private bool ShouldBlockClientCarrierReattach(EntityUid uid, TransformComponent xform)
+    {
+        if (!_net.IsClient)
+            return false;
+
+        PruneDeferredClientMovingStairDescent(uid, xform);
+
+        return xform.GridUid == null &&
+               _deferredClientMovingStairDescents.TryGetValue(uid, out var deferred) &&
+               xform.MapUid == deferred.SourceMapUid;
     }
 
     private bool TryResolveCurrentLinkedGrid(EntityUid ent, TransformComponent xform, out EntityUid gridUid, out CEZLinkedGridComponent linked, out string resolutionSource)
@@ -470,6 +524,9 @@ public abstract partial class CESharedZLevelsSystem
 
     private bool TryAttachToCarrierGrid(EntityUid ent, CEZPhysicsComponent zPhys, ref TransformComponent xform)
     {
+        if (ShouldBlockClientCarrierReattach(ent, xform))
+            return false;
+
         var shouldAttach = ShouldStayAttachedToCarrierGrid(zPhys);
         var resolvedCarrier = TryResolveCurrentLinkedGrid(ent, xform, out var carrierGridUid, out _, out var carrierResolveSource);
         var descentCandidate = zPhys.CurrentGroundFromBelowLevel || zPhys.LocalPosition < 0f;
@@ -744,6 +801,9 @@ public abstract partial class CESharedZLevelsSystem
                 {
                     if (ShouldDeferClientPredictedMovingStairDescent(uid, zPhys, xform, supportGridUid, supportIsHighGround))
                     {
+                        if (xform.MapUid is { } sourceMapUid)
+                            RefreshDeferredClientMovingStairDescent(uid, sourceMapUid, supportGridUid);
+
                         DebugZStairCsv(uid,
                             "down_defer",
                             $"reason=client_moving_stair,mode={descendMode},support_grid={ToPrettyString(supportGridUid)},support_grid_vel={supportGridVelocity},local_before={StairCsvFloat(zPhys.LocalPosition)},vel_before={StairCsvFloat(zPhys.Velocity)}",
@@ -1161,9 +1221,17 @@ public abstract partial class CESharedZLevelsSystem
 
             if (_net.IsServer)
             {
+                var explicitGridPayload = string.Empty;
+                if (landingGridSource == "explicit_grid" &&
+                    landingGridUid != EntityUid.Invalid)
+                {
+                    explicitGridPayload =
+                        $",tile_local_input={StairCsvVec2(targetLocal)},landing_grid_world={GetEntityWorldPositionCsv(landingGridUid)},landing_grid_rot={StairCsvFloat((float) _transform.GetWorldRotation(landingGridUid).Degrees)},landing_grid_vel={GetEntityVelocityCsv(landingGridUid)}";
+                }
+
                 DebugZStairCsv(ent,
                     "land_down_probe",
-                    $"dir={forwardDir},base_local={StairCsvVec2(local)},base_local_grid={(localGridUid == EntityUid.Invalid ? "null" : ToPrettyString(localGridUid))},base_local_source={localGridSource},support_source={(supportResolved ? "live" : cachedBelowHighGround ? "cache" : "none")},support_floor={(supportResolved ? support.FloorOffset : 1)},support_grid={(supportResolved ? ToPrettyString(support.GridUid) : targetGridUid is { } explicitTargetGrid ? ToPrettyString(explicitTargetGrid) : "null")},support_uid={(supportResolved && support.SupportUid != EntityUid.Invalid ? ToPrettyString(support.SupportUid) : "null")},support_sample={(supportResolved ? StairCsvFloat(support.Sample) : "na")},support_ground={(supportResolved ? StairCsvFloat(support.GroundHeight) : StairCsvFloat(zPhys.CurrentGroundHeight))},target_dir_grid={(targetDirectionGridUid == EntityUid.Invalid ? "null" : ToPrettyString(targetDirectionGridUid))},target_dir_source={targetDirectionGridSource},target_local_dir={targetLocalDir},target_local={StairCsvVec2(targetLocal)},landing_grid={(landingGridUid == EntityUid.Invalid ? "null" : ToPrettyString(landingGridUid))},landing_grid_source={landingGridSource},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}");
+                    $"dir={forwardDir},base_local={StairCsvVec2(local)},base_local_grid={(localGridUid == EntityUid.Invalid ? "null" : ToPrettyString(localGridUid))},base_local_source={localGridSource},support_source={(supportResolved ? "live" : cachedBelowHighGround ? "cache" : "none")},support_floor={(supportResolved ? support.FloorOffset : 1)},support_grid={(supportResolved ? ToPrettyString(support.GridUid) : targetGridUid is { } explicitTargetGrid ? ToPrettyString(explicitTargetGrid) : "null")},support_uid={(supportResolved && support.SupportUid != EntityUid.Invalid ? ToPrettyString(support.SupportUid) : "null")},support_sample={(supportResolved ? StairCsvFloat(support.Sample) : "na")},support_ground={(supportResolved ? StairCsvFloat(support.GroundHeight) : StairCsvFloat(zPhys.CurrentGroundHeight))},target_dir_grid={(targetDirectionGridUid == EntityUid.Invalid ? "null" : ToPrettyString(targetDirectionGridUid))},target_dir_source={targetDirectionGridSource},target_local_dir={targetLocalDir},target_local={StairCsvVec2(targetLocal)},landing_grid={(landingGridUid == EntityUid.Invalid ? "null" : ToPrettyString(landingGridUid))},landing_grid_source={landingGridSource},landing_x={StairCsvFloat(landingWorldPos.X)},landing_y={StairCsvFloat(landingWorldPos.Y)}{explicitGridPayload}");
             }
         }
         else
@@ -1959,9 +2027,37 @@ public abstract partial class CESharedZLevelsSystem
             var detachedTargetWorldPosition = Vector2.Transform(detachedCarrierLocal, detachedPeerGridMatrix);
             if (ZDebugStairsEnabled)
             {
-                DebugZStairCsv(ent,
+                var sourceGridWorldPosition = _transform.GetWorldPosition(currentGridUid);
+                var sourceGridRotation = (float) _transform.GetWorldRotation(currentGridUid).Degrees;
+                var sourceGridVelocityResolved = TryGetLinearVelocity(currentGridUid, out var sourceGridVelocityVector);
+                var sourceGridVelocity = sourceGridVelocityResolved
+                    ? StairCsvVec2(sourceGridVelocityVector)
+                    : "na";
+                var sourceGridVelocityKey = sourceGridVelocityResolved
+                    ? StairCsvDedupeVec2(sourceGridVelocityVector, 3)
+                    : "na";
+                var peerGridWorldPosition = _transform.GetWorldPosition(peerGridUid);
+                var peerGridRotation = (float) _transform.GetWorldRotation(peerGridUid).Degrees;
+                var peerGridVelocityResolved = TryGetLinearVelocity(peerGridUid, out var peerGridVelocityVector);
+                var peerGridVelocity = peerGridVelocityResolved
+                    ? StairCsvVec2(peerGridVelocityVector)
+                    : "na";
+                var peerGridVelocityKey = peerGridVelocityResolved
+                    ? StairCsvDedupeVec2(peerGridVelocityVector, 3)
+                    : "na";
+                var targetDelta = detachedTargetWorldPosition - fallbackWorldPosition;
+                var dedupeKey =
+                    $"{ToPrettyString(currentGridUid)}|{StairCsvDedupeVec2(sourceGridWorldPosition, 2)}|{StairCsvDedupeFloat(sourceGridRotation, 3)}|{sourceGridVelocityKey}|" +
+                    $"{ToPrettyString(peerGridUid)}|{StairCsvDedupeVec2(peerGridWorldPosition, 2)}|{StairCsvDedupeFloat(peerGridRotation, 3)}|{peerGridVelocityKey}|" +
+                    $"{StairCsvDedupeVec2(detachedCarrierLocal, 2)}|{StairCsvDedupeVec2(detachedTargetWorldPosition, 2)}";
+
+                if (DebugZStairCsv(ent,
                     "move_target_transform",
-                    $"source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},source_local_source=detached_cache,peer_grid={ToPrettyString(peerGridUid)},source_world={StairCsvVec2(fallbackWorldPosition)},source_local={StairCsvVec2(detachedCarrierLocal)},target_world={StairCsvVec2(detachedTargetWorldPosition)}");
+                    $"source_grid={ToPrettyString(currentGridUid)},source_resolve={resolutionSource},source_local_source=detached_cache,peer_grid={ToPrettyString(peerGridUid)},source_world={StairCsvVec2(fallbackWorldPosition)},source_local={StairCsvVec2(detachedCarrierLocal)},target_world={StairCsvVec2(detachedTargetWorldPosition)},source_grid_world={StairCsvVec2(sourceGridWorldPosition)},source_grid_rot={StairCsvFloat(sourceGridRotation)},source_grid_vel={sourceGridVelocity},peer_grid_world={StairCsvVec2(peerGridWorldPosition)},peer_grid_rot={StairCsvFloat(peerGridRotation)},peer_grid_vel={peerGridVelocity},target_delta={StairCsvVec2(targetDelta)}",
+                    dedupeKey))
+                {
+                    WatchGridSyncPair(currentGridUid, peerGridUid);
+                }
             }
 
             return detachedTargetWorldPosition;

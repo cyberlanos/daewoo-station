@@ -25,6 +25,7 @@ public abstract partial class CESharedZLevelsSystem
     private bool _zDebugVerboseEnabled;
     private bool _zDebugStairsEnabled;
     private readonly Dictionary<(EntityUid Uid, string EventName, string DedupeKey), TimeSpan> _stairDebugKeys = new();
+    private readonly Dictionary<(EntityUid SourceGridUid, EntityUid PeerGridUid), TimeSpan> _watchedGridSyncPairs = new();
 
     private void InitializeDebug()
     {
@@ -75,6 +76,7 @@ public abstract partial class CESharedZLevelsSystem
 
         _zDebugStairsEnabled = enabled;
         _stairDebugKeys.Clear();
+        _watchedGridSyncPairs.Clear();
         Log.Info($"[CEZStairCsv] stair logging {(enabled ? "enabled" : "disabled")} via cvar {GetStairDebugName()}");
     }
 
@@ -165,17 +167,80 @@ public abstract partial class CESharedZLevelsSystem
         return $"{StairCsvFloat(value.X)}:{StairCsvFloat(value.Y)}";
     }
 
-    protected void DebugZStairCsv(EntityUid ent, string eventName, string payload, string? dedupeKey = null)
+    protected static string StairCsvDedupeFloat(float value, int decimals)
+    {
+        return StairCsvFloat(MathF.Round(value, decimals));
+    }
+
+    protected static string StairCsvDedupeVec2(Vector2 value, int decimals)
+    {
+        return $"{StairCsvDedupeFloat(value.X, decimals)}:{StairCsvDedupeFloat(value.Y, decimals)}";
+    }
+
+    protected void WatchGridSyncPair(EntityUid sourceGridUid, EntityUid peerGridUid)
+    {
+        if (!ZDebugStairsEnabled ||
+            sourceGridUid == EntityUid.Invalid ||
+            peerGridUid == EntityUid.Invalid)
+        {
+            return;
+        }
+
+        PruneWatchedGridSyncPairs();
+        var expiresAt = _timing.CurTime + StairDebugRepeatWindow;
+        _watchedGridSyncPairs[(sourceGridUid, peerGridUid)] = expiresAt;
+        _watchedGridSyncPairs[(peerGridUid, sourceGridUid)] = expiresAt;
+    }
+
+    protected bool IsGridSyncPairWatched(EntityUid sourceGridUid, EntityUid peerGridUid)
+    {
+        if (!ZDebugStairsEnabled ||
+            sourceGridUid == EntityUid.Invalid ||
+            peerGridUid == EntityUid.Invalid)
+        {
+            return false;
+        }
+
+        if (!_watchedGridSyncPairs.TryGetValue((sourceGridUid, peerGridUid), out var expiresAt))
+            return false;
+
+        if (_timing.CurTime <= expiresAt)
+            return true;
+
+        _watchedGridSyncPairs.Remove((sourceGridUid, peerGridUid));
+        _watchedGridSyncPairs.Remove((peerGridUid, sourceGridUid));
+        return false;
+    }
+
+    private void PruneWatchedGridSyncPairs()
+    {
+        if (_watchedGridSyncPairs.Count == 0)
+            return;
+
+        var expired = new List<(EntityUid SourceGridUid, EntityUid PeerGridUid)>();
+        foreach (var (pair, expiresAt) in _watchedGridSyncPairs)
+        {
+            if (_timing.CurTime > expiresAt)
+                expired.Add(pair);
+        }
+
+        foreach (var pair in expired)
+        {
+            _watchedGridSyncPairs.Remove(pair);
+        }
+    }
+
+    protected bool DebugZStairCsv(EntityUid ent, string eventName, string payload, string? dedupeKey = null)
     {
         if (!ZDebugStairsEnabled)
-            return;
+            return false;
 
         if (dedupeKey != null)
         {
             var key = (ent, eventName, dedupeKey);
             if (_stairDebugKeys.TryGetValue(key, out var previousTime) &&
                 _timing.CurTime - previousTime < StairDebugRepeatWindow)
-                return;
+                return false;
 
             _stairDebugKeys[key] = _timing.CurTime;
         }
@@ -193,5 +258,6 @@ public abstract partial class CESharedZLevelsSystem
         basePayload += $",side={StairCsvSide()},first_pred={StairCsvBool(_timing.IsFirstTimePredicted)},applying_state={StairCsvBool(_timing.ApplyingState)}";
 
         Log.Info($"[CEZStairCsv] event={eventName},{basePayload},{payload}");
+        return true;
     }
 }
