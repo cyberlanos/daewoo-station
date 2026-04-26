@@ -72,7 +72,7 @@ public sealed partial class CEZLevelsSystem
         if (args.Handled || !TryComp(ent.Owner, out TransformComponent? xform))
             return;
 
-        if (!CanItemDescendFromCurrentTile(ent.Owner, xform))
+        if (!CanItemExperienceZGravity(ent.Owner, xform))
             return;
 
         args.IsWeightless = false;
@@ -91,7 +91,7 @@ public sealed partial class CEZLevelsSystem
         return TryMoveDown(item);
     }
 
-    private bool CanItemDescendFromCurrentTile(EntityUid item, TransformComponent xform)
+    private bool CanItemExperienceZGravity(EntityUid item, TransformComponent xform)
     {
         if (!IsItemRestingOnMapOrGrid(xform))
             return false;
@@ -100,14 +100,16 @@ public sealed partial class CEZLevelsSystem
         if (HasCurrentLevelFloor(xform, worldPos))
             return false;
 
+        return HasZGravityInfluenceFromBelow(item, xform);
+    }
+
+    private bool CanItemDescendFromCurrentTile(EntityUid item, TransformComponent xform)
+    {
+        if (!CanItemExperienceZGravity(item, xform))
+            return false;
+
         // Impassable structure at landing position - block descent.
-        if (IsLandingBlocked(item, xform))
-            return false;
-
-        if (!TryGetSupportBelow(item, xform, out _, out var isHighGround))
-            return false;
-
-        return isHighGround || HasEffectiveGravityFromBelow(item, xform);
+        return !IsLandingBlocked(item, xform);
     }
 
     private bool HasCurrentLevelFloor(TransformComponent xform, Vector2 worldPos)

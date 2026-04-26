@@ -5,7 +5,9 @@
 
 using System.Numerics;
 using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared._Pirate.ZLevels.Flight.Components;
 using Content.Shared.Chasm;
+using Content.Shared.Gravity;
 using Content.Shared.Inventory;
 using Content.Shared.Movement.Components;
 using Content.Shared.Physics;
@@ -73,6 +75,7 @@ public abstract partial class CESharedZLevelsSystem
 
         SubscribeLocalEvent<CEZPhysicsComponent, CEGetZVelocityEvent>(OnGetVelocity);
         SubscribeLocalEvent<CEZPhysicsComponent, CEZLevelMapMoveEvent>(OnZLevelMapMove);
+        SubscribeLocalEvent<CEZPhysicsComponent, IsWeightlessEvent>(OnCharacterIsWeightless);
         SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentInit>(OnActiveInit);
 
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
@@ -254,6 +257,38 @@ public abstract partial class CESharedZLevelsSystem
             return false;
 
         return _gravity.EntityGridOrMapHaveGravity((belowGridUid, Transform(belowGridUid)));
+    }
+
+    /// <summary>
+    /// Returns true when the z-level directly below exerts gravitational influence on this entity.
+    /// Landing blockers do not matter here; they block passage, not the gravity field.
+    /// </summary>
+    [PublicAPI]
+    protected bool HasZGravityInfluenceFromBelow(EntityUid ent, TransformComponent xform)
+    {
+        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out var isHighGround))
+            return false;
+
+        return isHighGround || _gravity.EntityGridOrMapHaveGravity((belowGridUid, Transform(belowGridUid)));
+    }
+
+    private void OnCharacterIsWeightless(Entity<CEZPhysicsComponent> ent, ref IsWeightlessEvent args)
+    {
+        if (args.Handled)
+            return;
+
+        if (TryComp<CEZFlyerComponent>(ent.Owner, out var flyer) && flyer.Active)
+            return;
+
+        var xform = Transform(ent.Owner);
+        if (_gravity.EntityGridOrMapHaveGravity((ent.Owner, xform)))
+            return;
+
+        if (!HasZGravityInfluenceFromBelow(ent.Owner, xform))
+            return;
+
+        args.IsWeightless = false;
+        args.Handled = true;
     }
 
     private bool TryFindSupportedLevelBelow(EntityUid ent, TransformComponent xform, out int supportOffset, out EntityUid supportGridUid, out bool isHighGround)
