@@ -31,6 +31,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         _serverInitialized = true;
         InitView();
         InitGridSync();
+        InitItems(); // Pirate: multiz
 
         SubscribeLocalEvent<CEStationZLevelsComponent, StationPostInitEvent>(OnStationPostInit);
     }
@@ -126,5 +127,6 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
 
         UpdateView(frameTime);
         UpdateGridSync(frameTime);
+        UpdateItems(frameTime);
     }
 }

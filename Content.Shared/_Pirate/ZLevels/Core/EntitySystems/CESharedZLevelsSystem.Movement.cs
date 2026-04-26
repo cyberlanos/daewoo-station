@@ -174,7 +174,8 @@ public abstract partial class CESharedZLevelsSystem
     /// Returns the supporting grid uid so callers can inspect the lower deck's gravity state live,
     /// which is important for moving linked shuttle grids.
     /// </summary>
-    private bool TryGetSupportBelow(EntityUid ent, TransformComponent xform, out EntityUid belowGridUid, out bool isHighGround)
+    [PublicAPI]
+    protected bool TryGetSupportBelow(EntityUid ent, TransformComponent xform, out EntityUid belowGridUid, out bool isHighGround)
     {
         belowGridUid = EntityUid.Invalid;
         isHighGround = false;
@@ -994,7 +995,7 @@ public abstract partial class CESharedZLevelsSystem
         return false;
     }
 
-    private bool TryResolveGridAtWorldPositionOnMap(EntityUid mapUid, Vector2 worldPos, out EntityUid gridUid, out MapGridComponent gridComp)
+    protected bool TryResolveGridAtWorldPositionOnMap(EntityUid mapUid, Vector2 worldPos, out EntityUid gridUid, out MapGridComponent gridComp)
     {
         var bestNonEmptyGridUid = EntityUid.Invalid;
         MapGridComponent? bestNonEmptyGrid = null;
