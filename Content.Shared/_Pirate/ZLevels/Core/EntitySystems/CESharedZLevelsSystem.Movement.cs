@@ -8,11 +8,13 @@ using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Chasm;
 using Content.Shared.Inventory;
 using Content.Shared.Movement.Components;
+using Content.Shared.Physics;
 using Content.Shared.Throwing;
 using JetBrains.Annotations;
 using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
@@ -200,6 +202,45 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
+    /// Returns true when the lower z-level landing tile contains an anchored hard fixture
+    /// that physically blocks tall/full movement, such as walls, closed airlocks, or windows.
+    /// </summary>
+    [PublicAPI]
+    protected bool IsLandingBlocked(EntityUid ent, TransformComponent xform)
+    {
+        if (!TryResolveGridForMapOffset(ent, xform, -1, out var belowGridUid, out var belowGrid))
+            return false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+        var blockingLayers = (int) (CollisionGroup.Impassable | CollisionGroup.HighImpassable);
+
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+        while (anchoredQuery.MoveNext(out var uid))
+        {
+            if (_highgroundQuery.HasComp(uid.Value))
+                continue;
+
+            if (!TryComp<PhysicsComponent>(uid.Value, out var physics) || !physics.CanCollide)
+                continue;
+
+            if (!TryComp<FixturesComponent>(uid.Value, out var fixtures))
+                continue;
+
+            foreach (var fixture in fixtures.Fixtures.Values)
+            {
+                if (!fixture.Hard)
+                    continue;
+
+                if ((fixture.CollisionLayer & blockingLayers) != 0)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Returns true when the tile or high-ground directly below this entity belongs to a grid/map that currently has gravity.
     /// This is evaluated live from world position instead of using cached movement state, so it stays correct for moving shuttles.
     /// </summary>
@@ -273,6 +314,9 @@ public abstract partial class CESharedZLevelsSystem
             return AutoDescendMode.None;
         }
 
+        if (IsLandingBlocked(uid, xform))
+            return AutoDescendMode.None;
+
         // When the mover has already slipped off the current deck and the cached probe says the
         // immediate level below is a stair, prefer that snapshot over a second live lookup.
         // On moving shuttles the live probe can miss the stair for one tick while map-parented,
@@ -315,6 +359,10 @@ public abstract partial class CESharedZLevelsSystem
         // Currently on a sticky surface (e.g. already mid-ladder)
         if (zPhys.CurrentStickyGround)
             return true;
+
+        // Impassable structure at landing position - block regardless of support.
+        if (IsLandingBlocked(uid, xform))
+            return false;
 
         // No floor at this XY on the level below — never descend
         if (!TryGetSupportBelow(uid, xform, out _, out var isHighGround))

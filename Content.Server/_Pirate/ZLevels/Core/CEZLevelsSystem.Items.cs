@@ -100,6 +100,10 @@ public sealed partial class CEZLevelsSystem
         if (HasCurrentLevelFloor(xform, worldPos))
             return false;
 
+        // Impassable structure at landing position - block descent.
+        if (IsLandingBlocked(item, xform))
+            return false;
+
         if (!TryGetSupportBelow(item, xform, out _, out var isHighGround))
             return false;
 
