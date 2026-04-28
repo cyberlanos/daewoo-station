@@ -25,6 +25,26 @@
     event: !type:CEZLevelActionDown
 
 - type: entity
+  id: CEActionWeightlessZLevelUp
+  parent: CEActionZLevelUp
+  components:
+  - type: Action
+    checkCanInteract: false
+    icon:
+      sprite: _Pirate/Actions/misc.rsi
+      state: up
+
+- type: entity
+  id: CEActionWeightlessZLevelDown
+  parent: CEActionZLevelDown
+  components:
+  - type: Action
+    checkCanInteract: false
+    icon:
+      sprite: _Pirate/Actions/misc.rsi
+      state: down
+
+- type: entity
   id: CEActionToggleLookUp
   name: Look up
   description: You lift your head and look up at the sky.

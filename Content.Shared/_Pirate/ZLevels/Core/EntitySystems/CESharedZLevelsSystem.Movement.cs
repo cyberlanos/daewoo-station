@@ -1787,6 +1787,25 @@ public abstract partial class CESharedZLevelsSystem
         return HasSupportAtWorldPositionOnGrid(gridUid, grid, worldPos);
     }
 
+    [PublicAPI]
+    public bool IsInEmptySpaceOnCurrentLevel(EntityUid ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        return !HasSupportAtWorldPositionOnCurrentLevel(ent, worldPos, xform);
+    }
+
+    [PublicAPI]
+    public bool IsLandingBelowBlocked(EntityUid ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        return IsLandingBlocked(ent, xform);
+    }
+
     private bool TryGetSupportedNextTileLandingPosition(Direction forwardDir, Vector2 currentLocal, Vector2 fallbackWorldPos, EntityUid? targetGridUid, MapId targetMapId, out Vector2 landingWorldPos)
     {
         landingWorldPos = fallbackWorldPos;
