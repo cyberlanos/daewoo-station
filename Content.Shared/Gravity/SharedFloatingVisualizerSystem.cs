@@ -56,7 +56,7 @@ public abstract class SharedFloatingVisualizerSystem : EntitySystem
 
         if (component.CanFloat && // Pirate: multiz
             EntityManager.TrySystem<CESharedZLevelsSystem>(out var zLevels) &&
-            zLevels.HasEffectiveGravityFromBelow(uid, transform))
+            zLevels.HasZGravityInfluenceFromBelow(uid, transform)) // Pirate: multiz
         {
             component.CanFloat = false; // Pirate: multiz
         }

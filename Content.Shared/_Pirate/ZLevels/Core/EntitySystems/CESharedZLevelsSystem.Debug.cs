@@ -24,6 +24,7 @@ public abstract partial class CESharedZLevelsSystem
     private bool _zDebugEnabled;
     private bool _zDebugVerboseEnabled;
     private bool _zDebugStairsEnabled;
+    private TimeSpan _nextStairDebugPrune;
     private readonly Dictionary<(EntityUid Uid, string EventName, string DedupeKey), TimeSpan> _stairDebugKeys = new();
     private readonly Dictionary<(EntityUid SourceGridUid, EntityUid PeerGridUid), TimeSpan> _watchedGridSyncPairs = new();
 
@@ -77,6 +78,7 @@ public abstract partial class CESharedZLevelsSystem
         _zDebugStairsEnabled = enabled;
         _stairDebugKeys.Clear();
         _watchedGridSyncPairs.Clear();
+        _nextStairDebugPrune = TimeSpan.Zero;
         Log.Info($"[CEZStairCsv] stair logging {(enabled ? "enabled" : "disabled")} via cvar {GetStairDebugName()}");
     }
 
@@ -237,6 +239,8 @@ public abstract partial class CESharedZLevelsSystem
 
         if (dedupeKey != null)
         {
+            PruneStairDebugKeys();
+
             var key = (ent, eventName, dedupeKey);
             if (_stairDebugKeys.TryGetValue(key, out var previousTime) &&
                 _timing.CurTime - previousTime < StairDebugRepeatWindow)
@@ -259,5 +263,26 @@ public abstract partial class CESharedZLevelsSystem
 
         Log.Info($"[CEZStairCsv] event={eventName},{basePayload},{payload}");
         return true;
+    }
+
+    private void PruneStairDebugKeys()
+    {
+        if (_stairDebugKeys.Count == 0 ||
+            _timing.CurTime < _nextStairDebugPrune)
+            return;
+
+        _nextStairDebugPrune = _timing.CurTime + StairDebugRepeatWindow;
+        var expired = new List<(EntityUid Uid, string EventName, string DedupeKey)>();
+
+        foreach (var (key, previousTime) in _stairDebugKeys)
+        {
+            if (_timing.CurTime - previousTime >= StairDebugRepeatWindow)
+                expired.Add(key);
+        }
+
+        foreach (var key in expired)
+        {
+            _stairDebugKeys.Remove(key);
+        }
     }
 }

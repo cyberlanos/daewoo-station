@@ -24,7 +24,7 @@ public abstract class CESharedZLevelGhostMoverSystem : EntitySystem
         if (args.Handled)
             return;
 
-        args.Handled = _zLevel.TryMoveDown(ent);
+        args.Handled = _zLevel.TryMoveDown(ent, bypassPassability: true);
     }
 
     private void OnZLevelUp(Entity<CEZLevelGhostMoverComponent> ent, ref CEZLevelActionUp args)

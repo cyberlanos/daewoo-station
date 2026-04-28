@@ -43,6 +43,8 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<CEZPhysicsComponent, AfterAutoHandleStateEvent>(OnZPhysicsHandleState);
         SubscribeLocalEvent<CEZPhysicsComponent, GetEyeOffsetEvent>(OnEyeOffset);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, ComponentStartup>(OnItemZPhysicsStartup);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, ComponentRemove>(OnItemZPhysicsRemove);
     }
 
     private void OnEyeOffset(Entity<CEZPhysicsComponent> ent, ref GetEyeOffsetEvent args)
@@ -107,6 +109,48 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
             // Update the base offset to track changes made by other systems
             stamina.StartOffset = zPhys.SpriteOffsetDefault;
         }
+
+        var itemQuery = EntityQueryEnumerator<CEZItemPhysicsComponent, SpriteComponent>();
+        while (itemQuery.MoveNext(out var uid, out var zItem, out var sprite))
+        {
+            EnsureItemVisualDefaults((uid, zItem), sprite);
+
+            var localPosition = MathF.Max(zItem.LocalPosition, 0f);
+            sprite.NoRotation = localPosition != 0 || zItem.NoRotDefault;
+
+            _sprite.SetOffset((uid, sprite), zItem.SpriteOffsetDefault + new Vector2(0, localPosition * ZLevelOffset));
+            _sprite.SetDrawDepth((uid, sprite), localPosition > 0 ? (int)Shared.DrawDepth.DrawDepth.OverMobs : zItem.DrawDepthDefault);
+        }
+    }
+
+    private void OnItemZPhysicsStartup(Entity<CEZItemPhysicsComponent> ent, ref ComponentStartup args)
+    {
+        if (TryComp<SpriteComponent>(ent, out var sprite))
+            EnsureItemVisualDefaults(ent, sprite);
+    }
+
+    private void OnItemZPhysicsRemove(Entity<CEZItemPhysicsComponent> ent, ref ComponentRemove args)
+    {
+        if (!ent.Comp.VisualsInitialized ||
+            !TryComp<SpriteComponent>(ent, out var sprite))
+        {
+            return;
+        }
+
+        sprite.NoRotation = ent.Comp.NoRotDefault;
+        _sprite.SetOffset((ent.Owner, sprite), ent.Comp.SpriteOffsetDefault);
+        _sprite.SetDrawDepth((ent.Owner, sprite), ent.Comp.DrawDepthDefault);
+    }
+
+    private void EnsureItemVisualDefaults(Entity<CEZItemPhysicsComponent> ent, SpriteComponent sprite)
+    {
+        if (ent.Comp.VisualsInitialized)
+            return;
+
+        ent.Comp.NoRotDefault = sprite.NoRotation;
+        ent.Comp.DrawDepthDefault = sprite.DrawDepth;
+        ent.Comp.SpriteOffsetDefault = sprite.Offset;
+        ent.Comp.VisualsInitialized = true;
     }
 
 

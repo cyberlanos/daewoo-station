@@ -4,67 +4,178 @@
  */
 
 using System.Numerics;
+using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared.Gravity;
+using Content.Shared.Hands;
 using Content.Shared.Interaction.Events;
+using Content.Shared.Inventory.Events;
 using Content.Shared.Item;
 using Content.Shared.Throwing;
+using Robust.Shared.Containers;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server._Pirate.ZLevels.Core;
 
 public sealed partial class CEZLevelsSystem
 {
-    private readonly HashSet<EntityUid> _pendingItemDescents = new();
+    private const float ItemZGravityForce = 9.8f;
+    private const float ItemZVelocityLimit = 20f;
+    private const float ItemImpactVelocityLimit = 3f;
+    private static readonly EntProtoId ItemFallVfx = "CEDustEffect";
 
     private void InitItems()
     {
         SubscribeLocalEvent<ItemComponent, StopThrowEvent>(OnItemStopThrow);
         SubscribeLocalEvent<ItemComponent, DroppedEvent>(OnItemDropped);
         SubscribeLocalEvent<ItemComponent, IsWeightlessEvent>(OnItemIsWeightless);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, GotEquippedHandEvent>(OnItemGotEquippedHand);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, GotEquippedEvent>(OnItemGotEquipped);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, EntGotInsertedIntoContainerMessage>(OnItemInsertedIntoContainer);
+        SubscribeLocalEvent<CEZItemPhysicsComponent, EntParentChangedMessage>(OnItemZPhysicsParentChanged);
     }
 
     private void OnItemStopThrow(Entity<ItemComponent> ent, ref StopThrowEvent args)
     {
-        QueueItemDescend(ent.Owner);
+        TryAddItemZPhysics(ent.Owner);
     }
 
     private void OnItemDropped(Entity<ItemComponent> ent, ref DroppedEvent args)
     {
-        QueueItemDescend(ent.Owner);
+        TryAddItemZPhysics(ent.Owner);
     }
 
-    private void QueueItemDescend(EntityUid item)
+    private void OnItemGotEquippedHand(Entity<CEZItemPhysicsComponent> ent, ref GotEquippedHandEvent args)
     {
-        _pendingItemDescents.Add(item);
+        RemoveItemZPhysics(ent.Owner);
+    }
+
+    private void OnItemGotEquipped(Entity<CEZItemPhysicsComponent> ent, ref GotEquippedEvent args)
+    {
+        RemoveItemZPhysics(ent.Owner);
+    }
+
+    private void OnItemInsertedIntoContainer(Entity<CEZItemPhysicsComponent> ent, ref EntGotInsertedIntoContainerMessage args)
+    {
+        RemoveItemZPhysics(ent.Owner);
+    }
+
+    private void OnItemZPhysicsParentChanged(Entity<CEZItemPhysicsComponent> ent, ref EntParentChangedMessage args)
+    {
+        if (!IsItemRestingOnMapOrGrid(args.Transform))
+            RemoveItemZPhysics(ent.Owner);
+    }
+
+    private void TryAddItemZPhysics(EntityUid item)
+    {
+        var xform = Transform(item);
+        if (!IsItemRestingOnMapOrGrid(xform))
+            return;
+
+        var zItem = EnsureComp<CEZItemPhysicsComponent>(item);
+        zItem.LocalPosition = 0f;
+        zItem.ZVelocity = 0f;
+        zItem.HadZFall = false;
+        Dirty(item, zItem);
+        UpdateItemGravityInfluence(item, xform);
+    }
+
+    private void RemoveItemZPhysics(EntityUid item)
+    {
+        RemComp<CEZItemPhysicsComponent>(item);
+        RemComp<CEZGravityInfluencedComponent>(item);
     }
 
     private void UpdateItems(float frameTime)
     {
-        if (_pendingItemDescents.Count == 0)
-            return;
-
-        var pending = new List<EntityUid>(_pendingItemDescents);
-        _pendingItemDescents.Clear();
-
-        foreach (var item in pending)
+        var query = EntityQueryEnumerator<CEZItemPhysicsComponent, ItemComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var zItem, out _, out var xform))
         {
-            if (TerminatingOrDeleted(item))
-                continue;
-
-            var xform = Transform(item);
             if (!IsItemRestingOnMapOrGrid(xform))
-                continue;
-
-            if (HasComp<ThrownItemComponent>(item) ||
-                TryComp<PhysicsComponent>(item, out var physics) && physics.Awake)
             {
-                _pendingItemDescents.Add(item);
+                RemoveItemZPhysics(uid);
                 continue;
             }
 
-            TryItemDescend(item);
+            if (HasComp<ThrownItemComponent>(uid) ||
+                TryComp<PhysicsComponent>(uid, out var physics) && physics.Awake)
+                continue;
+
+            var oldLocalPosition = zItem.LocalPosition;
+            var worldPos = _transform.GetWorldPosition(uid);
+            var hasCurrentLevelFloor = HasCurrentLevelFloor(xform, worldPos);
+            if (hasCurrentLevelFloor && zItem.LocalPosition <= 0f)
+            {
+                FinishItemZFall(uid, zItem);
+                continue;
+            }
+
+            if (hasCurrentLevelFloor)
+            {
+                RemComp<CEZGravityInfluencedComponent>(uid);
+            }
+            else if (!UpdateItemGravityInfluence(uid, xform))
+            {
+                FinishItemZFall(uid, zItem, false);
+                continue;
+            }
+
+            zItem.ZVelocity = MathF.Max(zItem.ZVelocity - ItemZGravityForce * frameTime, -ItemZVelocityLimit);
+            zItem.LocalPosition += zItem.ZVelocity * frameTime;
+
+            if (zItem.LocalPosition > 0f)
+            {
+                DirtyItemZVisuals(uid, zItem, oldLocalPosition);
+                continue;
+            }
+
+            if (!CanItemDescendFromCurrentTile(uid, xform) || !TryMoveDown(uid, bypassPassability: true))
+            {
+                FinishItemZFall(uid, zItem);
+                continue;
+            }
+
+            zItem.LocalPosition += 1f;
+            zItem.HadZFall = true;
+            var fallEv = new CEZLevelFallMapEvent();
+            RaiseLocalEvent(uid, ref fallEv);
+
+            DirtyItemZVisuals(uid, zItem, oldLocalPosition);
         }
+    }
+
+    private void DirtyItemZVisuals(EntityUid item, CEZItemPhysicsComponent zItem, float oldLocalPosition)
+    {
+        if (Math.Abs(oldLocalPosition - zItem.LocalPosition) > 0.01f)
+            DirtyField(item, zItem, nameof(CEZItemPhysicsComponent.LocalPosition));
+    }
+
+    private void FinishItemZFall(EntityUid item, CEZItemPhysicsComponent zItem, bool spawnImpact = true)
+    {
+        if (spawnImpact &&
+            zItem.HadZFall &&
+            MathF.Abs(zItem.ZVelocity) >= ItemImpactVelocityLimit)
+        {
+            SpawnAtPosition(ItemFallVfx, Transform(item).Coordinates);
+        }
+
+        zItem.LocalPosition = 0f;
+        zItem.ZVelocity = 0f;
+        RemoveItemZPhysics(item);
+    }
+
+    private bool UpdateItemGravityInfluence(EntityUid item, TransformComponent xform)
+    {
+        var hasZGravity = CanItemExperienceZGravity(item, xform);
+
+        if (hasZGravity)
+            EnsureComp<CEZGravityInfluencedComponent>(item);
+        else
+            RemComp<CEZGravityInfluencedComponent>(item);
+
+        return hasZGravity;
     }
 
     private void OnItemIsWeightless(Entity<ItemComponent> ent, ref IsWeightlessEvent args)
@@ -79,18 +190,6 @@ public sealed partial class CEZLevelsSystem
         args.Handled = true;
     }
 
-    private bool TryItemDescend(EntityUid item)
-    {
-        if (HasComp<ThrownItemComponent>(item))
-            return false;
-
-        var xform = Transform(item);
-        if (!CanItemDescendFromCurrentTile(item, xform))
-            return false;
-
-        return TryMoveDown(item);
-    }
-
     private bool CanItemExperienceZGravity(EntityUid item, TransformComponent xform)
     {
         if (!IsItemRestingOnMapOrGrid(xform))
@@ -100,7 +199,7 @@ public sealed partial class CEZLevelsSystem
         if (HasCurrentLevelFloor(xform, worldPos))
             return false;
 
-        return HasZGravityInfluenceFromBelow(item, xform);
+        return HasGridGravityFromBelow(item, xform);
     }
 
     private bool CanItemDescendFromCurrentTile(EntityUid item, TransformComponent xform)
@@ -108,8 +207,10 @@ public sealed partial class CEZLevelsSystem
         if (!CanItemExperienceZGravity(item, xform))
             return false;
 
-        // Impassable structure at landing position - block descent.
-        return !IsLandingBlocked(item, xform);
+        if (IsLandingBlocked(item, xform))
+            return false;
+
+        return true;
     }
 
     private bool HasCurrentLevelFloor(TransformComponent xform, Vector2 worldPos)

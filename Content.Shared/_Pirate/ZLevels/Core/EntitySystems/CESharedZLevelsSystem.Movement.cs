@@ -44,6 +44,7 @@ public abstract partial class CESharedZLevelsSystem
     private const float StairTransferGraceSeconds = 0.2f;
     private const float StairTransferMovingGridGraceScale = 0.01f;
     private const float StairTransferMovingGridGraceMaxSeconds = 0.8f;
+    private const float GroundContactTolerance = 0.05f;
     private const float FlatGroundSettleVelocityThreshold = 1.0f;
     private static readonly float[] StairUpLandingSearchSamples = [0.05f, 0.15f, 0.25f, 0.35f, 0.45f];
 
@@ -75,8 +76,9 @@ public abstract partial class CESharedZLevelsSystem
 
         SubscribeLocalEvent<CEZPhysicsComponent, CEGetZVelocityEvent>(OnGetVelocity);
         SubscribeLocalEvent<CEZPhysicsComponent, CEZLevelMapMoveEvent>(OnZLevelMapMove);
-        SubscribeLocalEvent<CEZPhysicsComponent, IsWeightlessEvent>(OnCharacterIsWeightless);
+        SubscribeLocalEvent<CEZGravityInfluencedComponent, IsWeightlessEvent>(OnZGravityInfluenced);
         SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentInit>(OnActiveInit);
+        SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentShutdown>(OnActiveShutdown);
 
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
         SubscribeLocalEvent<MapGridComponent, EntParentChangedMessage>(OnGridParentChanged);
@@ -89,6 +91,11 @@ public abstract partial class CESharedZLevelsSystem
         if (!ZPhyzQuery.TryComp(ent, out var zComp))
             return;
         CacheMovement((ent, zComp));
+    }
+
+    private void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
+    {
+        SetZGravityInfluenced(ent.Owner, false);
     }
 
     private void OnTileChanged(Entity<CEZLevelMapComponent> ent, ref TileChangedEvent args)
@@ -123,12 +130,14 @@ public abstract partial class CESharedZLevelsSystem
         var oldSticky = ent.Comp.CurrentStickyGround;
         var oldFromBelow = ent.Comp.CurrentGroundFromBelowLevel;
         var oldSupportBelow = ent.Comp.CurrentHasSupportBelow;
+        var oldSupportGridUid = ent.Comp.CurrentSupportGridUid;
         var oldHighGroundBelow = ent.Comp.CurrentHighGroundBelow;
 
         ent.Comp.CurrentGroundHeight = ComputeGroundHeightInternal((ent, ent), out var sticky, out var fromBelow);
         ent.Comp.CurrentStickyGround = sticky;
         ent.Comp.CurrentGroundFromBelowLevel = fromBelow;
-        ent.Comp.CurrentHasSupportBelow = ComputeHasSupportBelow(ent, Transform(ent), out var isHighGround);
+        ent.Comp.CurrentHasSupportBelow = ComputeHasSupportBelow(ent, Transform(ent), out var supportGridUid, out var isHighGround);
+        ent.Comp.CurrentSupportGridUid = supportGridUid;
         ent.Comp.CurrentHighGroundBelow = isHighGround;
 
         if (ZDebugEnabled &&
@@ -136,13 +145,15 @@ public abstract partial class CESharedZLevelsSystem
              oldSticky != ent.Comp.CurrentStickyGround ||
              oldFromBelow != ent.Comp.CurrentGroundFromBelowLevel ||
              oldSupportBelow != ent.Comp.CurrentHasSupportBelow ||
+             oldSupportGridUid != ent.Comp.CurrentSupportGridUid ||
              oldHighGroundBelow != ent.Comp.CurrentHighGroundBelow))
         {
             DebugZ(ent,
                 $"movement cache updated at tile={_transform.GetGridOrMapTilePosition(ent)} world={_transform.GetWorldPosition(ent)} " +
                 $"ground {oldGroundHeight:0.00}->{ent.Comp.CurrentGroundHeight:0.00} sticky {oldSticky}->{ent.Comp.CurrentStickyGround} " +
                 $"fromBelow {oldFromBelow}->{ent.Comp.CurrentGroundFromBelowLevel} " +
-                $"supportBelow {oldSupportBelow}->{ent.Comp.CurrentHasSupportBelow} highGroundBelow {oldHighGroundBelow}->{ent.Comp.CurrentHighGroundBelow}");
+                $"supportBelow {oldSupportBelow}->{ent.Comp.CurrentHasSupportBelow} supportGrid {oldSupportGridUid}->{ent.Comp.CurrentSupportGridUid} " +
+                $"highGroundBelow {oldHighGroundBelow}->{ent.Comp.CurrentHighGroundBelow}");
         }
     }
 
@@ -151,11 +162,12 @@ public abstract partial class CESharedZLevelsSystem
     /// <paramref name="isHighGround"/> is true when that support is a CEZLevelHighGround
     /// entity (stairs/ladder) rather than a plain floor tile.
     /// </summary>
-    private bool ComputeHasSupportBelow(EntityUid ent, TransformComponent xform, out bool isHighGround)
+    private bool ComputeHasSupportBelow(EntityUid ent, TransformComponent xform, out EntityUid belowGridUid, out bool isHighGround)
     {
+        belowGridUid = EntityUid.Invalid;
         isHighGround = false;
 
-        if (!TryResolveGridForMapOffset(ent, xform, -1, out var belowGridUid, out var belowGrid))
+        if (!TryResolveGridForMapOffset(ent, xform, -1, out belowGridUid, out var belowGrid))
             return false;
 
         var worldPos = _transform.GetWorldPosition(ent);
@@ -171,7 +183,11 @@ public abstract partial class CESharedZLevelsSystem
             }
         }
 
-        return _map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty;
+        if (_map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty)
+            return true;
+
+        belowGridUid = EntityUid.Invalid;
+        return false;
     }
 
     /// <summary>
@@ -244,11 +260,27 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
-    /// Returns true when the tile or high-ground directly below this entity belongs to a grid/map that currently has gravity.
-    /// This is evaluated live from world position instead of using cached movement state, so it stays correct for moving shuttles.
+    /// Returns true when the z-level directly below exerts gravitational influence on this entity.
+    /// Landing blockers do not matter here; they block passage, not the gravity field.
     /// </summary>
     [PublicAPI]
-    public bool HasEffectiveGravityFromBelow(EntityUid ent, TransformComponent? xform = null)
+    public bool HasZGravityInfluenceFromBelow(EntityUid ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out var isHighGround))
+            return false;
+
+        return isHighGround || HasGridGravityOnSupport(belowGridUid);
+    }
+
+    /// <summary>
+    /// Returns true when support directly below this entity belongs to a grid/map that currently has gravity.
+    /// High-ground support is not special-cased here.
+    /// </summary>
+    [PublicAPI]
+    public bool HasGridGravityFromBelow(EntityUid ent, TransformComponent? xform = null)
     {
         if (!Resolve(ent, ref xform, false))
             return false;
@@ -256,23 +288,15 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out _))
             return false;
 
-        return _gravity.EntityGridOrMapHaveGravity((belowGridUid, Transform(belowGridUid)));
+        return HasGridGravityOnSupport(belowGridUid);
     }
 
-    /// <summary>
-    /// Returns true when the z-level directly below exerts gravitational influence on this entity.
-    /// Landing blockers do not matter here; they block passage, not the gravity field.
-    /// </summary>
-    [PublicAPI]
-    protected bool HasZGravityInfluenceFromBelow(EntityUid ent, TransformComponent xform)
+    private bool HasGridGravityOnSupport(EntityUid supportGridUid)
     {
-        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out var isHighGround))
-            return false;
-
-        return isHighGround || _gravity.EntityGridOrMapHaveGravity((belowGridUid, Transform(belowGridUid)));
+        return _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
     }
 
-    private void OnCharacterIsWeightless(Entity<CEZPhysicsComponent> ent, ref IsWeightlessEvent args)
+    private void OnZGravityInfluenced(Entity<CEZGravityInfluencedComponent> ent, ref IsWeightlessEvent args)
     {
         if (args.Handled)
             return;
@@ -289,6 +313,27 @@ public abstract partial class CESharedZLevelsSystem
 
         args.IsWeightless = false;
         args.Handled = true;
+    }
+
+    private void UpdateZGravityInfluence(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform)
+    {
+        var hasZGravity = zPhys.CurrentHasSupportBelow &&
+            (zPhys.CurrentHighGroundBelow ||
+             zPhys.CurrentSupportGridUid != EntityUid.Invalid &&
+             HasGridGravityOnSupport(zPhys.CurrentSupportGridUid));
+
+        SetZGravityInfluenced(uid, hasZGravity);
+    }
+
+    private void SetZGravityInfluenced(EntityUid uid, bool influenced)
+    {
+        if (influenced == HasComp<CEZGravityInfluencedComponent>(uid))
+            return;
+
+        if (influenced)
+            AddComp<CEZGravityInfluencedComponent>(uid);
+        else
+            RemComp<CEZGravityInfluencedComponent>(uid);
     }
 
     private bool TryFindSupportedLevelBelow(EntityUid ent, TransformComponent xform, out int supportOffset, out EntityUid supportGridUid, out bool isHighGround)
@@ -378,37 +423,6 @@ public abstract partial class CESharedZLevelsSystem
             return AutoDescendMode.FreeFall;
 
         return AutoDescendMode.None;
-    }
-
-    /// <summary>
-    /// Returns true when the entity is allowed to automatically descend to the Z-level below.
-    /// Rules:
-    /// - Sticky surface (currently on a ladder) → always allow.
-    /// - High-ground (stairs/ladder) directly below → always allow; stair traversal works
-    ///   even in weightless areas so the player can walk down from a space-walk to an airlock deck.
-    /// - Regular floor below + effective gravity from that lower support → allow.
-    /// - Anything else → block (entity floats on current level).
-    /// </summary>
-    private bool CanAutoDescend(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform)
-    {
-        // Currently on a sticky surface (e.g. already mid-ladder)
-        if (zPhys.CurrentStickyGround)
-            return true;
-
-        // Impassable structure at landing position - block regardless of support.
-        if (IsLandingBlocked(uid, xform))
-            return false;
-
-        // No floor at this XY on the level below — never descend
-        if (!TryGetSupportBelow(uid, xform, out _, out var isHighGround))
-            return false;
-
-        // Stairs or ladder below — allow descent regardless of gravity
-        if (isHighGround)
-            return true;
-
-        // Plain floor below — only fall if that lower support actually has gravity
-        return HasEffectiveGravityFromBelow(uid, xform);
     }
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
@@ -509,6 +523,14 @@ public abstract partial class CESharedZLevelsSystem
         if (!_net.IsClient ||
             sourceMapUid == EntityUid.Invalid ||
             supportGridUid == EntityUid.Invalid)
+        {
+            return;
+        }
+
+        if (_deferredClientMovingStairDescents.TryGetValue(uid, out var existing) &&
+            existing.SourceMapUid == sourceMapUid &&
+            existing.SupportGridUid == supportGridUid &&
+            _timing.CurTime <= existing.ExpiresAt)
         {
             return;
         }
@@ -731,7 +753,10 @@ public abstract partial class CESharedZLevelsSystem
         while (query.MoveNext(out var uid, out var zPhys, out _, out var xform, out var physics))
         {
             if (!HasTraversalContext(xform))
+            {
+                SetZGravityInfluenced(uid, false);
                 continue;
+            }
 
             TryAttachToCarrierGrid(uid, zPhys, ref xform);
 
@@ -742,6 +767,7 @@ public abstract partial class CESharedZLevelsSystem
             if (_timing.CurTime < zPhys.StartupSuppressedUntil)
             {
                 CacheMovement((uid, zPhys));
+                UpdateZGravityInfluence(uid, zPhys, xform);
 
                 if (!zPhys.CurrentGroundFromBelowLevel && zPhys.LocalPosition < zPhys.CurrentGroundHeight)
                     zPhys.LocalPosition = zPhys.CurrentGroundHeight;
@@ -758,12 +784,39 @@ public abstract partial class CESharedZLevelsSystem
                 continue;
             }
 
+            UpdateZGravityInfluence(uid, zPhys, xform);
+
             // Apply Z-gravity unless the entity is resting on an actual floor of the current level.
             // Entities parented to map (no grid) are always BodyStatus.InAir in SS14 physics, so
             // we cannot use physics.BodyStatus to detect ground rest.
-            var restingOnGround = !zPhys.CurrentGroundFromBelowLevel
-                                  && (zPhys.LocalPosition - zPhys.CurrentGroundHeight) <= 0.001f
-                                  && zPhys.Velocity <= 0f;
+            var currentGroundDistance = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
+            var lowVelocityGroundContact = MathF.Abs(zPhys.Velocity) <= FlatGroundSettleVelocityThreshold;
+            var downGraceBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
+            var restingOnCurrentGround = !zPhys.CurrentGroundFromBelowLevel &&
+                                         currentGroundDistance <= GroundContactTolerance &&
+                                         zPhys.Velocity <= 0f &&
+                                         lowVelocityGroundContact;
+            var restingOnGraceBlockedDescent = zPhys.CurrentGroundFromBelowLevel &&
+                                               downGraceBlocked &&
+                                               zPhys.LocalPosition <= GroundContactTolerance &&
+                                               zPhys.Velocity <= 0f;
+            var restingOnBlockedDescent = zPhys.CurrentGroundFromBelowLevel &&
+                                           zPhys.LocalPosition >= -GroundContactTolerance &&
+                                           zPhys.LocalPosition <= 0.001f &&
+                                           zPhys.Velocity <= 0f &&
+                                           IsLandingBlocked(uid, xform);
+            var restingOnGround = restingOnCurrentGround || restingOnGraceBlockedDescent || restingOnBlockedDescent;
+            if (restingOnCurrentGround)
+            {
+                zPhys.LocalPosition = zPhys.CurrentGroundHeight;
+                zPhys.Velocity = 0f;
+            }
+            else if (restingOnGraceBlockedDescent || restingOnBlockedDescent)
+            {
+                zPhys.LocalPosition = 0f;
+                zPhys.Velocity = 0f;
+            }
+
             if (!restingOnGround)
             {
                 var velocityEv = new CEGetZVelocityEvent((uid, zPhys));
@@ -812,14 +865,24 @@ public abstract partial class CESharedZLevelsSystem
 
             if (zPhys.Velocity < 0) //Falling down
             {
-                if (distanceToGround <= 0.05f && !zPhys.CurrentGroundFromBelowLevel) //There`s a ground
+                if (distanceToGround <= GroundContactTolerance && !zPhys.CurrentGroundFromBelowLevel) //There`s a ground
                 {
                     var impactPower = MathF.Abs(zPhys.Velocity);
-                    var suppressBounce = snappedDownToStickyGround ||
-                                         snappedUpToGround &&
-                                         (zPhys.CurrentGroundHeight > 0.01f ||
-                                          impactPower <= FlatGroundSettleVelocityThreshold ||
-                                          startedOnElevatedGround);
+                    var lowImpactGroundContact = impactPower <= FlatGroundSettleVelocityThreshold;
+                    var suppressWithoutLandingBlocked = snappedDownToStickyGround ||
+                                                        lowImpactGroundContact ||
+                                                        snappedUpToGround &&
+                                                        (zPhys.CurrentGroundHeight > 0.01f ||
+                                                         startedOnElevatedGround);
+                    var landingBlocked = !suppressWithoutLandingBlocked && IsLandingBlocked(uid, xform);
+                    var suppressBounce = suppressWithoutLandingBlocked || landingBlocked;
+                    var settleMode = landingBlocked
+                        ? "blocked"
+                        : snappedDownToStickyGround
+                            ? "sticky"
+                            : snappedUpToGround
+                                ? "stair"
+                                : "flat";
 
                     DebugZStairCsv(uid,
                         "ground_contact",
@@ -830,11 +893,13 @@ public abstract partial class CESharedZLevelsSystem
                     {
                         DebugZStairCsv(uid,
                             "ground_settle",
-                            $"impact={StairCsvFloat(impactPower)},mode={(snappedDownToStickyGround ? "sticky" : "stair")},ground={StairCsvFloat(zPhys.CurrentGroundHeight)}",
-                            $"{(snappedDownToStickyGround ? "sticky" : "stair")}|{StairCsvFloat(MathF.Round(impactPower, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}");
+                            $"impact={StairCsvFloat(impactPower)},mode={settleMode},ground={StairCsvFloat(zPhys.CurrentGroundHeight)}",
+                            $"{settleMode}|{StairCsvFloat(MathF.Round(impactPower, 2))}|{StairCsvFloat(MathF.Round(zPhys.CurrentGroundHeight, 2))}");
                         if (ZDebugEnabled)
                             DebugZVerbose(uid, $"suppressed bounce on stair contact at ground={zPhys.CurrentGroundHeight:0.00}");
 
+                        zPhys.LocalPosition = zPhys.CurrentGroundHeight;
+                        distanceToGround = 0f;
                         zPhys.Velocity = 0f;
                     }
                     else
@@ -864,7 +929,7 @@ public abstract partial class CESharedZLevelsSystem
 
             if (zPhys.LocalPosition < 0) // Need to descend to Z-level below
             {
-                var isWeightless = _gravity.IsWeightless(uid, physics, xform);
+                var isWeightless = !HasComp<CEZGravityInfluencedComponent>(uid);
                 var downBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
                 var supportOffset = 0;
                 var supportGridUid = EntityUid.Invalid;
@@ -898,7 +963,7 @@ public abstract partial class CESharedZLevelsSystem
                             $"reason=client_moving_stair,mode={descendMode},support_grid={ToPrettyString(supportGridUid)},support_grid_vel={supportGridVelocity},local_before={StairCsvFloat(zPhys.LocalPosition)},vel_before={StairCsvFloat(zPhys.Velocity)}",
                             $"client_moving_stair|{descendMode}|{ToPrettyString(supportGridUid)}|{supportGridVelocity}");
 
-                        zPhys.LocalPosition = MathF.Min(zPhys.LocalPosition, -0.01f);
+                        zPhys.LocalPosition = -0.01f;
                         zPhys.Velocity = 0f;
                         continue;
                     }
@@ -1636,7 +1701,8 @@ public abstract partial class CESharedZLevelsSystem
             reason = "no_highground";
             DebugZStairCsv(ent,
                 "up_check",
-                $"allow={StairCsvBool(allow)},reason={reason},sample=na,sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent=na");
+                $"allow={StairCsvBool(allow)},reason={reason},sample=na,sample_thr={StairCsvFloat(StairUpTransferSampleThreshold)},support_dir={supportDirection},up_dir={upwardDirection},move_dot=na,move_intent=na",
+                reason);
             return false;
         }
 
@@ -2371,8 +2437,11 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     [PublicAPI]
-    public bool TryMoveDown(EntityUid ent)
+    public bool TryMoveDown(EntityUid ent, bool bypassPassability = false)
     {
+        if (!bypassPassability && IsLandingBlocked(ent, Transform(ent)))
+            return false;
+
         return TryMove(ent, -1);
     }
 
@@ -2419,9 +2488,12 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     [PublicAPI]
-    public bool TryMoveDownOrChasm(EntityUid ent)
+    public bool TryMoveDownOrChasm(EntityUid ent, bool bypassPassability = false)
     {
-        if (TryMoveDown(ent))
+        if (!bypassPassability && IsLandingBlocked(ent, Transform(ent)))
+            return false;
+
+        if (TryMove(ent, -1))
         {
             if (ZDebugEnabled)
                 DebugZ(ent, "downward transfer completed");
