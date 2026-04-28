@@ -30,6 +30,7 @@ using Content.Shared.Mobs;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.NPC;
 using Content.Shared.NPC.Systems;
+using Content.Shared.SSDIndicator; // Pirate
 using Prometheus;
 using Robust.Server.GameObjects;
 using Robust.Shared.Configuration;
@@ -89,6 +90,9 @@ namespace Content.Server.NPC.Systems
         {
             component.Blackboard.SetValue(NPCBlackboard.Owner, uid);
             WakeNPC(uid, component);
+
+            // Pirate: Add NPC marker component so they don't get forced to sleep via SSD
+            EnsureComp<NOSSDSleepComponent>(uid);
         }
 
         public void OnNPCShutdown(EntityUid uid, HTNComponent component, ComponentShutdown args)
