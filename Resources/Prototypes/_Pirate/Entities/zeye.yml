@@ -3,3 +3,6 @@
   id: CEZLevelEye
   save: false
   categories: [ HideSpawnMenu ]
+  components:
+  - type: Transform
+    gridTraversal: false

@@ -141,6 +141,33 @@ public abstract partial class CESharedZLevelsSystem
         ent.Comp.CurrentSupportGridUid = supportGridUid;
         ent.Comp.CurrentHighGroundBelow = isHighGround;
 
+        if (ZDebugStairsEnabled)
+        {
+            var wasHighGround = oldSticky || oldGroundHeight > 0.5f;
+            var isHighGroundNow = ent.Comp.CurrentStickyGround || ent.Comp.CurrentGroundHeight > 0.5f;
+            var elevated = ent.Comp.LocalPosition > 0.5f || oldGroundHeight > 0.5f || ent.Comp.CurrentGroundHeight > 0.5f;
+            var lostHighGround = elevated && wasHighGround && !isHighGroundNow && ent.Comp.CurrentGroundHeight <= GroundContactTolerance;
+            var gainedHighGround = elevated && !wasHighGround && isHighGroundNow;
+
+            if (lostHighGround || gainedHighGround)
+            {
+                var xform = Transform(ent);
+                var worldPos = _transform.GetWorldPosition(ent);
+                var gridLocal = xform.GridUid is { } gridUid
+                    ? StairCsvVec2(Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(gridUid)))
+                    : "na";
+                var gridVel = xform.GridUid is { } velocityGridUid && TryGetLinearVelocity(velocityGridUid, out var linearVelocity)
+                    ? StairCsvVec2(linearVelocity)
+                    : "na";
+                var transition = lostHighGround ? "lost_highground" : "gained_highground";
+
+                DebugZStairCsv(ent,
+                    "stair_ground_flip",
+                    $"transition={transition},tile={_transform.GetGridOrMapTilePosition(ent)},world={StairCsvVec2(worldPos)},grid_local={gridLocal},grid_vel={gridVel},old_ground={StairCsvFloat(oldGroundHeight)},new_ground={StairCsvFloat(ent.Comp.CurrentGroundHeight)},old_sticky={StairCsvBool(oldSticky)},new_sticky={StairCsvBool(ent.Comp.CurrentStickyGround)},old_from_below={StairCsvBool(oldFromBelow)},new_from_below={StairCsvBool(ent.Comp.CurrentGroundFromBelowLevel)},old_support_below={StairCsvBool(oldSupportBelow)},new_support_below={StairCsvBool(ent.Comp.CurrentHasSupportBelow)},old_support_grid={(oldSupportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(oldSupportGridUid))},new_support_grid={(ent.Comp.CurrentSupportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(ent.Comp.CurrentSupportGridUid))},old_highground_below={StairCsvBool(oldHighGroundBelow)},new_highground_below={StairCsvBool(ent.Comp.CurrentHighGroundBelow)}",
+                    $"{transition}|{StairCsvDedupeFloat(ent.Comp.LocalPosition, 2)}|{StairCsvDedupeFloat(oldGroundHeight, 2)}|{StairCsvDedupeFloat(ent.Comp.CurrentGroundHeight, 2)}|{StairCsvBool(oldSticky)}|{StairCsvBool(ent.Comp.CurrentStickyGround)}|{_transform.GetGridOrMapTilePosition(ent)}");
+            }
+        }
+
         if (ZDebugEnabled &&
             (MathF.Abs(oldGroundHeight - ent.Comp.CurrentGroundHeight) > 0.01f ||
              oldSticky != ent.Comp.CurrentStickyGround ||
@@ -655,9 +682,6 @@ public abstract partial class CESharedZLevelsSystem
 
         if (supportVelocity.LengthSquared() <= 0.01f * 0.01f)
             return false;
-
-        if (descendMode == AutoDescendMode.FreeFall)
-            return true;
 
         if (descendMode != AutoDescendMode.ControlledStep ||
             !zPhys.CurrentHighGroundBelow ||
