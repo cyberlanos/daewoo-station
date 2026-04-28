@@ -54,6 +54,7 @@ public abstract partial class CESharedZLevelsSystem
     private const float ImpactVelocityLimit = 3f;
 
     private readonly Dictionary<EntityUid, DeferredClientMovingStairDescent> _deferredClientMovingStairDescents = new();
+    private readonly HashSet<EntityUid> _serverImmediateLinkedGridDescents = new();
     private EntityQuery<CEZLevelHighGroundComponent> _highgroundQuery;
 
     private struct DeferredClientMovingStairDescent
@@ -167,13 +168,34 @@ public abstract partial class CESharedZLevelsSystem
         belowGridUid = EntityUid.Invalid;
         isHighGround = false;
 
+        var worldPos = _transform.GetWorldPosition(ent);
+        if (TryGetDetachedCarrierProbe(ent, xform, out var carrierGridUid, out var carrierWorldPos) &&
+            TryResolveDetachedCarrierProbeGrid(carrierGridUid, 1, out belowGridUid, out var carrierBelowGrid))
+        {
+            worldPos = carrierWorldPos;
+            var supported = HasSupportOnGridAtWorld(ent, belowGridUid, carrierBelowGrid, worldPos, out isHighGround);
+            if (!supported)
+                belowGridUid = EntityUid.Invalid;
+
+            return supported;
+        }
+
         if (!TryResolveGridForMapOffset(ent, xform, -1, out belowGridUid, out var belowGrid))
             return false;
 
-        var worldPos = _transform.GetWorldPosition(ent);
-        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+        var hasSupport = HasSupportOnGridAtWorld(ent, belowGridUid, belowGrid, worldPos, out isHighGround);
+        if (!hasSupport)
+            belowGridUid = EntityUid.Invalid;
 
-        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+        return hasSupport;
+    }
+
+    private bool HasSupportOnGridAtWorld(EntityUid ent, EntityUid gridUid, MapGridComponent grid, Vector2 worldPos, out bool isHighGround)
+    {
+        isHighGround = false;
+        var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
+
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);
         while (anchoredQuery.MoveNext(out var uid))
         {
             if (_highgroundQuery.HasComp(uid.Value))
@@ -183,10 +205,9 @@ public abstract partial class CESharedZLevelsSystem
             }
         }
 
-        if (_map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty)
+        if (_map.TryGetTileRef(gridUid, grid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty)
             return true;
 
-        belowGridUid = EntityUid.Invalid;
         return false;
     }
 
@@ -201,23 +222,18 @@ public abstract partial class CESharedZLevelsSystem
         belowGridUid = EntityUid.Invalid;
         isHighGround = false;
 
+        var worldPos = _transform.GetWorldPosition(ent);
+        if (TryGetDetachedCarrierProbe(ent, xform, out var carrierGridUid, out var carrierWorldPos) &&
+            TryResolveDetachedCarrierProbeGrid(carrierGridUid, 1, out belowGridUid, out var carrierBelowGrid))
+        {
+            worldPos = carrierWorldPos;
+            return HasSupportOnGridAtWorld(ent, belowGridUid, carrierBelowGrid, worldPos, out isHighGround);
+        }
+
         if (!TryResolveGridForMapOffset(ent, xform, -1, out belowGridUid, out var belowGrid))
             return false;
 
-        var worldPos = _transform.GetWorldPosition(ent);
-        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
-
-        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
-        while (anchoredQuery.MoveNext(out var uid))
-        {
-            if (_highgroundQuery.HasComp(uid.Value))
-            {
-                isHighGround = true;
-                return true;
-            }
-        }
-
-        return _map.TryGetTileRef(belowGridUid, belowGrid, worldPos, out var tileRef) && !tileRef.Tile.IsEmpty;
+        return HasSupportOnGridAtWorld(ent, belowGridUid, belowGrid, worldPos, out isHighGround);
     }
 
     /// <summary>
@@ -227,14 +243,26 @@ public abstract partial class CESharedZLevelsSystem
     [PublicAPI]
     protected bool IsLandingBlocked(EntityUid ent, TransformComponent xform)
     {
+        var worldPos = _transform.GetWorldPosition(ent);
+        if (TryGetDetachedCarrierProbe(ent, xform, out var carrierGridUid, out var carrierWorldPos) &&
+            TryResolveDetachedCarrierProbeGrid(carrierGridUid, 1, out var carrierBelowGridUid, out var carrierBelowGrid))
+        {
+            worldPos = carrierWorldPos;
+            return HasLandingBlockerOnGridAtWorld(carrierBelowGridUid, carrierBelowGrid, worldPos);
+        }
+
         if (!TryResolveGridForMapOffset(ent, xform, -1, out var belowGridUid, out var belowGrid))
             return false;
 
-        var worldPos = _transform.GetWorldPosition(ent);
-        var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
+        return HasLandingBlockerOnGridAtWorld(belowGridUid, belowGrid, worldPos);
+    }
+
+    private bool HasLandingBlockerOnGridAtWorld(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
+    {
+        var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
         var blockingLayers = (int) (CollisionGroup.Impassable | CollisionGroup.HighImpassable);
 
-        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(belowGridUid, belowGrid, tileIndices);
+        var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);
         while (anchoredQuery.MoveNext(out var uid))
         {
             if (_highgroundQuery.HasComp(uid.Value))
@@ -343,10 +371,19 @@ public abstract partial class CESharedZLevelsSystem
         isHighGround = false;
 
         var worldPos = _transform.GetWorldPosition(ent);
+        var useDetachedCarrierProbe = TryGetDetachedCarrierProbe(ent, xform, out var carrierGridUid, out var carrierWorldPos);
+        if (useDetachedCarrierProbe)
+            worldPos = carrierWorldPos;
 
         for (var offset = 1; ; offset++)
         {
-            if (!TryResolveGridForMapOffset(ent, xform, -offset, out var belowGridUid, out var belowGrid))
+            EntityUid belowGridUid;
+            MapGridComponent belowGrid;
+            var resolved = useDetachedCarrierProbe
+                ? TryResolveDetachedCarrierProbeGrid(carrierGridUid, offset, out belowGridUid, out belowGrid)
+                : TryResolveGridForMapOffset(ent, xform, -offset, out belowGridUid, out belowGrid);
+
+            if (!resolved)
                 break;
 
             var tileIndices = _map.WorldToTile(belowGridUid, belowGrid, worldPos);
@@ -429,6 +466,7 @@ public abstract partial class CESharedZLevelsSystem
     {
         PruneDeferredClientMovingStairDescent(ent, Transform(ent));
 
+        var detachedFromLinkedGrid = false;
         if (args.ParentChanged &&
             (_net.IsServer ||
              _net.IsClient && !_timing.ApplyingState))
@@ -437,8 +475,10 @@ public abstract partial class CESharedZLevelsSystem
                 TryComp<CEZLinkedGridComponent>(args.OldPosition.EntityId, out _) &&
                 args.NewPosition.EntityId == Transform(ent).MapUid)
             {
+                detachedFromLinkedGrid = true;
                 ent.Comp.DetachedCarrierGridUid = args.OldPosition.EntityId;
                 ent.Comp.DetachedCarrierLocalPosition = args.OldPosition.Position;
+                ent.Comp.DetachedCarrierReferenceExpiresAt = _timing.CurTime + TimeSpan.FromSeconds(StairTransferMovingGridGraceMaxSeconds);
                 DebugZStairCsv(ent,
                     "detached_cache_capture",
                     $"carrier_grid={ToPrettyString(args.OldPosition.EntityId)},cached_local={StairCsvVec2(args.OldPosition.Position)},carrier_world={GetEntityWorldPositionCsv(args.OldPosition.EntityId)},carrier_rot={StairCsvFloat((float) _transform.GetWorldRotation(args.OldPosition.EntityId).Degrees)},carrier_vel={GetEntityVelocityCsv(args.OldPosition.EntityId)},target_map={args.NewPosition.EntityId}",
@@ -448,10 +488,106 @@ public abstract partial class CESharedZLevelsSystem
             {
                 ent.Comp.DetachedCarrierGridUid = EntityUid.Invalid;
                 ent.Comp.DetachedCarrierLocalPosition = Vector2.Zero;
+                ent.Comp.DetachedCarrierReferenceExpiresAt = TimeSpan.Zero;
             }
         }
 
         CacheMovement(ent);
+        TryConsumeServerImmediateLinkedGridDescent(ent, detachedFromLinkedGrid);
+    }
+
+    private bool TryConsumeServerImmediateLinkedGridDescent(Entity<CEZPhysicsComponent> ent, bool detachedFromLinkedGrid)
+    {
+        if (!_net.IsServer ||
+            !detachedFromLinkedGrid ||
+            _serverImmediateLinkedGridDescents.Contains(ent.Owner))
+        {
+            return false;
+        }
+
+        var xform = Transform(ent);
+        if (xform.GridUid != null ||
+            xform.MapUid == null ||
+            _timing.CurTime < ent.Comp.AutoDownBlockedUntil ||
+            !ent.Comp.CurrentGroundFromBelowLevel)
+        {
+            return false;
+        }
+
+        var descendMode = GetAutoDescendMode(
+            ent.Owner,
+            ent.Comp,
+            xform,
+            out var supportOffset,
+            out var supportGridUid,
+            out var supportIsHighGround,
+            out _);
+
+        if (descendMode == AutoDescendMode.None)
+            return false;
+
+        var supportGridVelocity = supportGridUid != EntityUid.Invalid && TryGetLinearVelocity(supportGridUid, out var belowGridVelocity)
+            ? StairCsvVec2(belowGridVelocity)
+            : "na";
+
+        DebugZStairCsv(ent,
+            "down_immediate",
+            $"reason=server_linked_grid_detach,mode={descendMode},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},support_grid_vel={supportGridVelocity},local_before={StairCsvFloat(ent.Comp.LocalPosition)},vel_before={StairCsvFloat(ent.Comp.Velocity)}");
+
+        _serverImmediateLinkedGridDescents.Add(ent.Owner);
+        try
+        {
+            var movedDown = TryMoveDown(ent.Owner);
+            DebugZStairCsv(ent,
+                "down_immediate_result",
+                $"success={StairCsvBool(movedDown)},mode={descendMode},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},support_grid_vel={supportGridVelocity}");
+
+            if (!movedDown)
+                return false;
+
+            if (descendMode == AutoDescendMode.ControlledStep)
+            {
+                ent.Comp.LocalPosition = MathF.Max(0f, ent.Comp.CurrentGroundHeight);
+                ent.Comp.Velocity = 0f;
+
+                if (supportIsHighGround &&
+                    TryComp<PhysicsComponent>(ent.Owner, out var physics) &&
+                    physics.LinearVelocity.LengthSquared() > 0.0001f)
+                {
+                    _physics.SetLinearVelocity(ent.Owner, Vector2.Zero, body: physics);
+                }
+
+                var upBlockSeconds = StairTransferGraceSeconds;
+                if (supportGridUid != EntityUid.Invalid &&
+                    TryGetLinearVelocity(supportGridUid, out var supportVelocityForGrace))
+                {
+                    upBlockSeconds = MathF.Min(
+                        StairTransferMovingGridGraceMaxSeconds,
+                        StairTransferGraceSeconds + supportVelocityForGrace.Length() * StairTransferMovingGridGraceScale);
+                }
+
+                ent.Comp.AutoUpBlockedUntil = _timing.CurTime + TimeSpan.FromSeconds(upBlockSeconds);
+            }
+            else
+            {
+                ent.Comp.LocalPosition += 1f;
+            }
+
+            DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.LocalPosition));
+            DirtyField(ent, ent.Comp, nameof(CEZPhysicsComponent.Velocity));
+
+            if (descendMode == AutoDescendMode.FreeFall || !ent.Comp.CurrentStickyGround)
+            {
+                var fallEv = new CEZLevelFallMapEvent();
+                RaiseLocalEvent(ent.Owner, ref fallEv);
+            }
+
+            return true;
+        }
+        finally
+        {
+            _serverImmediateLinkedGridDescents.Remove(ent.Owner);
+        }
     }
 
     private void OnGridParentChanged(Entity<MapGridComponent> ent, ref EntParentChangedMessage args)
@@ -478,6 +614,7 @@ public abstract partial class CESharedZLevelsSystem
     {
         zPhys.DetachedCarrierGridUid = EntityUid.Invalid;
         zPhys.DetachedCarrierLocalPosition = Vector2.Zero;
+        zPhys.DetachedCarrierReferenceExpiresAt = TimeSpan.Zero;
     }
 
     private bool TryGetDetachedCarrierLocalReference(CEZPhysicsComponent zPhys, out EntityUid sourceGridUid, out Vector2 carrierLocal)
@@ -486,6 +623,7 @@ public abstract partial class CESharedZLevelsSystem
         carrierLocal = Vector2.Zero;
 
         if (zPhys.DetachedCarrierGridUid == EntityUid.Invalid ||
+            _timing.CurTime > zPhys.DetachedCarrierReferenceExpiresAt ||
             !zPhys.CurrentGroundFromBelowLevel)
         {
             return false;
@@ -496,16 +634,34 @@ public abstract partial class CESharedZLevelsSystem
         return true;
     }
 
-    private bool ShouldDeferClientPredictedMovingStairDescent(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform, EntityUid supportGridUid, bool supportIsHighGround)
+    private bool ShouldDeferClientPredictedMovingGridDescent(
+        EntityUid uid,
+        CEZPhysicsComponent zPhys,
+        TransformComponent xform,
+        EntityUid supportGridUid,
+        bool supportIsHighGround,
+        AutoDescendMode descendMode)
     {
         if (!_net.IsClient ||
             _timing.ApplyingState ||
             xform.GridUid != null ||
             !zPhys.CurrentGroundFromBelowLevel ||
-            !zPhys.CurrentHighGroundBelow ||
-            !supportIsHighGround ||
             supportGridUid == EntityUid.Invalid ||
+            !TryComp<CEZLinkedGridComponent>(supportGridUid, out _) ||
             !TryGetLinearVelocity(supportGridUid, out var supportVelocity))
+        {
+            return false;
+        }
+
+        if (supportVelocity.LengthSquared() <= 0.01f * 0.01f)
+            return false;
+
+        if (descendMode == AutoDescendMode.FreeFall)
+            return true;
+
+        if (descendMode != AutoDescendMode.ControlledStep ||
+            !zPhys.CurrentHighGroundBelow ||
+            !supportIsHighGround)
         {
             return false;
         }
@@ -515,7 +671,64 @@ public abstract partial class CESharedZLevelsSystem
         if (TryGetDetachedCarrierLocalReference(zPhys, out _, out _))
             return false;
 
-        return supportVelocity.LengthSquared() > 0.01f * 0.01f;
+        return true;
+    }
+
+    private bool TryGetDetachedCarrierProbe(
+        EntityUid ent,
+        TransformComponent xform,
+        out EntityUid carrierGridUid,
+        out Vector2 sampleWorldPos,
+        CEZPhysicsComponent? zPhys = null)
+    {
+        carrierGridUid = EntityUid.Invalid;
+        sampleWorldPos = default;
+
+        if (xform.GridUid != null ||
+            !Resolve(ent, ref zPhys, false) ||
+            zPhys.DetachedCarrierGridUid == EntityUid.Invalid ||
+            _timing.CurTime > zPhys.DetachedCarrierReferenceExpiresAt ||
+            !_gridQuery.HasComp(zPhys.DetachedCarrierGridUid) ||
+            !TryComp<CEZLinkedGridComponent>(zPhys.DetachedCarrierGridUid, out _))
+        {
+            return false;
+        }
+
+        var carrierXform = Transform(zPhys.DetachedCarrierGridUid);
+        if (xform.MapUid != carrierXform.MapUid)
+            return false;
+
+        carrierGridUid = zPhys.DetachedCarrierGridUid;
+        sampleWorldPos = Vector2.Transform(zPhys.DetachedCarrierLocalPosition, _transform.GetWorldMatrix(carrierGridUid));
+        return true;
+    }
+
+    private bool TryResolveDetachedCarrierProbeGrid(EntityUid carrierGridUid, int floorOffset, out EntityUid gridUid, out MapGridComponent gridComp)
+    {
+        if (floorOffset == 0)
+        {
+            gridUid = carrierGridUid;
+            if (!_gridQuery.TryComp(gridUid, out var carrierGrid))
+            {
+                gridComp = default!;
+                return false;
+            }
+
+            gridComp = carrierGrid!;
+            return true;
+        }
+
+        if (TryComp<CEZLinkedGridComponent>(carrierGridUid, out var linked) &&
+            linked.PeerGrids.TryGetValue(linked.Depth - floorOffset, out gridUid) &&
+            _gridQuery.TryComp(gridUid, out var peerGrid))
+        {
+            gridComp = peerGrid!;
+            return true;
+        }
+
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+        return false;
     }
 
     private void RefreshDeferredClientMovingStairDescent(EntityUid uid, EntityUid sourceMapUid, EntityUid supportGridUid)
@@ -953,15 +1166,19 @@ public abstract partial class CESharedZLevelsSystem
 
                 if (canAutoDescend)
                 {
-                    if (ShouldDeferClientPredictedMovingStairDescent(uid, zPhys, xform, supportGridUid, supportIsHighGround))
+                    if (ShouldDeferClientPredictedMovingGridDescent(uid, zPhys, xform, supportGridUid, supportIsHighGround, descendMode))
                     {
                         if (xform.MapUid is { } sourceMapUid)
                             RefreshDeferredClientMovingStairDescent(uid, sourceMapUid, supportGridUid);
 
+                        var deferReason = descendMode == AutoDescendMode.FreeFall
+                            ? "client_moving_grid_freefall"
+                            : "client_moving_stair";
+
                         DebugZStairCsv(uid,
                             "down_defer",
-                            $"reason=client_moving_stair,mode={descendMode},support_grid={ToPrettyString(supportGridUid)},support_grid_vel={supportGridVelocity},local_before={StairCsvFloat(zPhys.LocalPosition)},vel_before={StairCsvFloat(zPhys.Velocity)}",
-                            $"client_moving_stair|{descendMode}|{ToPrettyString(supportGridUid)}|{supportGridVelocity}");
+                            $"reason={deferReason},mode={descendMode},support_grid={ToPrettyString(supportGridUid)},support_grid_vel={supportGridVelocity},local_before={StairCsvFloat(zPhys.LocalPosition)},vel_before={StairCsvFloat(zPhys.Velocity)}",
+                            $"{deferReason}|{descendMode}|{ToPrettyString(supportGridUid)}|{supportGridVelocity}");
 
                         zPhys.LocalPosition = -0.01f;
                         zPhys.Velocity = 0f;
@@ -1870,14 +2087,23 @@ public abstract partial class CESharedZLevelsSystem
             return false;
         }
 
-        if (!TryResolveGridForMapOffset(target.Owner, xform, 0, out var mapGridUid, out var mapGrid))
+        var useDetachedCarrierProbe = TryGetDetachedCarrierProbe(target.Owner, xform, out var carrierGridUid, out var carrierWorldPos, target.Comp);
+        var worldPos = useDetachedCarrierProbe
+            ? carrierWorldPos
+            : _transform.GetWorldPosition(target);
+
+        EntityUid mapGridUid;
+        MapGridComponent mapGrid;
+        var resolvedCurrentGrid = useDetachedCarrierProbe
+            ? TryResolveDetachedCarrierProbeGrid(carrierGridUid, 0, out mapGridUid, out mapGrid)
+            : TryResolveGridForMapOffset(target.Owner, xform, 0, out mapGridUid, out mapGrid);
+
+        if (!resolvedCurrentGrid)
         {
             if (logProbe)
                 DebugZVerbose(target.Owner, "ground probe failed: could not resolve current grid");
             return false;
         }
-
-        var worldPos = _transform.GetWorldPosition(target);
 
         var checkingGridUid = mapGridUid;
         var checkingGrid = mapGrid;
@@ -1886,7 +2112,13 @@ public abstract partial class CESharedZLevelsSystem
         {
             if (floor != 0)
             {
-                if (!TryResolveGridForMapOffset(target.Owner, xform, -floor, out var tempCheckingGridUid, out var tempCheckingGrid))
+                EntityUid tempCheckingGridUid;
+                MapGridComponent tempCheckingGrid;
+                var resolvedFloorGrid = useDetachedCarrierProbe
+                    ? TryResolveDetachedCarrierProbeGrid(carrierGridUid, floor, out tempCheckingGridUid, out tempCheckingGrid)
+                    : TryResolveGridForMapOffset(target.Owner, xform, -floor, out tempCheckingGridUid, out tempCheckingGrid);
+
+                if (!resolvedFloorGrid)
                 {
                     if (logProbe)
                         DebugZVerbose(target.Owner, $"ground probe skipped floor={floor}: could not resolve grid below");
@@ -2404,7 +2636,18 @@ public abstract partial class CESharedZLevelsSystem
         RaiseLocalEvent(ent, ref ev);
 
         if (ZPhyzQuery.TryComp(ent, out var zPhysAfterMove))
-            ClearDetachedCarrierReference(zPhysAfterMove);
+        {
+            if (_net.IsServer || _timing.IsFirstTimePredicted)
+            {
+                ClearDetachedCarrierReference(zPhysAfterMove);
+            }
+            else if (zPhysAfterMove.DetachedCarrierGridUid != EntityUid.Invalid)
+            {
+                DebugZStairCsv(ent,
+                    "detached_cache_preserve",
+                    $"reason=prediction_replay,carrier_grid={ToPrettyString(zPhysAfterMove.DetachedCarrierGridUid)},cached_local={StairCsvVec2(zPhysAfterMove.DetachedCarrierLocalPosition)},target_z={targetZLevel}");
+            }
+        }
 
         var actualWorldPos = _transform.GetWorldPosition(ent);
         var finalLocal = xform.GridUid != null

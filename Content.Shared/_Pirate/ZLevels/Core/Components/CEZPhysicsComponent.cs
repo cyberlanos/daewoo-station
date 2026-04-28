@@ -118,6 +118,8 @@ public sealed partial class CEZPhysicsComponent : Component
     [DataField]
     public Vector2 DetachedCarrierLocalPosition = Vector2.Zero;
 
+    public TimeSpan DetachedCarrierReferenceExpiresAt;
+
     // Visuals
 
     /// <summary>
