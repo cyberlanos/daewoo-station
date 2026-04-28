@@ -32,6 +32,8 @@ public sealed class VampirismSystem : EntitySystem
 
 
         EnsureBloodSucker(ent);
+        if (ent.Comp.MetabolizerPrototypes == null)
+            return;
 
         if (!TryComp<BodyComponent>(ent, out var body)
             || !_body.TryGetBodyOrganEntityComps<MetabolizerComponent>((ent, body), out var comps))
@@ -44,8 +46,8 @@ public sealed class VampirismSystem : EntitySystem
 
             _metabolizer.SetMetabolizerTypes((comp.Comp2.Owner, comp.Comp1), ent.Comp.MetabolizerPrototypes);
 
-            if (ent.Comp.SpecialDigestible is {} whitelist)
-                stomach.SpecialDigestible = whitelist;
+            //if (ent.Comp.SpecialDigestible is {} whitelist)
+            //    stomach.SpecialDigestible = whitelist;
         }
     }
 

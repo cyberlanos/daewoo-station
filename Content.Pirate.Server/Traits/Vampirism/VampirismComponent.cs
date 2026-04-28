@@ -18,8 +18,8 @@ public sealed partial class VampirismComponent : Component
     /// <summary>
     ///     A whitelist for what special-digestible-required foods the vampire's stomach is capable of eating.
     /// </summary>
-    [DataField]
-    public EntityWhitelist? SpecialDigestible = null;
+    //[DataField]
+    //public EntityWhitelist? SpecialDigestible = null;
 
     [DataField]
     public TimeSpan SuccDelay = TimeSpan.FromSeconds(1);

@@ -115,8 +115,8 @@
           - !type:OrganType
             type: Human
             shouldHave: false
-      - !type:SatiateHunger
-        factor: 0.5
+      - !type:SatiateHunger # Pirate
+        factor: 1.5
         conditions:
         - !type:OrganType
           type: Vampiric
@@ -125,28 +125,28 @@
         - !type:OrganType
           type: Vampiric
         reagent: Water
-        amount: 0.3
-      - !type:AdjustReagent
-        conditions:
-        - !type:OrganType
-          type: Vampiric
-        reagent: Protein
-        amount: 0.25 # See below
+        amount: 1
       - !type:AdjustReagent
         conditions:
         - !type:OrganType
           type: Vampiric
         reagent: Omnizine
         amount: 0.3
+      - !type:ModifyBleedAmount
+        amount: -0.05
+        conditions:
+        - !type:OrganType
+          type: Vampiric
+      - !type:ModifyBloodLevel
+        amount: 0.05
+        conditions:
+        - !type:OrganType
+          type: Vampiric # Pirate end
     Food:
       effects:
         - !type:AdjustReagent
           reagent: UncookedAnimalProteins
-          amount: 0.125 # 0.25 proteins for 1u of blood - restores 0.75 hunger, adds 0.25 blood per unit
-          conditions:
-          - !type:OrganType
-            type: Vampiric
-            shouldHave: false
+          amount: 0.1
     Medicine:
       effects:
       - !type:HealthChange
@@ -294,7 +294,7 @@
         time: 28
       - !type:HealthChange # Goobstation - Make Ichor less shit
         damage:
-          types: 
+          types:
             Heat: -5
             Shock: -5
             Cold: -5
@@ -305,11 +305,11 @@
             Bloodloss: -5
             Blunt: -5
             Slash: -5
-            Piercing: -5 
-   
+            Piercing: -5
+
       - !type:ModifyBloodLevel
             amount: 3
-  
+
       - !type:ModifyBleedAmount
             amount: -1.5
   # Goobstation, just in case you REALLY  REALLY want to water your plants
