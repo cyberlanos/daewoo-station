@@ -33,9 +33,9 @@ public abstract partial class CESharedZLevelsSystem
     // stair collision stops the body slightly earlier, so we use a center-sample threshold that
     // matches the reachable point seen in live traces while still leaving enough separation from
     // the downward landing sample to avoid reintroducing up/down stair loops.
-    // Keep a tiny tolerance here because the same stair path can stabilize around ~0.381-0.383
-    // after a full up/down cycle due to landing and collision quantization.
-    private const float StairUpTransferSampleThreshold = 0.39f;
+    // Keep a little tolerance here because scaled character hitboxes can stabilize around ~0.39-0.40
+    // before the stair crest fixture, while a normal body after a full up/down cycle sits around ~0.381-0.383.
+    private const float StairUpTransferSampleThreshold = 0.42f;
     // Place the mover just inside the next tile after climbing so it will not immediately re-trigger descent.
     private const float StairUpLandingForwardNudge = 0.05f;
     // Place the mover at the start of stair 3 after descending so it does not instantly climb back up.
