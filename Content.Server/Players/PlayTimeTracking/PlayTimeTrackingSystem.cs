@@ -90,6 +90,7 @@ using Content.Server.Afk.Events;
 using Content.Server.GameTicking;
 using Content.Server.GameTicking.Events;
 using Content.Server.Preferences.Managers;
+using Content.Server.Sandbox; // Pirate
 using Content.Server.Station.Events;
 using Content.Shared.CCVar;
 using Content.Shared.GameTicking;
@@ -121,6 +122,7 @@ public sealed class PlayTimeTrackingSystem : EntitySystem
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
     [Dependency] private readonly SharedRoleSystem _roles = default!;
     [Dependency] private readonly PlayTimeTrackingManager _tracking = default!;
+    [Dependency] private readonly SandboxSystem _sandbox = default!; // Pirate
 
     public override void Initialize()
     {
@@ -159,9 +161,13 @@ public sealed class PlayTimeTrackingSystem : EntitySystem
         if (_adminManager.IsAdmin(player))
         {
             trackers.Add(PlayTimeTrackingShared.TrackerAdmin);
-            trackers.Add(PlayTimeTrackingShared.TrackerOverall);
-            return;
+            //trackers.Add(PlayTimeTrackingShared.TrackerOverall); Pirate: Admin's also players
+            //return; Pirate
         }
+
+        // Pirate: Don't award playtime in sandbox mode
+        if (_sandbox.IsSandboxEnabled)
+            return;
 
         if (!IsPlayerAlive(player))
             return;
