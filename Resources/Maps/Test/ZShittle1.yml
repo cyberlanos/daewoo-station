@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 04/17/2026 20:03:13
-  entityCount: 160
+  time: 04/29/2026 19:55:19
+  entityCount: 163
 maps:
 - 3
 grids:
@@ -92,6 +92,40 @@ entities:
     - type: GridTree
     - type: Broadphase
     - type: OccluderTree
+- proto: AdminPDA
+  entities:
+  - uid: 154
+    components:
+    - type: Transform
+      pos: 3.1086957,-2.4822214
+      parent: 2
+    - type: ContainerContainer
+      containers:
+        PDA-id: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: 161
+        PDA-pen: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        PDA-pai: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        PDA-passport: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        Cartridge-Slot: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        program-container: !type:Container
+          showEnts: False
+          occludes: True
+          ents: []
+    - type: CEZItemPhysics
 - proto: AirlockShuttleSyndicate
   entities:
   - uid: 9
@@ -536,6 +570,23 @@ entities:
     - type: Transform
       pos: -3.5,-0.5
       parent: 2
+- proto: CaptainIDCard
+  entities:
+  - uid: 161
+    components:
+    - type: Transform
+      parent: 154
+    - type: NanoChatCard
+      pdaUid: 154
+    - type: Physics
+      canCollide: False
+- proto: ClothingBeltChiefEngineerFilled
+  entities:
+  - uid: 163
+    components:
+    - type: Transform
+      pos: 3.647519,-2.5552194
+      parent: 2
 - proto: ComputerIFF
   entities:
   - uid: 4
@@ -544,6 +595,13 @@ entities:
       rot: 1.5707963267948966 rad
       pos: -4.5,-0.5
       parent: 2
+- proto: ComputerResearchAndDevelopment
+  entities:
+  - uid: 20
+    components:
+    - type: Transform
+      pos: -3.5,0.5
+      parent: 2
 - proto: ComputerShuttle
   entities:
   - uid: 34
@@ -551,6 +609,12 @@ entities:
     - type: Transform
       rot: 1.5707963267948966 rad
       pos: -4.5,-1.5
+      parent: 2
+  - uid: 42
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 6.5,-0.5
       parent: 2
 - proto: DebugAPCRecharging
   entities:
@@ -591,13 +655,6 @@ entities:
     - type: Transform
       pos: -0.5,-2.5
       parent: 2
-- proto: GravityGeneratorMini
-  entities:
-  - uid: 97
-    components:
-    - type: Transform
-      pos: -3.5,0.5
-      parent: 2
 - proto: Grille
   entities:
   - uid: 28
@@ -614,18 +671,33 @@ entities:
       parent: 2
 - proto: Gyroscope
   entities:
-  - uid: 154
+  - uid: 43
     components:
     - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: -2.5,0.5
+      pos: 6.5,-2.5
       parent: 2
-- proto: MachineFTLDriveDebug
+- proto: HolopadEngineeringTelecoms
   entities:
-  - uid: 18
+  - uid: 110
     components:
     - type: Transform
-      pos: 6.5,-0.5
+      pos: -0.5,0.5
+      parent: 2
+- proto: IntercomAll
+  entities:
+  - uid: 109
+    components:
+    - type: Transform
+      pos: 2.5,1.5
+      parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: MachineFTLDriveAutomated
+  entities:
+  - uid: 97
+    components:
+    - type: Transform
+      pos: 6.5,0.5
       parent: 2
 - proto: Poweredlight
   entities:
@@ -675,6 +747,18 @@ entities:
       rot: 3.141592653589793 rad
       pos: -1.5,2.5
       parent: 2
+- proto: ResearchDisk10000
+  entities:
+  - uid: 18
+    components:
+    - type: Transform
+      pos: -3.6545646,0.5615288
+      parent: 2
+  - uid: 162
+    components:
+    - type: Transform
+      pos: -3.2899814,0.5406809
+      parent: 2
 - proto: ShuttleWindow
   entities:
   - uid: 27
@@ -707,6 +791,13 @@ entities:
     components:
     - type: Transform
       anchored: False
+      parent: 2
+- proto: StationRadioReceiver
+  entities:
+  - uid: 108
+    components:
+    - type: Transform
+      pos: -4.5,0.5
       parent: 2
 - proto: Thruster
   entities:
@@ -812,18 +903,6 @@ entities:
     - type: Transform
       rot: -1.5707963267948966 rad
       pos: -4.5,0.5
-      parent: 2
-  - uid: 42
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 6.5,0.5
-      parent: 2
-  - uid: 43
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 6.5,-2.5
       parent: 2
   - uid: 44
     components:
@@ -946,30 +1025,5 @@ entities:
     components:
     - type: Transform
       pos: -2.5,2.5
-      parent: 2
-- proto: WindowReinforcedDirectional
-  entities:
-  - uid: 20
-    components:
-    - type: Transform
-      rot: 3.141592653589793 rad
-      pos: 4.5,-2.5
-      parent: 2
-  - uid: 108
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 3.5,-1.5
-      parent: 2
-  - uid: 109
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 3.5,-0.5
-      parent: 2
-  - uid: 110
-    components:
-    - type: Transform
-      pos: 4.5,0.5
       parent: 2
 ...

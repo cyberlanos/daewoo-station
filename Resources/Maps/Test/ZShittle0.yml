@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 04/17/2026 20:03:13
-  entityCount: 193
+  time: 04/29/2026 19:55:19
+  entityCount: 211
 maps:
 - 3
 grids:
@@ -572,6 +572,33 @@ entities:
       rot: -1.5707963267948966 rad
       pos: 4.5,-0.5
       parent: 2
+- proto: ClothingBeltChiefEngineerFilled
+  entities:
+  - uid: 211
+    components:
+    - type: Transform
+      pos: 3.7482395,-2.7115774
+      parent: 2
+- proto: ComputerResearchAndDevelopment
+  entities:
+  - uid: 208
+    components:
+    - type: Transform
+      pos: -1.5,0.5
+      parent: 2
+    - type: TechnologyDatabase
+      supportedDisciplines:
+      - Industrial
+      - Arsenal
+      - Experimental
+      - CivilianServices
+- proto: CrewMonitoringServer
+  entities:
+  - uid: 204
+    components:
+    - type: Transform
+      pos: 1.5,-2.5
+      parent: 2
 - proto: CrowbarOrange
   entities:
   - uid: 183
@@ -586,6 +613,39 @@ entities:
     - type: Transform
       pos: -4.5,0.5
       parent: 2
+- proto: ERTJanitorPDA
+  entities:
+  - uid: 206
+    components:
+    - type: Transform
+      pos: 3.3056934,-2.6280308
+      parent: 2
+    - type: ContainerContainer
+      containers:
+        PDA-id: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: 207
+        PDA-pen: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        PDA-pai: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        PDA-passport: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        Cartridge-Slot: !type:ContainerSlot
+          showEnts: False
+          occludes: True
+          ent: null
+        program-container: !type:Container
+          showEnts: False
+          occludes: True
+          ents: []
 - proto: FloorTileItemShuttleBlack
   entities:
   - uid: 180
@@ -665,6 +725,32 @@ entities:
       rot: -1.5707963267948966 rad
       pos: 0.5,1.5
       parent: 2
+- proto: HolopadEngineeringTelecoms
+  entities:
+  - uid: 200
+    components:
+    - type: Transform
+      pos: -0.5,0.5
+      parent: 2
+- proto: IntercomAll
+  entities:
+  - uid: 202
+    components:
+    - type: Transform
+      pos: 2.5,1.5
+      parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: InterdyneEngineerIDCard
+  entities:
+  - uid: 207
+    components:
+    - type: Transform
+      parent: 206
+    - type: NanoChatCard
+      pdaUid: 206
+    - type: Physics
+      canCollide: False
 - proto: Poweredlight
   entities:
   - uid: 110
@@ -761,6 +847,25 @@ entities:
       parent: 2
     - type: Physics
       bodyType: Dynamic
+- proto: ResearchAndDevelopmentServer
+  entities:
+  - uid: 203
+    components:
+    - type: Transform
+      pos: 0.5,-2.5
+      parent: 2
+- proto: ResearchDisk10000
+  entities:
+  - uid: 209
+    components:
+    - type: Transform
+      pos: -1.5608146,0.5823761
+      parent: 2
+  - uid: 210
+    components:
+    - type: Transform
+      pos: -1.3628979,0.5302572
+      parent: 2
 - proto: ShuttleWindow
   entities:
   - uid: 31
@@ -805,6 +910,68 @@ entities:
     components:
     - type: Transform
       anchored: False
+      parent: 2
+- proto: StationRadioReceiver
+  entities:
+  - uid: 106
+    components:
+    - type: Transform
+      pos: -5.5,-0.5
+      parent: 2
+- proto: StationRadioRig
+  entities:
+  - uid: 103
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: 6.5,-1.5
+      parent: 2
+- proto: StationRadioServer
+  entities:
+  - uid: 119
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 6.5,-2.5
+      parent: 2
+    - type: DeviceLinkSource
+      linkedPorts:
+        103:
+        - - StationRadioServerPort
+          - StationRadioRigPort
+- proto: TableWood
+  entities:
+  - uid: 194
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 6.5,-2.5
+      parent: 2
+  - uid: 195
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 6.5,-1.5
+      parent: 2
+  - uid: 196
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 6.5,-0.5
+      parent: 2
+- proto: TelecomServerFilled
+  entities:
+  - uid: 201
+    components:
+    - type: Transform
+      pos: -0.5,-2.5
+      parent: 2
+- proto: TelecomTransmitter
+  entities:
+  - uid: 199
+    components:
+    - type: Transform
+      pos: -1.5,-2.5
       parent: 2
 - proto: Thruster
   entities:
@@ -899,6 +1066,41 @@ entities:
     - type: Transform
       rot: -1.5707963267948966 rad
       pos: 8.5,-2.5
+      parent: 2
+- proto: VinylDiskBlue
+  entities:
+  - uid: 198
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 6.756029,-0.91286385
+      parent: 2
+- proto: VinylDiskLightBlue
+  entities:
+  - uid: 197
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 6.3393626,-0.89201593
+      parent: 2
+- proto: VinylPlayer
+  entities:
+  - uid: 35
+    components:
+    - type: Transform
+      pos: 6.5,-0.5
+      parent: 2
+    - type: DeviceLinkSource
+      linkedPorts:
+        103:
+        - - VinylPlayerPort
+          - StationRadioRigPort
+- proto: VirologyServer
+  entities:
+  - uid: 205
+    components:
+    - type: Transform
+      pos: 2.5,-2.5
       parent: 2
 - proto: WallShuttle
   entities:
@@ -1149,30 +1351,5 @@ entities:
     - type: Transform
       rot: -1.5707963267948966 rad
       pos: -1.5,2.5
-      parent: 2
-- proto: WindowReinforcedDirectional
-  entities:
-  - uid: 35
-    components:
-    - type: Transform
-      rot: 3.141592653589793 rad
-      pos: 4.5,-2.5
-      parent: 2
-  - uid: 103
-    components:
-    - type: Transform
-      pos: 4.5,0.5
-      parent: 2
-  - uid: 106
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 5.5,-0.5
-      parent: 2
-  - uid: 119
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 5.5,-1.5
       parent: 2
 ...
