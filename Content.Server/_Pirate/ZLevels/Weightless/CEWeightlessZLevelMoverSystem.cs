@@ -61,15 +61,15 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
 
     private void UpdateActions(EntityUid uid, PhysicsComponent physics, TransformComponent xform)
     {
-        if (!CanUseWeightlessZMovement(uid, physics, xform) ||
-            !_zLevels.IsInEmptySpaceOnCurrentLevel(uid, xform))
+        if (!CanUseWeightlessZMovement(uid, physics, xform))
         {
             RemCompDeferred<CEWeightlessZLevelMoverComponent>(uid);
             return;
         }
 
         var hasUp = HasZLevel(uid, 1, xform);
-        var hasDown = HasZLevel(uid, -1, xform);
+        var hasDown = _zLevels.IsInEmptySpaceOnCurrentLevel(uid, xform) &&
+                      HasZLevel(uid, -1, xform);
 
         if (!hasUp && !hasDown)
         {
@@ -115,7 +115,7 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
             return false;
 
         if (offset > 0)
-            return _zLevels.TryMapUp(mapUid, out _) && !_zLevels.HasTileAbove(uid);
+            return _zLevels.TryMapUp(mapUid, out _) && !_zLevels.IsAscentBlocked(uid, xform);
 
         return _zLevels.TryMapDown(mapUid, out _) && !_zLevels.IsLandingBelowBlocked(uid, xform);
     }
@@ -184,9 +184,13 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
         }
 
         var xform = Transform(uid);
-        return CanUseWeightlessZMovement(uid, physics, xform) &&
-               _zLevels.IsInEmptySpaceOnCurrentLevel(uid, xform) &&
-               HasZLevel(uid, offset, xform);
+        if (!CanUseWeightlessZMovement(uid, physics, xform) ||
+            !HasZLevel(uid, offset, xform))
+        {
+            return false;
+        }
+
+        return offset > 0 || _zLevels.IsInEmptySpaceOnCurrentLevel(uid, xform);
     }
 
     private void StartCooldown(CEWeightlessZLevelMoverComponent mover)

@@ -284,6 +284,23 @@ public abstract partial class CESharedZLevelsSystem
         return HasLandingBlockerOnGridAtWorld(belowGridUid, belowGrid, worldPos);
     }
 
+    /// <summary>
+    /// Returns true when the upper z-level target tile has support or a hard blocker at this entity's XY position.
+    /// </summary>
+    [PublicAPI]
+    public bool IsAscentBlocked(EntityUid ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        var worldPos = _transform.GetWorldPosition(ent);
+        if (!TryResolveGridForMapOffset(ent, xform, 1, out var aboveGridUid, out var aboveGrid))
+            return false;
+
+        return HasSupportAtWorldPositionOnGrid(aboveGridUid, aboveGrid, worldPos) ||
+               HasLandingBlockerOnGridAtWorld(aboveGridUid, aboveGrid, worldPos);
+    }
+
     private bool HasLandingBlockerOnGridAtWorld(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
     {
         var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);

@@ -52,6 +52,8 @@ public sealed partial class CEZLevelsSystem
         var query = EntityQueryEnumerator<CEZLevelViewerComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var viewer, out var xform))
         {
+            UpdateLookUpAction((uid, viewer), xform);
+
             var desiredMaps = GetViewerAdjacentMaps((uid, xform));
 
             if (!ViewerEyesMatch(viewer, desiredMaps))
@@ -69,7 +71,7 @@ public sealed partial class CEZLevelsSystem
 
     private void OnViewerInit(Entity<CEZLevelViewerComponent> ent, ref MapInitEvent args)
     {
-        _actions.AddAction(ent, ref ent.Comp.ZLevelActionEntity, ent.Comp.ActionProto);
+        UpdateLookUpAction(ent);
         _meta.AddFlag(ent, MetaDataFlags.ExtraTransformEvents);
     }
 
@@ -87,6 +89,7 @@ public sealed partial class CEZLevelsSystem
     private void OnPlayerAttached(PlayerAttachedEvent ev)
     {
         var viewer = EnsureComp<CEZLevelViewerComponent>(ev.Entity);
+        UpdateLookUpAction((ev.Entity, viewer));
         UpdateViewer((ev.Entity, viewer));
     }
 
@@ -97,7 +100,38 @@ public sealed partial class CEZLevelsSystem
 
     private void OnViewerMapUidChanged(Entity<CEZLevelViewerComponent> ent, ref MapUidChangedEvent args)
     {
+        UpdateLookUpAction(ent);
         UpdateViewer(ent);
+    }
+
+    private void UpdateLookUpAction(Entity<CEZLevelViewerComponent> ent, TransformComponent? xform = null)
+    {
+        if (!Resolve(ent, ref xform, false))
+            return;
+
+        if (TryResolveViewerMap((ent.Owner, xform), 1, out _))
+        {
+            if (ent.Comp.ZLevelActionEntity is { } existing && Exists(existing))
+                return;
+
+            ent.Comp.ZLevelActionEntity = null;
+            _actions.AddAction(ent, ref ent.Comp.ZLevelActionEntity, ent.Comp.ActionProto);
+            DirtyField(ent, ent.Comp, nameof(CEZLevelViewerComponent.ZLevelActionEntity));
+            return;
+        }
+
+        if (ent.Comp.LookUp)
+        {
+            ent.Comp.LookUp = false;
+            DirtyField(ent, ent.Comp, nameof(CEZLevelViewerComponent.LookUp));
+        }
+
+        if (ent.Comp.ZLevelActionEntity is not { } action)
+            return;
+
+        _actions.RemoveAction(action);
+        ent.Comp.ZLevelActionEntity = null;
+        DirtyField(ent, ent.Comp, nameof(CEZLevelViewerComponent.ZLevelActionEntity));
     }
 
     // Build the exact map subscription set for the viewer, preferring linked shuttle peers so multiz decks stay visible together.
