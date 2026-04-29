@@ -347,3 +347,12 @@
   alpha: 1
   ghostName: Ітан Лі
   ghostDescription: От і догрався
+
+- type: customGhost
+  id: zubr-ghost
+  ckey: zubr
+  sprite:
+    - _Pirate/Ghosts/zubr.rsi
+  alpha: 1
+  ghostName: Tony [Zubr]
+  ghostDescription: I fucking hate these people. This party sucks.
