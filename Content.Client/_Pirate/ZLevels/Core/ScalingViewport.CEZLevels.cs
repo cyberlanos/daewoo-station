@@ -6,11 +6,13 @@
 using System.Linq;
 using System.Numerics;
 using Content.Client._Pirate.ZLevels.Core;
+using Content.Shared._Pirate.ZLevels.Apertures.Components;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared.Maps;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
+using Robust.Shared.Enums;
 using Robust.Shared.Graphics;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -32,8 +34,13 @@ public sealed partial class ScalingViewport
 
     private EntityQuery<TransformComponent>? _xformQuery;
     private EntityQuery<MapComponent>? _mapQuery;
-
     private IEye? _fallbackEye;
+    private readonly Dictionary<int, IRenderTexture> _zApertureTargets = new();
+    private readonly HashSet<int> _zApertureValidTargets = new();
+    private readonly Dictionary<int, EntityUid> _zApertureMapUids = new();
+    private readonly Dictionary<int, ZEye> _zApertureEyes = new();
+    private ZLevelApertureOverlay? _zApertureOverlay;
+    private bool _zApertureCaptureThisFrame;
 
     // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
     private Overlay? _cachedPlacementOverlay; // Pirate: multiz
@@ -108,6 +115,16 @@ public sealed partial class ScalingViewport
 
     private bool TryResolveZMap(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out MapId mapId, out EntityUid? peerGridUid) // Pirate: multiz
     {
+        if (TryResolveZMapEntity(playerMapUid, playerGridUid, depthOffset, out _, out mapId, out peerGridUid))
+            return true;
+
+        mapId = default;
+        return false;
+    }
+
+    private bool TryResolveZMapEntity(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out EntityUid mapUid, out MapId mapId, out EntityUid? peerGridUid) // Pirate: multiz
+    {
+        mapUid = default;
         mapId = default;
         peerGridUid = null; // Pirate: multiz
 
@@ -123,6 +140,7 @@ public sealed partial class ScalingViewport
                     peerXform.MapUid != null &&
                     _mapQuery!.Value.TryComp(peerXform.MapUid.Value, out var peerMapComp))
                 {
+                    mapUid = peerXform.MapUid.Value;
                     mapId = peerMapComp.MapId;
                     peerGridUid = peerGrid; // Pirate: multiz
                     return true;
@@ -135,6 +153,7 @@ public sealed partial class ScalingViewport
         {
             if (_mapQuery!.Value.TryComp(targetMap.Value, out var mapComp))
             {
+                mapUid = targetMap.Value;
                 mapId = mapComp.MapId;
                 return true;
             }
@@ -167,7 +186,7 @@ public sealed partial class ScalingViewport
         return new MapCoordinates(targetWorldPosition, targetMapId);
     }
 
-    private void RenderZLevels(IClydeViewport viewport)
+    private void RenderZLevels(IClydeViewport viewport, DrawingHandleScreen screenHandle)
     {
         if (_eye is null)
         {
@@ -201,6 +220,9 @@ public sealed partial class ScalingViewport
             return;
 
         var lookUp = zLevelViewer.LookUp ? 1 : 0;
+        _zApertureValidTargets.Clear();
+        _zApertureMapUids.Clear();
+        _zApertureEyes.Clear();
 
         var lowestDepth = 0;
         for (var i = 0; i >= -CESharedZLevelsSystem.MaxZLevelsBelowRendering; i--)
@@ -214,6 +236,14 @@ public sealed partial class ScalingViewport
             lowestDepth = i;
         }
 
+        _zApertureCaptureThisFrame = HasZLevelAperturesInRenderedDepths(playerXform.MapUid.Value, playerXform.GridUid, lowestDepth, lookUp);
+
+        if (_zApertureCaptureThisFrame)
+        {
+            EnsureZLevelApertureTargets(viewport.RenderTarget.Size, lowestDepth, lookUp);
+            EnsureZLevelApertureOverlay();
+        }
+
         // Find the engine's PlacementOverlay once and cache it. Pirate: multiz
         // It must not render during secondary (non-depth-0) passes to avoid duplicate placement previews. Pirate: multiz
         _cachedPlacementOverlay ??= _overlayManager.AllOverlays // Pirate: multiz
@@ -221,9 +251,12 @@ public sealed partial class ScalingViewport
 
         for (var depth = lowestDepth; depth <= lookUp; depth++)
         {
+            EntityUid renderedMapUid;
+
             if (depth == 0)
             {
-                viewport.Eye = new ZEye(lowestDepth, 0, lookUp)
+                renderedMapUid = playerXform.MapUid.Value;
+                var eye = new ZEye(lowestDepth, 0, lookUp)
                 {
                     Position = _fallbackEye.Position,
                     DrawFov = _fallbackEye.DrawFov,
@@ -232,10 +265,12 @@ public sealed partial class ScalingViewport
                     Rotation = _fallbackEye.Rotation,
                     Scale = _fallbackEye.Scale,
                 };
+                viewport.Eye = eye;
+                _zApertureEyes[depth] = eye;
             }
             else
             {
-                if (!TryResolveZMap(playerXform.MapUid.Value, playerXform.GridUid, depth, out var targetMapId, out var peerGridUid))
+                if (!TryResolveZMapEntity(playerXform.MapUid.Value, playerXform.GridUid, depth, out renderedMapUid, out var targetMapId, out var peerGridUid))
                     continue;
 
                 Angle rotation = _fallbackEye.Rotation * -1;
@@ -243,7 +278,7 @@ public sealed partial class ScalingViewport
                 // Secondary passes need a peer-aware eye position; otherwise linked decks render as if they shared the root grid's world transform.
                 var eyePosition = GetResolvedEyePosition(playerXform, peerGridUid, targetMapId);
 
-                viewport.Eye = new ZEye(lowestDepth, depth, lookUp)
+                var eye = new ZEye(lowestDepth, depth, lookUp)
                 {
                     Position = eyePosition,
                     DrawFov = _fallbackEye.DrawFov && depth >= 0,
@@ -252,8 +287,11 @@ public sealed partial class ScalingViewport
                     Rotation = _fallbackEye.Rotation,
                     Scale = _fallbackEye.Scale,
                 };
+                viewport.Eye = eye;
+                _zApertureEyes[depth] = eye;
             }
 
+            _zApertureMapUids[depth] = renderedMapUid;
             viewport.ClearColor = depth == lowestDepth ? Color.Black : null;
 
             #region Pirate: multiz
@@ -264,6 +302,9 @@ public sealed partial class ScalingViewport
 
             viewport.Render();
 
+            if (_zApertureCaptureThisFrame && depth < lookUp)
+                CaptureZLevelApertureTexture(screenHandle, viewport, depth);
+
             if (hidePlacement)
                 _overlayManager.AddOverlay(_cachedPlacementOverlay!);
             #endregion Pirate: multiz
@@ -271,6 +312,268 @@ public sealed partial class ScalingViewport
 
         Eye = _fallbackEye;
         viewport.Eye = Eye;
+    }
+
+    private bool HasZLevelApertures(EntityUid mapUid)
+    {
+        var query = _entityManager.EntityQueryEnumerator<CEZLevelApertureComponent, TransformComponent>();
+        while (query.MoveNext(out _, out var aperture, out var xform))
+        {
+            if (aperture.TargetDepth == -1 && xform.MapUid == mapUid)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool HasZLevelAperturesInRenderedDepths(EntityUid playerMapUid, EntityUid? playerGridUid, int lowestDepth, int lookUp)
+    {
+        for (var depth = lowestDepth + 1; depth <= lookUp; depth++)
+        {
+            EntityUid mapUid;
+
+            if (depth == 0)
+            {
+                mapUid = playerMapUid;
+            }
+            else if (!TryResolveZMapEntity(playerMapUid, playerGridUid, depth, out mapUid, out _, out _))
+            {
+                continue;
+            }
+
+            if (HasZLevelApertures(mapUid))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void EnsureZLevelApertureTargets(Vector2i size, int lowestDepth, int lookUp)
+    {
+        for (var depth = lowestDepth; depth < lookUp; depth++)
+        {
+            if (_zApertureTargets.TryGetValue(depth, out var existing) && existing.Size == size)
+                continue;
+
+            existing?.Dispose();
+            _zApertureTargets[depth] = _clyde.CreateRenderTarget(
+                size,
+                new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb),
+                new TextureSampleParameters { Filter = false },
+                $"z-level-aperture-depth-{depth}");
+        }
+    }
+
+    private void CaptureZLevelApertureTexture(DrawingHandleScreen screenHandle, IClydeViewport viewport, int depth)
+    {
+        if (!_zApertureTargets.TryGetValue(depth, out var target))
+            return;
+
+        var targetBox = UIBox2.FromDimensions(Vector2.Zero, viewport.RenderTarget.Size);
+        screenHandle.RenderInRenderTarget(target, () =>
+        {
+            screenHandle.DrawTextureRect(viewport.RenderTarget.Texture, targetBox);
+        }, Color.Transparent);
+
+        _zApertureValidTargets.Add(depth);
+    }
+
+    private void DrawZLevelAperturesWorld(DrawingHandleWorld worldHandle, IClydeViewport viewport)
+    {
+        if (_fallbackEye is null ||
+            _viewport is null ||
+            !ReferenceEquals(viewport, _viewport))
+        {
+            return;
+        }
+
+        _transform ??= _entityManager.System<SharedTransformSystem>();
+
+        var query = _entityManager.EntityQueryEnumerator<CEZLevelApertureComponent, TransformComponent>();
+
+        while (query.MoveNext(out _, out var aperture, out var xform))
+        {
+            if (aperture.TargetDepth != -1 ||
+                aperture.SpritePixelSize <= 0 ||
+                aperture.PixelSize.X <= 0 ||
+                aperture.PixelSize.Y <= 0)
+            {
+                continue;
+            }
+
+            if (!TryFindApertureDepth(xform.MapUid, out var apertureDepth))
+                continue;
+
+            var sourceDepth = apertureDepth - 1;
+            if (!_zApertureValidTargets.Contains(sourceDepth) ||
+                !_zApertureTargets.TryGetValue(sourceDepth, out var sourceTarget) ||
+                !_zApertureEyes.TryGetValue(apertureDepth, out var apertureEye))
+            {
+                continue;
+            }
+
+            var destinationViewportQuad = GetApertureViewportQuad(aperture, xform, apertureEye);
+            var destinationViewportBox = destinationViewportQuad.Bounds;
+            if (!destinationViewportBox.Intersects(UIBox2.FromDimensions(Vector2.Zero, _viewport.Size)))
+                continue;
+
+            // Same-screen-position sampling works because z-level grids are fixed relative to each other.
+            var sourceViewportQuad = destinationViewportQuad;
+            var destinationWorldQuad = GetApertureWorldQuad(aperture, xform);
+
+            DrawZLevelApertureQuad(worldHandle, sourceTarget.Texture, sourceTarget.Size, destinationWorldQuad, sourceViewportQuad);
+        }
+    }
+
+    private static void DrawZLevelApertureQuad(
+        DrawingHandleWorld worldHandle,
+        Texture texture,
+        Vector2i textureSize,
+        ApertureQuad destinationWorldQuad,
+        ApertureQuad sourceViewportQuad)
+    {
+        var vertices = new DrawVertexUV2D[6];
+
+        vertices[0] = new DrawVertexUV2D(destinationWorldQuad.TopLeft, ViewportPointToTextureUv(sourceViewportQuad.TopLeft, textureSize));
+        vertices[1] = new DrawVertexUV2D(destinationWorldQuad.TopRight, ViewportPointToTextureUv(sourceViewportQuad.TopRight, textureSize));
+        vertices[2] = new DrawVertexUV2D(destinationWorldQuad.BottomLeft, ViewportPointToTextureUv(sourceViewportQuad.BottomLeft, textureSize));
+        vertices[3] = new DrawVertexUV2D(destinationWorldQuad.TopRight, ViewportPointToTextureUv(sourceViewportQuad.TopRight, textureSize));
+        vertices[4] = new DrawVertexUV2D(destinationWorldQuad.BottomRight, ViewportPointToTextureUv(sourceViewportQuad.BottomRight, textureSize));
+        vertices[5] = new DrawVertexUV2D(destinationWorldQuad.BottomLeft, ViewportPointToTextureUv(sourceViewportQuad.BottomLeft, textureSize));
+
+        worldHandle.DrawPrimitives(DrawPrimitiveTopology.TriangleList, texture, vertices);
+    }
+
+    private static Vector2 ViewportPointToTextureUv(Vector2 point, Vector2i textureSize)
+    {
+        return new Vector2(
+            point.X / textureSize.X,
+            1f - point.Y / textureSize.Y);
+    }
+
+    private bool TryFindApertureDepth(EntityUid? mapUid, out int depth)
+    {
+        if (mapUid is null)
+        {
+            depth = default;
+            return false;
+        }
+
+        foreach (var (candidateDepth, candidateMapUid) in _zApertureMapUids)
+        {
+            if (candidateMapUid != mapUid.Value)
+                continue;
+
+            depth = candidateDepth;
+            return true;
+        }
+
+        depth = default;
+        return false;
+    }
+
+    private ApertureQuad GetApertureViewportQuad(CEZLevelApertureComponent aperture, TransformComponent xform, IEye eye)
+    {
+        var matrix = _transform!.GetWorldMatrix(xform);
+        var localQuad = GetPixelLocalQuad(aperture.PixelOffset, aperture.PixelSize, aperture.SpritePixelSize);
+
+        return new ApertureQuad(
+            LocalToViewport(localQuad.TopLeft, matrix, eye),
+            LocalToViewport(localQuad.TopRight, matrix, eye),
+            LocalToViewport(localQuad.BottomLeft, matrix, eye),
+            LocalToViewport(localQuad.BottomRight, matrix, eye));
+    }
+
+    private ApertureQuad GetApertureWorldQuad(CEZLevelApertureComponent aperture, TransformComponent xform)
+    {
+        var matrix = _transform!.GetWorldMatrix(xform);
+        var localQuad = GetPixelLocalQuad(aperture.PixelOffset, aperture.PixelSize, aperture.SpritePixelSize);
+
+        return new ApertureQuad(
+            Vector2.Transform(localQuad.TopLeft, matrix),
+            Vector2.Transform(localQuad.TopRight, matrix),
+            Vector2.Transform(localQuad.BottomLeft, matrix),
+            Vector2.Transform(localQuad.BottomRight, matrix));
+    }
+
+    private static ApertureQuad GetPixelLocalQuad(Vector2i pixelOffset, Vector2i pixelSize, int spritePixelSize)
+    {
+        var spriteSize = spritePixelSize;
+        var half = spriteSize / 2f;
+        var left = (pixelOffset.X - half) / spriteSize;
+        var right = (pixelOffset.X + pixelSize.X - half) / spriteSize;
+        var top = (half - pixelOffset.Y) / spriteSize;
+        var bottom = (half - pixelOffset.Y - pixelSize.Y) / spriteSize;
+
+        return new ApertureQuad(
+            new Vector2(left, top),
+            new Vector2(right, top),
+            new Vector2(left, bottom),
+            new Vector2(right, bottom));
+    }
+
+    private Vector2 LocalToViewport(Vector2 localPoint, Matrix3x2 matrix, IEye eye)
+    {
+        var worldPoint = Vector2.Transform(localPoint, matrix);
+        return _viewport!.RenderTarget.WorldToLocal(worldPoint, eye, _viewport.RenderScale);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        if (!disposing)
+            return;
+
+        if (_zApertureOverlay != null)
+        {
+            _overlayManager.RemoveOverlay(_zApertureOverlay);
+            _zApertureOverlay = null;
+        }
+
+        foreach (var target in _zApertureTargets.Values)
+            target.Dispose();
+        _zApertureTargets.Clear();
+    }
+
+    private void EnsureZLevelApertureOverlay()
+    {
+        if (_zApertureOverlay != null)
+            return;
+
+        _zApertureOverlay = new ZLevelApertureOverlay(this);
+        _overlayManager.AddOverlay(_zApertureOverlay);
+    }
+
+    private sealed class ZLevelApertureOverlay : Overlay
+    {
+        private readonly ScalingViewport _viewport;
+
+        public override OverlaySpace Space => OverlaySpace.WorldSpaceEntities;
+
+        public ZLevelApertureOverlay(ScalingViewport viewport)
+        {
+            _viewport = viewport;
+            ZIndex = (int) Content.Shared.DrawDepth.DrawDepth.FloorTiles - 1;
+        }
+
+        protected override void Draw(in OverlayDrawArgs args)
+        {
+            _viewport.DrawZLevelAperturesWorld(args.WorldHandle, args.Viewport);
+        }
+    }
+
+    private readonly record struct ApertureQuad(Vector2 TopLeft, Vector2 TopRight, Vector2 BottomLeft, Vector2 BottomRight)
+    {
+        public UIBox2 Bounds
+        {
+            get
+            {
+                var min = Vector2.Min(Vector2.Min(TopLeft, TopRight), Vector2.Min(BottomLeft, BottomRight));
+                var max = Vector2.Max(Vector2.Max(TopLeft, TopRight), Vector2.Max(BottomLeft, BottomRight));
+                return new UIBox2(min, max);
+            }
+        }
     }
 
     public sealed class ZEye(int lowest, int depth, int high) : Robust.Shared.Graphics.Eye

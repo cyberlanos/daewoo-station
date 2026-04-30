@@ -159,7 +159,7 @@ namespace Content.Client.Viewport
 
             DebugTools.AssertNotNull(_viewport);
 
-            RenderZLevels(_viewport!); // Pirate: multiz
+            RenderZLevels(_viewport!, handle.DrawingHandleScreen); // Pirate: multiz
 
             if (_queuedScreenshots.Count != 0)
             {
