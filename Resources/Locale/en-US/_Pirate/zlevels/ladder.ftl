@@ -1,0 +1,3 @@
+zlevel-ladder-climb-up = Climb up
+zlevel-ladder-climb-down = Climb down
+zlevel-ladder-popup-no-route = There is nowhere to climb from here.

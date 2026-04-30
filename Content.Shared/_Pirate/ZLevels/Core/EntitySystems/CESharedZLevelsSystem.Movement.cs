@@ -301,7 +301,8 @@ public abstract partial class CESharedZLevelsSystem
                HasLandingBlockerOnGridAtWorld(aboveGridUid, aboveGrid, worldPos);
     }
 
-    private bool HasLandingBlockerOnGridAtWorld(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
+    [PublicAPI]
+    public bool HasLandingBlockerOnGridAtWorld(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
     {
         var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
         var blockingLayers = (int) (CollisionGroup.Impassable | CollisionGroup.HighImpassable);
@@ -1507,12 +1508,46 @@ public abstract partial class CESharedZLevelsSystem
         if (uid is not { } resolvedUid)
             return "na";
 
-        return StairCsvVec2(_transform.GetWorldPosition(resolvedUid));
+        try
+        {
+            if (!TryComp(resolvedUid, out TransformComponent? _))
+                return "na";
+
+            return StairCsvVec2(_transform.GetWorldPosition(resolvedUid));
+        }
+        catch (KeyNotFoundException)
+        {
+            return "na";
+        }
     }
 
-    private bool TryResolveGridForMapOffset(EntityUid ent, TransformComponent xform, int offset, out EntityUid gridUid, out MapGridComponent gridComp)
+    [PublicAPI]
+    public bool TryResolveTraversalGridForOffset(EntityUid ent, int offset, out EntityUid gridUid, out MapGridComponent gridComp, TransformComponent? xform = null)
     {
-        var worldPos = _transform.GetWorldPosition(ent);
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        return TryResolveGridForMapOffset(ent, xform, offset, out gridUid, out gridComp);
+    }
+
+    [PublicAPI]
+    public bool TryResolveTraversalGridForOffsetAtWorldPosition(EntityUid ent, int offset, Vector2 worldPos, out EntityUid gridUid, out MapGridComponent gridComp, TransformComponent? xform = null)
+    {
+        gridUid = EntityUid.Invalid;
+        gridComp = default!;
+
+        if (!Resolve(ent, ref xform, false))
+            return false;
+
+        return TryResolveGridForMapOffset(ent, xform, offset, out gridUid, out gridComp, worldPos);
+    }
+
+    private bool TryResolveGridForMapOffset(EntityUid ent, TransformComponent xform, int offset, out EntityUid gridUid, out MapGridComponent gridComp, Vector2? worldPositionOverride = null)
+    {
+        var worldPos = worldPositionOverride ?? _transform.GetWorldPosition(ent);
 
         if (offset == 0)
         {
@@ -1778,7 +1813,8 @@ public abstract partial class CESharedZLevelsSystem
         return false;
     }
 
-    private bool HasSupportAtWorldPositionOnGrid(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
+    [PublicAPI]
+    public bool HasSupportAtWorldPositionOnGrid(EntityUid gridUid, MapGridComponent grid, Vector2 worldPos)
     {
         var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
         var anchoredQuery = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);

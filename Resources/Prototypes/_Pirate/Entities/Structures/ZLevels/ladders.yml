@@ -1,0 +1,39 @@
+- type: entity
+  id: CEZLevelLadder
+  name: ladder
+  description: A vertical ladder running through a z-level opening.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Transform
+    anchored: true
+  - type: Sprite
+    drawdepth: Mobs
+    sprite: _Pirate/Structures/ZLevels/Ladders/tg_ladders.rsi
+    state: ladder01
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Physics
+    bodyType: Static
+  - type: Fixtures
+    fixtures:
+      ladder:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.22,-0.45,0.22,0.45"
+        density: 60
+        hard: false
+        mask:
+        - MachineMask
+        layer:
+        - LowImpassable
+  - type: UserInterface
+    interfaces:
+      enum.RadialSelectorUiKey.Key:
+        type: CEZLevelLadderRadialMenuBUI
+  - type: ActivatableUI
+    key: enum.RadialSelectorUiKey.Key
+    singleUser: true
+  - type: CEZLevelAperture
+  - type: CEZLevelAscentPassage
+  - type: CEZLevelLadder

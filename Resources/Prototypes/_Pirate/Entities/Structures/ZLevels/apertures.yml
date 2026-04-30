@@ -13,3 +13,4 @@
     sprite: _Pirate/Structures/ZLevels/Ladders/tg_ladders.rsi
     state: ladder_rim
   - type: CEZLevelAperture
+  - type: CEZLevelAscentPassage
