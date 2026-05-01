@@ -1,7 +1,7 @@
 - type: entity
-  id: CEZLevelsLadderStoneBase
+  id: CEZLevelsStairsStoneBase
   abstract: true
-  name: stone ladder
+  name: stone stairs
   components:
   - type: Sprite
     sprite: _Pirate/Structures/Architecture/Ladders/stone.rsi
@@ -29,32 +29,32 @@
 
 - type: entity
   parent:
-  - CEZLevelLadderBase
-  - CEZLevelsLadderStoneBase
-  id: CEZLevelLadderStone
+  - CEZLevelStairsBase
+  - CEZLevelsStairsStoneBase
+  id: CEZLevelStairsStone
   components:
   - type: Construction
-    graph: CEZLevelLadderStone
-    node: CEZLevelLadderStone
+    graph: CEZLevelStairsStone
+    node: CEZLevelStairsStone
 
 - type: entity
   parent:
-  - CEZLevelLadderCornerBase
-  - CEZLevelsLadderStoneBase
-  id: CEZLevelLadderStoneCorner
+  - CEZLevelStairsCornerBase
+  - CEZLevelsStairsStoneBase
+  id: CEZLevelStairsStoneCorner
   suffix: Corner
   components:
   - type: Construction
-    graph: CEZLevelLadderStone
-    node: CEZLevelLadderStoneCorner
+    graph: CEZLevelStairsStone
+    node: CEZLevelStairsStoneCorner
 
 - type: entity
   parent:
-  - CEZLevelLadderCornerInnerBase
-  - CEZLevelsLadderStoneBase
-  id: CEZLevelLadderStoneCornerInner
+  - CEZLevelStairsCornerInnerBase
+  - CEZLevelsStairsStoneBase
+  id: CEZLevelStairsStoneCornerInner
   suffix: Inner Corner
   components:
   - type: Construction
-    graph: CEZLevelLadderStone
-    node: CEZLevelLadderStoneCornerInner
+    graph: CEZLevelStairsStone
+    node: CEZLevelStairsStoneCornerInner

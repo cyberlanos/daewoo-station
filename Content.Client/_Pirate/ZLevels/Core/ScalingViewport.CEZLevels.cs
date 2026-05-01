@@ -10,6 +10,7 @@ using Content.Shared._Pirate.ZLevels.Apertures.Components;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared.Maps;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -391,7 +392,7 @@ public sealed partial class ScalingViewport
 
         var query = _entityManager.EntityQueryEnumerator<CEZLevelApertureComponent, TransformComponent>();
 
-        while (query.MoveNext(out _, out var aperture, out var xform))
+        while (query.MoveNext(out var uid, out var aperture, out var xform))
         {
             if (aperture.TargetDepth != -1 ||
                 aperture.SpritePixelSize <= 0 ||
@@ -412,14 +413,14 @@ public sealed partial class ScalingViewport
                 continue;
             }
 
-            var destinationViewportQuad = GetApertureViewportQuad(aperture, xform, apertureEye);
+            var destinationViewportQuad = GetApertureViewportQuad(uid, aperture, xform, apertureEye);
             var destinationViewportBox = destinationViewportQuad.Bounds;
             if (!destinationViewportBox.Intersects(UIBox2.FromDimensions(Vector2.Zero, _viewport.Size)))
                 continue;
 
             // Same-screen-position sampling works because z-level grids are fixed relative to each other.
             var sourceViewportQuad = destinationViewportQuad;
-            var destinationWorldQuad = GetApertureWorldQuad(aperture, xform);
+            var destinationWorldQuad = GetApertureWorldQuad(uid, aperture, xform, apertureEye);
 
             DrawZLevelApertureQuad(worldHandle, sourceTarget.Texture, sourceTarget.Size, destinationWorldQuad, sourceViewportQuad);
         }
@@ -472,9 +473,9 @@ public sealed partial class ScalingViewport
         return false;
     }
 
-    private ApertureQuad GetApertureViewportQuad(CEZLevelApertureComponent aperture, TransformComponent xform, IEye eye)
+    private ApertureQuad GetApertureViewportQuad(EntityUid uid, CEZLevelApertureComponent aperture, TransformComponent xform, IEye eye)
     {
-        var matrix = _transform!.GetWorldMatrix(xform);
+        var matrix = GetApertureDrawMatrix(uid, xform, eye);
         var localQuad = GetPixelLocalQuad(aperture.PixelOffset, aperture.PixelSize, aperture.SpritePixelSize);
 
         return new ApertureQuad(
@@ -484,9 +485,9 @@ public sealed partial class ScalingViewport
             LocalToViewport(localQuad.BottomRight, matrix, eye));
     }
 
-    private ApertureQuad GetApertureWorldQuad(CEZLevelApertureComponent aperture, TransformComponent xform)
+    private ApertureQuad GetApertureWorldQuad(EntityUid uid, CEZLevelApertureComponent aperture, TransformComponent xform, IEye eye)
     {
-        var matrix = _transform!.GetWorldMatrix(xform);
+        var matrix = GetApertureDrawMatrix(uid, xform, eye);
         var localQuad = GetPixelLocalQuad(aperture.PixelOffset, aperture.PixelSize, aperture.SpritePixelSize);
 
         return new ApertureQuad(
@@ -494,6 +495,22 @@ public sealed partial class ScalingViewport
             Vector2.Transform(localQuad.TopRight, matrix),
             Vector2.Transform(localQuad.BottomLeft, matrix),
             Vector2.Transform(localQuad.BottomRight, matrix));
+    }
+
+    private Matrix3x2 GetApertureDrawMatrix(EntityUid uid, TransformComponent xform, IEye eye)
+    {
+        if (!_entityManager.TryGetComponent<SpriteComponent>(uid, out var sprite))
+            return _transform!.GetWorldMatrix(xform);
+
+        var (worldPosition, worldRotation) = _transform!.GetWorldPositionRotation(xform);
+        var angle = (worldRotation + eye.Rotation).Reduced().FlipPositive();
+        var cardinal = Angle.Zero;
+
+        if (sprite is { NoRotation: false, SnapCardinals: true })
+            cardinal = angle.RoundToCardinalAngle();
+
+        var entityMatrix = Matrix3Helpers.CreateTransform(worldPosition, sprite.NoRotation ? -eye.Rotation : worldRotation - cardinal);
+        return Matrix3x2.Multiply(sprite.LocalMatrix, entityMatrix);
     }
 
     private static ApertureQuad GetPixelLocalQuad(Vector2i pixelOffset, Vector2i pixelSize, int spritePixelSize)

@@ -1,10 +1,10 @@
 - type: constructionGraph
-  id: CEZLevelLadderWooden
+  id: CEZLevelStairsWooden
   start: start
   graph:
     - node: start
       edges:
-        - to: CEZLevelLadderWooden
+        - to: CEZLevelStairsWooden
           completed:
             - !type:SnapToGrid
           steps:
@@ -12,8 +12,8 @@
               amount: 2
               doAfter: 2
 
-    - node: CEZLevelLadderWooden
-      entity: CEZLevelLadderWooden
+    - node: CEZLevelStairsWooden
+      entity: CEZLevelStairsWooden
       edges:
         - to: start
           completed:
@@ -24,15 +24,15 @@
           steps:
             - tool: Prying
               doAfter: 2
-        - to: CEZLevelLadderWoodenCorner
+        - to: CEZLevelStairsWoodenCorner
           steps:
             - tool: Prying
               doAfter: 2
 
-    - node: CEZLevelLadderWoodenCorner
-      entity: CEZLevelLadderWoodenCorner
+    - node: CEZLevelStairsWoodenCorner
+      entity: CEZLevelStairsWoodenCorner
       edges:
-        - to: CEZLevelLadderWooden
+        - to: CEZLevelStairsWooden
           steps:
             - tool: Prying
               doAfter: 2

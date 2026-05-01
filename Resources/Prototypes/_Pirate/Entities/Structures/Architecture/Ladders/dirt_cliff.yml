@@ -1,5 +1,5 @@
 - type: entity
-  id: CEZLevelsLadderDirtCliffBase
+  id: CEZLevelsStairsDirtCliffBase
   abstract: true
   name: dirt cliff
   description: A rough dirt cliff face that can be climbed between z-levels.
@@ -25,20 +25,20 @@
 
 - type: entity
   parent:
-  - CEZLevelLadderBase
-  - CEZLevelsLadderDirtCliffBase
-  id: CEZLevelLadderDirtCliff
+  - CEZLevelStairsBase
+  - CEZLevelsStairsDirtCliffBase
+  id: CEZLevelStairsDirtCliff
 
 - type: entity
   parent:
-  - CEZLevelLadderCornerBase
-  - CEZLevelsLadderDirtCliffBase
-  id: CEZLevelLadderDirtCliffCorner
+  - CEZLevelStairsCornerBase
+  - CEZLevelsStairsDirtCliffBase
+  id: CEZLevelStairsDirtCliffCorner
   suffix: Corner
 
 - type: entity
   parent:
-  - CEZLevelLadderCornerInnerBase
-  - CEZLevelsLadderDirtCliffBase
-  id: CEZLevelLadderDirtCliffCornerInner
+  - CEZLevelStairsCornerInnerBase
+  - CEZLevelsStairsDirtCliffBase
+  id: CEZLevelStairsDirtCliffCornerInner
   suffix: Inner Corner

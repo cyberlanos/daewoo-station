@@ -3,6 +3,7 @@ using Content.Server.Popups;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared._Pirate.ZLevels.Ladders.Components;
+using Content.Shared.DoAfter;
 using Content.Shared._White.RadialSelector;
 using Content.Shared.Gravity;
 using Content.Shared.Maps;
@@ -11,6 +12,7 @@ using Content.Shared.UserInterface;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Server._Pirate.ZLevels.Ladders;
@@ -21,11 +23,17 @@ public sealed class CEZLevelLadderSystem : EntitySystem
     private const string ClimbDownAction = "zlevel-ladder-climb-down";
     private const float FallStartPosition = 0.99f;
     private const float FallStartVelocity = -0.1f;
+    private static readonly TimeSpan ClimbCooldown = TimeSpan.FromSeconds(1);
 
     private static readonly SpriteSpecifier UpIcon = new SpriteSpecifier.Rsi(new ResPath("/Textures/_Pirate/Actions/misc.rsi"), "up");
     private static readonly SpriteSpecifier DownIcon = new SpriteSpecifier.Rsi(new ResPath("/Textures/_Pirate/Actions/misc.rsi"), "down");
 
+    private readonly Dictionary<EntityUid, TimeSpan> _nextClimb = new();
+    private readonly HashSet<EntityUid> _activeClimbs = new();
+
+    [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly PopupSystem _popup = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
@@ -40,10 +48,19 @@ public sealed class CEZLevelLadderSystem : EntitySystem
         SubscribeLocalEvent<CEZLevelLadderComponent, ActivatableUIOpenAttemptEvent>(OnOpenAttempt);
         SubscribeLocalEvent<CEZLevelLadderComponent, BeforeActivatableUIOpenEvent>(OnBeforeUiOpen);
         SubscribeLocalEvent<CEZLevelLadderComponent, RadialSelectorSelectedMessage>(OnRadialSelected);
+        SubscribeLocalEvent<CEZLevelLadderComponent, CEZLevelLadderClimbUpDoAfterEvent>(OnClimbUpDoAfter);
+        SubscribeLocalEvent<CEZLevelLadderComponent, CEZLevelLadderClimbDownDoAfterEvent>(OnClimbDownDoAfter);
     }
 
     private void OnOpenAttempt(Entity<CEZLevelLadderComponent> ent, ref ActivatableUIOpenAttemptEvent args)
     {
+        if (IsOnCooldown(args.User) || _activeClimbs.Contains(args.User))
+        {
+            args.Cancel();
+            _popup.PopupEntity(Loc.GetString("zlevel-ladder-popup-cooldown"), ent, args.User);
+            return;
+        }
+
         if (GetEntries(ent, args.User).Count > 0)
             return;
 
@@ -61,10 +78,10 @@ public sealed class CEZLevelLadderSystem : EntitySystem
         switch (args.SelectedItem)
         {
             case ClimbUpAction:
-                TryClimbUp(ent, args.Actor);
+                TryStartClimbUp(ent, args.Actor);
                 break;
             case ClimbDownAction:
-                TryClimbDown(ent, args.Actor);
+                TryStartClimbDown(ent, args.Actor);
                 break;
         }
 
@@ -74,6 +91,9 @@ public sealed class CEZLevelLadderSystem : EntitySystem
     private List<RadialSelectorEntry> GetEntries(Entity<CEZLevelLadderComponent> ladder, EntityUid user)
     {
         var entries = new List<RadialSelectorEntry>(2);
+
+        if (IsOnCooldown(user) || _activeClimbs.Contains(user))
+            return entries;
 
         if (CanClimbUp(ladder, user))
         {
@@ -96,6 +116,20 @@ public sealed class CEZLevelLadderSystem : EntitySystem
         return entries;
     }
 
+    private bool TryStartClimbUp(Entity<CEZLevelLadderComponent> ladder, EntityUid user)
+    {
+        if (IsOnCooldown(user) || _activeClimbs.Contains(user))
+        {
+            _popup.PopupEntity(Loc.GetString("zlevel-ladder-popup-cooldown"), ladder, user);
+            return false;
+        }
+
+        if (!CanClimbUp(ladder, user))
+            return false;
+
+        return TryStartClimbDoAfter(ladder, user, new CEZLevelLadderClimbUpDoAfterEvent());
+    }
+
     private bool TryClimbUp(Entity<CEZLevelLadderComponent> ladder, EntityUid user)
     {
         if (!CanClimbUp(ladder, user))
@@ -107,6 +141,20 @@ public sealed class CEZLevelLadderSystem : EntitySystem
 
         _zLevels.NormalizeTransferredPullable(user, 1);
         return true;
+    }
+
+    private bool TryStartClimbDown(Entity<CEZLevelLadderComponent> ladder, EntityUid user)
+    {
+        if (IsOnCooldown(user) || _activeClimbs.Contains(user))
+        {
+            _popup.PopupEntity(Loc.GetString("zlevel-ladder-popup-cooldown"), ladder, user);
+            return false;
+        }
+
+        if (!CanClimbDown(ladder, user))
+            return false;
+
+        return TryStartClimbDoAfter(ladder, user, new CEZLevelLadderClimbDownDoAfterEvent());
     }
 
     private bool TryClimbDown(Entity<CEZLevelLadderComponent> ladder, EntityUid user)
@@ -129,6 +177,64 @@ public sealed class CEZLevelLadderSystem : EntitySystem
 
         StartFallingFromUpperOpening(user);
         return true;
+    }
+
+    private bool TryStartClimbDoAfter(Entity<CEZLevelLadderComponent> ladder, EntityUid user, SimpleDoAfterEvent climbEvent)
+    {
+        var doAfter = new DoAfterArgs(EntityManager, user, ladder.Comp.ClimbDelay, climbEvent, ladder.Owner, target: ladder.Owner, used: ladder.Owner)
+        {
+            BreakOnMove = true,
+            BreakOnDamage = true,
+            NeedHand = false,
+            DuplicateCondition = DuplicateConditions.SameTarget | DuplicateConditions.SameEvent,
+        };
+
+        if (!_doAfter.TryStartDoAfter(doAfter))
+            return false;
+
+        _activeClimbs.Add(user);
+        StartCooldown(user);
+        return true;
+    }
+
+    private void OnClimbUpDoAfter(Entity<CEZLevelLadderComponent> ent, ref CEZLevelLadderClimbUpDoAfterEvent args)
+    {
+        _activeClimbs.Remove(args.User);
+
+        if (args.Handled || args.Cancelled)
+            return;
+
+        args.Handled = true;
+        TryClimbUp(ent, args.User);
+    }
+
+    private void OnClimbDownDoAfter(Entity<CEZLevelLadderComponent> ent, ref CEZLevelLadderClimbDownDoAfterEvent args)
+    {
+        _activeClimbs.Remove(args.User);
+
+        if (args.Handled || args.Cancelled)
+            return;
+
+        args.Handled = true;
+        TryClimbDown(ent, args.User);
+    }
+
+    private bool IsOnCooldown(EntityUid user)
+    {
+        var now = _timing.CurTime;
+        if (!_nextClimb.TryGetValue(user, out var nextClimb))
+            return false;
+
+        if (now < nextClimb)
+            return true;
+
+        _nextClimb.Remove(user);
+        return false;
+    }
+
+    private void StartCooldown(EntityUid user)
+    {
+        _nextClimb[user] = _timing.CurTime + ClimbCooldown;
     }
 
     private bool CanClimbUp(Entity<CEZLevelLadderComponent> ladder, EntityUid user)

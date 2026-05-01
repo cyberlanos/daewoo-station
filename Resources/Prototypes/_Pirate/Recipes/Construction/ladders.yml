@@ -1,8 +1,8 @@
 - type: construction
-  id: CEZLevelLadderWooden
-  graph: CEZLevelLadderWooden
+  id: CEZLevelStairsWooden
+  graph: CEZLevelStairsWooden
   startNode: start
-  targetNode: CEZLevelLadderWooden
+  targetNode: CEZLevelStairsWooden
   category: construction-category-structures
   objectType: Structure
   placementMode: SnapgridCenter
@@ -11,10 +11,10 @@
     - !type:TileNotBlocked
 
 - type: construction
-  id: CEZLevelLadderWoodenCorner
-  graph: CEZLevelLadderWooden
+  id: CEZLevelStairsWoodenCorner
+  graph: CEZLevelStairsWooden
   startNode: start
-  targetNode: CEZLevelLadderWoodenCorner
+  targetNode: CEZLevelStairsWoodenCorner
   category: construction-category-structures
   objectType: Structure
   placementMode: SnapgridCenter
@@ -23,10 +23,10 @@
     - !type:TileNotBlocked
 
 - type: construction
-  id: CEZLevelLadderStone
-  graph: CEZLevelLadderStone
+  id: CEZLevelStairsStone
+  graph: CEZLevelStairsStone
   startNode: start
-  targetNode: CEZLevelLadderStone
+  targetNode: CEZLevelStairsStone
   category: construction-category-structures
   objectType: Structure
   placementMode: SnapgridCenter
@@ -35,10 +35,10 @@
     - !type:TileNotBlocked
 
 - type: construction
-  id: CEZLevelLadderStoneCorner
-  graph: CEZLevelLadderStone
+  id: CEZLevelStairsStoneCorner
+  graph: CEZLevelStairsStone
   startNode: start
-  targetNode: CEZLevelLadderStoneCorner
+  targetNode: CEZLevelStairsStoneCorner
   category: construction-category-structures
   objectType: Structure
   placementMode: SnapgridCenter

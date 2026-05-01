@@ -1,7 +1,7 @@
 - type: entity
-  id: CEZLevelsLadderWoodenBase
+  id: CEZLevelsStairsWoodenBase
   abstract: true
-  name: wooden ladder
+  name: wooden stairs
   components:
   - type: Sprite
     sprite: _Pirate/Structures/Architecture/Ladders/wooden.rsi
@@ -27,21 +27,21 @@
 
 - type: entity
   parent:
-  - CEZLevelLadderBase
-  - CEZLevelsLadderWoodenBase
-  id: CEZLevelLadderWooden
+  - CEZLevelStairsBase
+  - CEZLevelsStairsWoodenBase
+  id: CEZLevelStairsWooden
   components:
   - type: Construction
-    graph: CEZLevelLadderWooden
-    node: CEZLevelLadderWooden
+    graph: CEZLevelStairsWooden
+    node: CEZLevelStairsWooden
 
 - type: entity
   parent:
-  - CEZLevelLadderCornerBase
-  - CEZLevelsLadderWoodenBase
-  id: CEZLevelLadderWoodenCorner
+  - CEZLevelStairsCornerBase
+  - CEZLevelsStairsWoodenBase
+  id: CEZLevelStairsWoodenCorner
   suffix: Corner
   components:
   - type: Construction
-    graph: CEZLevelLadderWooden
-    node: CEZLevelLadderWoodenCorner
+    graph: CEZLevelStairsWooden
+    node: CEZLevelStairsWoodenCorner

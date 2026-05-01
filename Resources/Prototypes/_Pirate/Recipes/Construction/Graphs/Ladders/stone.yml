@@ -1,10 +1,10 @@
 - type: constructionGraph
-  id: CEZLevelLadderStone
+  id: CEZLevelStairsStone
   start: start
   graph:
     - node: start
       edges:
-        - to: CEZLevelLadderStone
+        - to: CEZLevelStairsStone
           completed:
             - !type:SnapToGrid
           steps:
@@ -12,8 +12,8 @@
               amount: 2
               doAfter: 2
 
-    - node: CEZLevelLadderStone
-      entity: CEZLevelLadderStone
+    - node: CEZLevelStairsStone
+      entity: CEZLevelStairsStone
       edges:
         - to: start
           completed:
@@ -24,23 +24,23 @@
           steps:
             - tool: Prying
               doAfter: 2
-        - to: CEZLevelLadderStoneCorner
+        - to: CEZLevelStairsStoneCorner
           steps:
             - tool: Prying
               doAfter: 2
 
-    - node: CEZLevelLadderStoneCorner
-      entity: CEZLevelLadderStoneCorner
+    - node: CEZLevelStairsStoneCorner
+      entity: CEZLevelStairsStoneCorner
       edges:
-        - to: CEZLevelLadderStoneCornerInner
+        - to: CEZLevelStairsStoneCornerInner
           steps:
             - tool: Prying
               doAfter: 2
 
-    - node: CEZLevelLadderStoneCornerInner
-      entity: CEZLevelLadderStoneCornerInner
+    - node: CEZLevelStairsStoneCornerInner
+      entity: CEZLevelStairsStoneCornerInner
       edges:
-        - to: CEZLevelLadderStone
+        - to: CEZLevelStairsStone
           steps:
             - tool: Prying
               doAfter: 2
