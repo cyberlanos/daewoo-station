@@ -147,6 +147,9 @@ public abstract partial class CESharedZLevelsSystem
             return;
 
         var xform = Transform(ent);
+        if (!HasTraversalContext(xform))
+            return;
+
         var zState = ZPhyzQuery.TryComp(ent, out var zPhys)
             ? $" local={zPhys.LocalPosition:0.00} vel={zPhys.Velocity:0.00} ground={zPhys.CurrentGroundHeight:0.00} sticky={zPhys.CurrentStickyGround}"
             : string.Empty;
@@ -250,6 +253,9 @@ public abstract partial class CESharedZLevelsSystem
         }
 
         var xform = Transform(ent);
+        if (!HasTraversalContext(xform))
+            return false;
+
         var basePayload =
             $"uid={ToPrettyString(ent)},parent={xform.ParentUid},grid={xform.GridUid},map={xform.MapUid}";
 

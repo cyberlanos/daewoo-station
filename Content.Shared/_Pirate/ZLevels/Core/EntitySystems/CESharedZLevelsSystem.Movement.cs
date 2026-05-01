@@ -94,7 +94,7 @@ public abstract partial class CESharedZLevelsSystem
         CacheMovement((ent, zComp));
     }
 
-    private void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
+    protected virtual void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
     {
         SetZGravityInfluenced(ent.Owner, false);
     }

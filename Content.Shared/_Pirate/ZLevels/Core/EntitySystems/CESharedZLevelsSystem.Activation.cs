@@ -82,6 +82,12 @@ public abstract partial class CESharedZLevelsSystem
 
         var xform = Transform(ent);
 
+        if (!HasTraversalContext(xform))
+        {
+            SetActiveStatus(ent, false);
+            return;
+        }
+
         if (xform.ParentUid != xform.MapUid && xform.ParentUid != xform.GridUid)
         {
             DebugZ(ent, "z-physics inactive: parent is neither the map nor the grid");

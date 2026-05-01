@@ -52,8 +52,8 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
 
         _nextUpdate = _timing.CurTime + UpdateInterval;
 
-        var query = EntityQueryEnumerator<CEZPhysicsComponent, PhysicsComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out _, out var physics, out var xform))
+        var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, PhysicsComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out _, out _, out var physics, out var xform))
         {
             UpdateActions(uid, physics, xform);
         }

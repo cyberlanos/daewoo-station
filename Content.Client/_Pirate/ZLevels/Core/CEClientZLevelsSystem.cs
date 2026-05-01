@@ -86,8 +86,8 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<CEZPhysicsComponent, SpriteComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var zPhys, out var sprite, out var xform))
+        var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, SpriteComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var zPhys, out _, out var sprite, out var xform))
         {
             var localPosition = GetVisualsLocalPosition((uid, zPhys), xform);
 
@@ -121,6 +121,21 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
             _sprite.SetOffset((uid, sprite), zItem.SpriteOffsetDefault + new Vector2(0, localPosition * ZLevelOffset));
             _sprite.SetDrawDepth((uid, sprite), localPosition > 0 ? (int)Shared.DrawDepth.DrawDepth.OverMobs : zItem.DrawDepthDefault);
         }
+    }
+
+    protected override void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
+    {
+        base.OnActiveShutdown(ent, ref args);
+
+        if (!TryComp<CEZPhysicsComponent>(ent, out var zPhys) ||
+            !TryComp<SpriteComponent>(ent, out var sprite))
+        {
+            return;
+        }
+
+        sprite.NoRotation = zPhys.NoRotDefault;
+        _sprite.SetOffset((ent.Owner, sprite), zPhys.SpriteOffsetDefault);
+        _sprite.SetDrawDepth((ent.Owner, sprite), zPhys.DrawDepthDefault);
     }
 
     private void OnItemZPhysicsStartup(Entity<CEZItemPhysicsComponent> ent, ref ComponentStartup args)
