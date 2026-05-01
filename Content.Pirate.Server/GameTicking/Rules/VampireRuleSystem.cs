@@ -270,21 +270,22 @@ public sealed partial class VampireRuleSystem : GameRuleSystem<VampireRuleCompon
         if (!ent.Comp.HadPressureImmunityComponent)
             RemComp<PressureImmunityComponent>(uid);
 
-        // Remove VampireToxin marker from DnaComponent so future blood generation is clean.
-        if (TryComp<DnaComponent>(uid, out var dnaComp))
+        if (!HasComp<VampirismComponent>(uid))
         {
-            dnaComp.VampireToxin = false;
-        }
+            // Remove VampireToxin marker from DnaComponent so future blood generation is clean.
+            if (TryComp<DnaComponent>(uid, out var dnaComp))
+                dnaComp.VampireToxin = false; // Remove VampireToxin marker from DnaComponent so future blood generation is clean.
 
-        // Remove VampireToxin from existing blood in the bloodstream.
-        if (TryComp<BloodstreamComponent>(uid, out var bloodstream)
-            && _solutionContainer.ResolveSolution(uid, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var solution))
-        {
-            foreach (var reagent in solution.Contents)
+            // Remove VampireToxin from existing blood in the bloodstream.
+            if (TryComp<BloodstreamComponent>(uid, out var bloodstream)
+                && _solutionContainer.ResolveSolution(uid, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var solution))
             {
-                foreach (var dnaData in reagent.Reagent.EnsureReagentData().OfType<DnaData>())
+                foreach (var reagent in solution.Contents)
                 {
-                    dnaData.VampireToxin = false;
+                    foreach (var dnaData in reagent.Reagent.EnsureReagentData().OfType<DnaData>())
+                    {
+                        dnaData.VampireToxin = false;
+                    }
                 }
             }
         }

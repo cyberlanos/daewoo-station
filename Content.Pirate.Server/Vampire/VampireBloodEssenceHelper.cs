@@ -47,10 +47,6 @@ namespace Content.Pirate.Server.Vampire
         {
             var essenceAmount = bloodVolume * conversionRate;
 
-            // Drinking vampire blood gives no essence.
-            if (entityManager.HasComponent<VampireComponent>(victim) || entityManager.HasComponent<VampirismComponent>(victim))
-                essenceAmount = 0;
-
             return AddBloodEssence(entityManager, vampire, essenceAmount, victim);
         }
     }

@@ -474,13 +474,6 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         {
             var bloodData = GetEntityBloodData(ent.Owner); // Pirate
 
-            // If the entity has vampire blood marker in its DNA component, tag new blood with VampireToxin.
-            if (TryComp<DnaComponent>(ent.Owner, out var dnaComp) && dnaComp.VampireToxin)
-            {
-                foreach (var data in bloodData.OfType<DnaData>())
-                    data.VampireToxin = true;
-            }
-
             SolutionContainer.TryAddReagent(ent.Comp.BloodSolution.Value, ent.Comp.BloodReagent, amount, out var acceptedAmount, null, bloodData); // Pirate end
             return acceptedAmount > 0;
         }
@@ -629,9 +622,13 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         var bloodData = new List<ReagentData>();
         var dnaData = new DnaData();
 
-        if (TryComp<DnaComponent>(uid, out var donorComp) && donorComp.DNA != null)
+        if (TryComp<DnaComponent>(uid, out var donorComp))
         {
-            dnaData.DNA = donorComp.DNA;
+            dnaData.VampireToxin = donorComp.VampireToxin; // Pirate
+            if (donorComp.DNA != null)
+                dnaData.DNA = donorComp.DNA;
+            else
+                dnaData.DNA = Loc.GetString("forensics-dna-unknown");
         }
         else
             dnaData.DNA = Loc.GetString("forensics-dna-unknown");
