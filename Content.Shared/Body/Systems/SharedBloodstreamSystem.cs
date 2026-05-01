@@ -472,7 +472,16 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         //  SHITMED CHANGE: We dont really care if the reagent was added in its entirety, just whether or not it could take more blood.
         if (amount >= 0)
         {
-            SolutionContainer.TryAddReagent(ent.Comp.BloodSolution.Value, ent.Comp.BloodReagent, amount, out var acceptedAmount, null, GetEntityBloodData(ent.Owner));
+            var bloodData = GetEntityBloodData(ent.Owner); // Pirate
+
+            // If the entity has vampire blood marker in its DNA component, tag new blood with VampireToxin.
+            if (TryComp<DnaComponent>(ent.Owner, out var dnaComp) && dnaComp.VampireToxin)
+            {
+                foreach (var data in bloodData.OfType<DnaData>())
+                    data.VampireToxin = true;
+            }
+
+            SolutionContainer.TryAddReagent(ent.Comp.BloodSolution.Value, ent.Comp.BloodReagent, amount, out var acceptedAmount, null, bloodData); // Pirate end
             return acceptedAmount > 0;
         }
 

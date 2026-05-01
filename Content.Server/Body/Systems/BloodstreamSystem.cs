@@ -201,7 +201,6 @@ public sealed class BloodstreamSystem : SharedBloodstreamSystem
         }
         else
             dnaData.DNA = Loc.GetString("forensics-dna-unknown");
-
         bloodData.Add(dnaData);
 
         return bloodData;

@@ -78,8 +78,6 @@ public sealed class BloodRegenerationPirateSystem : EntitySystem
             _thirst.ModifyThirst(ent, thirstComp, (float)-usedThirst);
         if (amount > FixedPoint2.Zero)
         {
-            var bloodData = _bloodstream.GetEntityBloodData(ent.Owner);
-            var hasToxin = bloodData.OfType<Content.Shared.Chemistry.Reagent.DnaData>().Any(d => d.VampireToxin);
             return _bloodstream.TryModifyBloodLevel(ent.AsNullable(), amount);
         }
 

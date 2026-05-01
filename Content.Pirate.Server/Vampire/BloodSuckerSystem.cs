@@ -227,12 +227,6 @@ namespace Content.Pirate.Server.Vampirism.Systems
             var temp = _solutionSystem.SplitSolution(bloodstream.BloodSolution.Value, bloodsuckerComp.UnitsToSucc);
             _stomachSystem.TryTransferSolution(stomachList[0].Comp2.Owner, temp, stomachList[0].Comp1);
 
-            if (TryComp<HungerComponent>(bloodsucker, out var hungerComp))
-            {
-                var hungerRestored = (float)temp.Volume * 1.0f;
-                _hunger.ModifyHunger(bloodsucker, hungerRestored, hungerComp);
-            }
-
             // Add a little pierce
             DamageSpecifier damage = new();
             damage.DamageDict.Add("Piercing", 1); // Slowly accumulate enough to gib after like half an hour

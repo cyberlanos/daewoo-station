@@ -158,16 +158,16 @@ public sealed class PlayTimeTrackingSystem : EntitySystem
         if (_afk.IsAfk(player))
             return;
 
+        // Pirate: Don't award playtime in sandbox mode
+        if (_sandbox.IsSandboxEnabled)
+            return;
+
         if (_adminManager.IsAdmin(player))
         {
             trackers.Add(PlayTimeTrackingShared.TrackerAdmin);
             //trackers.Add(PlayTimeTrackingShared.TrackerOverall); Pirate: Admin's also players
             //return; Pirate
         }
-
-        // Pirate: Don't award playtime in sandbox mode
-        if (_sandbox.IsSandboxEnabled)
-            return;
 
         if (!IsPlayerAlive(player))
             return;

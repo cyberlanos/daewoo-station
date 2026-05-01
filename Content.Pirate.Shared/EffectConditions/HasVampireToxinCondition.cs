@@ -23,12 +23,10 @@ public sealed partial class HasVampireToxin : EntityEffectCondition
         if (args is not EntityEffectReagentArgs reagentArgs || reagentArgs.Source == null || reagentArgs.Reagent == null)
             return false;
 
-        // Check ALL reagent entries matching the metabolized reagent for VampireToxin marker.
-        // If any matching entry has VampireToxin, the condition applies.
+        // Check the specific reagent entry being metabolized for VampireToxin marker.
         var hasVampireToxin = reagentArgs.Source.Contents
-            .Where(reagentEntry => reagentEntry.Reagent.Prototype == reagentArgs.Reagent.ID)
-            .SelectMany(reagentEntry => reagentEntry.Reagent.EnsureReagentData().OfType<DnaData>())
-            .Any(dna => dna.VampireToxin);
+            .Any(reagentEntry => reagentEntry.Reagent.Prototype == reagentArgs.Reagent.ID
+                && reagentEntry.Reagent.EnsureReagentData().OfType<DnaData>().Any(dna => dna.VampireToxin));
 
         return hasVampireToxin ^ Invert;
     }

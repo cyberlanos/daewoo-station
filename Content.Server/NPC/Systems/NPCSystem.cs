@@ -89,10 +89,7 @@ namespace Content.Server.NPC.Systems
         public void OnNPCMapInit(EntityUid uid, HTNComponent component, MapInitEvent args)
         {
             component.Blackboard.SetValue(NPCBlackboard.Owner, uid);
-            WakeNPC(uid, component);
-
-            // Pirate: Add NPC marker component so they don't get forced to sleep via SSD
-            EnsureComp<NOSSDSleepComponent>(uid);
+            WakeNPC(uid, component);;
         }
 
         public void OnNPCShutdown(EntityUid uid, HTNComponent component, ComponentShutdown args)
