@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Numerics;
 using Content.Server.Atmos.Components;
+using Content.Shared.Atmos.Components;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Components;
 using Content.Shared.Database;
@@ -76,7 +77,7 @@ public sealed partial class GunSystem
 
                 if (!ev.Reflected)
                 {
-                    blocked = TryAttemptHitscanBlock(user, gunUid, hit);
+                    blocked = TryAttemptHitscanBlock(user, gunUid, hit, hitscan);
                     FireHitscanEffects(effectCoordinates, result.Distance, dir.Normalized().ToAngle(), hitscan, user, blocked);
                     break;
                 }
