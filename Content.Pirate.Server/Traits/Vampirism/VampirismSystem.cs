@@ -57,9 +57,6 @@ public sealed class VampirismSystem : EntitySystem
                 continue;
 
             _metabolizer.SetMetabolizerTypes((comp.Comp2.Owner, comp.Comp1), ent.Comp.MetabolizerPrototypes);
-
-            //if (ent.Comp.SpecialDigestible is {} whitelist)
-            //    stomach.SpecialDigestible = whitelist;
         }
     }
 
