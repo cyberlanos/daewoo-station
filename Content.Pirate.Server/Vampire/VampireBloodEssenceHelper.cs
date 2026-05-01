@@ -1,7 +1,10 @@
+using Content.Pirate.Shared.Vampire;
 using Content.Pirate.Server.Traits.Vampirism.Components;
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Goobstation.Maths.FixedPoint;
 using Robust.Shared.GameObjects;
+using Robust.Shared.Serialization;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Pirate.Server.Vampire
 {
