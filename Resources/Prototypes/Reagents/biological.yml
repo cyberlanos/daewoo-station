@@ -120,16 +120,22 @@
         conditions:
         - !type:OrganType
           type: Vampiric
+        - !type:HasVampireToxin
+          invert: true
       - !type:AdjustReagent
         conditions:
         - !type:OrganType
           type: Vampiric
+        - !type:HasVampireToxin
+          invert: true
         reagent: Water
-        amount: 1
+        amount: 0.5
       - !type:AdjustReagent
         conditions:
         - !type:OrganType
           type: Vampiric
+        - !type:HasVampireToxin
+          invert: true
         reagent: Omnizine
         amount: 0.3
       - !type:ModifyBleedAmount
@@ -137,16 +143,32 @@
         conditions:
         - !type:OrganType
           type: Vampiric
+        - !type:HasVampireToxin
+          invert: true
       - !type:ModifyBloodLevel
         amount: 0.05
         conditions:
         - !type:OrganType
-          type: Vampiric # Pirate end
+          type: Vampiric
+        - !type:HasVampireToxin
+          invert: true # Pirate end
     Food:
       effects:
         - !type:AdjustReagent
           reagent: UncookedAnimalProteins
           amount: 0.1
+          conditions: # Pirate
+            - !type:OrganType
+              type: Vampiric
+              shouldHave: false
+        - !type:AdjustReagent
+          reagent: UncookedAnimalProteins
+          amount: 0.1
+          conditions: # Pirate
+            - !type:OrganType
+              type: Vampiric
+            - !type:HasVampireToxin
+              invert: true # Pirate end
     Medicine:
       effects:
       - !type:HealthChange

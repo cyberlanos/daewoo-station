@@ -27,11 +27,17 @@ using Content.Shared.Atmos;
 using Content.Shared.Atmos.Rotting;
 using Content.Shared.Nutrition.Components;
 using Content.Shared.Chemistry.Reaction;
+using Content.Shared.Chemistry.Components.SolutionManager;
+using Content.Shared.Forensics.Components;
+using Content.Shared.Chemistry.Components;
+using Content.Shared.Chemistry.EntitySystems;
+using Content.Shared.Chemistry.Reagent;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Prototypes;
 using System.Text;
+using System.Linq;
 
 namespace Content.Pirate.Server.GameTicking.Rules;
 
@@ -47,6 +53,7 @@ public sealed partial class VampireRuleSystem : GameRuleSystem<VampireRuleCompon
     [Dependency] private readonly VampireSystem _vampire = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = default!;
     [Dependency] private readonly BodySystem _body = default!;
+    [Dependency] private readonly SharedSolutionContainerSystem _solutionContainer = default!;
 
     public readonly SoundSpecifier BriefingSound = new SoundPathSpecifier("/Audio/_Pirate/Ambience/Antag/vampire_start.ogg");
 
@@ -130,6 +137,29 @@ public sealed partial class VampireRuleSystem : GameRuleSystem<VampireRuleCompon
 
         EnsureComp<BloodSuckerComponent>(vampire);
         EnsureComp<WeakToHolyComponent>(vampire).AlwaysTakeHoly = true;
+
+        // Mark vampire blood with VampireToxin so other vampires get no benefit from drinking it
+        if (TryComp<BloodstreamComponent>(target, out var bloodstream))
+        {
+            if (_solutionContainer.ResolveSolution(target, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var solution))
+            {
+                foreach (var reagent in solution.Contents)
+                {
+                    var dnaDataList = reagent.Reagent.EnsureReagentData().OfType<DnaData>().ToList();
+                    foreach (var dnaData in dnaDataList)
+                    {
+                        dnaData.VampireToxin = true;
+                    }
+                }
+            }
+        }
+
+        // Mark the DnaComponent so future blood generation also includes the toxin.
+        if (TryComp<DnaComponent>(target, out var dnaComp))
+        {
+            dnaComp.VampireToxin = true;
+        }
+
         _vampire.AddStartingAbilities(vampire);
         _vampire.MakeVulnerableToHoly(vampire);
         _alerts.ShowAlert(vampire, vampireAlertComponent.BloodAlert);

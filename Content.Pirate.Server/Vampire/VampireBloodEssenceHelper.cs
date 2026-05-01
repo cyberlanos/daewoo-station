@@ -1,9 +1,7 @@
-using Content.Pirate.Shared.Vampire;
+using Content.Pirate.Server.Traits.Vampirism.Components;
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Goobstation.Maths.FixedPoint;
 using Robust.Shared.GameObjects;
-using Robust.Shared.Serialization;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Pirate.Server.Vampire
 {
@@ -45,6 +43,11 @@ namespace Content.Pirate.Server.Vampire
         public static bool AddBloodEssenceFromSucking(IEntityManager entityManager, EntityUid vampire, EntityUid victim, FixedPoint2 bloodVolume, float conversionRate = 1f)
         {
             var essenceAmount = bloodVolume * conversionRate;
+
+            // Drinking vampire blood gives no essence.
+            if (entityManager.HasComponent<VampireComponent>(victim) || entityManager.HasComponent<VampirismComponent>(victim))
+                essenceAmount = 0;
+
             return AddBloodEssence(entityManager, vampire, essenceAmount, victim);
         }
     }

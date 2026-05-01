@@ -195,7 +195,10 @@ public sealed class BloodstreamSystem : SharedBloodstreamSystem
         var dnaData = new DnaData();
 
         if (TryComp<DnaComponent>(uid, out var donorComp) && donorComp.DNA != null)
+        {
             dnaData.DNA = donorComp.DNA;
+            dnaData.VampireToxin = donorComp.VampireToxin; // Pirate
+        }
         else
             dnaData.DNA = Loc.GetString("forensics-dna-unknown");
 
