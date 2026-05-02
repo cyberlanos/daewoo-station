@@ -201,6 +201,8 @@ namespace Content.Server.Atmos.EntitySystems
             {
                 var contentDef = (ContentTileDefinition) _tileDefinitionManager[gTile.TypeId];
                 mapAtmosphere = contentDef.MapAtmosphere;
+                if (mapAtmosphere && PirateHasZLevelTileBelow(ent, idx)) // Pirate: multiz
+                    mapAtmosphere = false; // Pirate: multiz
                 tile.ThermalConductivity = contentDef.ThermalConductivity;
                 tile.HeatCapacity = contentDef.HeatCapacity;
                 tile.NoGridTile = false;
@@ -208,6 +210,8 @@ namespace Content.Server.Atmos.EntitySystems
             else
             {
                 mapAtmosphere = true;
+                if (PirateHasZLevelTileBelow(ent, idx)) // Pirate: multiz
+                    mapAtmosphere = false; // Pirate: multiz
                 tile.ThermalConductivity =  0.5f;
                 tile.HeatCapacity = float.PositiveInfinity;
 
