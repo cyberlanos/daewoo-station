@@ -1166,3 +1166,11 @@ Entries:
       message: Бонус витривалості більше не виходить за ліміт
   id: 98
   time: '2026-04-25T20:09:29.0000000+00:00'
+- author: AgentMaper
+  changes:
+    - type: Tweak
+      message: Оновлено Perdition Island
+    - type: Tweak
+      message: Оновлено GateTP
+  id: 99
+  time: '2026-05-03T16:40:24.0000000+00:00'
