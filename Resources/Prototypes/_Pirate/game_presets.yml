@@ -25,3 +25,18 @@
   - BasicRoundstartVariation
   - PsionicEventsScheduler # Pirate
   
+- type: gamePreset
+  id: Relaxed
+  alias:
+  - relaxed
+  - relax
+  - розслаблений
+  name: "Розслаблений"
+  showInVote: true
+  description: "Спокійний режим з некритичними подіями."
+  rules:
+  - BasicStationEventSchedulerNoAntag
+  - ParadoxCloneSpawn
+  - Devil
+  - BasicRoundstartVariation
+  - PsionicEventsScheduler
