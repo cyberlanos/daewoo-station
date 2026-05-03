@@ -10,8 +10,6 @@ namespace Content.Server.Atmos.EntitySystems;
 
 public sealed partial class AtmosphereSystem
 {
-    private readonly HashSet<(EntityUid Grid, Vector2i Tile, string Key)> _pirateZAtmosLogged = new();
-
     private void PirateInitializeZAtmos()
     {
         SubscribeLocalEvent<CEZLinkedGridComponent, ComponentStartup>(PirateOnZLinkedGridStartup);
@@ -22,10 +20,17 @@ public sealed partial class AtmosphereSystem
         PirateInvalidateZAtmosOpenings(ent.Owner);
     }
 
-    private bool PirateShouldTryZLevelProtectedMixture(EntityUid? gridUid, Vector2i gridTile)
+    private bool PirateShouldTryZLevelProtectedMixture(Entity<TransformComponent?> entity, EntityUid? gridUid, Vector2i gridTile)
     {
         if (gridUid == null || !gridUid.Value.IsValid())
             return true;
+
+        if (TryComp<CEZPhysicsComponent>(entity.Owner, out var zPhysics) &&
+            TryComp<CEZLinkedGridComponent>(gridUid.Value, out var linked) &&
+            linked.Depth != zPhysics.CurrentZLevel)
+        {
+            return true;
+        }
 
         return !TryComp<GridAtmosphereComponent>(gridUid.Value, out var atmos) ||
                !atmos.Tiles.ContainsKey(gridTile);
@@ -43,12 +48,31 @@ public sealed partial class AtmosphereSystem
 
         var worldPos = _transformSystem.GetWorldPosition(entity.Comp);
         var checkedGrids = new HashSet<EntityUid>();
+        var targetDepth = TryComp<CEZPhysicsComponent>(entity.Owner, out var zPhysics)
+            ? zPhysics.CurrentZLevel
+            : (int?) null;
+        var bestDepth = int.MinValue;
+        EntityUid bestGridUid = EntityUid.Invalid;
+        GridAtmosphereComponent? bestAtmos = null;
+        GasTileOverlayComponent? bestOverlay = null;
+        MapGridComponent? bestGrid = null;
+        TransformComponent? bestXform = null;
+        Vector2i bestTile = default;
 
         if (entity.Comp.GridUid is { } gridUid &&
-            checkedGrids.Add(gridUid) &&
-            PirateTryGetZLevelProtectedTileMixtureFromGrid(entity.Owner, gridUid, worldPos, excite, out mixture))
+            checkedGrids.Add(gridUid))
         {
-            return true;
+            PirateTrySelectZLevelProtectedTileMixtureCandidate(
+                gridUid,
+                worldPos,
+                targetDepth,
+                ref bestDepth,
+                ref bestGridUid,
+                ref bestAtmos,
+                ref bestOverlay,
+                ref bestGrid,
+                ref bestXform,
+                ref bestTile);
         }
 
         foreach (var grid in _mapManager.GetAllGrids(entity.Comp.MapID))
@@ -56,28 +80,69 @@ public sealed partial class AtmosphereSystem
             if (!checkedGrids.Add(grid.Owner))
                 continue;
 
-            if (PirateTryGetZLevelProtectedTileMixtureFromGrid(entity.Owner, grid.Owner, worldPos, excite, out mixture))
-                return true;
+            PirateTrySelectZLevelProtectedTileMixtureCandidate(
+                grid.Owner,
+                worldPos,
+                targetDepth,
+                ref bestDepth,
+                ref bestGridUid,
+                ref bestAtmos,
+                ref bestOverlay,
+                ref bestGrid,
+                ref bestXform,
+                ref bestTile);
         }
 
-        return false;
+        if (!bestGridUid.IsValid() ||
+            bestAtmos == null ||
+            bestOverlay == null ||
+            bestGrid == null ||
+            bestXform == null)
+        {
+            return false;
+        }
+
+        var ent = new Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent>(
+            bestGridUid,
+            bestAtmos,
+            bestOverlay,
+            bestGrid,
+            bestXform);
+
+        var tile = GetOrNewTile(bestGridUid, bestAtmos, bestTile);
+        PirateEnsureZLevelProtectedTileAir(ent, tile, GetVolumeForTiles(bestGrid));
+
+        if (excite)
+        {
+            AddActiveTile(bestAtmos, tile);
+            InvalidateVisuals((bestGridUid, bestOverlay), bestTile);
+        }
+
+        mixture = tile.Air;
+        return true;
     }
 
-    private bool PirateTryGetZLevelProtectedTileMixtureFromGrid(
-        EntityUid source,
+    private void PirateTrySelectZLevelProtectedTileMixtureCandidate(
         EntityUid gridUid,
         Vector2 worldPos,
-        bool excite,
-        out GasMixture? mixture)
+        int? targetDepth,
+        ref int bestDepth,
+        ref EntityUid bestGridUid,
+        ref GridAtmosphereComponent? bestAtmos,
+        ref GasTileOverlayComponent? bestOverlay,
+        ref MapGridComponent? bestGrid,
+        ref TransformComponent? bestXform,
+        ref Vector2i bestTile)
     {
-        mixture = null;
-
-        if (!TryComp<GridAtmosphereComponent>(gridUid, out var atmos) ||
+        if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked) ||
+            targetDepth is { } depth && linked.Depth != depth ||
+            targetDepth == null && linked.Depth <= bestDepth ||
+            !TryComp<GridAtmosphereComponent>(gridUid, out var atmos) ||
             !TryComp<GasTileOverlayComponent>(gridUid, out var overlay) ||
             !TryComp<MapGridComponent>(gridUid, out var grid) ||
             !TryComp<TransformComponent>(gridUid, out var xform))
         {
-            return false;
+            return;
         }
 
         var gridTile = _mapSystem.WorldToTile(gridUid, grid, worldPos);
@@ -88,23 +153,16 @@ public sealed partial class AtmosphereSystem
             grid,
             xform);
 
-        if (!PirateTryGetZLevelAtmosProtection(ent, gridTile, out var protection, out var belowGridUid, out var belowTile))
-            return false;
+        if (!PirateHasZLevelAtmosProtection(ent, gridTile))
+            return;
 
-        var tile = GetOrNewTile(gridUid, atmos, gridTile);
-        PirateTryUpdateZLevelProtectedTileAir(ent, tile, GetVolumeForTiles(grid));
-
-        if (excite)
-        {
-            AddActiveTile(atmos, tile);
-            InvalidateVisuals((gridUid, overlay), gridTile);
-        }
-
-        mixture = tile.Air;
-        PirateLogZAtmosOnce(gridUid, gridTile, $"entity-query-{protection}",
-            $"[Pirate z-atmos] Entity query for {ToPrettyString(source)} resolved protected {protection} {gridTile} on {ToPrettyString(gridUid)}; " +
-            $"below={ToPrettyString(belowGridUid)} tile={belowTile}; air={PirateDescribeZAtmosAirForLog(atmos, gridTile)}");
-        return true;
+        bestDepth = linked.Depth;
+        bestGridUid = gridUid;
+        bestAtmos = atmos;
+        bestOverlay = overlay;
+        bestGrid = grid;
+        bestXform = xform;
+        bestTile = gridTile;
     }
 
     private bool PirateHasZLevelTileBelow(
@@ -150,22 +208,20 @@ public sealed partial class AtmosphereSystem
         TileAtmosphere tile,
         float volume)
     {
-        if (!PirateTryGetZLevelAtmosProtection(ent, tile.GridIndices, out var protection, out var belowGridUid, out var belowTile))
+        if (!PirateHasZLevelAtmosProtection(ent, tile.GridIndices))
             return false;
 
-        if (tile.Air is { TotalMoles: > Atmospherics.GasMinMoles })
-        {
-            PirateLogZAtmosOnce(ent.Owner, tile.GridIndices, $"has-air-{protection}",
-                $"[Pirate z-atmos] Protected {protection} {tile.GridIndices} on {ToPrettyString(ent.Owner)} already has gas: " +
-                $"moles={tile.Air.TotalMoles:0.#####}, pressure={tile.Air.Pressure:0.###}, temp={tile.Air.Temperature:0.###}; " +
-                $"below={ToPrettyString(belowGridUid)} tile={belowTile}; adj=[{PirateDescribeZAtmosAdjacent(tile)}]");
-            return true;
-        }
+        PirateEnsureZLevelProtectedTileAir(ent, tile, volume);
+        return true;
+    }
 
-        var beforeMoles = tile.Air?.TotalMoles;
-        var beforePressure = tile.Air?.Pressure;
-        var beforeTemp = tile.Air?.Temperature;
-        var beforeAdj = PirateDescribeZAtmosAdjacent(tile);
+    private void PirateEnsureZLevelProtectedTileAir(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        TileAtmosphere tile,
+        float volume)
+    {
+        if (tile.Air is { TotalMoles: > Atmospherics.GasMinMoles })
+            return;
 
         tile.Air ??= new GasMixture(volume) { Temperature = Atmospherics.T20C };
         tile.Air.Clear();
@@ -176,29 +232,13 @@ public sealed partial class AtmosphereSystem
         tile.Hotspot = new Hotspot();
 
         GridFixTileVacuum(tile);
-
-        PirateLogZAtmosOnce(ent.Owner, tile.GridIndices, $"seed-{protection}",
-            $"[Pirate z-atmos] Seeded protected {protection} {tile.GridIndices} on {ToPrettyString(ent.Owner)}; " +
-            $"below={ToPrettyString(belowGridUid)} tile={belowTile}; " +
-            $"before=moles:{PirateFormatNullable(beforeMoles)} pressure:{PirateFormatNullable(beforePressure)} temp:{PirateFormatNullable(beforeTemp)}; " +
-            $"after=moles:{tile.Air.TotalMoles:0.#####} pressure:{tile.Air.Pressure:0.###} temp:{tile.Air.Temperature:0.###}; " +
-            $"adjBefore=[{beforeAdj}]; adjAfter=[{PirateDescribeZAtmosAdjacent(tile)}]");
-
         NotifyDeviceTileChanged((ent.Owner, ent.Comp1, ent.Comp3), tile.GridIndices);
-        return true;
     }
 
-    private bool PirateTryGetZLevelAtmosProtection(
+    private bool PirateHasZLevelAtmosProtection(
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
-        Vector2i gridTile,
-        out string protection,
-        out EntityUid belowGridUid,
-        out Vector2i belowTile)
+        Vector2i gridTile)
     {
-        protection = string.Empty;
-        belowGridUid = EntityUid.Invalid;
-        belowTile = default;
-
         var hasGridTile = _map.TryGetTile(ent.Comp3, gridTile, out var gridTileRef) && !gridTileRef.IsEmpty;
         var isCandidate = !hasGridTile;
 
@@ -206,66 +246,9 @@ public sealed partial class AtmosphereSystem
         {
             var contentDef = (ContentTileDefinition) _tileDefinitionManager[gridTileRef.TypeId];
             isCandidate = contentDef.MapAtmosphere;
-            protection = $"map-atmos tile type={gridTileRef.TypeId}";
-        }
-        else
-        {
-            protection = "empty tile";
         }
 
-        if (!isCandidate)
-            return false;
-
-        if (PirateTryGetZLevelTileBelow(ent.Owner, ent.Comp3, gridTile, out belowGridUid, out _, out belowTile))
-            return true;
-
-        PirateLogZAtmosOnce(ent.Owner, gridTile, $"no-lower-{protection}",
-            $"[Pirate z-atmos] Candidate {protection} {gridTile} on {ToPrettyString(ent.Owner)} has no lower z tile; " +
-            $"noGrid={!hasGridTile}; currentAir={PirateDescribeZAtmosAirForLog(ent.Comp1, gridTile)}");
-        return false;
-    }
-
-    private string PirateDescribeZAtmosAdjacent(TileAtmosphere tile)
-    {
-        Span<AtmosDirection> directions =
-        [
-            AtmosDirection.North,
-            AtmosDirection.South,
-            AtmosDirection.East,
-            AtmosDirection.West
-        ];
-
-        var parts = new string[Atmospherics.Directions];
-        for (var i = 0; i < Atmospherics.Directions; i++)
-        {
-            var adj = tile.AdjacentTiles[i];
-            parts[i] = adj == null
-                ? $"{directions[i]}=null"
-                : $"{directions[i]}=moles:{PirateFormatNullable(adj.Air?.TotalMoles)} pressure:{PirateFormatNullable(adj.Air?.Pressure)} noGrid:{adj.NoGridTile} map:{adj.MapAtmosphere}";
-        }
-
-        return string.Join("; ", parts);
-    }
-
-    private string PirateDescribeZAtmosAirForLog(GridAtmosphereComponent atmos, Vector2i tile)
-    {
-        if (!atmos.Tiles.TryGetValue(tile, out var atmosTile))
-            return "missing-atmos-tile";
-
-        return atmosTile.Air == null
-            ? "null"
-            : $"moles:{atmosTile.Air.TotalMoles:0.#####} pressure:{atmosTile.Air.Pressure:0.###} temp:{atmosTile.Air.Temperature:0.###}";
-    }
-
-    private static string PirateFormatNullable(float? value)
-    {
-        return value == null ? "null" : $"{value.Value:0.#####}";
-    }
-
-    private void PirateLogZAtmosOnce(EntityUid gridUid, Vector2i tile, string key, string message)
-    {
-        if (_pirateZAtmosLogged.Add((gridUid, tile, key)))
-            Log.Info(message);
+        return isCandidate && PirateHasZLevelTileBelow(ent.Owner, ent.Comp3, gridTile);
     }
 
     private void PirateInvalidateZAtmosOpenings(EntityUid gridUid)

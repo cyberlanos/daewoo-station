@@ -277,10 +277,10 @@ namespace Content.Server.Atmos.EntitySystems
                 return;
             }
 
-#region Pirate: multiz
+            #region Pirate: multiz
             if (PirateTryUpdateZLevelProtectedTileAir(ent, tile, volume))
                 return;
-#endregion
+            #endregion
 
             var data = tile.AirtightData;
             var fullyBlocked = data.BlockedDirections == AtmosDirection.All;
