@@ -26,8 +26,8 @@ public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
 
     public void QueueAdapterRefloodsOnGrid(EntityUid gridUid)
     {
-        var query = EntityQueryEnumerator<NodeContainerComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var container, out var xform))
+        var query = EntityQueryEnumerator<CEMultizAtmosPipeAdapterComponent, NodeContainerComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out _, out var container, out var xform))
         {
             if (xform.GridUid == gridUid)
                 QueueAdapterRefloods((uid, container));
