@@ -1,0 +1,12 @@
+- type: rcd
+  id: CEMultizCableHub
+  category: Electrical
+  sprite: /Textures/_Pirate/Structures/Power/cable_hub.rsi/cablerelay.png
+  mode: ConstructObject
+  prototype: CEMultizCableHub
+  cost: 15
+  delay: 0
+  rules:
+  - MustBuildOnSubfloor
+  rotation: Fixed
+  fx: EffectRCDConstruct0

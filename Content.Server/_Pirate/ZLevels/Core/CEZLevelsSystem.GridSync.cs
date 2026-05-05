@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Server._Pirate.ZLevels.Power;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
@@ -62,6 +63,8 @@ public sealed partial class CEZLevelsSystem
             Dirty(gridUid, comp);
         }
 
+        RaiseLinkedGridPeersChanged(grids.Values);
+
         Log.Info($"Linked {grids.Count} grids across Z-levels in network {network.Owner}");
     }
 
@@ -83,6 +86,8 @@ public sealed partial class CEZLevelsSystem
             Dirty(gridUid, comp);
         }
 
+        RaiseLinkedGridPeersChanged(gridsByDepth.Values);
+
         Log.Info($"Linked {gridsByDepth.Count} grids across Z-levels in network {network.Owner}");
     }
 
@@ -92,7 +97,20 @@ public sealed partial class CEZLevelsSystem
         foreach (var (_, peerUid) in ent.Comp.PeerGrids)
         {
             if (TryComp<CEZLinkedGridComponent>(peerUid, out var peerLinked))
+            {
                 peerLinked.PeerGrids.Remove(ent.Comp.Depth);
+                var ev = new CEMultizLinkedGridPeersChangedEvent();
+                RaiseLocalEvent(peerUid, ref ev);
+            }
+        }
+    }
+
+    private void RaiseLinkedGridPeersChanged(IEnumerable<EntityUid> gridUids)
+    {
+        foreach (var gridUid in gridUids)
+        {
+            var ev = new CEMultizLinkedGridPeersChangedEvent();
+            RaiseLocalEvent(gridUid, ref ev);
         }
     }
 
