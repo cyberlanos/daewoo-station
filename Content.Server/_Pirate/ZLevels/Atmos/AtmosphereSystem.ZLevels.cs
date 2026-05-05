@@ -10,18 +10,100 @@ namespace Content.Server.Atmos.EntitySystems;
 
 public sealed partial class AtmosphereSystem
 {
-    private void PirateInitializeZAtmos()
+    private readonly HashSet<EntityUid> _zAtmosLinkedMaps = new();
+    private readonly HashSet<ZAtmosTilePair> _zAtmosVerticalSharePairs = new();
+    private readonly HashSet<ZAtmosTilePair> _zAtmosVerticalTransferPairs = new();
+    private readonly Dictionary<ZAtmosTileKey, int> _zAtmosVerticalTransferTileRefs = new();
+
+    private readonly record struct ZAtmosTileKey(EntityUid GridUid, Vector2i Tile);
+
+    private readonly record struct ZAtmosTilePair(ZAtmosTileKey A, ZAtmosTileKey B)
     {
-        SubscribeLocalEvent<CEZLinkedGridComponent, ComponentStartup>(PirateOnZLinkedGridStartup);
+        public static ZAtmosTilePair Create(EntityUid gridA, Vector2i tileA, EntityUid gridB, Vector2i tileB)
+        {
+            var keyA = new ZAtmosTileKey(gridA, tileA);
+            var keyB = new ZAtmosTileKey(gridB, tileB);
+
+            if (gridA.Id < gridB.Id)
+                return new ZAtmosTilePair(keyA, keyB);
+
+            if (gridA.Id > gridB.Id)
+                return new ZAtmosTilePair(keyB, keyA);
+
+            return tileA.GetHashCode() <= tileB.GetHashCode()
+                ? new ZAtmosTilePair(keyA, keyB)
+                : new ZAtmosTilePair(keyB, keyA);
+        }
     }
 
-    private void PirateOnZLinkedGridStartup(Entity<CEZLinkedGridComponent> ent, ref ComponentStartup args)
+    private void InitializeZAtmos()
     {
-        PirateInvalidateZAtmosOpenings(ent.Owner);
+        SubscribeLocalEvent<CEZLinkedGridComponent, ComponentStartup>(OnZLinkedGridStartup);
+        SubscribeLocalEvent<CEZLinkedGridComponent, ComponentShutdown>(OnZLinkedGridShutdown);
     }
 
-    private bool PirateShouldTryZLevelProtectedMixture(Entity<TransformComponent?> entity, EntityUid? gridUid, Vector2i gridTile)
+    private void RunZAtmosProcessing()
     {
+        _zAtmosVerticalSharePairs.Clear();
+    }
+
+    private void OnZLinkedGridStartup(Entity<CEZLinkedGridComponent> ent, ref ComponentStartup args)
+    {
+        TrackZAtmosMap(ent.Owner);
+        InvalidateZAtmosOpenings(ent.Owner);
+    }
+
+    private void OnZLinkedGridShutdown(Entity<CEZLinkedGridComponent> ent, ref ComponentShutdown args)
+    {
+        UntrackZAtmosMap(ent.Owner);
+        RemoveZAtmosTransferCandidatesForGrid(ent.Owner);
+    }
+
+    private void TrackZAtmosMap(EntityUid gridUid)
+    {
+        if (Transform(gridUid).MapUid is { } mapUid)
+            _zAtmosLinkedMaps.Add(mapUid);
+    }
+
+    private void UntrackZAtmosMap(EntityUid gridUid)
+    {
+        if (Transform(gridUid).MapUid is not { } mapUid ||
+            HasOtherZAtmosGridOnMap(mapUid, gridUid))
+        {
+            return;
+        }
+
+        _zAtmosLinkedMaps.Remove(mapUid);
+    }
+
+    private bool HasOtherZAtmosGridOnMap(EntityUid mapUid, EntityUid ignoredGridUid)
+    {
+        var query = EntityQueryEnumerator<CEZLinkedGridComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out _, out var xform))
+        {
+            if (uid != ignoredGridUid && xform.MapUid == mapUid)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool MapSupportsZAtmos(Entity<TransformComponent?> entity, EntityUid? gridUid)
+    {
+        if (gridUid is { } grid && TryComp<CEZLinkedGridComponent>(grid, out _))
+        {
+            TrackZAtmosMap(grid);
+            return true;
+        }
+
+        return entity.Comp?.MapUid is { } mapUid && _zAtmosLinkedMaps.Contains(mapUid);
+    }
+
+    private bool ShouldTryZLevelProtectedMixture(Entity<TransformComponent?> entity, EntityUid? gridUid, Vector2i gridTile)
+    {
+        if (!MapSupportsZAtmos(entity, gridUid))
+            return false;
+
         if (gridUid == null || !gridUid.Value.IsValid())
             return true;
 
@@ -36,7 +118,7 @@ public sealed partial class AtmosphereSystem
                !atmos.Tiles.ContainsKey(gridTile);
     }
 
-    private bool PirateTryGetZLevelProtectedTileMixtureForEntity(
+    private bool TryGetZLevelProtectedTileMixtureForEntity(
         Entity<TransformComponent?> entity,
         bool excite,
         out GasMixture? mixture)
@@ -44,6 +126,9 @@ public sealed partial class AtmosphereSystem
         mixture = null;
 
         if (!Resolve(entity.Owner, ref entity.Comp))
+            return false;
+
+        if (!MapSupportsZAtmos(entity, entity.Comp.GridUid))
             return false;
 
         var worldPos = _transformSystem.GetWorldPosition(entity.Comp);
@@ -62,7 +147,7 @@ public sealed partial class AtmosphereSystem
         if (entity.Comp.GridUid is { } gridUid &&
             checkedGrids.Add(gridUid))
         {
-            PirateTrySelectZLevelProtectedTileMixtureCandidate(
+            TrySelectZLevelProtectedTileMixtureCandidate(
                 gridUid,
                 worldPos,
                 targetDepth,
@@ -80,7 +165,7 @@ public sealed partial class AtmosphereSystem
             if (!checkedGrids.Add(grid.Owner))
                 continue;
 
-            PirateTrySelectZLevelProtectedTileMixtureCandidate(
+            TrySelectZLevelProtectedTileMixtureCandidate(
                 grid.Owner,
                 worldPos,
                 targetDepth,
@@ -110,7 +195,7 @@ public sealed partial class AtmosphereSystem
             bestXform);
 
         var tile = GetOrNewTile(bestGridUid, bestAtmos, bestTile);
-        PirateEnsureZLevelProtectedTileAir(ent, tile, GetVolumeForTiles(bestGrid));
+        EnsureZLevelProtectedTileAir(ent, tile, GetVolumeForTiles(bestGrid));
 
         if (excite)
         {
@@ -122,7 +207,7 @@ public sealed partial class AtmosphereSystem
         return true;
     }
 
-    private void PirateTrySelectZLevelProtectedTileMixtureCandidate(
+    private void TrySelectZLevelProtectedTileMixtureCandidate(
         EntityUid gridUid,
         Vector2 worldPos,
         int? targetDepth,
@@ -153,7 +238,7 @@ public sealed partial class AtmosphereSystem
             grid,
             xform);
 
-        if (!PirateHasZLevelAtmosProtection(ent, gridTile))
+        if (!HasZLevelAtmosProtection(ent, gridTile))
             return;
 
         bestDepth = linked.Depth;
@@ -165,19 +250,19 @@ public sealed partial class AtmosphereSystem
         bestTile = gridTile;
     }
 
-    private bool PirateHasZLevelTileBelow(
+    private bool HasZLevelTileBelow(
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
         Vector2i gridTile)
     {
-        return PirateHasZLevelTileBelow(ent.Owner, ent.Comp3, gridTile);
+        return HasZLevelTileBelow(ent.Owner, ent.Comp3, gridTile);
     }
 
-    private bool PirateHasZLevelTileBelow(EntityUid gridUid, MapGridComponent grid, Vector2i gridTile)
+    private bool HasZLevelTileBelow(EntityUid gridUid, MapGridComponent grid, Vector2i gridTile)
     {
-        return PirateTryGetZLevelTileBelow(gridUid, grid, gridTile, out _, out _, out _);
+        return TryGetZLevelTileBelow(gridUid, grid, gridTile, out _, out _, out _);
     }
 
-    private bool PirateTryGetZLevelTileBelow(
+    private bool TryGetZLevelTileBelow(
         EntityUid gridUid,
         MapGridComponent grid,
         Vector2i gridTile,
@@ -203,19 +288,19 @@ public sealed partial class AtmosphereSystem
         return _mapSystem.TryGetTile(belowGrid, belowTile, out var tile) && !tile.IsEmpty;
     }
 
-    private bool PirateTryUpdateZLevelProtectedTileAir(
+    private bool TryUpdateZLevelProtectedTileAir(
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
         TileAtmosphere tile,
         float volume)
     {
-        if (!PirateHasZLevelAtmosProtection(ent, tile.GridIndices))
+        if (!HasZLevelAtmosProtection(ent, tile.GridIndices))
             return false;
 
-        PirateEnsureZLevelProtectedTileAir(ent, tile, volume);
+        EnsureZLevelProtectedTileAir(ent, tile, volume);
         return true;
     }
 
-    private void PirateEnsureZLevelProtectedTileAir(
+    private void EnsureZLevelProtectedTileAir(
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
         TileAtmosphere tile,
         float volume)
@@ -235,12 +320,265 @@ public sealed partial class AtmosphereSystem
         NotifyDeviceTileChanged((ent.Owner, ent.Comp1, ent.Comp3), tile.GridIndices);
     }
 
-    private bool PirateHasZLevelAtmosProtection(
+    private void RefreshZAtmosTransferCandidates(
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
         Vector2i gridTile)
     {
+        if (!TryComp<CEZLinkedGridComponent>(ent.Owner, out var linked))
+            return;
+
+        if (TryGetZAtmosPeerTile(ent.Owner, ent.Comp3, linked, gridTile, -1, out var belowGridUid, out _, out var belowTile))
+            RemoveZAtmosTransferCandidate(ent.Owner, gridTile, belowGridUid, belowTile);
+
+        if (TryGetZAtmosPeerTile(ent.Owner, ent.Comp3, linked, gridTile, 1, out var aboveGridUid, out var aboveGrid, out var aboveTile))
+            RemoveZAtmosTransferCandidate(aboveGridUid, aboveTile, ent.Owner, gridTile);
+
+        if (TryGetZLevelAtmosProtectionBelow(ent, gridTile, out belowGridUid, out _, out belowTile))
+            AddZAtmosTransferCandidate(ent.Owner, gridTile, belowGridUid, belowTile);
+
+        if (!aboveGridUid.IsValid() ||
+            aboveGrid == null ||
+            !TryComp<GridAtmosphereComponent>(aboveGridUid, out var aboveAtmos) ||
+            !TryComp<GasTileOverlayComponent>(aboveGridUid, out var aboveOverlay) ||
+            !TryComp<TransformComponent>(aboveGridUid, out var aboveXform))
+        {
+            return;
+        }
+
+        var aboveEnt = new Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent>(
+            aboveGridUid,
+            aboveAtmos,
+            aboveOverlay,
+            aboveGrid,
+            aboveXform);
+
+        if (HasZLevelAtmosProtection(aboveEnt, aboveTile))
+            AddZAtmosTransferCandidate(aboveGridUid, aboveTile, ent.Owner, gridTile);
+    }
+
+    private bool IsZAtmosTransferCandidate(EntityUid gridUid, Vector2i gridTile)
+    {
+        return _zAtmosVerticalTransferTileRefs.ContainsKey(new ZAtmosTileKey(gridUid, gridTile));
+    }
+
+    private void ActivateZAtmosTransferCandidate(GridAtmosphereComponent atmos, TileAtmosphere tile)
+    {
+        if (IsZAtmosTransferCandidate(tile.GridIndex, tile.GridIndices))
+            AddActiveTile(atmos, tile);
+    }
+
+    private void AddZAtmosTransferCandidate(EntityUid gridA, Vector2i tileA, EntityUid gridB, Vector2i tileB)
+    {
+        var pair = ZAtmosTilePair.Create(gridA, tileA, gridB, tileB);
+        if (!_zAtmosVerticalTransferPairs.Add(pair))
+            return;
+
+        IncrementZAtmosTransferTileRef(pair.A);
+        IncrementZAtmosTransferTileRef(pair.B);
+    }
+
+    private void RemoveZAtmosTransferCandidate(EntityUid gridA, Vector2i tileA, EntityUid gridB, Vector2i tileB)
+    {
+        var pair = ZAtmosTilePair.Create(gridA, tileA, gridB, tileB);
+        if (!_zAtmosVerticalTransferPairs.Remove(pair))
+            return;
+
+        DecrementZAtmosTransferTileRef(pair.A);
+        DecrementZAtmosTransferTileRef(pair.B);
+    }
+
+    private void RemoveZAtmosTransferCandidatesForGrid(EntityUid gridUid)
+    {
+        if (_zAtmosVerticalTransferPairs.Count == 0)
+            return;
+
+        var removed = new List<ZAtmosTilePair>();
+        foreach (var pair in _zAtmosVerticalTransferPairs)
+        {
+            if (pair.A.GridUid == gridUid || pair.B.GridUid == gridUid)
+                removed.Add(pair);
+        }
+
+        foreach (var pair in removed)
+        {
+            _zAtmosVerticalTransferPairs.Remove(pair);
+            DecrementZAtmosTransferTileRef(pair.A);
+            DecrementZAtmosTransferTileRef(pair.B);
+        }
+    }
+
+    private void IncrementZAtmosTransferTileRef(ZAtmosTileKey key)
+    {
+        _zAtmosVerticalTransferTileRefs.TryGetValue(key, out var count);
+        _zAtmosVerticalTransferTileRefs[key] = count + 1;
+    }
+
+    private void DecrementZAtmosTransferTileRef(ZAtmosTileKey key)
+    {
+        if (!_zAtmosVerticalTransferTileRefs.TryGetValue(key, out var count))
+            return;
+
+        if (count <= 1)
+        {
+            _zAtmosVerticalTransferTileRefs.Remove(key);
+            return;
+        }
+
+        _zAtmosVerticalTransferTileRefs[key] = count - 1;
+    }
+
+    private void ShareZLevelAtmos(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        TileAtmosphere tile,
+        int fireCount)
+    {
+        if (tile.Air == null ||
+            !IsZAtmosTransferCandidate(ent.Owner, tile.GridIndices))
+        {
+            return;
+        }
+
+        TryShareZLevelAtmos(ent, tile, fireCount, 1);
+        TryShareZLevelAtmos(ent, tile, fireCount, -1);
+    }
+
+    private void TryShareZLevelAtmos(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        TileAtmosphere tile,
+        int fireCount,
+        int depthOffset)
+    {
+        if (!TryGetZLevelAtmosTransferTile(ent, tile, depthOffset, out var otherEnt, out var otherTile))
+            return;
+
+        var pair = ZAtmosTilePair.Create(ent.Owner, tile.GridIndices, otherEnt.Owner, otherTile.GridIndices);
+        if (!_zAtmosVerticalSharePairs.Add(pair))
+            return;
+
+        if (tile.ArchivedCycle < fireCount)
+            Archive(tile, fireCount);
+
+        if (otherTile.ArchivedCycle < fireCount)
+            Archive(otherTile, fireCount);
+
+        if (CompareExchange(tile, otherTile) == GasCompareResult.NoExchange)
+            return;
+
+        AddActiveTile(ent.Comp1, tile);
+        AddActiveTile(otherEnt.Comp1, otherTile);
+
+        Share(tile, otherTile, CountZLevelAtmosAdjacentTiles(tile));
+        LastShareCheck(tile);
+        LastShareCheck(otherTile);
+
+        InvalidateVisuals(ent, tile);
+        InvalidateVisuals(otherEnt, otherTile);
+    }
+
+    private bool TryGetZLevelAtmosTransferTile(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        TileAtmosphere tile,
+        int depthOffset,
+        out Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> otherEnt,
+        out TileAtmosphere otherTile)
+    {
+        otherEnt = default;
+        otherTile = default!;
+
+        if (!TryComp<CEZLinkedGridComponent>(ent.Owner, out var linked) ||
+            !linked.PeerGrids.TryGetValue(linked.Depth + depthOffset, out var otherGridUid) ||
+            !TryComp<GridAtmosphereComponent>(otherGridUid, out var otherAtmos) ||
+            !TryComp<GasTileOverlayComponent>(otherGridUid, out var otherOverlay) ||
+            !TryComp<MapGridComponent>(otherGridUid, out var otherGrid) ||
+            !TryComp<TransformComponent>(otherGridUid, out var otherXform))
+        {
+            return false;
+        }
+
+        var worldPos = _mapSystem.GridTileToWorldPos(ent.Owner, ent.Comp3, tile.GridIndices);
+        var otherGridTile = _mapSystem.WorldToTile(otherGridUid, otherGrid, worldPos);
+        otherEnt = new Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent>(
+            otherGridUid,
+            otherAtmos,
+            otherOverlay,
+            otherGrid,
+            otherXform);
+
+        if (!_zAtmosVerticalTransferPairs.Contains(ZAtmosTilePair.Create(
+                ent.Owner,
+                tile.GridIndices,
+                otherGridUid,
+                otherGridTile)))
+        {
+            return false;
+        }
+
+        otherTile = GetOrUpdateZLevelAtmosTile(otherEnt, otherGridTile);
+
+        return CanZLevelAtmosTransfer(tile) &&
+               CanZLevelAtmosTransfer(otherTile);
+    }
+
+    private TileAtmosphere GetOrUpdateZLevelAtmosTile(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        Vector2i gridTile)
+    {
+        var tile = GetOrNewTile(ent.Owner, ent.Comp1, gridTile);
+
+        if (tile.Air != null && !tile.MapAtmosphere)
+            return tile;
+
+        TryComp(ent.Comp4.MapUid, out MapAtmosphereComponent? mapAtmos);
+        UpdateTileData(ent, mapAtmos, tile);
+        UpdateAdjacentTiles(ent, tile, activate: true);
+        UpdateTileAir(ent, tile, GetVolumeForTiles(ent.Comp3));
+
+        return tile;
+    }
+
+    private bool CanZLevelAtmosTransfer(TileAtmosphere tile)
+    {
+        var data = tile.AirtightData;
+
+        return tile.Air is { Immutable: false } &&
+               !tile.Space &&
+               !tile.MapAtmosphere &&
+               (data.BlockedDirections != AtmosDirection.All || !data.NoAirWhenBlocked);
+    }
+
+    private static int CountZLevelAtmosAdjacentTiles(TileAtmosphere tile)
+    {
+        var adjacent = 1;
+
+        for (var i = 0; i < Atmospherics.Directions; i++)
+        {
+            var direction = (AtmosDirection) (1 << i);
+            if (tile.AdjacentBits.IsFlagSet(direction))
+                adjacent++;
+        }
+
+        return adjacent;
+    }
+
+    private bool HasZLevelAtmosProtection(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        Vector2i gridTile)
+    {
+        return TryGetZLevelAtmosProtectionBelow(ent, gridTile, out _, out _, out _);
+    }
+
+    private bool TryGetZLevelAtmosProtectionBelow(
+        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
+        Vector2i gridTile,
+        out EntityUid belowGridUid,
+        out MapGridComponent belowGrid,
+        out Vector2i belowTile)
+    {
         var hasGridTile = _map.TryGetTile(ent.Comp3, gridTile, out var gridTileRef) && !gridTileRef.IsEmpty;
         var isCandidate = !hasGridTile;
+        belowGridUid = EntityUid.Invalid;
+        belowGrid = default!;
+        belowTile = default;
 
         if (hasGridTile)
         {
@@ -248,10 +586,35 @@ public sealed partial class AtmosphereSystem
             isCandidate = contentDef.MapAtmosphere;
         }
 
-        return isCandidate && PirateHasZLevelTileBelow(ent.Owner, ent.Comp3, gridTile);
+        return isCandidate && TryGetZLevelTileBelow(ent.Owner, ent.Comp3, gridTile, out belowGridUid, out belowGrid, out belowTile);
     }
 
-    private void PirateInvalidateZAtmosOpenings(EntityUid gridUid)
+    private bool TryGetZAtmosPeerTile(
+        EntityUid gridUid,
+        MapGridComponent grid,
+        CEZLinkedGridComponent linked,
+        Vector2i gridTile,
+        int depthOffset,
+        out EntityUid peerGridUid,
+        out MapGridComponent? peerGrid,
+        out Vector2i peerTile)
+    {
+        peerGridUid = EntityUid.Invalid;
+        peerGrid = null;
+        peerTile = default;
+
+        if (!linked.PeerGrids.TryGetValue(linked.Depth + depthOffset, out peerGridUid) ||
+            !TryComp<MapGridComponent>(peerGridUid, out peerGrid))
+        {
+            return false;
+        }
+
+        var worldPos = _mapSystem.GridTileToWorldPos(gridUid, grid, gridTile);
+        peerTile = _mapSystem.WorldToTile(peerGridUid, peerGrid, worldPos);
+        return true;
+    }
+
+    private void InvalidateZAtmosOpenings(EntityUid gridUid)
     {
         if (!TryComp<MapGridComponent>(gridUid, out var grid) ||
             !TryComp<GridAtmosphereComponent>(gridUid, out var atmos))
@@ -262,11 +625,11 @@ public sealed partial class AtmosphereSystem
         var enumerator = _mapSystem.GetAllTilesEnumerator(gridUid, grid);
         while (enumerator.MoveNext(out var tileRef))
         {
-            PirateInvalidateZAtmosTileAndNeighbors(atmos, tileRef.Value.GridIndices);
+            InvalidateZAtmosTileAndNeighbors(atmos, tileRef.Value.GridIndices);
         }
     }
 
-    private void PirateInvalidateZAtmosPeers(Entity<MapGridComponent> changedGrid, Vector2i changedTile)
+    private void InvalidateZAtmosPeers(Entity<MapGridComponent> changedGrid, Vector2i changedTile)
     {
         if (!TryComp<CEZLinkedGridComponent>(changedGrid.Owner, out var linked) ||
             !linked.PeerGrids.TryGetValue(linked.Depth + 1, out var aboveGridUid) ||
@@ -279,10 +642,10 @@ public sealed partial class AtmosphereSystem
         var worldPos = _mapSystem.GridTileToWorldPos(changedGrid.Owner, changedGrid.Comp, changedTile);
         var aboveTile = _mapSystem.WorldToTile(aboveGridUid, aboveGrid, worldPos);
 
-        PirateInvalidateZAtmosTileAndNeighbors(aboveAtmos, aboveTile);
+        InvalidateZAtmosTileAndNeighbors(aboveAtmos, aboveTile);
     }
 
-    private void PirateInvalidateZAtmosTileAndNeighbors(GridAtmosphereComponent atmos, Vector2i tile)
+    private void InvalidateZAtmosTileAndNeighbors(GridAtmosphereComponent atmos, Vector2i tile)
     {
         atmos.InvalidatedCoords.Add(tile);
 

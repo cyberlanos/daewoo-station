@@ -56,8 +56,8 @@ public partial class AtmosphereSystem
 
         var position = _transformSystem.GetGridTilePositionOrDefault((ent, ent.Comp));
         #region Pirate: multiz
-        if (PirateShouldTryZLevelProtectedMixture((ent, ent.Comp), grid?.Owner, position) &&
-            PirateTryGetZLevelProtectedTileMixtureForEntity((ent, ent.Comp), excite, out var pirateMixture))
+        if (ShouldTryZLevelProtectedMixture((ent, ent.Comp), grid?.Owner, position) &&
+            TryGetZLevelProtectedTileMixtureForEntity((ent, ent.Comp), excite, out var pirateMixture))
         {
             return pirateMixture;
         }
@@ -171,8 +171,8 @@ public partial class AtmosphereSystem
 
         var indices = _transformSystem.GetGridTilePositionOrDefault(entity);
         #region Pirate: multiz
-        if (PirateShouldTryZLevelProtectedMixture((entity.Owner, entity.Comp), entity.Comp.GridUid, indices) &&
-            PirateTryGetZLevelProtectedTileMixtureForEntity((entity.Owner, entity.Comp), excite, out var pirateMixture))
+        if (ShouldTryZLevelProtectedMixture((entity.Owner, entity.Comp), entity.Comp.GridUid, indices) &&
+            TryGetZLevelProtectedTileMixtureForEntity((entity.Owner, entity.Comp), excite, out var pirateMixture))
         {
             return pirateMixture;
         }
