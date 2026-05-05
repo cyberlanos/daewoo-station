@@ -468,6 +468,9 @@ public abstract partial class CESharedZLevelsSystem
         supportIsHighGround = false;
         effectiveGravityBelow = false;
 
+        if (IsAutomaticZPhysicsExcluded(uid))
+            return AutoDescendMode.None;
+
         if (zPhys.CurrentStickyGround)
         {
             if (TryResolveGridForMapOffset(uid, xform, -1, out supportGridUid, out _))
@@ -509,6 +512,16 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnMoveEvent(Entity<CEZPhysicsComponent> ent, ref MoveEvent args)
     {
+        if (IsAutomaticZPhysicsExcluded(ent))
+        {
+            SetActiveStatus(ent, false);
+            SetZGravityInfluenced(ent, false);
+            ent.Comp.DetachedCarrierGridUid = EntityUid.Invalid;
+            ent.Comp.DetachedCarrierLocalPosition = Vector2.Zero;
+            ent.Comp.DetachedCarrierReferenceExpiresAt = TimeSpan.Zero;
+            return;
+        }
+
         PruneDeferredClientMovingStairDescent(ent, Transform(ent));
 
         var detachedFromLinkedGrid = false;
@@ -1007,6 +1020,26 @@ public abstract partial class CESharedZLevelsSystem
         var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent, PhysicsComponent>();
         while (query.MoveNext(out var uid, out var zPhys, out _, out var xform, out var physics))
         {
+            if (IsAutomaticZPhysicsExcluded(uid))
+            {
+                SetActiveStatus(uid, false);
+                SetZGravityInfluenced(uid, false);
+
+                var dirtyVelocity = Math.Abs(zPhys.Velocity) > 0.01f;
+                var dirtyHeight = Math.Abs(zPhys.LocalPosition) > 0.01f;
+
+                zPhys.Velocity = 0f;
+                zPhys.LocalPosition = 0f;
+
+                if (dirtyVelocity)
+                    DirtyField(uid, zPhys, nameof(CEZPhysicsComponent.Velocity));
+
+                if (dirtyHeight)
+                    DirtyField(uid, zPhys, nameof(CEZPhysicsComponent.LocalPosition));
+
+                continue;
+            }
+
             if (!HasTraversalContext(xform))
             {
                 SetZGravityInfluenced(uid, false);

@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 04/29/2026 19:55:19
-  entityCount: 163
+  time: 05/05/2026 12:40:18
+  entityCount: 171
 maps:
 - 3
 grids:
@@ -78,6 +78,75 @@ entities:
     - type: GridAtmosphere
       version: 2
       data:
+        tiles:
+          -2,-1:
+            0: 72
+            1: 34816
+          -2,0:
+            0: 132
+          -1,-1:
+            1: 65520
+          -1,0:
+            1: 1039
+            0: 2560
+          -1,-2:
+            0: 40960
+            1: 16384
+          0,-2:
+            1: 45056
+            0: 16384
+          0,-1:
+            1: 65523
+          0,0:
+            1: 2879
+            0: 1024
+          1,-2:
+            0: 12288
+          1,-1:
+            1: 26224
+            0: 132
+          1,0:
+            1: 7
+            0: 328
+        uniqueMixes:
+        - volume: 2500
+          immutable: True
+          moles:
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+        - volume: 2500
+          temperature: 293.15
+          moles:
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
+          - 0
         chunkSize: 4
     - type: GasTileOverlay
     - type: RadiationGridResistance
@@ -97,7 +166,7 @@ entities:
   - uid: 154
     components:
     - type: Transform
-      pos: 3.1086957,-2.4822214
+      pos: 1.6159269,-2.9198945
       parent: 2
     - type: ContainerContainer
       containers:
@@ -152,9 +221,33 @@ entities:
       rot: 1.5707963267948966 rad
       pos: 1.5,-4.5
       parent: 2
+- proto: AtmosDeviceFanDirectional
+  entities:
+  - uid: 164
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 0.5,2.5
+      parent: 2
+  - uid: 165
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 1.5,2.5
+      parent: 2
+  - uid: 166
+    components:
+    - type: Transform
+      pos: 0.5,-4.5
+      parent: 2
+  - uid: 167
+    components:
+    - type: Transform
+      pos: 1.5,-4.5
+      parent: 2
 - proto: AtmosFixAirMarker
   entities:
-  - uid: 148
+  - uid: 157
     components:
     - type: Transform
       pos: 5.5,0.5
@@ -580,13 +673,33 @@ entities:
       pdaUid: 154
     - type: Physics
       canCollide: False
+  - uid: 168
+    components:
+    - type: Transform
+      pos: 1.6263435,-2.1381013
+      parent: 2
+- proto: CEZLevelVerticalLadderAperture
+  entities:
+  - uid: 171
+    components:
+    - type: Transform
+      pos: -1.5,-1.5
+      parent: 2
+- proto: CEZLevelVerticalLadderTallAperture
+  entities:
+  - uid: 170
+    components:
+    - type: Transform
+      pos: -2.5,-1.5
+      parent: 2
 - proto: ClothingBeltChiefEngineerFilled
   entities:
   - uid: 163
     components:
     - type: Transform
-      pos: 3.647519,-2.5552194
+      pos: 1.6159269,-2.6176012
       parent: 2
+    - type: CEZItemPhysics
 - proto: ComputerIFF
   entities:
   - uid: 4
@@ -633,13 +746,18 @@ entities:
     - type: Transform
       pos: 6.5,-1.5
       parent: 2
-- proto: GeneratorRTG
+- proto: FireAxeCabinetFilledOpen
   entities:
-  - uid: 157
+  - uid: 18
     components:
     - type: Transform
-      pos: -3.5,-2.5
+      rot: -1.5707963267948966 rad
+      pos: 2.5,-3.5
       parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: GeneratorRTG
+  entities:
   - uid: 158
     components:
     - type: Transform
@@ -654,6 +772,13 @@ entities:
     components:
     - type: Transform
       pos: -0.5,-2.5
+      parent: 2
+- proto: GravityGeneratorMini
+  entities:
+  - uid: 148
+    components:
+    - type: Transform
+      pos: -3.5,-2.5
       parent: 2
 - proto: Grille
   entities:
@@ -698,6 +823,13 @@ entities:
     components:
     - type: Transform
       pos: 6.5,0.5
+      parent: 2
+- proto: PartRodMetal
+  entities:
+  - uid: 169
+    components:
+    - type: Transform
+      pos: 2.0331426,-2.0595567
       parent: 2
 - proto: Poweredlight
   entities:
@@ -747,18 +879,14 @@ entities:
       rot: 3.141592653589793 rad
       pos: -1.5,2.5
       parent: 2
-- proto: ResearchDisk10000
+- proto: RCDExperimental
   entities:
-  - uid: 18
-    components:
-    - type: Transform
-      pos: -3.6545646,0.5615288
-      parent: 2
   - uid: 162
     components:
     - type: Transform
-      pos: -3.2899814,0.5406809
+      pos: 1.6575935,-2.4612424
       parent: 2
+    - type: CEZItemPhysics
 - proto: ShuttleWindow
   entities:
   - uid: 27

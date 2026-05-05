@@ -5,6 +5,7 @@
 
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Ghost;
+using Content.Shared.Ghost;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
@@ -21,6 +22,8 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, AnchorStateChangedEvent>(OnAnchorStateChange);
         SubscribeLocalEvent<CEZPhysicsComponent, PhysicsBodyTypeChangedEvent>(OnPhysicsBodyTypeChange);
         SubscribeLocalEvent<CEZPhysicsComponent, EntParentChangedMessage>(OnParentChanged);
+        SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentStartup>(OnGhostMoverStartup);
+        SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentShutdown>(OnGhostMoverShutdown);
     }
 
     private void OnAnchorStateChange(Entity<CEZPhysicsComponent> ent, ref AnchorStateChangedEvent args)
@@ -68,13 +71,37 @@ public abstract partial class CESharedZLevelsSystem
             SetZPosition((ent, ent), oldParentZPhys.LocalPosition);
     }
 
+    private void OnGhostMoverStartup(Entity<CEZLevelGhostMoverComponent> ent, ref ComponentStartup args)
+    {
+        RefreshZPhysicsActivation(ent);
+    }
+
+    private void OnGhostMoverShutdown(Entity<CEZLevelGhostMoverComponent> ent, ref ComponentShutdown args)
+    {
+        RefreshZPhysicsActivation(ent);
+    }
+
+    private void RefreshZPhysicsActivation(EntityUid uid)
+    {
+        if (!ZPhyzQuery.TryComp(uid, out var zPhys))
+            return;
+
+        CheckActivation((uid, zPhys));
+    }
+
+    private bool IsAutomaticZPhysicsExcluded(EntityUid uid)
+    {
+        return HasComp<GhostComponent>(uid) ||
+               HasComp<CEZLevelGhostMoverComponent>(uid);
+    }
+
     private void CheckActivation(Entity<CEZPhysicsComponent> ent)
     {
         if (TerminatingOrDeleted(ent))
             return;
 
         // Ghost movers use actions only — exclude from automatic Z-physics entirely
-        if (HasComp<CEZLevelGhostMoverComponent>(ent))
+        if (IsAutomaticZPhysicsExcluded(ent))
         {
             SetActiveStatus(ent, false);
             return;
