@@ -99,7 +99,7 @@
   - type: EmitSoundOnPickup
     sound: /Audio/_Pirate/Weapons/Melee/pickupweapon.ogg
   - type: AmbientSound
-    range: 0.01
+    range: 5
     volume: -4
     sound: /Audio/_Pirate/Misc/miami_music.ogg
   - type: ClothingSpeedModifier

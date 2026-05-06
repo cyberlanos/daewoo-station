@@ -69,9 +69,9 @@
   description: It's a red highschool jacket with a big '14' stitched onto the back.
   components:
   - type: Sprite
-    sprite: _Pirate/Clothing/Misc/letterman_jacket_red.rsi
+    sprite: _Pirate/Clothing/OuterClothing/Misc/letterman_jacket_red.rsi
   - type: Clothing
-    sprite: _Pirate/Clothing/Misc/letterman_jacket_red.rsi
+    sprite: _Pirate/Clothing/OuterClothing/Misc/letterman_jacket_red.rsi
   - type: TemperatureProtection
     heatingCoefficient: 0.1
     coolingCoefficient: 0.1

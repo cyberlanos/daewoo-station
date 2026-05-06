@@ -20,7 +20,6 @@
   - type: Clothing
     sprite: _Pirate/Clothing/Uniforms/Jumpsuit/Security/security_cadet.rsi
 
-
 - type: entity
   parent: ClothingUniformBase
   id: ClothingUniformJumpsuitJeansGreen
