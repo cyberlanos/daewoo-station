@@ -141,6 +141,8 @@
   - type: StaticPrice
     price: 100
   - type: BlockWeather
+  - type: SoundBlocker # Pirate: audio muffle
+    soundBlockPercent: 0.5 # Pirate: audio muffle
 
 - type: entity
   parent: Window

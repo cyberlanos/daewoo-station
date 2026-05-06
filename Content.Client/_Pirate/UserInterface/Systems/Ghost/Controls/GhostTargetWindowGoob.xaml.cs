@@ -189,7 +189,7 @@ namespace Content.Client._Pirate.UserInterface.Systems.Ghost.Controls
             {
                 var titleKey = SectionTitleKeys[(int) type];
                 var count = _warps.Count(w => w.Type == type);
-                var wrap = new WrapContainer { SeparationOverride = 6, HorizontalExpand = true };
+                var wrap = new Content.Client._Pirate.UserInterface.Controls.WrapContainer { SeparationOverride = 6, HorizontalExpand = true };
 
                 var headingText = $"{Loc.GetString(titleKey)} - ({count})";
                 var section = new FramedCollapsible(headingText)
