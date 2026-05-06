@@ -2,7 +2,6 @@ using Content.Server.NodeContainer.Nodes;
 using Content.Server.Power.Nodes;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.NodeContainer;
-using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 
 namespace Content.Server._Pirate.ZLevels.Power;
@@ -32,9 +31,7 @@ public sealed partial class CEMultizCableHubNode : CableDeviceNode
             yield break;
         }
 
-        var map = entMan.System<SharedMapSystem>();
         var gridTile = grid.TileIndicesFor(xform.Coordinates);
-        var worldPos = map.GridTileToWorldPos(gridUid, grid, gridTile);
 
         foreach (var depthOffset in DepthOffsets)
         {
@@ -44,7 +41,7 @@ public sealed partial class CEMultizCableHubNode : CableDeviceNode
                 continue;
             }
 
-            var peerTile = map.WorldToTile(peerGridUid, peerGrid, worldPos);
+            var peerTile = gridTile;
             foreach (var node in NodeHelpers.GetNodesInTile(nodeQuery, peerGrid, peerTile))
             {
                 if (node is CEMultizCableHubNode && node != this && node.NodeGroupID == NodeGroupID)

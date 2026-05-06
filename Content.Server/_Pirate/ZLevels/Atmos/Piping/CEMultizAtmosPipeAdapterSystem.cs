@@ -2,7 +2,6 @@ using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.NodeContainer;
-using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 
 namespace Content.Server._Pirate.ZLevels.Atmos.Piping;
@@ -10,7 +9,6 @@ namespace Content.Server._Pirate.ZLevels.Atmos.Piping;
 public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
 {
     [Dependency] private readonly NodeGroupSystem _nodeGroup = default!;
-    [Dependency] private readonly SharedMapSystem _map = default!;
 
     public override void Initialize()
     {
@@ -26,7 +24,7 @@ public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
 
     public void QueueAdapterRefloodsOnGrid(EntityUid gridUid)
     {
-        var query = EntityQueryEnumerator<CEMultizAtmosPipeAdapterComponent, NodeContainerComponent, TransformComponent>();
+        var query = AllEntityQuery<CEMultizAtmosPipeAdapterComponent, NodeContainerComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out _, out var container, out var xform))
         {
             if (xform.GridUid == gridUid)
@@ -58,13 +56,12 @@ public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
         if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
             return;
 
-        var worldPos = _map.GridTileToWorldPos(gridUid, grid, tile);
         foreach (var peerGridUid in linked.PeerGrids.Values)
         {
             if (!TryComp<MapGridComponent>(peerGridUid, out var peerGrid))
                 continue;
 
-            var peerTile = _map.WorldToTile(peerGridUid, peerGrid, worldPos);
+            var peerTile = tile;
             QueueAdapterRefloodsInTile(nodeQuery, peerGrid, peerTile);
         }
     }

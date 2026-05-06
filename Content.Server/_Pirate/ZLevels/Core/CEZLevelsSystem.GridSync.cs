@@ -38,7 +38,7 @@ public sealed partial class CEZLevelsSystem
             mapToDepth[mapUid.Value] = depth;
         }
 
-        var gridQuery = EntityQueryEnumerator<MapGridComponent, TransformComponent>();
+        var gridQuery = AllEntityQuery<MapGridComponent, TransformComponent>();
         while (gridQuery.MoveNext(out var gridUid, out _, out var gridXform))
         {
             if (gridXform.MapUid is null)

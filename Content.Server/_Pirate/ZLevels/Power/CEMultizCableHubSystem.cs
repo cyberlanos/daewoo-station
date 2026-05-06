@@ -48,7 +48,7 @@ public sealed class CEMultizCableHubSystem : EntitySystem
 
     private void QueueHubRefloodsOnGrid(EntityUid gridUid)
     {
-        var query = EntityQueryEnumerator<CEMultizCableHubSupportComponent, NodeContainerComponent, TransformComponent>();
+        var query = AllEntityQuery<CEMultizCableHubSupportComponent, NodeContainerComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out _, out var container, out var xform))
         {
             if (xform.GridUid == gridUid)
