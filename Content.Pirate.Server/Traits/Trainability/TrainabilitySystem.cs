@@ -20,7 +20,6 @@ using Robust.Shared.GameObjects.Components.Localization;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Popups;
-using Content.Pirate.Shared.Traits.Trainability;
 
 namespace Content.Pirate.Server.Traits.Trainability
 {
@@ -37,6 +36,9 @@ namespace Content.Pirate.Server.Traits.Trainability
         public override void Initialize()
         {
             base.Initialize();
+
+            SubscribeLocalEvent<TrainabilityComponent, ComponentInit>(OnComponentInit);
+
             SubscribeLocalEvent<MeleeHitEvent>(OnMeleeHit);
             SubscribeLocalEvent<TrainabilityComponent, DamageModifyEvent>(OnDamageModify);
 
@@ -44,8 +46,6 @@ namespace Content.Pirate.Server.Traits.Trainability
             SubscribeLocalEvent<TrainabilityComponent, DownedEvent>(OnDowned);
 
             SubscribeLocalEvent<SolutionComponent, SolutionChangedEvent>(OnSolutionChanged);
-
-            SubscribeLocalEvent<TrainabilityComponent, ComponentInit>(OnComponentInit);
 
             SubscribeLocalEvent<TrainabilityComponent, CloningEvent>(OnClone);
 
@@ -60,6 +60,8 @@ namespace Content.Pirate.Server.Traits.Trainability
         public override void Update(float frameTime)
         {
             base.Update(frameTime);
+
+            // Iterate through all entities with TrainabilityComponent
             var query = EntityQueryEnumerator<TrainabilityComponent>();
             while (query.MoveNext(out var uid, out var comp))
             {
@@ -69,38 +71,54 @@ namespace Content.Pirate.Server.Traits.Trainability
         }
 
         #region Technical strains
-        // -- HITS --
+
+        // -- DAMAGE --
+
+        // Triggered when an entity performs a melee attack
         private void OnMeleeHit(MeleeHitEvent args)
         {
             if (!TryComp<TrainabilityComponent>(args.User, out var comp))
                 return;
 
+            // Add bonus damage based on muscle mass
             args.BonusDamage += comp.DamageBonus * comp.MuscleMass;
 
+            // Calculate the final damage after modifiers
             var resolvedDamage = new DamageSpecifier(args.BaseDamage);
             resolvedDamage += args.BonusDamage;
             resolvedDamage = DamageSpecifier.ApplyModifierSets(resolvedDamage, args.ModifiersList);
 
+            // Convert dealt damage into training strain
             var damageStrain = GetDamageStain(comp, resolvedDamage);
+
+            // Stop if no valid strain was generated
             if (damageStrain.Empty)
                 return;
 
+            // Process all hit entities
             foreach (var hitEntity in args.HitEntities)
             {
-                if (!TryComp<MobStateComponent>(hitEntity, out var mob)) continue;
-                if (mob.CurrentState != MobState.Alive) continue;
+                // Ignore non-living entities
+                if (!TryComp<MobStateComponent>(hitEntity, out var mob))
+                    continue;
 
-                // Create and queue a new training strain
+                if (mob.CurrentState != MobState.Alive)
+                    continue;
+
+                // Create and add a new training strain
                 var newStrain = new TechnicalStrain { Damage = damageStrain };
                 AddTechnicalStrain(comp, newStrain);
             }
         }
 
+        // Converts dealt physical damage into training strain
         public DamageSpecifier GetDamageStain(TrainabilityComponent comp, DamageSpecifier damage)
         {
             var damageStrain = new DamageSpecifier();
+
             var totalDamage = FixedPoint2.Zero;
 
+            // Sum all physical damage types
             foreach (var type in PhysicalDamageTypes)
             {
                 if (damage.DamageDict.TryGetValue(type, out var amount) && amount > FixedPoint2.Zero)
@@ -110,6 +128,7 @@ namespace Content.Pirate.Server.Traits.Trainability
             if (totalDamage <= FixedPoint2.Zero)
                 return damageStrain;
 
+            // Normalize each physical damage type contribution
             foreach (var type in PhysicalDamageTypes)
             {
                 if (damage.DamageDict.TryGetValue(type, out var amount) && amount > FixedPoint2.Zero)
@@ -117,6 +136,7 @@ namespace Content.Pirate.Server.Traits.Trainability
             }
 
             damageStrain *= comp.DamageRisingSpeed;
+
             return damageStrain;
         }
 
@@ -207,8 +227,11 @@ namespace Content.Pirate.Server.Traits.Trainability
         }
 
         // -- STAMINA AND SPRINT --
+
+        // Updates sprint progress and stamina training
         private void UpdateSprintProgress(float frameTime, EntityUid uid, TrainabilityComponent comp)
         {
+            // Check if the entity is currently sprinting and moving
             if (!TryComp<SprinterComponent>(uid, out var sprinter)
                 || !sprinter.IsSprinting
                 || !TryComp<InputMoverComponent>(uid, out var mover)
@@ -216,17 +239,20 @@ namespace Content.Pirate.Server.Traits.Trainability
                 || !TryComp<PhysicsComponent>(uid, out var physics)
                 || physics.LinearVelocity.LengthSquared() <= 0.01f)
             {
+                // Reset sprint timer if sprint conditions are not met
                 comp.SprintTimer = 0;
                 return;
             }
 
+            // Increase sprint timer while sprinting
             comp.SprintTimer += frameTime;
 
-            // Check if the sprint duration has exceeded the defined interval for a "tick"
+            // Check if enough sprint time has passed
             if (comp.SprintTimer > comp.SprintInterval)
             {
                 comp.SprintTimer = 0;
 
+                // Add stamina strain gained from sprinting
                 var newStrain = new TechnicalStrain { Stamina = comp.StaminaRisingSpeed };
                 AddTechnicalStrain(comp, newStrain);
             }
@@ -235,16 +261,24 @@ namespace Content.Pirate.Server.Traits.Trainability
 
         #region Physical strains
         // -- PUSH-UP --
+
+        // Called when the entity stands up
         private void OnStood(EntityUid uid, TrainabilityComponent comp, StoodEvent args)
         {
-           comp.LastStandTime = _timing.CurTime;
+            // Store the time when the entity last stood up
+            comp.LastStandTime = _timing.CurTime;
         }
 
+        // Called when the entity goes downed
         private void OnDowned(EntityUid uid, TrainabilityComponent comp, DownedEvent args)
         {
+            // Check if the downed action happened within the push-up window
             if ((_timing.CurTime - comp.LastStandTime).TotalSeconds < comp.PushUpWindow)
             {
+                // Apply physical training strain from push-ups
                 AddPhysicalStrain(comp, comp.PushUpsEfficiency);
+
+                // Show feedback popup to the player
                 _popup.PopupEntity(Loc.GetString("system-trainability-push-up", ("gender", (object) GetGender(uid))), uid, uid);
             }
         }
@@ -394,19 +428,59 @@ namespace Content.Pirate.Server.Traits.Trainability
         }
         #endregion
 
+        // Updates the muscle mass alert
         private void UpdateAlert(EntityUid uid, TrainabilityComponent comp)
         {
-            if(comp.MuscleMass >= 0.025f)
+            // Show the alert only if the entity has enough muscle mass
+            if (comp.MuscleMass >= 0.025f)
             {
+                // Calculate the alert level based on current muscle mass
                 short stateIndex = (short) (comp.MuscleMass / comp.MaxMuscleMass * 9);
 
                 _alertsSystem.ShowAlert(uid, "Trainability", stateIndex);
             }
             else
             {
+                // Remove the alert if muscle mass is too low
                 _alertsSystem.ClearAlert(uid, "Trainability");
             }
         }
+
+        // Triggered when the entity is examined
+        private void OnExamine(EntityUid uid, TrainabilityComponent comp, ExaminedEvent args)
+        {
+            if (comp.MuscleMass < 0.3f) return;
+
+            // Selects the text based on muscle mass
+            string key = comp.MuscleMass switch
+            {
+                >= 0.8f => "system-trainability-examine-level3",
+                >= 0.5f => "system-trainability-examine-level2",
+                _ => "system-trainability-examine-level1",
+            };
+
+            args.PushMarkup(Loc.GetString(key, ("gender", (object) GetGender(uid))));
+        }
+
+        private Gender GetGender(EntityUid uid)
+        {
+            // Default gender value
+            var entityGender = Gender.Neuter;
+
+            // Try to get gender from the humanoid component
+            if (TryComp<HumanoidAppearanceComponent>(uid, out var humanoid))
+            {
+                entityGender = humanoid.Gender;
+            }
+            // Otherwise, try to get it from the grammar component
+            else if (TryComp<GrammarComponent>(uid, out var grammar))
+            {
+                entityGender = grammar.Gender ?? Gender.Neuter;
+            }
+
+            return entityGender;
+        }
+
         private void OnClone(Entity<TrainabilityComponent> ent, ref CloningEvent args)
         {
             if (!args.Settings.EventComponents.Contains(Factory.GetRegistration(ent.Comp.GetType()).Name))
@@ -457,36 +531,6 @@ namespace Content.Pirate.Server.Traits.Trainability
             }
 
             Dirty(args.CloneUid, clone);
-        }
-
-        private void OnExamine(EntityUid uid, TrainabilityComponent comp, ExaminedEvent args)
-        {
-            if (comp.MuscleMass < 0.3f) return;
-
-            string key = comp.MuscleMass switch
-            {
-                >= 0.8f => "system-trainability-examine-level3",
-                >= 0.5f => "system-trainability-examine-level2",
-                _ => "system-trainability-examine-level1",
-            };
-
-            args.PushMarkup(Loc.GetString(key, ("gender", (object) GetGender(uid))));
-        }
-
-        private Gender GetGender(EntityUid uid)
-        {
-            var entityGender = Gender.Neuter;
-
-            if (TryComp<HumanoidAppearanceComponent>(uid, out var humanoid))
-            {
-                entityGender = humanoid.Gender;
-            }
-            else if (TryComp<GrammarComponent>(uid, out var grammar))
-            {
-                entityGender = grammar.Gender ?? Gender.Neuter;
-            }
-
-            return entityGender;
         }
 
     }
