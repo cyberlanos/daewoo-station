@@ -9,8 +9,8 @@
   name: Anomaly pulse
   description: Release a pulse of energy of your abnormal nature
   components:
-    - type: Action
-      useDelay: 30
-      icon: { sprite: Structures/Specific/anomaly.rsi, state: anom1 } # Pirate: engine update
-    - type: InstantAction
-      event: !type:ActionAnomalyPulseEvent
+  - type: Action
+    useDelay: 30
+    icon: { sprite: Structures/Specific/anomaly.rsi, state: anom1 } # Pirate: engine update
+  - type: InstantAction
+    event: !type:ActionAnomalyPulseEvent
