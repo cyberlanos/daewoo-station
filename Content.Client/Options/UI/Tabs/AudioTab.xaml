@@ -40,6 +40,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <ui:OptionSlider Name="SliderRadioSoundDelay" Title="{Loc 'ui-options-radio-sound-delay'}" />
 
                 <CheckBox Name="HearSelfCheckBox" Text="{Loc 'ui-options-hear-self'}" />
+                <!-- Pirate: area echo -->
+                <Label Text="{Loc 'ui-options-general-area-echo'}" StyleClasses="LabelKeyText"/><!-- Pirate: area echo -->
+                <BoxContainer Orientation="Vertical" Margin="16 3 0 8"><!-- Pirate: area echo -->
+                    <CheckBox Name="AreaEchoCheckBox" Text="{Loc 'ui-options-area-echo-enabled'}" /><!-- Pirate: area echo -->
+                    <CheckBox Name="AreaEchoHighResolutionCheckBox" Text="{Loc 'ui-options-area-echo-highres'}" /><!-- Pirate: area echo -->
+                </BoxContainer><!-- Pirate: area echo -->
                 <CheckBox Name="LobbyMusicCheckBox" Text="{Loc 'ui-options-lobby-music'}" />
                 <CheckBox Name="RestartSoundsCheckBox" Text="{Loc 'ui-options-restart-sounds'}" />
                 <CheckBox Name="EventMusicCheckBox" Text="{Loc 'ui-options-event-music'}" />
