@@ -21,7 +21,8 @@ public sealed class PirateAudioEffectSystem : EntitySystem
     [Dependency] private readonly SharedAudioSystem _audio = default!;
 
     private bool? _auxiliariesSafe;
-    private static readonly Dictionary<ProtoId<AudioPresetPrototype>, (EntityUid AuxiliaryUid, EntityUid EffectUid)> CachedEffects = new();
+    private readonly Dictionary<ProtoId<AudioPresetPrototype>, (EntityUid AuxiliaryUid, EntityUid EffectUid)> _cachedEffects = new();
+    private readonly HashSet<EntityUid> _activeEffectAudio = new();
     private const float ReverbGainScale = 0.58f;
     private const float EarlyReflectionGainScale = 0.62f;
     private const float LateReverbGainScale = 0.48f;
@@ -33,6 +34,7 @@ public sealed class PirateAudioEffectSystem : EntitySystem
         base.Initialize();
         SubscribeNetworkEvent<RoundRestartCleanupEvent>(_ => Cleanup());
         SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypeReload);
+        SubscribeLocalEvent<AudioComponent, EntityTerminatingEvent>(OnAudioTerminating);
     }
 
     public override void Shutdown()
@@ -46,7 +48,7 @@ public sealed class PirateAudioEffectSystem : EntitySystem
         if (!args.WasModified<AudioPresetPrototype>())
             return;
 
-        var oldPresets = CachedEffects.Keys.ToArray();
+        var oldPresets = _cachedEffects.Keys.ToArray();
         Cleanup();
 
         foreach (var oldPreset in oldPresets)
@@ -55,13 +57,26 @@ public sealed class PirateAudioEffectSystem : EntitySystem
 
     private void Cleanup()
     {
-        foreach (var cache in CachedEffects.Values)
+        foreach (var cache in _cachedEffects.Values)
         {
             TryQueueDel(cache.AuxiliaryUid);
             TryQueueDel(cache.EffectUid);
         }
 
-        CachedEffects.Clear();
+        _cachedEffects.Clear();
+        _activeEffectAudio.Clear();
+    }
+
+    private void OnAudioTerminating(Entity<AudioComponent> entity, ref EntityTerminatingEvent args)
+    {
+        if (_activeEffectAudio.Remove(entity.Owner) && _activeEffectAudio.Count == 0)
+            Cleanup();
+    }
+
+    private void CleanupIfIdle()
+    {
+        if (_activeEffectAudio.Count == 0)
+            Cleanup();
     }
 
     private bool DetermineAuxiliarySafety([NotNullWhen(true)] out (EntityUid Entity, AudioAuxiliaryComponent Component)? auxiliaryPair, bool keepPair)
@@ -108,6 +123,7 @@ public sealed class PirateAudioEffectSystem : EntitySystem
             return false;
 
         _audio.SetAuxiliary(entity, entity.Comp, auxiliaryUid);
+        _activeEffectAudio.Add(entity.Owner);
         return true;
     }
 
@@ -117,12 +133,22 @@ public sealed class PirateAudioEffectSystem : EntitySystem
             return false;
 
         if (entity.Comp.Auxiliary is not { } existingAuxiliary || !existingAuxiliary.IsValid())
+        {
+            _activeEffectAudio.Remove(entity.Owner);
+            CleanupIfIdle();
             return true;
+        }
 
-        if (!CachedEffects.Values.Any(cache => cache.AuxiliaryUid == existingAuxiliary))
+        if (!_cachedEffects.Values.Any(cache => cache.AuxiliaryUid == existingAuxiliary))
+        {
+            _activeEffectAudio.Remove(entity.Owner);
+            CleanupIfIdle();
             return true;
+        }
 
         _audio.SetAuxiliary(entity, entity.Comp, null);
+        _activeEffectAudio.Remove(entity.Owner);
+        CleanupIfIdle();
         return true;
     }
 
@@ -135,8 +161,14 @@ public sealed class PirateAudioEffectSystem : EntitySystem
             return false;
         }
 
-        if (CachedEffects.TryGetValue(preset, out var cached))
+        if (_cachedEffects.TryGetValue(preset, out var cached))
         {
+            if (!Exists(cached.AuxiliaryUid) || !Exists(cached.EffectUid))
+            {
+                _cachedEffects.Remove(preset);
+                return TryCacheEffect(preset, out auxiliaryUid, out effectUid);
+            }
+
             auxiliaryUid = cached.AuxiliaryUid;
             effectUid = cached.EffectUid;
             return true;
@@ -168,10 +200,16 @@ public sealed class PirateAudioEffectSystem : EntitySystem
         _audio.SetEffectPreset(effectPair.Entity, effectPair.Component, AttenuateAreaEcho(presetPrototype));
         _audio.SetEffect(auxiliaryPair.Entity, auxiliaryPair.Component, effectPair.Entity);
 
+        if (!_cachedEffects.TryAdd(preset, (auxiliaryPair.Entity, effectPair.Entity)))
+        {
+            TryQueueDel(auxiliaryPair.Entity);
+            TryQueueDel(effectPair.Entity);
+            return false;
+        }
+
         auxiliaryUid = auxiliaryPair.Entity;
         effectUid = effectPair.Entity;
-
-        return CachedEffects.TryAdd(preset, (auxiliaryPair.Entity, effectPair.Entity));
+        return true;
     }
 
     private static ReverbProperties AttenuateAreaEcho(AudioPresetPrototype preset)
