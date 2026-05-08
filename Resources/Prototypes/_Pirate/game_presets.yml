@@ -14,6 +14,18 @@
     - PsionicEventsScheduler
 
 - type: gamePreset
+  id: SecretSalt
+  alias:
+    - secretsalt
+    - saltsecret
+  name: secretsalt-title
+  description: secretsalt-description
+  showInVote: true
+  rules:
+    - SecretSalt
+    - PsionicEventsScheduler # Pirate
+
+- type: gamePreset
   id: PirateGreenshift
   alias:
   - greenshift
