@@ -28,7 +28,7 @@ public sealed partial class PirateVars
     /// Lower values are more accurate and more expensive.
     /// </summary>
     public static readonly CVarDef<float> AreaEchoStepFidelity =
-        CVarDef.Create("pirate.area_echo.step_fidelity", 5f, CVar.ARCHIVE | CVar.CLIENTONLY);
+        CVarDef.Create("pirate.area_echo.step_fidelity", 5f, CVar.CLIENTONLY);
 
     /// <summary>
     /// Interval between full echo refreshes for existing audio entities.

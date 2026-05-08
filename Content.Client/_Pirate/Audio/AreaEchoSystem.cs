@@ -53,10 +53,6 @@ public sealed class AreaEchoSystem : EntitySystem
 
     private readonly int _echoLayer = (int) (CollisionGroup.Opaque | CollisionGroup.Impassable);
 
-    private const int ExistingAudioUpdatesPerTick = 4;
-
-    private readonly Queue<EntityUid> _pendingEchoUpdates = new();
-
     private Angle[] _calculatedDirections = CardinalDirections;
     private TimeSpan _nextExistingUpdate = TimeSpan.Zero;
     private int _echoMaxReflections;
@@ -87,27 +83,17 @@ public sealed class AreaEchoSystem : EntitySystem
     {
         base.Update(frameTime);
 
-        if (!_echoEnabled)
+        if (!_echoEnabled || _timing.CurTime < _nextExistingUpdate)
             return;
 
-        if (_timing.CurTime >= _nextExistingUpdate)
-        {
-            _nextExistingUpdate = _timing.CurTime + _calculationInterval;
-            QueueExistingAudioUpdates();
-        }
-
-        ProcessPendingAudioUpdates();
-    }
-
-    private void QueueExistingAudioUpdates()
-    {
-        _pendingEchoUpdates.Clear();
+        _nextExistingUpdate = _timing.CurTime + _calculationInterval;
 
         var minimumMagnitude = DistancePresets[0].Distance;
         DebugTools.Assert(minimumMagnitude > 0f, "First distance preset was less than or equal to 0.");
         if (minimumMagnitude <= 0f)
             return;
 
+        var maximumMagnitude = DistancePresets[^1].Distance;
         var audioEnumerator = EntityQueryEnumerator<AudioComponent>();
 
         while (audioEnumerator.MoveNext(out var uid, out var audioComponent))
@@ -115,36 +101,7 @@ public sealed class AreaEchoSystem : EntitySystem
             if (!CanAudioEcho(audioComponent) || !audioComponent.Playing)
                 continue;
 
-            _pendingEchoUpdates.Enqueue(uid);
-        }
-    }
-
-    private void ProcessPendingAudioUpdates()
-    {
-        if (_pendingEchoUpdates.Count == 0)
-            return;
-
-        var minimumMagnitude = DistancePresets[0].Distance;
-        DebugTools.Assert(minimumMagnitude > 0f, "First distance preset was less than or equal to 0.");
-        if (minimumMagnitude <= 0f)
-        {
-            _pendingEchoUpdates.Clear();
-            return;
-        }
-
-        var maximumMagnitude = DistancePresets[^1].Distance;
-        var processed = 0;
-
-        while (processed < ExistingAudioUpdatesPerTick && _pendingEchoUpdates.TryDequeue(out var uid))
-        {
-            if (!TryComp<AudioComponent>(uid, out var audioComponent))
-                continue;
-
-            if (!CanAudioEcho(audioComponent) || !audioComponent.Playing)
-                continue;
-
             ProcessAudioEntity((uid, audioComponent), Transform(uid), minimumMagnitude, maximumMagnitude);
-            processed++;
         }
     }
 
@@ -166,15 +123,19 @@ public sealed class AreaEchoSystem : EntitySystem
     private List<Entity<TransformComponent>> TryGetHierarchyBeforeMap(Entity<TransformComponent> originEntity)
     {
         var hierarchy = new List<Entity<TransformComponent>> { originEntity };
-        var current = originEntity;
-        var mapUid = current.Comp.MapUid;
 
-        while (current.Comp.ParentUid != mapUid && current.Comp.ParentUid.IsValid())
+        ref var currentEntity = ref originEntity;
+        ref var currentTransformComponent = ref currentEntity.Comp;
+
+        var mapUid = currentEntity.Comp.MapUid;
+
+        while (currentTransformComponent.ParentUid != mapUid && currentTransformComponent.ParentUid.IsValid())
         {
-            var nextUid = current.Comp.ParentUid;
-            current = (nextUid, Transform(nextUid));
+            var nextUid = currentTransformComponent.ParentUid;
+            currentEntity.Owner = nextUid;
+            currentTransformComponent = Transform(nextUid);
 
-            hierarchy.Add(current);
+            hierarchy.Add(currentEntity);
         }
 
         DebugTools.Assert(hierarchy.Count >= 1, "Malformed entity hierarchy.");
@@ -269,7 +230,7 @@ public sealed class AreaEchoSystem : EntitySystem
             magnitude += totalDistance;
         }
 
-        magnitude /= _calculatedDirections.Length * Math.Max(1, _echoMaxReflections + 1);
+        magnitude /= _calculatedDirections.Length * Math.Max(1, _echoMaxReflections);
         return true;
     }
 
