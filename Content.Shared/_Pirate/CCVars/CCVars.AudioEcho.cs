@@ -15,7 +15,7 @@ public sealed partial class PirateVars
     /// Otherwise, area echoes calculate with all eight directions.
     /// </summary>
     public static readonly CVarDef<bool> AreaEchoHighResolution =
-        CVarDef.Create("pirate.area_echo.alldirections", false, CVar.ARCHIVE | CVar.CLIENTONLY);
+        CVarDef.Create("pirate.area_echo.alldirections", true, CVar.ARCHIVE | CVar.CLIENTONLY);
 
     /// <summary>
     /// How many times a ray can bounce off a surface for an echo calculation.
