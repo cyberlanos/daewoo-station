@@ -49,6 +49,7 @@
   description: "Спокійний режим з некритичними подіями."
   rules:
   - PirateRelaxedEventScheduler
+  - PirateRelaxedSubGamemodesRule
   - BasicRoundstartVariation
   - PsionicEventsScheduler
 
@@ -65,7 +66,6 @@
       - !type:NestedSelector
         tableId: SpicyPestEventsTable
       - id: ParadoxCloneSpawn
-      - id: Devil
 
 - type: entity
   id: PirateRelaxedEventScheduler
@@ -74,3 +74,12 @@
   - type: BasicStationEventScheduler
     scheduledGameRules: !type:NestedSelector
       tableId: PirateRelaxedEventsTable
+
+- type: entity
+  id: PirateRelaxedSubGamemodesRule
+  parent: BaseGameRule
+  components:
+  - type: SubGamemodes
+    rules:
+    - id: Devil
+      prob: 0.3
