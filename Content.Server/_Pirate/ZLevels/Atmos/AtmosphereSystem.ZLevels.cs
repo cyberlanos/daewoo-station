@@ -254,15 +254,31 @@ public sealed partial class AtmosphereSystem
         Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent,
         Vector2i gridTile)
     {
-        return HasZLevelTileBelow(ent.Owner, ent.Comp3, gridTile);
+        return HasAnySolidZLevelTileBelow(ent.Owner, ent.Comp3, gridTile); // Pirate: multiz
     }
 
-    private bool HasZLevelTileBelow(EntityUid gridUid, MapGridComponent grid, Vector2i gridTile)
+    private bool HasAnySolidZLevelTileBelow(EntityUid gridUid, MapGridComponent grid, Vector2i gridTile)
     {
-        return TryGetZLevelTileBelow(gridUid, grid, gridTile, out _, out _, out _);
+        if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
+            return false;
+
+        var worldPos = _mapSystem.GridTileToWorldPos(gridUid, grid, gridTile);
+
+        for (var depth = linked.Depth - 1; ; depth--)
+        {
+            if (!linked.PeerGrids.TryGetValue(depth, out var belowGridUid) ||
+                !TryComp<MapGridComponent>(belowGridUid, out var belowGrid))
+                break;
+
+            var belowTile = _mapSystem.WorldToTile(belowGridUid, belowGrid, worldPos);
+            if (_mapSystem.TryGetTile(belowGrid, belowTile, out var tile) && !tile.IsEmpty)
+                return true;
+        }
+
+        return false;
     }
 
-    private bool TryGetZLevelTileBelow(
+    private bool TryGetImmediateLevelBelow(
         EntityUid gridUid,
         MapGridComponent grid,
         Vector2i gridTile,
@@ -277,15 +293,12 @@ public sealed partial class AtmosphereSystem
         if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked) ||
             !linked.PeerGrids.TryGetValue(linked.Depth - 1, out belowGridUid) ||
             !TryComp<MapGridComponent>(belowGridUid, out var foundBelowGrid))
-        {
             return false;
-        }
 
         belowGrid = foundBelowGrid;
         var worldPos = _mapSystem.GridTileToWorldPos(gridUid, grid, gridTile);
         belowTile = _mapSystem.WorldToTile(belowGridUid, belowGrid, worldPos);
-
-        return _mapSystem.TryGetTile(belowGrid, belowTile, out var tile) && !tile.IsEmpty;
+        return true;
     }
 
     private bool TryUpdateZLevelProtectedTileAir(
@@ -586,7 +599,15 @@ public sealed partial class AtmosphereSystem
             isCandidate = contentDef.MapAtmosphere;
         }
 
-        return isCandidate && TryGetZLevelTileBelow(ent.Owner, ent.Comp3, gridTile, out belowGridUid, out belowGrid, out belowTile);
+        if (!isCandidate)
+            return false;
+
+        // Pirate: multiz - require a solid tile anywhere below (through consecutive holes),
+        // then pair with the immediate level so gas chains level-by-level through the shaft
+        if (!HasAnySolidZLevelTileBelow(ent.Owner, ent.Comp3, gridTile))
+            return false;
+
+        return TryGetImmediateLevelBelow(ent.Owner, ent.Comp3, gridTile, out belowGridUid, out belowGrid, out belowTile); // Pirate: multiz
     }
 
     private bool TryGetZAtmosPeerTile(
