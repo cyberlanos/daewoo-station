@@ -238,30 +238,6 @@ public abstract partial class CESharedZLevelsSystem
         return false;
     }
 
-    /// <summary>
-    /// Resolves whether there is actual support directly below this entity on the next z-level.
-    /// Returns the supporting grid uid so callers can inspect the lower deck's gravity state live,
-    /// which is important for moving linked shuttle grids.
-    /// </summary>
-    [PublicAPI]
-    protected bool TryGetSupportBelow(EntityUid ent, TransformComponent xform, out EntityUid belowGridUid, out bool isHighGround)
-    {
-        belowGridUid = EntityUid.Invalid;
-        isHighGround = false;
-
-        var worldPos = _transform.GetWorldPosition(ent);
-        if (TryGetDetachedCarrierProbe(ent, xform, out var carrierGridUid, out var carrierWorldPos) &&
-            TryResolveDetachedCarrierProbeGrid(carrierGridUid, 1, out belowGridUid, out var carrierBelowGrid))
-        {
-            worldPos = carrierWorldPos;
-            return HasSupportOnGridAtWorld(ent, belowGridUid, carrierBelowGrid, worldPos, out isHighGround);
-        }
-
-        if (!TryResolveGridForMapOffset(ent, xform, -1, out belowGridUid, out var belowGrid))
-            return false;
-
-        return HasSupportOnGridAtWorld(ent, belowGridUid, belowGrid, worldPos, out isHighGround);
-    }
 
     /// <summary>
     /// Returns true when the lower z-level landing tile contains an anchored hard fixture
@@ -333,7 +309,8 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
-    /// Returns true when the z-level directly below exerts gravitational influence on this entity.
+    /// Returns true when any z-level below exerts gravitational influence on this entity.
+    /// Searches across multiple z-levels so entities falling through consecutive holes are not treated as weightless. // Pirate: multiz
     /// Landing blockers do not matter here; they block passage, not the gravity field.
     /// </summary>
     [PublicAPI]
@@ -342,7 +319,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!Resolve(ent, ref xform, false))
             return false;
 
-        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out var isHighGround))
+        if (!TryFindSupportedLevelBelow(ent, xform, out _, out var belowGridUid, out var isHighGround)) // Pirate: multiz
             return false;
 
         return isHighGround || HasGridGravityOnSupport(belowGridUid);
@@ -351,6 +328,7 @@ public abstract partial class CESharedZLevelsSystem
     /// <summary>
     /// Returns true when support directly below this entity belongs to a grid/map that currently has gravity.
     /// High-ground support is not special-cased here.
+    /// Searches across multiple z-levels so items can fall through consecutive holes, matching character behaviour. // Pirate: multiz
     /// </summary>
     [PublicAPI]
     public bool HasGridGravityFromBelow(EntityUid ent, TransformComponent? xform = null)
@@ -358,7 +336,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!Resolve(ent, ref xform, false))
             return false;
 
-        if (!TryGetSupportBelow(ent, xform, out var belowGridUid, out _))
+        if (!TryFindSupportedLevelBelow(ent, xform, out _, out var belowGridUid, out _)) // Pirate: multiz
             return false;
 
         return HasGridGravityOnSupport(belowGridUid);
