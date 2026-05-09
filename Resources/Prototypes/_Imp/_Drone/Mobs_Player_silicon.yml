@@ -289,6 +289,10 @@
     damageProtection:
       flatReductions:
         Heat: 10 # capable of touching light bulbs and stoves without feeling pain!
+  - type: RemoteInteraction # Pirate - allow maintenance drones to use silicon remote door controls.
+  - type: ShowElectrocutionHUD # Pirate - parity with borg wireless access.
+  - type: StationAiVision # Pirate - remote controls use the AI vision grid.
+    range: 3
   - type: InputMover
   - type: MobMover
   - type: ContentEye
@@ -305,6 +309,8 @@
     channels:
     - Dronemind
   - type: Access
+    groups:
+    - AllAccess # Pirate - captain-equivalent station access.
     tags:
     - Engineering
     - Maintenance
