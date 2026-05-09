@@ -26,6 +26,8 @@
   suffix: Unremoveable
   components:
   - type: Unremoveable
+  - type: TrayScanner # Pirate - start enabled because drones carry it in a pocket.
+    enabled: true
 
 - type: entity
   parent: Omnitool
