@@ -321,6 +321,11 @@ public sealed partial class AtmosphereSystem
         if (tile.Air is { TotalMoles: > Atmospherics.GasMinMoles })
             return;
 
+        #region Pirate: multiz
+        if (tile.Air?.Immutable == true)
+            tile.Air = null; // GridFixTileVacuum asserts non-immutable; space air must be replaced
+        #endregion
+
         tile.Air ??= new GasMixture(volume) { Temperature = Atmospherics.T20C };
         tile.Air.Clear();
         tile.Air.Temperature = Atmospherics.T20C;

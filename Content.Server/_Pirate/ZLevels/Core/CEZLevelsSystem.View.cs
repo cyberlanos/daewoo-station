@@ -100,7 +100,9 @@ public sealed partial class CEZLevelsSystem
 
     private void OnViewerMapUidChanged(Entity<CEZLevelViewerComponent> ent, ref MapUidChangedEvent args)
     {
-        UpdateLookUpAction(ent);
+        // UpdateLookUpAction is intentionally omitted here: AddAction creates a child entity, which
+        // violates ChangeMapIdRecursive's assert that ChildCount stays constant during MapUidChangedEvent.
+        // The 0.1s UpdateView poll handles the action update with negligible delay.
         UpdateViewer(ent);
     }
 

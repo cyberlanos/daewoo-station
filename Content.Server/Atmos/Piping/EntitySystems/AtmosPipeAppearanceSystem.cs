@@ -80,6 +80,12 @@ public sealed partial class AtmosPipeAppearanceSystem : SharedAtmosPipeAppearanc
             if (pipeIndex >= numberOfPipeLayers)
                 continue;
 
+            #region Pirate: multiz
+            var neighbourXform = Transform(neighbour);
+            if (neighbourXform.MapID != xform.MapID) // skip cross-z-level connections, they have no cardinal direction on this grid
+                continue;
+            #endregion
+
             var otherTile = _map.TileIndicesFor(xform.GridUid.Value, grid, Transform(neighbour).Coordinates);
             var pipeLayerDirections = connectedDirections[pipeIndex];
 
