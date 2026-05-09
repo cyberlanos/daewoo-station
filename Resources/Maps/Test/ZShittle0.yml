@@ -4,7 +4,7 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 05/05/2026 18:28:49
+  time: 05/09/2026 07:47:27
   entityCount: 280
 maps:
 - 3
@@ -1155,8 +1155,6 @@ entities:
     - type: Transform
       pos: 10.5,-1.5
       parent: 2
-    - type: GasVolumePump
-      enabled: True
 - proto: GeneratorRTG
   entities:
   - uid: 186

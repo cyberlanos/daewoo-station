@@ -15,3 +15,4 @@
       - type: CEStationZLevels
         mapsAbove:
         - /Maps/Test/ZShittle1.yml
+        - /Maps/Test/ZShittle2.yml
