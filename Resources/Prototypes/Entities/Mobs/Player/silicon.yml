@@ -490,7 +490,6 @@
   - type: MovementSpeedModifier # Goobstation
     baseSprintSpeed: 14
     baseWalkSpeed: 28
-  - type: AiEye # Pirate: audio muffle
   - type: NoFTL
   - type: WarpPoint
     follow: true

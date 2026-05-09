@@ -228,7 +228,6 @@
     damagePenalty: 0.1
   - type: ExaminableDamage
     messages: WindowMessages
-  - type: SoundBlocker # Pirate: audio muffle
   # </Goobstation>
 
 - type: entity

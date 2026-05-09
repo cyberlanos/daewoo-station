@@ -84,7 +84,6 @@
         acts: ["Destruction"]
   - type: Occluder
   - type: BlockWeather
-  - type: SoundBlocker # Pirate: audio muffle
   - type: InteractionVerbs # EE: Interaction Verbs
     allowedVerbs:
     - KnockOn

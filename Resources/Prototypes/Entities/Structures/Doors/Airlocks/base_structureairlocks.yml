@@ -288,7 +288,6 @@
   - type: Penetratable # Goobstation - Better snipers
     penetrateDamage: 75
     damagePenalty: 0.2
-  - type: SoundBlocker # Pirate: audio muffle
   - type: InteractionVerbs
     allowedVerbs:
     - KnockOn
