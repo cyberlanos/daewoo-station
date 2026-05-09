@@ -61,16 +61,7 @@ public sealed class AudioUIController : UIController
     {
         if (!string.IsNullOrEmpty(value))
         {
-            #region Pirate: multiz
             var resource = GetSoundOrFallback(value, CCVars.UIClickSound.DefaultValue);
-            if (resource == null)
-            {
-                _clickSource = null;
-                UIManager.SetClickSound(null);
-                return;
-            }
-            #endregion
-
             var source =
                 _audioManager.CreateAudioSource(resource);
 
@@ -93,16 +84,7 @@ public sealed class AudioUIController : UIController
     {
         if (!string.IsNullOrEmpty(value))
         {
-            #region Pirate: multiz
             var hoverResource = GetSoundOrFallback(value, CCVars.UIHoverSound.DefaultValue);
-            if (hoverResource == null)
-            {
-                _hoverSource = null;
-                UIManager.SetHoverSound(null);
-                return;
-            }
-            #endregion
-
             var hoverSource =
                 _audioManager.CreateAudioSource(hoverResource);
 
@@ -121,21 +103,11 @@ public sealed class AudioUIController : UIController
         }
     }
 
-    #region Pirate: multiz
-    private AudioResource? GetSoundOrFallback(string path, string fallback)
+    private AudioResource GetSoundOrFallback(string path, string fallback)
     {
-        try
-        {
-            if (!_cache.TryGetResource(path, out AudioResource? resource))
-                return _cache.GetResource<AudioResource>(fallback);
+        if (!_cache.TryGetResource(path, out AudioResource? resource))
+            return _cache.GetResource<AudioResource>(fallback);
 
-            return resource;
-        }
-        catch (Exception e)
-        {
-            Logger.ErrorS("audio.ui", $"Failed to load UI sound '{path}' or fallback '{fallback}': {e}");
-            return null;
-        }
+        return resource;
     }
-    #endregion
 }
