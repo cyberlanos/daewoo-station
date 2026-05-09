@@ -66,7 +66,6 @@ using System.Globalization; // Pirate: radio sounds
 using Content.Client.Administration.Managers;
 using Content.Client.Audio;
 using Content.Goobstation.Common.CCVar;
-using Content.Shared._Pirate.CCVars; // Pirate: area echo
 using Content.Shared.CCVar;
 using Content.Goobstation.Common.CCVar; // Goob Station - Barks
 using Robust.Client.Audio;
@@ -158,10 +157,6 @@ public sealed partial class AudioTab : Control
             _cfg.GetCVar(CCVars.MaxMaxAmbientSourcesConfigured));
 
         Control.AddOptionCheckBox(GoobCVars.VoiceChatHearSelf, HearSelfCheckBox);
-        #region Pirate: area echo
-        Control.AddOptionCheckBox(PirateVars.AreaEchoEnabled, AreaEchoCheckBox);
-        Control.AddOptionCheckBox(PirateVars.AreaEchoHighResolution, AreaEchoHighResolutionCheckBox);
-        #endregion
         Control.AddOptionCheckBox(CCVars.LobbyMusicEnabled, LobbyMusicCheckBox);
         Control.AddOptionCheckBox(CCVars.RestartSoundsEnabled, RestartSoundsCheckBox);
         Control.AddOptionCheckBox(CCVars.EventMusicEnabled, EventMusicCheckBox);
