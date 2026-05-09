@@ -157,7 +157,7 @@ ghost-role-information-skeleton-biker-name = Скелет-байкер
 ghost-role-information-skeleton-biker-description = Покатайтеся на своєму крутому мотоциклі.
 
 ghost-role-information-closet-skeleton-name = Шафовий Скелет
-ghost-role-information-closet-skeleton-description = Сійте хаос! Ви — споконвічна сила без вірності. Живіть щасливо з екіпажем або ведіть солодку війну скелетів
+ghost-role-information-closet-skeleton-description = Ви — один із найстаріших членів екіпажу станції. Поверніться до екіпажу, допомагайте станції та не створюйте проблем людям, поруч із якими тепер працюєте.
 
 ghost-role-information-onestar-mecha-rules = Використовуйте свою зброю, щоб викликати хаос. Ти - антагоніст.
 
