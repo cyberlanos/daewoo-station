@@ -39,7 +39,7 @@
   - PsionicEventsScheduler # Pirate
   
 - type: gamePreset
-  id: Relaxed
+  id: PirateRelaxed
   alias:
   - relaxed
   - relax
@@ -48,8 +48,29 @@
   showInVote: true
   description: "Спокійний режим з некритичними подіями."
   rules:
-  - BasicStationEventSchedulerNoAntag
-  - ParadoxCloneSpawn
-  - Devil
+  - PirateRelaxedEventScheduler
   - BasicRoundstartVariation
   - PsionicEventsScheduler
+
+- type: entityTable
+  id: PirateRelaxedEventsTable
+  table: !type:AllSelector
+    children:
+      - !type:NestedSelector
+        tableId: BasicCalmEventsTable
+      - !type:NestedSelector
+        tableId: CargoGiftsTable
+      - !type:NestedSelector
+        tableId: CalmPestEventsTable
+      - !type:NestedSelector
+        tableId: SpicyPestEventsTable
+      - id: ParadoxCloneSpawn
+      - id: Devil
+
+- type: entity
+  id: PirateRelaxedEventScheduler
+  parent: BaseGameRule
+  components:
+  - type: BasicStationEventScheduler
+    scheduledGameRules: !type:NestedSelector
+      tableId: PirateRelaxedEventsTable
