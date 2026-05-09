@@ -23,7 +23,7 @@ namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 public abstract partial class CESharedZLevelsSystem
 {
-    public const int MaxZLevelsBelowRendering = 3;
+    public const int MaxZLevelsBelowRendering = 6;
 
     private const float ZGravityForce = 9.8f;
     private const float ZVelocityLimit = 20.0f;

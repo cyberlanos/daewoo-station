@@ -9,10 +9,12 @@ using Content.Client._Pirate.ZLevels.Core;
 using Content.Shared._Pirate.ZLevels.Apertures.Components;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
+using Content.Shared.CCVar;
 using Content.Shared.Maps;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
+using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Graphics;
 using Robust.Shared.Map;
@@ -27,6 +29,7 @@ public sealed partial class ScalingViewport
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly ITileDefinitionManager _tile = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!; // Pirate: multiz
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     private CEClientZLevelsSystem? _zLevels;
     private SharedMapSystem? _mapSystem;
@@ -220,13 +223,17 @@ public sealed partial class ScalingViewport
         if (playerXform.MapUid is null)
             return;
 
+        var visibleBelow = Math.Clamp(
+            _cfg.GetCVar(CCVars.CEZLevelsVisibleBelow),
+            0,
+            CESharedZLevelsSystem.MaxZLevelsBelowRendering);
         var lookUp = zLevelViewer.LookUp ? 1 : 0;
         _zApertureValidTargets.Clear();
         _zApertureMapUids.Clear();
         _zApertureEyes.Clear();
 
         var lowestDepth = 0;
-        for (var i = 0; i >= -CESharedZLevelsSystem.MaxZLevelsBelowRendering; i--)
+        for (var i = 0; i >= -visibleBelow; i--)
         {
             if (i != 0)
             {
