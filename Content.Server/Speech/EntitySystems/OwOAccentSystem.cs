@@ -45,11 +45,9 @@ namespace Content.Server.Speech.EntitySystems
 
             return message.Replace("!", _random.Pick(Faces))
                 .Replace("r", "w").Replace("R", "W")
-                // Pirate edit start
                 .Replace("l", "w").Replace("L", "W")
-                .Replace("р", "в").Replace("Р", "В")
-                .Replace("л", "в").Replace("Л", "В");
-                // Pirate edit end
+                .Replace("р", "в").Replace("Р", "В") // Pirate edit
+                .Replace("л", "в").Replace("Л", "В"); // Pirate edit
         }
 
         private void OnAccent(EntityUid uid, OwOAccentComponent component, AccentGetEvent args)
