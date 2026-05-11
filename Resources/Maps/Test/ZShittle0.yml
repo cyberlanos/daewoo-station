@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 05/09/2026 07:47:27
-  entityCount: 280
+  time: 05/11/2026 12:34:49
+  entityCount: 284
 maps:
 - 3
 grids:
@@ -859,6 +859,30 @@ entities:
     - type: Transform
       pos: 3.7482395,-2.7115774
       parent: 2
+- proto: ComputerAtmosMonitoring
+  entities:
+  - uid: 199
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -1.5,-2.5
+      parent: 2
+- proto: ComputerCrewMonitoring
+  entities:
+  - uid: 201
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -0.5,-2.5
+      parent: 2
+- proto: ComputerPowerMonitoring
+  entities:
+  - uid: 186
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: -4.5,-1.5
+      parent: 2
 - proto: ComputerResearchAndDevelopment
   entities:
   - uid: 208
@@ -872,6 +896,14 @@ entities:
       - Arsenal
       - Experimental
       - CivilianServices
+- proto: ComputerSurveillanceCameraMonitor
+  entities:
+  - uid: 187
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: -4.5,-0.5
+      parent: 2
 - proto: CrewMonitoringServer
   entities:
   - uid: 204
@@ -1157,16 +1189,6 @@ entities:
       parent: 2
 - proto: GeneratorRTG
   entities:
-  - uid: 186
-    components:
-    - type: Transform
-      pos: -4.5,-1.5
-      parent: 2
-  - uid: 187
-    components:
-    - type: Transform
-      pos: -4.5,-0.5
-      parent: 2
   - uid: 188
     components:
     - type: Transform
@@ -1176,6 +1198,16 @@ entities:
     components:
     - type: Transform
       pos: -2.5,0.5
+      parent: 2
+  - uid: 283
+    components:
+    - type: Transform
+      pos: -4.5,-2.5
+      parent: 2
+  - uid: 284
+    components:
+    - type: Transform
+      pos: -3.5,-2.5
       parent: 2
 - proto: Grille
   entities:
@@ -1441,6 +1473,20 @@ entities:
       parent: 2
     - type: Physics
       bodyType: Static
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 281
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -0.5,0.5
+      parent: 2
+  - uid: 282
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: 8.5,-0.5
+      parent: 2
 - proto: TableWood
   entities:
   - uid: 194
@@ -1460,20 +1506,6 @@ entities:
     - type: Transform
       rot: 3.141592653589793 rad
       pos: 6.5,-0.5
-      parent: 2
-- proto: TelecomServerFilled
-  entities:
-  - uid: 201
-    components:
-    - type: Transform
-      pos: -0.5,-2.5
-      parent: 2
-- proto: TelecomTransmitter
-  entities:
-  - uid: 199
-    components:
-    - type: Transform
-      pos: -1.5,-2.5
       parent: 2
 - proto: Thruster
   entities:

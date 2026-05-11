@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 05/09/2026 07:47:27
-  entityCount: 196
+  time: 05/11/2026 12:34:49
+  entityCount: 197
 maps:
 - 3
 grids:
@@ -1151,6 +1151,14 @@ entities:
     components:
     - type: Transform
       pos: -4.5,0.5
+      parent: 2
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 197
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -0.5,0.5
       parent: 2
 - proto: Thruster
   entities:
