@@ -19,6 +19,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Linq;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
+using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
 using Content.Goobstation.Shared.CrewMonitoring;
 using Content.Server.DeviceNetwork;
 using Content.Server.DeviceNetwork.Systems;
@@ -43,6 +45,7 @@ public sealed class CrewMonitoringConsoleSystem : EntitySystem
         SubscribeLocalEvent<CrewMonitoringConsoleComponent, ComponentRemove>(OnRemove);
         SubscribeLocalEvent<CrewMonitoringConsoleComponent, DeviceNetworkPacketEvent>(OnPacketReceived);
         SubscribeLocalEvent<CrewMonitoringConsoleComponent, BoundUIOpenedEvent>(OnUIOpened);
+        SubscribeLocalEvent<CrewMonitoringConsoleComponent, CEZMonitoringConsoleLevelSelectedMessage>(OnZLevelSelected); // Pirate: multiz
     }
 
     private void OnRemove(EntityUid uid, CrewMonitoringConsoleComponent component, ComponentRemove args)
@@ -75,6 +78,31 @@ public sealed class CrewMonitoringConsoleSystem : EntitySystem
 
         UpdateUserInterface(uid, component);
     }
+
+    #region Pirate: multiz
+    private void OnZLevelSelected(EntityUid uid, CrewMonitoringConsoleComponent component, CEZMonitoringConsoleLevelSelectedMessage args)
+    {
+        var targetGrid = GetEntity(args.Grid);
+        if (targetGrid == null)
+            return;
+
+        var xform = Transform(uid);
+        if (xform.GridUid == null || !IsValidZMonitoringGrid(xform.GridUid.Value, targetGrid.Value))
+            return;
+
+        EnsureComp<NavMapComponent>(targetGrid.Value);
+    }
+
+    private bool IsValidZMonitoringGrid(EntityUid sourceGrid, EntityUid targetGrid)
+    {
+        if (sourceGrid == targetGrid)
+            return true;
+
+        return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
+               TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork == targetLinked.ZNetwork;
+    }
+    #endregion
 
     private void UpdateUserInterface(EntityUid uid, CrewMonitoringConsoleComponent? component = null)
     {

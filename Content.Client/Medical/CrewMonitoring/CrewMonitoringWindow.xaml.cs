@@ -123,6 +123,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
     private NetEntity? _trackedEntity;
     private bool _tryToScrollToListFocus;
     private Texture? _blipTexture;
+    public event Action<NetEntity?, int>? SendZLevelSelectedMessageAction; // Pirate: multiz
 
     public CrewMonitoringWindow()
     {
@@ -140,7 +141,13 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         _blipTexture = _spriteSystem.Frame0(new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/NavMap/beveled_circle.png")));
 
         if (_entManager.TryGetComponent<TransformComponent>(mapUid, out var xform))
+        { // Pirate: multiz
             NavMap.MapUid = xform.GridUid;
+            NavMap.CEZLevelSelectorEnabled = true; // Pirate: multiz
+            NavMap.CEZFilterTrackedBlipsToDisplayedMap = true; // Pirate: multiz
+            NavMap.CESetZLevelSelectorRoot(xform.GridUid); // Pirate: multiz
+            NavMap.CEZLevelSelectedAction += OnZLevelSelected; // Pirate: multiz
+        } // Pirate: multiz
 
         else
             NavMap.Visible = false;
@@ -149,6 +156,13 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         StationName.Text = stationName;
         NavMap.ForceNavMapUpdate();
     }
+
+    #region Pirate: multiz
+    private void OnZLevelSelected(EntityUid gridUid, int depth) 
+    {
+        SendZLevelSelectedMessageAction?.Invoke(_entManager.GetNetEntity(gridUid), depth); 
+    } 
+    #endregion
 
     protected override void FrameUpdate(FrameEventArgs args)
     {

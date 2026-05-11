@@ -35,6 +35,8 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 using System.Linq;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
+using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
 using Content.Shared.NodeContainer;
 
 namespace Content.Server.Power.EntitySystems;
@@ -47,6 +49,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
     // Note: this data does not need to be saved
     private Dictionary<EntityUid, Dictionary<Vector2i, PowerCableChunk>> _gridPowerCableChunks = new();
+    private readonly Dictionary<EntityUid, EntityUid> _selectedMonitorGrids = new(); // Pirate: multiz
     private float _updateTimer = 1.0f;
 
     private const float UpdateTime = 1.0f;
@@ -59,11 +62,13 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         // Console events
         SubscribeLocalEvent<PowerMonitoringConsoleComponent, ComponentInit>(OnConsoleInit);
         SubscribeLocalEvent<PowerMonitoringConsoleComponent, EntParentChangedMessage>(OnConsoleParentChanged);
+        SubscribeLocalEvent<PowerMonitoringConsoleComponent, ComponentShutdown>(OnConsoleShutdown); // Pirate: multiz
         SubscribeLocalEvent<PowerMonitoringCableNetworksComponent, ComponentInit>(OnCableNetworksInit);
         SubscribeLocalEvent<PowerMonitoringCableNetworksComponent, EntParentChangedMessage>(OnCableNetworksParentChanged);
 
         // UI events
         SubscribeLocalEvent<PowerMonitoringConsoleComponent, PowerMonitoringConsoleMessage>(OnPowerMonitoringConsoleMessage);
+        SubscribeLocalEvent<PowerMonitoringConsoleComponent, CEZMonitoringConsoleLevelSelectedMessage>(OnZLevelSelected); // Pirate: multiz
         SubscribeLocalEvent<PowerMonitoringConsoleComponent, BoundUIOpenedEvent>(OnBoundUIOpened);
 
         // Grid events
@@ -89,6 +94,58 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         RefreshPowerMonitoringConsole(uid, component);
     }
 
+    #region Pirate: multiz
+    private void OnConsoleShutdown(EntityUid uid, PowerMonitoringConsoleComponent component, ComponentShutdown args)
+    {
+        _selectedMonitorGrids.Remove(uid);
+    }
+
+    private void OnZLevelSelected(EntityUid uid, PowerMonitoringConsoleComponent component, CEZMonitoringConsoleLevelSelectedMessage args)
+    {
+        var targetGrid = GetEntity(args.Grid);
+        if (targetGrid == null)
+            return;
+
+        var xform = Transform(uid);
+        if (xform.GridUid == null || !IsValidZMonitoringGrid(xform.GridUid.Value, targetGrid.Value))
+            return;
+
+        _selectedMonitorGrids[uid] = targetGrid.Value;
+        component.Focus = null;
+        EnsureComp<NavMapComponent>(targetGrid.Value);
+        RefreshPowerMonitoringConsoleForGrid(uid, component, targetGrid.Value, false);
+
+        if (TryComp<PowerMonitoringCableNetworksComponent>(uid, out var cableNetworks))
+            RefreshPowerMonitoringCableNetworksForGrid(uid, cableNetworks, targetGrid.Value);
+
+        UpdateUIState(uid, component);
+    }
+    private EntityUid GetSelectedMonitoringGrid(EntityUid consoleUid, TransformComponent xform)
+    {
+        if (xform.GridUid == null)
+            return EntityUid.Invalid;
+
+        if (_selectedMonitorGrids.TryGetValue(consoleUid, out var selectedGrid) &&
+            IsValidZMonitoringGrid(xform.GridUid.Value, selectedGrid))
+        {
+            return selectedGrid;
+        }
+
+        _selectedMonitorGrids.Remove(consoleUid);
+        return xform.GridUid.Value;
+    }
+
+    private bool IsValidZMonitoringGrid(EntityUid sourceGrid, EntityUid targetGrid)
+    {
+        if (sourceGrid == targetGrid)
+            return true;
+
+        return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
+               TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork == targetLinked.ZNetwork;
+    }
+    #endregion
+
     private void OnCableNetworksInit(EntityUid uid, PowerMonitoringCableNetworksComponent component, ComponentInit args)
     {
         RefreshPowerMonitoringCableNetworks(uid, component);
@@ -103,6 +160,21 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     {
         var focus = GetEntity(args.FocusDevice);
         var group = args.FocusGroup;
+
+        #region Pirate: multiz
+        if (focus != null)
+        {
+            var consoleXform = Transform(uid);
+            var selectedGrid = GetSelectedMonitoringGrid(uid, consoleXform);
+
+            if (selectedGrid == EntityUid.Invalid ||
+                !TryComp(focus.Value, out TransformComponent? focusXform) ||
+                focusXform.GridUid != selectedGrid)
+            {
+                focus = null;
+            }
+        }
+        #endregion
 
         // Update this if the focus device has changed
         if (component.Focus != focus)
@@ -320,13 +392,16 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (consoleXform?.GridUid == null)
             return;
 
-        var gridUid = consoleXform.GridUid.Value;
+        var gridUid = GetSelectedMonitoringGrid(uid, consoleXform); // Pirate: multiz
 
         if (!TryComp<MapGridComponent>(gridUid, out var mapGrid))
             return;
 
         // The grid must have a NavMapComponent to visualize the map in the UI
         EnsureComp<NavMapComponent>(gridUid);
+        RefreshPowerMonitoringConsoleForGrid(uid, component, gridUid, false); // Pirate: multiz
+        if (TryComp<PowerMonitoringCableNetworksComponent>(uid, out var cableNetworksForSelectedGrid)) // Pirate: multiz
+            RefreshPowerMonitoringCableNetworksForGrid(uid, cableNetworksForSelectedGrid, gridUid); // Pirate: multiz
 
         // Initializing data to be send to the client
         var totalSources = 0d;
@@ -941,6 +1016,11 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         foreach (var ent in nodeList)
         {
             var xform = Transform(ent);
+            #region Pirate: multiz
+            if (xform.GridUid != gridUid)
+                continue;
+            #endregion
+
             var tile = _sharedMapSystem.GetTileRef(gridUid, grid, xform.Coordinates);
             var gridIndices = tile.GridIndices;
             var chunkOrigin = SharedMapSystem.GetChunkIndices(gridIndices, ChunkSize);
@@ -965,17 +1045,23 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     {
         component.Focus = null;
         component.FocusGroup = PowerMonitoringConsoleGroup.Generator;
-        component.PowerMonitoringDeviceMetaData.Clear();
-        component.Flags = 0;
 
         var xform = Transform(uid);
 
         if (xform.GridUid == null)
             return;
 
-        var grid = xform.GridUid.Value;
+        var grid = GetSelectedMonitoringGrid(uid, xform); // Pirate: multiz
+        RefreshPowerMonitoringConsoleForGrid(uid, component, grid, true); // Pirate: multiz
+    }
 
+    private void RefreshPowerMonitoringConsoleForGrid(EntityUid uid, PowerMonitoringConsoleComponent component, EntityUid grid, bool resetFlags) // Pirate: multiz
+    {
         var query = AllEntityQuery<PowerMonitoringDeviceComponent, TransformComponent>();
+        component.PowerMonitoringDeviceMetaData.Clear(); // Pirate: multiz
+        if (resetFlags) // Pirate: multiz
+            component.Flags = 0; // Pirate: multiz
+
         while (query.MoveNext(out var ent, out var entDevice, out var entXform))
         {
             if (grid != entXform.GridUid)
@@ -1005,7 +1091,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         }
 
         Dirty(uid, component);
-    }
+    } // Pirate: multiz
 
     private void RefreshPowerMonitoringCableNetworks(EntityUid uid, PowerMonitoringCableNetworksComponent component)
     {
@@ -1014,8 +1100,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (xform.GridUid == null)
             return;
 
-        var grid = xform.GridUid.Value;
+        var grid = GetSelectedMonitoringGrid(uid, xform); // Pirate: multiz
+        RefreshPowerMonitoringCableNetworksForGrid(uid, component, grid); // Pirate: multiz
+    }
 
+    private void RefreshPowerMonitoringCableNetworksForGrid(EntityUid uid, PowerMonitoringCableNetworksComponent component, EntityUid grid) // Pirate: multiz
+    {
         if (!TryComp<MapGridComponent>(grid, out var map))
             return;
 
@@ -1026,7 +1116,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         component.FocusChunks.Clear();
 
         Dirty(uid, component);
-    }
+    } // Pirate: multiz
 
     private struct PowerStats
     {

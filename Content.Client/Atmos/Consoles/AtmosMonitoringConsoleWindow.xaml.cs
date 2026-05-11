@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Client.Pinpointer.UI;
+using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
 using Content.Client.UserInterface.Controls;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Prototypes;
@@ -32,6 +33,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
     private readonly IEntityManager _entManager;
     private readonly IPrototypeManager _protoManager;
     private readonly SpriteSystem _spriteSystem;
+    private readonly AtmosMonitoringConsoleBoundUserInterface _userInterface; // Pirate: multiz
 
     private EntityUid? _owner;
     private NetEntity? _focusEntity;
@@ -48,6 +50,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
     public AtmosMonitoringConsoleWindow(AtmosMonitoringConsoleBoundUserInterface userInterface, EntityUid? owner)
     {
         RobustXamlLoader.Load(this);
+        _userInterface = userInterface; // Pirate: multiz
         _entManager = IoCManager.Resolve<IEntityManager>();
         _protoManager = IoCManager.Resolve<IPrototypeManager>();
         _spriteSystem = _entManager.System<SpriteSystem>();
@@ -64,6 +67,12 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         {
             consoleCoords = xform.Coordinates;
             NavMap.MapUid = xform.GridUid;
+            #region Pirate: multiz
+            NavMap.CEZLevelSelectorEnabled = true;
+            NavMap.CEZFilterTrackedBlipsToDisplayedMap = true;
+            NavMap.CESetZLevelSelectorRoot(xform.GridUid);
+            NavMap.CEZLevelSelectedAction += OnZLevelSelected;
+            #endregion
 
             // Assign station name
             if (_entManager.TryGetComponent<MetaDataComponent>(xform.GridUid, out var stationMetaData))
@@ -104,6 +113,13 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         // Initalize
         UpdateUI(consoleCoords, Array.Empty<AtmosMonitoringConsoleEntry>());
     }
+
+    #region Pirate: multiz
+    private void OnZLevelSelected(EntityUid gridUid, int depth)
+    {
+        _userInterface.SendMessage(new CEZMonitoringConsoleLevelSelectedMessage(_entManager.GetNetEntity(gridUid), depth));
+    }
+    #endregion
 
     #region Toggle handling
 
@@ -241,7 +257,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         if (proto.TexturePaths == null || proto.TexturePaths.Length == 0)
             return;
 
-        var idx = Math.Clamp((int)metaData.Direction / 2, 0, proto.TexturePaths.Length - 1);
+        var idx = Math.Clamp((int) metaData.Direction / 2, 0, proto.TexturePaths.Length - 1);
         var texture = proto.TexturePaths.Length > 0 ? proto.TexturePaths[idx] : proto.TexturePaths[0];
         var color = isSensor ? proto.Color : proto.Color * metaData.PipeColor;
 
@@ -252,7 +268,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         var coords = _entManager.GetCoordinates(metaData.NetCoordinates);
 
         if (proto.Placement == NavMapBlipPlacement.Offset && metaData.PipeLayer > 0)
-            coords = coords.Offset(_pipeLayerOffsets[(int)metaData.PipeLayer]);
+            coords = coords.Offset(_pipeLayerOffsets[(int) metaData.PipeLayer]);
 
         var blip = new NavMapBlip(coords, _spriteSystem.Frame0(new SpriteSpecifier.Texture(texture)), color, blinks, proto.Selectable, proto.Scale);
         NavMap.TrackedEntities[metaData.NetEntity] = blip;
@@ -300,7 +316,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             return;
         }
 
-        var entryContainer = (AtmosMonitoringEntryContainer)tableChild;
+        var entryContainer = (AtmosMonitoringEntryContainer) tableChild;
         entryContainer.UpdateEntry(data, data.NetEntity == _focusEntity);
     }
 
@@ -311,7 +327,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             if (tableChild is not AtmosAlarmEntryContainer)
                 continue;
 
-            var entryContainer = (AtmosAlarmEntryContainer)tableChild;
+            var entryContainer = (AtmosAlarmEntryContainer) tableChild;
 
             if (entryContainer.NetEntity != currTrackedEntity)
                 entryContainer.RemoveAsFocus();
@@ -398,7 +414,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             if (control is not AtmosMonitoringEntryContainer)
                 continue;
 
-            var entry = (AtmosMonitoringEntryContainer)control;
+            var entry = (AtmosMonitoringEntryContainer) control;
 
             if (entry.Data.NetEntity == _focusEntity)
                 return true;
@@ -440,7 +456,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
 
         for (int index = 0; index < AtmosNetworksTable.ChildCount; index++)
         {
-            var entry = (AtmosMonitoringEntryContainer)AtmosNetworksTable.GetChild(index);
+            var entry = (AtmosMonitoringEntryContainer) AtmosNetworksTable.GetChild(index);
 
             if (entry == null)
                 continue;
