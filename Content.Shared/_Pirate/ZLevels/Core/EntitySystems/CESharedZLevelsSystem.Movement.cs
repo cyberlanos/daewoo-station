@@ -1071,13 +1071,19 @@ public abstract partial class CESharedZLevelsSystem
                                            zPhys.LocalPosition <= 0.001f &&
                                            zPhys.Velocity <= 0f &&
                                            IsLandingBlocked(uid, xform);
-            var restingOnGround = restingOnCurrentGround || restingOnGraceBlockedDescent || restingOnBlockedDescent;
+
+            // Weightless entity sitting at the current z-plane with non-positive velocity.
+            var restingWeightlessAtPlane = !HasComp<CEZGravityInfluencedComponent>(uid) &&
+                                           zPhys.LocalPosition >= -GroundContactTolerance &&
+                                           zPhys.LocalPosition <= 0.001f &&
+                                           zPhys.Velocity <= 0f;
+            var restingOnGround = restingOnCurrentGround || restingOnGraceBlockedDescent || restingOnBlockedDescent || restingWeightlessAtPlane;
             if (restingOnCurrentGround)
             {
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
                 zPhys.Velocity = 0f;
             }
-            else if (restingOnGraceBlockedDescent || restingOnBlockedDescent)
+            else if (restingOnGraceBlockedDescent || restingOnBlockedDescent || restingWeightlessAtPlane)
             {
                 zPhys.LocalPosition = 0f;
                 zPhys.Velocity = 0f;
