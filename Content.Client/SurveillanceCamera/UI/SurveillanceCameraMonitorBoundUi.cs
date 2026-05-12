@@ -95,7 +95,7 @@ public sealed class SurveillanceCameraMonitorBoundUserInterface : BoundUserInter
 
         if (active == null)
         {
-            _window.UpdateState(null, cast.ActiveAddress, cast.Cameras, cast.MobileCameras, monitor, monitorCoords); // Goobstation
+            _window.UpdateState(null, null, cast.ActiveAddress, cast.Cameras, cast.MobileCameras, monitor, monitorCoords); // Pirate: multiz
 
             if (_currentCamera != null)
             {
@@ -120,7 +120,7 @@ public sealed class SurveillanceCameraMonitorBoundUserInterface : BoundUserInter
 
             if (EntMan.TryGetComponent<EyeComponent>(active, out var eye))
             {
-                _window.UpdateState(eye.Eye, cast.ActiveAddress, cast.Cameras, cast.MobileCameras, monitor, monitorCoords); // Goobstation
+                _window.UpdateState(eye.Eye, active, cast.ActiveAddress, cast.Cameras, cast.MobileCameras, monitor, monitorCoords); // Pirate: multiz
             }
         }
     }

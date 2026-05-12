@@ -35,8 +35,10 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 using System.Linq;
+using Content.Server._Pirate.ZLevels.Power; // Pirate: multiz
 using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
+using Content.Server.NodeContainer.NodeGroups; // Pirate: multiz
 using Content.Shared.NodeContainer;
 
 namespace Content.Server.Power.EntitySystems;
@@ -144,6 +146,66 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
+
+    private HashSet<EntityUid> GetHubLinkedMonitoringGrids(EntityUid gridUid)
+    {
+        var grids = new HashSet<EntityUid> { gridUid };
+        var hubQuery = AllEntityQuery<CEMultizCableHubSupportComponent, NodeContainerComponent, TransformComponent>();
+
+        while (hubQuery.MoveNext(out _, out _, out var container, out var xform))
+        {
+            if (xform.GridUid != gridUid)
+                continue;
+
+            foreach (var node in container.Nodes.Values)
+            {
+                if (node is not CEMultizCableHubNode ||
+                    node.NodeGroup is not IBasePowerNet ||
+                    node.NodeGroup is not BaseNodeGroup powerNet)
+                    continue;
+
+                foreach (var networkNode in powerNet.Nodes)
+                {
+                    var nodeXform = Transform(networkNode.Owner);
+                    if (nodeXform.GridUid != null)
+                        grids.Add(nodeXform.GridUid.Value);
+                }
+            }
+        }
+
+        return grids;
+    }
+
+    private bool IsEntityOnMonitoringGrid(EntityUid uid, HashSet<EntityUid> monitoringGrids)
+    {
+        return TryComp(uid, out TransformComponent? xform) &&
+               xform.GridUid is { } gridUid &&
+               monitoringGrids.Contains(gridUid);
+    }
+
+    private static bool TryGetEntryEntity(
+        EntityUid uid,
+        PowerMonitoringDeviceComponent device,
+        IEntityManager entityManager,
+        out EntityUid entryUid,
+        out PowerMonitoringDeviceComponent entryDevice)
+    {
+        entryUid = uid;
+        entryDevice = device;
+
+        if (!device.IsCollectionMasterOrChild || device.IsCollectionMaster)
+            return true;
+
+        if (!device.CollectionMaster.IsValid() ||
+            !entityManager.TryGetComponent(device.CollectionMaster, out PowerMonitoringDeviceComponent? masterDevice))
+        {
+            return true;
+        }
+
+        entryUid = device.CollectionMaster;
+        entryDevice = masterDevice;
+        return true;
+    }
     #endregion
 
     private void OnCableNetworksInit(EntityUid uid, PowerMonitoringCableNetworksComponent component, ComponentInit args)
@@ -166,10 +228,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         {
             var consoleXform = Transform(uid);
             var selectedGrid = GetSelectedMonitoringGrid(uid, consoleXform);
+            var monitoringGrids = GetHubLinkedMonitoringGrids(selectedGrid);
 
             if (selectedGrid == EntityUid.Invalid ||
                 !TryComp(focus.Value, out TransformComponent? focusXform) ||
-                focusXform.GridUid != selectedGrid)
+                focusXform.GridUid is not { } focusGrid ||
+                !monitoringGrids.Contains(focusGrid))
             {
                 focus = null;
             }
@@ -289,14 +353,19 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (gridUid == null)
             return;
 
+
         if (component.IsCollectionMasterOrChild)
             AssignEntityAsCollectionMaster(uid, component, xform);
 
         var query = AllEntityQuery<PowerMonitoringConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var ent, out var entConsole, out var entXform))
         {
-            if (gridUid != entXform.GridUid)
+            #region Pirate: multiz
+            var monitoringGrids = GetHubLinkedMonitoringGrids(gridUid.Value);
+            if (entXform.GridUid is not { } consoleGrid ||
+                !monitoringGrids.Contains(consoleGrid))
                 continue;
+            #endregion
 
             if (!args.Anchored)
             {
@@ -392,16 +461,20 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (consoleXform?.GridUid == null)
             return;
 
-        var gridUid = GetSelectedMonitoringGrid(uid, consoleXform); // Pirate: multiz
 
         if (!TryComp<MapGridComponent>(gridUid, out var mapGrid))
             return;
 
         // The grid must have a NavMapComponent to visualize the map in the UI
         EnsureComp<NavMapComponent>(gridUid);
+
+        #region Pirate: multiz
+        var gridUid = GetSelectedMonitoringGrid(uid, consoleXform); // Pirate: multiz
+        var monitoringGrids = GetHubLinkedMonitoringGrids(gridUid); // Pirate: multiz
         RefreshPowerMonitoringConsoleForGrid(uid, component, gridUid, false); // Pirate: multiz
         if (TryComp<PowerMonitoringCableNetworksComponent>(uid, out var cableNetworksForSelectedGrid)) // Pirate: multiz
             RefreshPowerMonitoringCableNetworksForGrid(uid, cableNetworksForSelectedGrid, gridUid); // Pirate: multiz
+        #endregion
 
         // Initializing data to be send to the client
         var totalSources = 0d;
@@ -419,8 +492,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         var powerConsumerQuery = AllEntityQuery<PowerConsumerComponent, TransformComponent>();
         while (powerConsumerQuery.MoveNext(out var ent, out var powerConsumer, out var xform))
         {
-            if (xform.Anchored == false || xform.GridUid != gridUid)
+            #region Pirate: multiz
+            if (xform.Anchored == false ||
+                xform.GridUid is not { } consumerGrid ||
+                !monitoringGrids.Contains(consumerGrid))
                 continue;
+            #endregion
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var device))
                 continue;
@@ -443,8 +520,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (device.IsCollectionMasterOrChild && !device.IsCollectionMaster)
                 continue;
 
-            if (xform.Anchored == false || xform.GridUid != gridUid)
+            #region Pirate: multiz
+            if (xform.Anchored == false ||
+                xform.GridUid is not { } deviceGrid ||
+                !monitoringGrids.Contains(deviceGrid))
                 continue;
+            #endregion
 
             // Get the device power stats
             var powerStats = GetPowerStats(ent, device);
@@ -472,7 +553,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             {
                 // Record the tracked sources powering the device
                 if (nodeContainer.Nodes.TryGetValue(device.SourceNode, out var sourceNode))
-                    GetSourcesForNode(component.Focus.Value, sourceNode, out sourcesForFocus);
+                    GetSourcesForNode(component.Focus.Value, sourceNode, out sourcesForFocus, monitoringGrids); // Pirate: multiz
 
                 // Search for the enabled load node (required for portable generators)
                 var loadNodeName = device.LoadNode;
@@ -487,7 +568,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
                 // Record the tracked loads on the device
                 if (nodeContainer.Nodes.TryGetValue(loadNodeName, out var loadNode))
-                    GetLoadsForNode(component.Focus.Value, loadNode, out loadsForFocus);
+                    GetLoadsForNode(component.Focus.Value, loadNode, out loadsForFocus, monitoringGrids); // Pirate: multiz
 
                 // If the UI focus changed, update the highlighted power network
                 if (TryComp<PowerMonitoringCableNetworksComponent>(uid, out var cableNetworks) &&
@@ -610,7 +691,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         return battery.CurrentCharge / effectiveMax;
     }
 
-    private void GetSourcesForNode(EntityUid uid, Node node, out List<PowerMonitoringConsoleEntry> sources)
+    private void GetSourcesForNode(EntityUid uid, Node node, out List<PowerMonitoringConsoleEntry> sources, HashSet<EntityUid> monitoringGrids) // Pirate: multiz
     {
         sources = new List<PowerMonitoringConsoleEntry>();
 
@@ -628,23 +709,25 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (uid == ent)
                 continue;
 
+            if (!IsEntityOnMonitoringGrid(ent, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
+
             currentSupply += powerSupplier.CurrentSupply;
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
                 // Combine entities represented by an master into a single entry
-                if (entDevice.IsCollectionMasterOrChild && !entDevice.IsCollectionMaster)
-                    ent = entDevice.CollectionMaster;
+                TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice); // Pirate: multiz
 
-                if (indexedSources.TryGetValue(ent, out var entry))
+                if (indexedSources.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
                     entry.PowerValue += powerSupplier.CurrentSupply;
-                    indexedSources[ent] = entry;
+                    indexedSources[entryEnt] = entry; // Pirate: multiz
 
                     continue;
                 }
 
-                indexedSources.Add(ent, new PowerMonitoringConsoleEntry(GetNetEntity(ent), entDevice.Group, powerSupplier.CurrentSupply, GetBatteryLevel(ent)));
+                indexedSources.Add(entryEnt, new PowerMonitoringConsoleEntry(GetNetEntity(entryEnt), entryDevice.Group, powerSupplier.CurrentSupply, GetBatteryLevel(entryEnt))); // Pirate: multiz
             }
         }
 
@@ -658,23 +741,25 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (!TryComp<PowerNetworkBatteryComponent>(ent, out var entBattery))
                 continue;
 
+            if (!IsEntityOnMonitoringGrid(ent, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
+
             currentSupply += entBattery.CurrentSupply;
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
                 // Combine entities represented by an master into a single entry
-                if (entDevice.IsCollectionMasterOrChild && !entDevice.IsCollectionMaster)
-                    ent = entDevice.CollectionMaster;
+                TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice); // Pirate: multiz
 
-                if (indexedSources.TryGetValue(ent, out var entry))
+                if (indexedSources.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
                     entry.PowerValue += entBattery.CurrentSupply;
-                    indexedSources[ent] = entry;
+                    indexedSources[entryEnt] = entry; // Pirate: multiz
 
                     continue;
                 }
 
-                indexedSources.Add(ent, new PowerMonitoringConsoleEntry(GetNetEntity(ent), entDevice.Group, entBattery.CurrentSupply, GetBatteryLevel(ent)));
+                indexedSources.Add(entryEnt, new PowerMonitoringConsoleEntry(GetNetEntity(entryEnt), entryDevice.Group, entBattery.CurrentSupply, GetBatteryLevel(entryEnt))); // Pirate: multiz
             }
         }
 
@@ -683,6 +768,9 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         // Get the total demand for the network
         foreach (var powerConsumer in netQ.Consumers)
         {
+            if (!IsEntityOnMonitoringGrid(powerConsumer.Owner, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
+
             currentDemand += powerConsumer.ReceivedPower;
         }
 
@@ -692,6 +780,9 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
             if (!TryComp<PowerNetworkBatteryComponent>(ent, out var entBattery))
                 continue;
+
+            if (!IsEntityOnMonitoringGrid(ent, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
 
             currentDemand += entBattery.CurrentReceiving;
         }
@@ -725,7 +816,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         }
     }
 
-    private void GetLoadsForNode(EntityUid uid, Node node, out List<PowerMonitoringConsoleEntry> loads, List<EntityUid>? children = null)
+    private void GetLoadsForNode(EntityUid uid, Node node, out List<PowerMonitoringConsoleEntry> loads, HashSet<EntityUid> monitoringGrids, List<EntityUid>? children = null) // Pirate: multiz
     {
         loads = new List<PowerMonitoringConsoleEntry>();
 
@@ -742,23 +833,25 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (uid == ent)
                 continue;
 
+            if (!IsEntityOnMonitoringGrid(ent, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
+
             currentDemand += powerConsumer.ReceivedPower;
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
                 // Combine entities represented by an master into a single entry
-                if (entDevice.IsCollectionMasterOrChild && !entDevice.IsCollectionMaster)
-                    ent = entDevice.CollectionMaster;
+                TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice); // Pirate: multiz
 
-                if (indexedLoads.TryGetValue(ent, out var entry))
+                if (indexedLoads.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
                     entry.PowerValue += powerConsumer.ReceivedPower;
-                    indexedLoads[ent] = entry;
+                    indexedLoads[entryEnt] = entry; // Pirate: multiz
 
                     continue;
                 }
 
-                indexedLoads.Add(ent, new PowerMonitoringConsoleEntry(GetNetEntity(ent), entDevice.Group, powerConsumer.ReceivedPower, GetBatteryLevel(ent)));
+                indexedLoads.Add(entryEnt, new PowerMonitoringConsoleEntry(GetNetEntity(entryEnt), entryDevice.Group, powerConsumer.ReceivedPower, GetBatteryLevel(entryEnt))); // Pirate: multiz
             }
         }
 
@@ -772,23 +865,25 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (!TryComp<PowerNetworkBatteryComponent>(ent, out var battery))
                 continue;
 
+            if (!IsEntityOnMonitoringGrid(ent, monitoringGrids)) // Pirate: multiz
+                continue; // Pirate: multiz
+
             currentDemand += battery.CurrentReceiving;
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
                 // Combine entities represented by an master into a single entry
-                if (entDevice.IsCollectionMasterOrChild && !entDevice.IsCollectionMaster)
-                    ent = entDevice.CollectionMaster;
+                TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice); // Pirate: multiz
 
-                if (indexedLoads.TryGetValue(ent, out var entry))
+                if (indexedLoads.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
                     entry.PowerValue += battery.CurrentReceiving;
-                    indexedLoads[ent] = entry;
+                    indexedLoads[entryEnt] = entry; // Pirate: multiz
 
                     continue;
                 }
 
-                indexedLoads.Add(ent, new PowerMonitoringConsoleEntry(GetNetEntity(ent), entDevice.Group, battery.CurrentReceiving, GetBatteryLevel(ent)));
+                indexedLoads.Add(entryEnt, new PowerMonitoringConsoleEntry(GetNetEntity(entryEnt), entryDevice.Group, battery.CurrentReceiving, GetBatteryLevel(entryEnt))); // Pirate: multiz
             }
         }
 
@@ -841,6 +936,8 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     {
         if (!Resolve(uid, ref device, ref nodeContainer, ref xform, false))
             return;
+
+        var monitoringGrids = xform.GridUid != null ? GetHubLinkedMonitoringGrids(xform.GridUid.Value) : null; // Pirate: multiz
 
         // If the device is not attached to a network, exit
         var nodeName = device.SourceNode == string.Empty ? device.LoadNode : device.SourceNode;
@@ -896,8 +993,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             if (ent == uid)
                 continue;
 
-            if (entXform.GridUid != xform.GridUid)
+            #region Pirate: multiz
+            if (monitoringGrids == null ||
+                entXform.GridUid is not { } entGrid ||
+                !monitoringGrids.Contains(entGrid))
                 continue;
+            #endregion
 
             if (!DevicesHaveMatchingNodes(nodeContainer, entNodeContainer))
                 continue;
@@ -929,12 +1030,17 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     {
         var netEntity = GetNetEntity(child);
         var xform = Transform(child);
+        var monitoringGrids = xform.GridUid != null ? GetHubLinkedMonitoringGrids(xform.GridUid.Value) : null; // Pirate: multiz
 
         var query = AllEntityQuery<PowerMonitoringConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var ent, out var entConsole, out var entXform))
         {
-            if (entXform.GridUid != xform.GridUid)
+            #region Pirate: multiz
+            if (monitoringGrids == null ||
+                entXform.GridUid is not { } entGrid ||
+                !monitoringGrids.Contains(entGrid))
                 continue;
+            #endregion
 
             if (!entConsole.PowerMonitoringDeviceMetaData.TryGetValue(netEntity, out var metaData))
                 continue;
@@ -950,12 +1056,17 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     {
         var netEntity = GetNetEntity(master);
         var xform = Transform(master);
+        var monitoringGrids = xform.GridUid != null ? GetHubLinkedMonitoringGrids(xform.GridUid.Value) : null; // Pirate: multiz
 
         var query = AllEntityQuery<PowerMonitoringConsoleComponent, TransformComponent>();
         while (query.MoveNext(out var ent, out var entConsole, out var entXform))
         {
-            if (entXform.GridUid != xform.GridUid)
+            #region Pirate: multiz
+            if (monitoringGrids == null ||
+                entXform.GridUid is not { } entGrid ||
+                !monitoringGrids.Contains(entGrid))
                 continue;
+            #endregion
 
             if (!entConsole.PowerMonitoringDeviceMetaData.TryGetValue(netEntity, out var metaData))
                 continue;
@@ -1058,14 +1169,18 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
     private void RefreshPowerMonitoringConsoleForGrid(EntityUid uid, PowerMonitoringConsoleComponent component, EntityUid grid, bool resetFlags) // Pirate: multiz
     {
         var query = AllEntityQuery<PowerMonitoringDeviceComponent, TransformComponent>();
+        var monitoringGrids = GetHubLinkedMonitoringGrids(grid); // Pirate: multiz
         component.PowerMonitoringDeviceMetaData.Clear(); // Pirate: multiz
         if (resetFlags) // Pirate: multiz
             component.Flags = 0; // Pirate: multiz
 
         while (query.MoveNext(out var ent, out var entDevice, out var entXform))
         {
-            if (grid != entXform.GridUid)
+            #region Pirate: multiz
+            if (entXform.GridUid is not { } entGrid ||
+                !monitoringGrids.Contains(entGrid))
                 continue;
+            #endregion
 
             var netEntity = GetNetEntity(ent);
             var name = MetaData(ent).EntityName;

@@ -148,9 +148,10 @@ public sealed partial class SurveillanceCameraMonitorWindow : FancyWindow // Goo
 
     // The UI class should get the eye from the entity, and then
     // pass it here so that the UI can change its view.
-    public void UpdateState(IEye? eye, string activeAddress, Dictionary<string, (string, (NetEntity, NetCoordinates))> cameras, Dictionary<string, (string, (NetEntity, NetCoordinates))> mobileCameras, EntityUid monitor, EntityCoordinates? monitorCoords) // Goobstation
+    public void UpdateState(IEye? eye, EntityUid? activeCamera, string activeAddress, Dictionary<string, (string, (NetEntity, NetCoordinates))> cameras, Dictionary<string, (string, (NetEntity, NetCoordinates))> mobileCameras, EntityUid monitor, EntityCoordinates? monitorCoords) // Pirate: multiz
     {
         _currentAddress = activeAddress;
+        CameraView.CEZLevelViewEntity = activeCamera; // Pirate: multiz
         SetCameraView(eye);
         // Goobstation start
         _reverseCameras.Clear();

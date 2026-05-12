@@ -46,6 +46,8 @@ public sealed partial class ScalingViewport
     private ZLevelApertureOverlay? _zApertureOverlay;
     private bool _zApertureCaptureThisFrame;
 
+    public EntityUid? CEZLevelViewEntity { get; set; }
+
     // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
     private Overlay? _cachedPlacementOverlay; // Pirate: multiz
 
@@ -217,8 +219,13 @@ public sealed partial class ScalingViewport
             return;
         }
 
-        if (!_xformQuery.Value.TryComp(_player.LocalEntity, out var playerXform))
-            return;
+        var viewEntity = CEZLevelViewEntity ?? _player.LocalEntity.Value;
+        if (!_xformQuery.Value.TryComp(viewEntity, out var playerXform))
+        {
+            viewEntity = _player.LocalEntity.Value;
+            if (!_xformQuery.Value.TryComp(viewEntity, out playerXform))
+                return;
+        }
 
         if (playerXform.MapUid is null)
             return;
