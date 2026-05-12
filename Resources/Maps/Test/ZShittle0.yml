@@ -4,7 +4,7 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 05/11/2026 12:34:49
+  time: 05/12/2026 17:05:40
   entityCount: 284
 maps:
 - 3
@@ -859,6 +859,13 @@ entities:
     - type: Transform
       pos: 3.7482395,-2.7115774
       parent: 2
+- proto: ComputerAlert
+  entities:
+  - uid: 104
+    components:
+    - type: Transform
+      pos: 0.5,0.5
+      parent: 2
 - proto: ComputerAtmosMonitoring
   entities:
   - uid: 199
@@ -1266,13 +1273,6 @@ entities:
       pdaUid: 206
     - type: Physics
       canCollide: False
-- proto: PlasmaCanister
-  entities:
-  - uid: 104
-    components:
-    - type: Transform
-      pos: 0.5,0.5
-      parent: 2
 - proto: Poweredlight
   entities:
   - uid: 110

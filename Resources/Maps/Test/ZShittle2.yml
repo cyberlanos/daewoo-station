@@ -4,8 +4,8 @@ meta:
   engineVersion: 266.0.0
   forkId: ""
   forkVersion: ""
-  time: 05/11/2026 12:34:49
-  entityCount: 142
+  time: 05/12/2026 17:05:40
+  entityCount: 147
 maps:
 - 3
 grids:
@@ -151,6 +151,30 @@ entities:
     - type: GridTree
     - type: Broadphase
     - type: OccluderTree
+- proto: AirAlarm
+  entities:
+  - uid: 146
+    components:
+    - type: Transform
+      pos: 3.5,1.5
+      parent: 2
+    - type: DeviceList
+      devices:
+      - 147
+    - type: Fixtures
+      fixtures: {}
+- proto: AirSensor
+  entities:
+  - uid: 147
+    components:
+    - type: Transform
+      pos: 1.5,0.5
+      parent: 2
+    - type: DeviceNetwork
+      configurators:
+      - invalid
+      deviceLists:
+      - 146
 - proto: AtmosFixAirMarker
   entities:
   - uid: 58
@@ -646,6 +670,28 @@ entities:
     components:
     - type: Transform
       anchored: False
+      parent: 2
+- proto: SurveillanceCameraRouterGeneral
+  entities:
+  - uid: 143
+    components:
+    - type: Transform
+      pos: 6.5,-0.5
+      parent: 2
+- proto: SurveillanceCameraRouterService
+  entities:
+  - uid: 144
+    components:
+    - type: Transform
+      pos: 6.5,-1.5
+      parent: 2
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 145
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -1.5,0.5
       parent: 2
 - proto: TelecomServerFilledCargo
   entities:
