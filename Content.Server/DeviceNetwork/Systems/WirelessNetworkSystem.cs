@@ -82,6 +82,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Server.DeviceNetwork.Components;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.DeviceNetwork.Events;
 using JetBrains.Annotations;
 
@@ -110,11 +111,28 @@ namespace Content.Server.DeviceNetwork.Systems
             if (!TryComp<WirelessNetworkComponent>(args.Sender, out var sendingComponent))
                 return;
 
-            if (xform.MapID != args.SenderTransform.MapID
+            if (!CanReachAcrossMapOrZStack(args.SenderTransform, xform) // Pirate: multiz
                 || (ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
             {
                 args.Cancel();
             }
         }
+        #region Pirate: multiz
+        private bool CanReachAcrossMapOrZStack(TransformComponent senderXform, TransformComponent receiverXform)
+        {
+            if (receiverXform.MapID == senderXform.MapID)
+                return true;
+
+            var senderGrid = senderXform.GridUid;
+            var receiverGrid = receiverXform.GridUid;
+
+            if (senderGrid == null || receiverGrid == null)
+                return false;
+
+            return TryComp<CEZLinkedGridComponent>(senderGrid.Value, out var senderLinked)
+                   && TryComp<CEZLinkedGridComponent>(receiverGrid.Value, out var receiverLinked)
+                   && senderLinked.ZNetwork == receiverLinked.ZNetwork;
+        }
+        #endregion
     }
 }
