@@ -1,7 +1,7 @@
 {
     "version": 1,
     "license": "CC-BY-SA-3.0",
-    "copyright": "Interdyne and CaptainInterdyne icon made by Nazar_m | Other Interdyne icon made by kraftorset (discord), AdminAssistant made by noctyrnal (github)",
+    "copyright": "Interdyne and CaptainInterdyne icon made by Nazar_m | Other Interdyne icon made by kraftorset (discord), AdminAssistant made by noctyrnal (github), (All security, CBURN): made by Vareniko",
 
     "size": {
         "x": 8,
@@ -111,6 +111,27 @@
         },
         {
             "name": "vampire"
+        },
+        {
+            "name": "Brigmedic"
+        },
+        {
+            "name": "Detective"
+        },
+		{
+            "name": "SecurityCadet"
+        },
+		{
+            "name": "SecurityOfficer"
+        },
+		{
+            "name": "Warden"
+        },
+		{
+            "name": "SecurityInstructor"
+        },
+		{
+            "name": "SecurityPilot"
         }
     ]
 }

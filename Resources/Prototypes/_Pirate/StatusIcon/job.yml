@@ -1,10 +1,7 @@
-- type: jobIcon
-  parent: JobIcon
-  id: JobIconAdminAssitant
-  icon:
-    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
-    state: AdminAssistant
-
+# SPDX-FileCopyrightText: 2026 Vareniko <213822582+Vareniko@users.noreply.github.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Central Command - ЦК
 - type: jobIcon
   parent: JobIcon
   id: JobIconCBURN
@@ -18,3 +15,26 @@
   icon:
     sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
     state: ERT
+
+# Command - Командування
+- type: jobIcon
+  parent: JobIcon
+  id: JobIconAdminAssitant
+  icon:
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
+    state: AdminAssistant
+
+# Security - Служба Безпеки
+- type: jobIcon
+  parent: JobIcon
+  id: JobIconSecurityInstructor
+  icon:
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
+    state: SecurityInstructor
+
+- type: jobIcon
+  parent: JobIcon
+  id: JobIconSecurityPilot
+  icon:
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
+    state: SecurityPilot
