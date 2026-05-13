@@ -82,6 +82,7 @@
 # SPDX-FileCopyrightText: 2024 to4no_fix <156101927+chavonadelal@users.noreply.github.com>
 # SPDX-FileCopyrightText: 2024 voidnull000 <18663194+voidnull000@users.noreply.github.com>
 # SPDX-FileCopyrightText: 2025 Aiden <28298836+Aidenkrz@users.noreply.github.com>
+# SPDX-FileCopyrightText: 2026 Vareniko <213822582+Vareniko@users.noreply.github.com>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -96,7 +97,7 @@
   parent: JobIcon
   id: JobIconDetective
   icon:
-    sprite: /Textures/Interface/Misc/job_icons.rsi
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi # Pirate bluesec
     state: Detective
   jobName: job-name-detective
 
@@ -192,7 +193,7 @@
   parent: JobIcon
   id: JobIconSecurityOfficer
   icon:
-    sprite: /Textures/Interface/Misc/job_icons.rsi
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi # Pirate bluesec
     state: SecurityOfficer
   jobName: job-name-security
 
@@ -368,7 +369,7 @@
   parent: JobIcon
   id: JobIconBrigmedic
   icon:
-    sprite: /Textures/Interface/Misc/job_icons.rsi
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi # Pirate bluesec
     state: Brigmedic
   jobName: job-name-brigmedic
 
@@ -400,7 +401,7 @@
   parent: JobIcon
   id: JobIconWarden
   icon:
-    sprite: /Textures/Interface/Misc/job_icons.rsi
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi # Pirate bluesec
     state: Warden
   jobName: job-name-warden
 
@@ -472,7 +473,7 @@
   parent: JobIcon
   id: JobIconSecurityCadet
   icon:
-    sprite: /Textures/Interface/Misc/job_icons.rsi
+    sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi # Pirate bluesec
     state: SecurityCadet
   jobName: job-name-cadet
 
