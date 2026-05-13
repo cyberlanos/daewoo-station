@@ -462,6 +462,7 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
             return;
 
 
+        var gridUid = GetSelectedMonitoringGrid(uid, consoleXform); // Pirate: multiz
         if (!TryComp<MapGridComponent>(gridUid, out var mapGrid))
             return;
 
@@ -469,7 +470,6 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         EnsureComp<NavMapComponent>(gridUid);
 
         #region Pirate: multiz
-        var gridUid = GetSelectedMonitoringGrid(uid, consoleXform); // Pirate: multiz
         var monitoringGrids = GetHubLinkedMonitoringGrids(gridUid); // Pirate: multiz
         RefreshPowerMonitoringConsoleForGrid(uid, component, gridUid, false); // Pirate: multiz
         if (TryComp<PowerMonitoringCableNetworksComponent>(uid, out var cableNetworksForSelectedGrid)) // Pirate: multiz
