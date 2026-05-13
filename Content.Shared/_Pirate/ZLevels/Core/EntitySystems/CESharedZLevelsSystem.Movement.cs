@@ -373,6 +373,12 @@ public abstract partial class CESharedZLevelsSystem
              zPhys.CurrentSupportGridUid != EntityUid.Invalid &&
              HasGridGravityOnSupport(zPhys.CurrentSupportGridUid));
 
+        if (!hasZGravity &&
+            TryFindSupportedLevelBelow(uid, xform, out _, out var supportGridUid, out var supportIsHighGround))
+        {
+            hasZGravity = supportIsHighGround || HasGridGravityOnSupport(supportGridUid);
+        }
+
         SetZGravityInfluenced(uid, hasZGravity);
     }
 
