@@ -27,10 +27,10 @@
 # Security - Служба Безпеки
 - type: jobIcon
   parent: JobIcon
-  id: JobIconSecurityInspector
+  id: JobIconSecurityInstructor
   icon:
     sprite: /Textures/_Pirate/Interface/Misc/job_icons.rsi
-    state: SecurityInspector
+    state: SecurityInstructor
 
 - type: jobIcon
   parent: JobIcon
