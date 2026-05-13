@@ -66,8 +66,8 @@ public sealed partial class CEZPhysicsComponent : Component
 
     /// <summary>
     /// Cached flag: true when the support found directly below is a CEZLevelHighGround entity
-    /// (stairs or ladder), rather than a plain tile. When true, descent is always permitted
-    /// regardless of gravity, so stair/ladder traversal works even in weightless zones.
+    /// (stairs or ladder), rather than a plain tile. This only permits automatic descent
+    /// when the supporting grid/map has gravity.
     /// </summary>
     [DataField]
     public bool CurrentHighGroundBelow;

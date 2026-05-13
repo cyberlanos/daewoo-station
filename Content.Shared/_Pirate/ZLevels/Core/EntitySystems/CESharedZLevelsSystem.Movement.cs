@@ -319,10 +319,10 @@ public abstract partial class CESharedZLevelsSystem
         if (!Resolve(ent, ref xform, false))
             return false;
 
-        if (!TryFindSupportedLevelBelow(ent, xform, out _, out var belowGridUid, out var isHighGround)) // Pirate: multiz
+        if (!TryFindSupportedLevelBelow(ent, xform, out _, out var belowGridUid, out _)) // Pirate: multiz
             return false;
 
-        return isHighGround || HasGridGravityOnSupport(belowGridUid);
+        return HasGridGravityOnSupport(belowGridUid);
     }
 
     /// <summary>
@@ -369,14 +369,13 @@ public abstract partial class CESharedZLevelsSystem
     private void UpdateZGravityInfluence(EntityUid uid, CEZPhysicsComponent zPhys, TransformComponent xform)
     {
         var hasZGravity = zPhys.CurrentHasSupportBelow &&
-            (zPhys.CurrentHighGroundBelow ||
-             zPhys.CurrentSupportGridUid != EntityUid.Invalid &&
+            (zPhys.CurrentSupportGridUid != EntityUid.Invalid &&
              HasGridGravityOnSupport(zPhys.CurrentSupportGridUid));
 
         if (!hasZGravity &&
-            TryFindSupportedLevelBelow(uid, xform, out _, out var supportGridUid, out var supportIsHighGround))
+            TryFindSupportedLevelBelow(uid, xform, out _, out var supportGridUid, out _))
         {
-            hasZGravity = supportIsHighGround || HasGridGravityOnSupport(supportGridUid);
+            hasZGravity = HasGridGravityOnSupport(supportGridUid);
         }
 
         SetZGravityInfluenced(uid, hasZGravity);
@@ -458,7 +457,12 @@ public abstract partial class CESharedZLevelsSystem
         if (zPhys.CurrentStickyGround)
         {
             if (TryResolveGridForMapOffset(uid, xform, -1, out supportGridUid, out _))
-                return AutoDescendMode.ControlledStep;
+            {
+                effectiveGravityBelow = HasGridGravityOnSupport(supportGridUid);
+                return effectiveGravityBelow
+                    ? AutoDescendMode.ControlledStep
+                    : AutoDescendMode.None;
+            }
 
             return AutoDescendMode.None;
         }
@@ -476,16 +480,18 @@ public abstract partial class CESharedZLevelsSystem
         {
             supportOffset = 1;
             supportIsHighGround = true;
-            effectiveGravityBelow = _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
-            return AutoDescendMode.ControlledStep;
+            effectiveGravityBelow = HasGridGravityOnSupport(supportGridUid);
+            return effectiveGravityBelow
+                ? AutoDescendMode.ControlledStep
+                : AutoDescendMode.None;
         }
 
         if (!TryFindSupportedLevelBelow(uid, xform, out supportOffset, out supportGridUid, out supportIsHighGround))
             return AutoDescendMode.None;
 
-        effectiveGravityBelow = _gravity.EntityGridOrMapHaveGravity((supportGridUid, Transform(supportGridUid)));
+        effectiveGravityBelow = HasGridGravityOnSupport(supportGridUid);
 
-        if (supportOffset == 1 && supportIsHighGround)
+        if (supportOffset == 1 && supportIsHighGround && effectiveGravityBelow)
             return AutoDescendMode.ControlledStep;
 
         if (effectiveGravityBelow)
@@ -994,6 +1000,13 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnGetVelocity(Entity<CEZPhysicsComponent> ent, ref CEGetZVelocityEvent args)
     {
+        var xform = Transform(ent.Owner);
+        if (!HasComp<CEZGravityInfluencedComponent>(ent.Owner) &&
+            !_gravity.EntityGridOrMapHaveGravity((ent.Owner, xform)))
+        {
+            return;
+        }
+
         args.VelocityDelta -= ZGravityForce * ent.Comp.GravityMultiplier;
     }
 
