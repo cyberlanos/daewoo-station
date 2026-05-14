@@ -42,6 +42,6 @@ public abstract class SharedAudioMuffleSystem : EntitySystem
                 return;
         }
 
-        DirtyField(ent.AsNullable(), nameof(SoundBlockerComponent.Active));
+        DirtyField(ent, ent.Comp, nameof(SoundBlockerComponent.Active));
     }
 }

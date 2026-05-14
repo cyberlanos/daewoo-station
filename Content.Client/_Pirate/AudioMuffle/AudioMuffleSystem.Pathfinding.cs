@@ -36,6 +36,13 @@ public sealed partial class AudioMuffleSystem
         return Math.Abs(distance.X) + Math.Abs(distance.Y);
     }
 
+    // True for 4-way orthogonal neighbors only (exactly one of x/y is zero).
+    // Excludes diagonals and the center tile.
+    private static bool IsOrthogonalNeighbor(int x, int y)
+    {
+        return (x == 0) != (y == 0);
+    }
+
     private void RebuildAndExpand(Vector2i newPos, Vector2i oldPos)
     {
         if (newPos == oldPos)
@@ -113,7 +120,7 @@ public sealed partial class AudioMuffleSystem
             {
                 for (var y = -1; y <= 1; y++)
                 {
-                    if (x != 0 && y != 0 || x == 0 && y == 0)
+                    if (!IsOrthogonalNeighbor(x, y))
                         continue;
 
                     var neighbor = tile + new Vector2i(x, y);
@@ -191,7 +198,7 @@ public sealed partial class AudioMuffleSystem
             {
                 for (var y = -minAbsY; y <= maxAbsY; y++)
                 {
-                    if (x != 0 && y != 0 || x == 0 && y == 0)
+                    if (!IsOrthogonalNeighbor(x, y))
                         continue;
 
                     var neighbor = node.Indices + new Vector2i(x, y);
@@ -286,7 +293,7 @@ public sealed partial class AudioMuffleSystem
             {
                 for (var y = -1; y <= 1; y++)
                 {
-                    if (x != 0 && y != 0 || x == 0 && y == 0)
+                    if (!IsOrthogonalNeighbor(x, y))
                         continue;
 
                     var neighbor = node.Indices + new Vector2i(x, y);
@@ -333,7 +340,7 @@ public sealed partial class AudioMuffleSystem
         {
             for (var y = -1; y <= 1; y++)
             {
-                if (x != 0 && y != 0 || x == 0 && y == 0)
+                if (!IsOrthogonalNeighbor(x, y))
                     continue;
 
                 var neighbor = node.Indices + new Vector2i(x, y);
@@ -480,7 +487,9 @@ public sealed partial class AudioMuffleSystem
             node.TotalCost = result.TotalCost + 1f + GetTotalTileCost(node.Indices);
         }
         else
-            return false; // It's easier to rebuild this shit than trying to figure this out...
+            // TODO: handle the cycle case properly instead of bailing — the caller falls
+            // back to a full rebuild via RewriteAndReExpand, which is correct but wasteful.
+            return false;
 
         return true;
     }
@@ -492,7 +501,7 @@ public sealed partial class AudioMuffleSystem
         {
             for (var y = -1; y <= 1; y++)
             {
-                if (x != 0 && y != 0 || x == 0 && y == 0)
+                if (!IsOrthogonalNeighbor(x, y))
                     continue;
 
                 var neighbor = node.Indices + new Vector2i(x, y);
