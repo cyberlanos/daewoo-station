@@ -225,8 +225,7 @@ public sealed partial class AudioMuffleSystem
                         if (diff >= 0)
                             continue;
 
-                        next.Previous = node;
-                        node.Next.Add(next);
+                        SwapPrev(next, node, out _);
 
                         UpdateTotalCostOfNextTileData(next, diff, PathfindingRange - count);
 
