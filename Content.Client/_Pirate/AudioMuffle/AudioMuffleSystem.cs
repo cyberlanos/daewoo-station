@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Collections.Concurrent;
 using System.Numerics;
 using Content.Shared.GameTicking;
 using Content.Shared.Ghost;
@@ -68,9 +69,12 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
     // jitters every frame whenever a source's tile-dict membership flickers
     // (pathfinding hit vs. raycast fallback vs. out-of-range), which manifests as
     // audible crackling/ripping. Lerp toward the target with a short time constant.
+    // ConcurrentDictionary because the engine processes audio sources in parallel
+    // (Robust.Client.Audio.AudioSystem.UpdateAudioJob → ParallelManager), so
+    // OnOcclusion runs on worker threads.
     private const float OcclusionSmoothingTau = 0.12f;
     private const float OcclusionStaleSeconds = 2f;
-    private readonly Dictionary<EntityUid, (float Value, TimeSpan LastSeen)> _smoothedOcclusion = new();
+    private readonly ConcurrentDictionary<EntityUid, (float Value, TimeSpan LastSeen)> _smoothedOcclusion = new();
     private readonly List<EntityUid> _occlusionPruneBuf = new();
     private float _occlusionPruneAccum;
 
@@ -627,7 +631,7 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
                 _occlusionPruneBuf.Add(key);
         }
         foreach (var key in _occlusionPruneBuf)
-            _smoothedOcclusion.Remove(key);
+            _smoothedOcclusion.TryRemove(key, out _);
         _occlusionPruneBuf.Clear();
     }
 
