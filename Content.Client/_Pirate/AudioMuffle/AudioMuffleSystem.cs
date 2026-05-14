@@ -19,6 +19,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Player;
+using Robust.Shared.Timing;
 
 namespace Content.Client._Pirate.AudioMuffle;
 
@@ -33,6 +34,7 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
 
     private EntityQuery<GhostComponent> _ghostQuery;
     private EntityQuery<SpectralComponent> _spectralQuery;
@@ -61,6 +63,16 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
 
     private bool _pathfindingEnabled = true;
     private float _maxRayLength;
+
+    // Per-source occlusion smoothing. Without this the engine-side lowpass parameter
+    // jitters every frame whenever a source's tile-dict membership flickers
+    // (pathfinding hit vs. raycast fallback vs. out-of-range), which manifests as
+    // audible crackling/ripping. Lerp toward the target with a short time constant.
+    private const float OcclusionSmoothingTau = 0.12f;
+    private const float OcclusionStaleSeconds = 2f;
+    private readonly Dictionary<EntityUid, (float Value, TimeSpan LastSeen)> _smoothedOcclusion = new();
+    private readonly List<EntityUid> _occlusionPruneBuf = new();
+    private float _occlusionPruneAccum;
 
     public override void Initialize()
     {
@@ -98,6 +110,7 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         PlayerGrid = null;
         OldPlayerTile = null;
         ClearDicts();
+        _smoothedOcclusion.Clear();
 
         _xform.OnGlobalMoveEvent -= OnMove;
 
@@ -109,6 +122,7 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         PlayerGrid = null;
         OldPlayerTile = null;
         ClearDicts();
+        _smoothedOcclusion.Clear();
     }
 
     private void ResetImmediate(EntityUid player)
@@ -190,6 +204,19 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         var uid = ev.Entity.Owner;
 
         if (HasComp<MapGridComponent>(uid))
+            return;
+
+        // Fast filter: OnGlobalMoveEvent fires for every moving entity on the map (NPCs,
+        // projectiles, items, mobs...). Only player/blocker/relayed-target moves can
+        // affect occlusion. Bail early on everything else to keep this off the audio
+        // thread's back on weak CPUs.
+        var isPlayer = uid == player;
+        var isBlocker = !isPlayer && _blockerQuery.HasComp(uid);
+        var isRelayed = !isPlayer && !isBlocker
+            && _relayedQuery.TryComp(_player.LocalEntity, out var relay)
+            && uid == relay.RelayEntity;
+
+        if (!isPlayer && !isBlocker && !isRelayed)
             return;
 
         var oldMap = ev.OldPosition.IsValid(EntityManager)
@@ -473,23 +500,24 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
             return 0f;
 
         var total = 0f;
-        var toRemove = new List<Entity<SoundBlockerComponent>>();
+        _tileBlockerRemoveBuf.Clear();
         foreach (var blocker in blockers)
         {
             if (!Exists(blocker))
             {
-                toRemove.Add(blocker);
+                _tileBlockerRemoveBuf.Add(blocker);
                 continue;
             }
 
             total += GetBlockerCost(blocker.Comp);
         }
 
-        foreach (var remove in toRemove)
+        foreach (var remove in _tileBlockerRemoveBuf)
         {
             remove.Comp.Indices = null;
             blockers.Remove(remove);
         }
+        _tileBlockerRemoveBuf.Clear();
 
         if (blockers.Count == 0)
             ReverseBlockerIndicesDict.Remove(tile);
@@ -514,15 +542,15 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
     private float OnOcclusion(MapCoordinates listener, Vector2 delta, float distance, EntityUid? ignoredEnt)
     {
         if (distance < 0.1f || ResolvePlayer() is not { } player)
-            return 0f;
+            return SmoothOcclusion(ignoredEnt, 0f);
 
         // ResolvePlayer returns nearest entity that provides ai vision, if it cannot find any, it returns ai eye
         // itself, which means no cameras nearby => all audio is muffled
         if (distance > AudioRange || _aiEyeQuery.HasComp(player))
-            return 100f;
+            return SmoothOcclusion(ignoredEnt, 100f);
 
         if (!_pathfindingEnabled)
-            return CalculateRaycastOcclusion(listener, delta, distance, ignoredEnt);
+            return SmoothOcclusion(ignoredEnt, CalculateRaycastOcclusion(listener, delta, distance, ignoredEnt));
 
         var xform = Transform(player);
         var playerPos = _xform.GetMapCoordinates(player, xform);
@@ -531,13 +559,66 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         distance = delta.Length();
 
         if (TryFindCommonPlayerGrid(playerPos, audioPos) is not { } grid)
-            return CalculateRaycastOcclusion(listener, delta, distance, ignoredEnt);
+            return SmoothOcclusion(ignoredEnt, CalculateRaycastOcclusion(listener, delta, distance, ignoredEnt));
 
         var tile = _map.TileIndicesFor(grid, audioPos);
 
-        return !TileDataDict.TryGetValue(tile, out var data)
+        var target = !TileDataDict.TryGetValue(tile, out var data)
             ? CalculateRaycastOcclusion(listener, delta, distance, ignoredEnt)
             : CalculatePathfindingOcclusion(grid, playerPos, tile, data);
+
+        return SmoothOcclusion(ignoredEnt, target);
+    }
+
+    private float SmoothOcclusion(EntityUid? source, float target)
+    {
+        if (source is not { } src)
+            return target;
+
+        var now = _timing.RealTime;
+
+        if (!_smoothedOcclusion.TryGetValue(src, out var prev))
+        {
+            _smoothedOcclusion[src] = (target, now);
+            return target;
+        }
+
+        var dt = (float)(now - prev.LastSeen).TotalSeconds;
+        if (dt <= 0f)
+        {
+            _smoothedOcclusion[src] = (prev.Value, now);
+            return prev.Value;
+        }
+
+        // Clamp big gaps (paused client, alt-tab) so we don't take a giant single step.
+        if (dt > 0.25f)
+            dt = 0.25f;
+
+        var alpha = 1f - MathF.Exp(-dt / OcclusionSmoothingTau);
+        var smoothed = prev.Value + (target - prev.Value) * alpha;
+        _smoothedOcclusion[src] = (smoothed, now);
+        return smoothed;
+    }
+
+    public override void FrameUpdate(float frameTime)
+    {
+        base.FrameUpdate(frameTime);
+
+        _occlusionPruneAccum += frameTime;
+        if (_occlusionPruneAccum < 1f || _smoothedOcclusion.Count == 0)
+            return;
+        _occlusionPruneAccum = 0f;
+
+        var threshold = _timing.RealTime - TimeSpan.FromSeconds(OcclusionStaleSeconds);
+        _occlusionPruneBuf.Clear();
+        foreach (var (key, (_, lastSeen)) in _smoothedOcclusion)
+        {
+            if (lastSeen < threshold)
+                _occlusionPruneBuf.Add(key);
+        }
+        foreach (var key in _occlusionPruneBuf)
+            _smoothedOcclusion.Remove(key);
+        _occlusionPruneBuf.Clear();
     }
 
     private float CalculatePathfindingOcclusion(Entity<MapGridComponent> grid,
@@ -546,7 +627,9 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         MuffleTileData tileData)
     {
         var playerIndices = _map.TileIndicesFor(grid, playerPos);
-        var playerDist = (float) ManhattanDistance(pos, playerIndices);
+        // Use Euclidean distance to match AudioRange and CalculateRaycastOcclusion, which
+        // also work in Euclidean tile units. Manhattan over-counted on diagonals.
+        var playerDist = Vector2.Distance(pos, playerIndices);
         var muffleLevel = tileData.TotalCost + (playerDist - AudioRange) / 4f - GetTotalTileCost(pos);
         return CalculateOcclusion(muffleLevel);
     }

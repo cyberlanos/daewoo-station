@@ -12,10 +12,17 @@ public sealed partial class AudioMuffleSystem
     private readonly HashSet<MuffleTileData> _updatedData = new();
     private readonly HashSet<MuffleTileData> _reExpand = new();
     private readonly HashSet<Vector2i> _passed = new();
+    private readonly HashSet<Vector2i> _rebuildPassed = new();
     private readonly HashSet<Vector2i> _rewritePassed = new();
     private readonly PriorityQueue<MuffleTileData> _frontier = new();
     private readonly Dictionary<MuffleTileData, float> _expansionNodes = new();
     private readonly Dictionary<MuffleTileData, float> _innerExpansionNodes = new();
+    private readonly List<Entity<SoundBlockerComponent>> _tileBlockerRemoveBuf = new();
+
+    // Hard cap on per-call expansion work. Without this, MathF.Pow(amount, sum) could
+    // reach ~234k iterations from a single tile-crossing and stall on weak CPUs,
+    // which causes audio underruns / cracking.
+    private const int MaxExpandIterations = 4096;
 
     public static int ManhattanDistance(Vector2i start, Vector2i end)
     {
@@ -96,7 +103,9 @@ public sealed partial class AudioMuffleSystem
         _reExpand.Clear();
 
         _frontier.Clear();
-        _passed.Clear();
+        // Use a dedicated set here. Previously this aliased _passed, which Expand() then
+        // cleared at entry — discarding everything we collected below.
+        _rebuildPassed.Clear();
         foreach (var (tile, data) in TileDataDict)
         {
             var isPassed = true;
@@ -121,15 +130,15 @@ public sealed partial class AudioMuffleSystem
             }
 
             if (isPassed)
-                _passed.Add(tile);
+                _rebuildPassed.Add(tile);
         }
 
         // This determines the side of already expanded area that we are expanding into.
         var vecX = new Vector2i(Math.Sign(signX - 1), Math.Sign(1 - signX)) * signX;
         var vecY = new Vector2i(Math.Sign(signY - 1), Math.Sign(1 - signY)) * signY;
-        Expand(_frontier, newPos, _passed, vecX, vecY, PathfindingRange * distance);
+        Expand(_frontier, newPos, _rebuildPassed, vecX, vecY, PathfindingRange * distance);
         _frontier.Clear();
-        _passed.Clear();
+        _rebuildPassed.Clear();
     }
 
     private void Expand(Vector2i start)
@@ -168,10 +177,9 @@ public sealed partial class AudioMuffleSystem
         var sum = minAbsX + minAbsY + maxAbsX + maxAbsY;
         if (sum == 0)
             return;
-        var max = MathF.Pow(amount, sum);
+        var max = MathF.Min(MathF.Pow(amount, sum), MaxExpandIterations);
         var count = 0;
 
-        _passed.Clear();
         while (frontier.Count > 0 && count < max)
         {
             var node = frontier.Take();
@@ -232,13 +240,9 @@ public sealed partial class AudioMuffleSystem
                         TileDataDict[neighbor] = newNode;
                         frontier.Add(newNode);
                     }
-
-                    _passed.Add(neighbor);
                 }
             }
         }
-
-        _passed.Clear();
     }
 
     private void RewriteAndReExpand(MuffleTileData first,
@@ -267,7 +271,8 @@ public sealed partial class AudioMuffleSystem
         }
 
         var count = 0;
-        while (_frontier.Count > 0 && count < Math.Pow(amount, 4))
+        var rewriteMax = MathF.Min(MathF.Pow(amount, 4), MaxExpandIterations);
+        while (_frontier.Count > 0 && count < rewriteMax)
         {
             var node = _frontier.Take();
             count++;
@@ -428,7 +433,8 @@ public sealed partial class AudioMuffleSystem
         }
 
         var count = 0;
-        while (_frontier.Count > 0 && count < Math.Pow(PathfindingRange, 4))
+        var expandNodeMax = MathF.Min(MathF.Pow(PathfindingRange, 4), MaxExpandIterations);
+        while (_frontier.Count > 0 && count < expandNodeMax)
         {
             var next = _frontier.Take();
             count++;
