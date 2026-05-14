@@ -139,9 +139,8 @@ public sealed partial class AudioMuffleSystem
                 _rebuildPassed.Add(tile);
         }
 
-        // This determines the side of already expanded area that we are expanding into.
-        var vecX = new Vector2i(Math.Sign(signX - 1), Math.Sign(1 - signX)) * signX;
-        var vecY = new Vector2i(Math.Sign(signY - 1), Math.Sign(1 - signY)) * signY;
+        var vecX = new Vector2i(signX < 0 ? 1 : 0, signX > 0 ? 1 : 0);
+        var vecY = new Vector2i(signY < 0 ? 1 : 0, signY > 0 ? 1 : 0);
         Expand(_frontier, newPos, _rebuildPassed, vecX, vecY, PathfindingRange * distance);
         _frontier.Clear();
         _rebuildPassed.Clear();
@@ -305,7 +304,12 @@ public sealed partial class AudioMuffleSystem
                     if (!invalidated.Contains(neighbor))
                         continue;
 
-                    if (Vector2.Distance(node.Indices, neighbor) > AudioRange)
+                    // Use the rewrite seed as the origin: node.Indices vs. neighbor is
+                    // always 1 for orthogonal neighbors, so the previous form never
+                    // filtered anything. Bounding by first.Indices keeps the rewrite
+                    // within the AudioRange disc around where the rewrite started,
+                    // matching what Expand does relative to its origin.
+                    if (Vector2.Distance(first.Indices, neighbor) > AudioRange)
                         continue;
 
                     invalidated.Remove(neighbor);
@@ -633,6 +637,8 @@ public sealed partial class AudioMuffleSystem
         {
             return other != null && Indices.Equals(other.Indices);
         }
+
+        public override bool Equals(object? obj) => Equals(obj as MuffleTileData);
 
         public int CompareTo(MuffleTileData? other)
         {

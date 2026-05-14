@@ -28,10 +28,4 @@ public sealed partial class SoundBlockerComponent : Component
     /// </summary>
     [ViewVariables]
     public Vector2i? Indices;
-
-    /// <summary>
-    /// Cached blocker cost calculated from <see cref="SoundBlockPercent"/>
-    /// </summary>
-    [ViewVariables]
-    public float? CachedBlockerCost;
 }

@@ -142,8 +142,6 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
 
     private void OnBlockerState(Entity<SoundBlockerComponent> ent, ref AfterAutoHandleStateEvent args)
     {
-        ent.Comp.CachedBlockerCost = null;
-
         if (ResolvePlayer() is not { } player)
             return;
 
@@ -513,13 +511,8 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         if (!blocker.Active)
             return 0f;
 
-        if (blocker.CachedBlockerCost == null)
-        {
-            var percent = MathF.Max(blocker.SoundBlockPercent, 0f);
-            blocker.CachedBlockerCost = percent > 0.99f ? 400f : -(1f / (percent - 1f)) * 4f - 4f;
-        }
-
-        return blocker.CachedBlockerCost.Value;
+        var percent = MathF.Max(blocker.SoundBlockPercent, 0f);
+        return percent > 0.99f ? 400f : -(1f / (percent - 1f)) * 4f - 4f;
     }
 
     private float OnOcclusion(MapCoordinates listener, Vector2 delta, float distance, EntityUid? ignoredEnt)
