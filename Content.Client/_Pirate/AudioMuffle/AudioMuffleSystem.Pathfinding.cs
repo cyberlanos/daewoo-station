@@ -17,7 +17,6 @@ public sealed partial class AudioMuffleSystem
     private readonly PriorityQueue<MuffleTileData> _frontier = new();
     private readonly Dictionary<MuffleTileData, float> _expansionNodes = new();
     private readonly Dictionary<MuffleTileData, float> _innerExpansionNodes = new();
-    private readonly List<Entity<SoundBlockerComponent>> _tileBlockerRemoveBuf = new();
 
     // Hard cap on per-call expansion work. Without this, MathF.Pow(amount, sum) could
     // reach ~234k iterations from a single tile-crossing and stall on weak CPUs,

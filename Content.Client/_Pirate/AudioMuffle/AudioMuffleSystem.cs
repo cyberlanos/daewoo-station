@@ -65,13 +65,6 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
     private bool _pathfindingEnabled = true;
     private float _maxRayLength;
 
-    // Per-source occlusion smoothing. Without this the engine-side lowpass parameter
-    // jitters every frame whenever a source's tile-dict membership flickers
-    // (pathfinding hit vs. raycast fallback vs. out-of-range), which manifests as
-    // audible crackling/ripping. Lerp toward the target with a short time constant.
-    // ConcurrentDictionary because the engine processes audio sources in parallel
-    // (Robust.Client.Audio.AudioSystem.UpdateAudioJob → ParallelManager), so
-    // OnOcclusion runs on worker threads.
     private const float OcclusionSmoothingTau = 0.12f;
     private const float OcclusionStaleSeconds = 2f;
     private readonly ConcurrentDictionary<EntityUid, (float Value, TimeSpan LastSeen)> _smoothedOcclusion = new();
@@ -504,27 +497,13 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
             return 0f;
 
         var total = 0f;
-        _tileBlockerRemoveBuf.Clear();
         foreach (var blocker in blockers)
         {
             if (!Exists(blocker))
-            {
-                _tileBlockerRemoveBuf.Add(blocker);
                 continue;
-            }
 
             total += GetBlockerCost(blocker.Comp);
         }
-
-        foreach (var remove in _tileBlockerRemoveBuf)
-        {
-            remove.Comp.Indices = null;
-            blockers.Remove(remove);
-        }
-        _tileBlockerRemoveBuf.Clear();
-
-        if (blockers.Count == 0)
-            ReverseBlockerIndicesDict.Remove(tile);
 
         return total;
     }
@@ -534,16 +513,6 @@ public sealed partial class AudioMuffleSystem : SharedAudioMuffleSystem
         if (!blocker.Active)
             return 0f;
 
-        // Map SoundBlockPercent (p, ~0..1, how much this obstacle blocks sound) to a
-        // pathfinding cost added on top of the per-tile move cost. Algebraically the
-        // expression is 4*p/(1-p): 0 at p=0, 4 at p=0.5, ~9.3 at p=0.7 (default door),
-        // ~36 at p=0.9, ~396 at p=0.99 — a hyperbolic ramp so that "almost solid"
-        // blockers dominate the path cost. The factor 4 sets the scale relative to
-        // CalculateOcclusion's pow(muffleLevel/8, 4) curve; the -4 zeroes the offset
-        // so a p=0 blocker contributes nothing. p>=0.99 is clamped to 400 to avoid
-        // the 1/(p-1) singularity as p approaches 1 and to give "wall-like" blockers
-        // a finite but effectively-silencing cost. Result is memoized in
-        // CachedBlockerCost and invalidated when SoundBlockPercent changes.
         if (blocker.CachedBlockerCost == null)
         {
             var percent = MathF.Max(blocker.SoundBlockPercent, 0f);
