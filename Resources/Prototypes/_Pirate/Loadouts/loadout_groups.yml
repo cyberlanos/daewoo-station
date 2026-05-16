@@ -24,6 +24,79 @@
   - PlushieTayler
   - PlushiePocketAssistant
 
+- type: loadoutGroup
+  id: PirateEEGenericItems
+  name: loadout-group-trinkets
+  minLimit: 0
+  maxLimit: 3
+  loadouts:
+  - LoadoutBookRandom
+  - LoadoutHandLabeler
+  - LoadoutItemBarberScissors
+  - LoadoutItemBlunt
+  - LoadoutItemBoxFolderGrey
+  - LoadoutItemCig
+  - LoadoutItemCigsMixed
+  - LoadoutItemCrayonBox
+  - LoadoutItemDrinkLithiumFlask
+  - LoadoutItemDrinkShinyFlask
+  - LoadoutItemDrinkVacuumFlask
+  - LoadoutItemFlare
+  - LoadoutItemFlashlightLantern
+  - LoadoutItemHandheldStationMap
+  - LoadoutItemJoint
+  - LoadoutItemLantern
+  - LoadoutItemLighterCheap
+  - LoadoutItemLighterFlippo
+  - LoadoutItemPapers
+  - LoadoutItemSmokingPipeFilledTobacco
+  - LoadoutPen
+  - LuxuryPen
+  - PlushieArachind
+  - PlushieCarp
+  - PlushieHampter
+  - PlushieHuman
+  - PlushieMoth
+  - PlushieRouny
+  - PlushieSharkBlue
+  - PlushieSharkGrey
+  - PlushieSharkPink
+  - PlushieSlime
+  - PlushieVox
+
+- type: loadoutGroup
+  id: PirateEEGenericEyes
+  name: loadout-group-glasses
+  minLimit: 0
+  loadouts:
+  - LoadoutEyesBlindfold
+  - LoadoutEyesEyepatch
+  - LoadoutItemSunglasses
+
+- type: loadoutGroup
+  id: PirateGenericPassengerJumpsuit
+  name: loadout-group-passenger-jumpsuit
+  minLimit: 0
+  loadouts: []
+  subgroups:
+  - PiratePassengerJumpsuit
+
+- type: loadoutGroup
+  id: PirateGenericPassengerFace
+  name: loadout-group-passenger-mask
+  minLimit: 0
+  loadouts: []
+  subgroups:
+  - PassengerFace
+
+- type: loadoutGroup
+  id: PirateGenericPassengerGloves
+  name: loadout-group-passenger-gloves
+  minLimit: 0
+  loadouts: []
+  subgroups:
+  - PassengerGloves
+
 
 
 ## Command - Командування
@@ -258,6 +331,61 @@
   - WardrobeFlannelBlue
   - WardrobeFlannelGreen
   - WardrobeFlannelRed
+
+- type: loadoutGroup
+  id: PirateEEGenericHead
+  name: loadout-group-passenger-head
+  minLimit: 0
+  loadouts:
+  - ClothingHeadHatTacticalMaidHeadband
+  - ClothingHeadHatWitch1
+  - LoadoutHeadBowlerHat
+  - LoadoutHeadGreyFlatcap
+  - LoadoutHeadHatCorpsoftFlipped
+  - LoadoutHeadHatCowboyBountyHunter
+  - LoadoutHeadHatMimesoftFlipped
+  - LoadoutHeadTinfoil
+  subgroups:
+  - PiratePassengerHead
+
+- type: loadoutGroup
+  id: PirateEEGenericNeck
+  name: loadout-group-passenger-neck
+  minLimit: 0
+  loadouts:
+  - LoadoutNeckScarfStripedZebra
+  subgroups:
+  - PiratePassengerNeck
+
+- type: loadoutGroup
+  id: PirateEEGenericShoes
+  name: loadout-group-passenger-shoes
+  minLimit: 0
+  loadouts:
+  - LoadoutShoesBootsCowboyFancy
+  - LoadoutShoesBootsCowboyWhite
+  - LoadoutShoesBootsLaceup
+  - LoadoutShoesBootsWork
+  - LoadoutShoesLeather
+  - LoadoutShoesUnderSocksBee
+  subgroups:
+  - PiratePassengerShoes
+
+- type: loadoutGroup
+  id: PirateEEGenericOuterClothing
+  name: loadout-group-passenger-outerclothing
+  minLimit: 0
+  loadouts:
+  - ClothingOuterCoatDetectiveLoadout
+  - ClothingOuterCoatExpensive
+  - ClothingOuterSuitWitchRobes
+  - LoadoutOuterCoatBomberjacket
+  - LoadoutOuterCoatHoodieBlack
+  - LoadoutOuterCoatHoodieGrey
+  - LoadoutOuterCoatLettermanRed
+  - LoadoutOuterVest
+  subgroups:
+  - PiratePassengerOuterClothing
 
 
 

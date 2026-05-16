@@ -167,7 +167,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         }
 
         // In some instances we might not have picked up a new group for existing data.
-        foreach (var groupProto in roleProto.Groups)
+        foreach (var groupProto in roleProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups)) // Pirate: multiz
         {
             if (SelectedLoadouts.ContainsKey(groupProto))
                 continue;
@@ -182,7 +182,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         foreach (var (group, groupLoadouts) in SelectedLoadouts)
         {
             // Check the group is even valid for this role.
-            if (!roleProto.Groups.Contains(group))
+            if (!roleProto.Groups.Contains(group) && !PirateGlobalLoadoutGroups.Groups.Contains(group)) // Pirate: multiz
             {
                 groupRemove.Add(group);
                 continue;
@@ -290,9 +290,10 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         var collection = IoCManager.Instance!;
         var roleProto = protoManager.Index(Role);
 
-        for (var i = roleProto.Groups.Count - 1; i >= 0; i--)
+        var defaultGroups = roleProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups).ToList(); // Pirate: multiz
+        for (var i = defaultGroups.Count - 1; i >= 0; i--) // Pirate: multiz
         {
-            var group = roleProto.Groups[i];
+            var group = defaultGroups[i]; // Pirate: multiz
 
             if (!protoManager.TryIndex(group, out var groupProto))
                 continue;

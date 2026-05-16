@@ -156,6 +156,7 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: multiz
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
 using Content.Client.Lobby.UI.Roles;
@@ -225,6 +226,7 @@ namespace Content.Client.Lobby.UI
 
         // One at a time.
         private LoadoutWindow? _loadoutWindow;
+        private bool _showUnavailableLoadouts; // Pirate: multiz
 
         private bool _exporting;
         private bool _imaging;
@@ -646,12 +648,13 @@ namespace Content.Client.Lobby.UI
 
             TabContainer.SetTabTitle(2, Loc.GetString("humanoid-profile-editor-antags-tab"));
             TabContainer.SetTabTitle(3, Loc.GetString("trait-editor-title")); // Pirate: port and modified DV traits UI
+            TabContainer.SetTabTitle(4, Loc.GetString("loadout-window")); // Pirate: multiz
 
             RefreshTraits();
 
             #region Markings
 
-            TabContainer.SetTabTitle(4, Loc.GetString("humanoid-profile-editor-markings-tab"));
+            TabContainer.SetTabTitle(5, Loc.GetString("humanoid-profile-editor-markings-tab")); // Pirate: multiz
 
             Markings.OnMarkingAdded += OnMarkingChange;
             Markings.OnMarkingRemoved += OnMarkingChange;
@@ -1005,7 +1008,364 @@ namespace Content.Client.Lobby.UI
         public void RefreshLoadouts()
         {
             _loadoutWindow?.Dispose();
+#region Pirate: multiz
+            LoadoutSlotTabs.DisposeAllChildren();
+            SelectedLoadoutsList.DisposeAllChildren();
+
+            if (Profile == null || _playerManager.LocalSession == null)
+                return;
+
+            var collection = IoCManager.Instance;
+            if (collection == null)
+                return;
+
+            var choices = CollectLoadoutChoices(collection);
+            var categoryTabs = CreateLoadoutCategoryTabs();
+            var loadoutSystem = _entManager.System<LoadoutSystem>();
+
+            foreach (var choice in choices.Values.OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
+            {
+                if (!choice.Enabled && !choice.Selected && !_showUnavailableLoadouts)
+                    continue;
+
+                if (!categoryTabs.TryGetValue(choice.Category, out var categoryBody))
+                    categoryBody = categoryTabs["Items"];
+
+                var icon = new LoadoutIconButton(choice.Prototype, loadoutSystem.GetName(choice.Prototype), choice.Enabled ? null : choice.Reason)
+                {
+                    Disabled = !choice.Enabled,
+                    Pressed = choice.Selected,
+                };
+
+                icon.OnPressed += args => SetCombinedLoadout(choice, args.Button.Pressed);
+                categoryBody.AddChild(icon);
+            }
+
+            RefreshSelectedLoadoutsList(choices, loadoutSystem);
+#endregion
         }
+
+#region Pirate: multiz
+        private Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice> CollectLoadoutChoices(IDependencyCollection collection)
+        {
+            var result = new Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice>();
+
+            if (Profile == null || _playerManager.LocalSession == null)
+                return result;
+
+            var activeRoleIds = GetActiveLoadoutRoleIds();
+            var roleIds = _prototypeManager.EnumeratePrototypes<JobPrototype>()
+                .Select(job => LoadoutSystem.GetJobPrototype(job.ID))
+                .Distinct();
+
+            foreach (var roleId in roleIds)
+            {
+                if (!_prototypeManager.TryIndex<RoleLoadoutPrototype>(roleId, out var roleLoadoutProto))
+                    continue;
+
+                var active = activeRoleIds.Contains(roleId);
+                var roleLoadout = Profile
+                    .GetLoadoutOrDefault(roleId, _playerManager.LocalSession, Profile.Species, _entManager, _prototypeManager)
+                    .Clone();
+
+                roleLoadout.EnsureValid(Profile, _playerManager.LocalSession, collection);
+
+                var shownGroups = new HashSet<ProtoId<LoadoutGroupPrototype>>();
+                foreach (var groupId in roleLoadoutProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups)) // Pirate: multiz
+                {
+                    if (!shownGroups.Add(groupId) ||
+                        !_prototypeManager.TryIndex(groupId, out LoadoutGroupPrototype? groupProto) ||
+                        groupProto.Hidden)
+                        continue;
+
+                    var category = GetLoadoutGroupCategory(groupProto);
+                    Profile.Loadouts.TryGetValue(roleId, out var savedRoleLoadout);
+                    var selected = savedRoleLoadout?.SelectedLoadouts.GetValueOrDefault(groupId);
+
+                    foreach (var loadoutId in groupProto.GetAllLoadouts(_prototypeManager).Distinct())
+                    {
+                        if (!_prototypeManager.TryIndex(loadoutId, out LoadoutPrototype? loadoutProto))
+                            continue;
+
+                        if (!result.TryGetValue(loadoutId, out var choice))
+                        {
+                            choice = new CombinedLoadoutChoice(loadoutProto, category);
+                            result[loadoutId] = choice;
+                        }
+
+                        var enabled = roleLoadout.IsValid(Profile, _playerManager.LocalSession, loadoutId, collection, out var reason);
+                        choice.Locations.Add(new CombinedLoadoutLocation(roleId, groupId, active, enabled, reason));
+                        choice.Selected |= active && selected?.Any(loadout => loadout.Prototype == loadoutId) == true;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private HashSet<string> GetActiveLoadoutRoleIds()
+        {
+            if (Profile == null)
+                return new HashSet<string>();
+
+            var highPriorityJob = Profile.JobPriorities.FirstOrDefault(priority => priority.Value == JobPriority.High).Key;
+            var jobId = highPriorityJob.Id ?? SharedGameTicker.FallbackOverflowJob;
+            var roleId = LoadoutSystem.GetJobPrototype(jobId);
+
+            return _prototypeManager.HasIndex<RoleLoadoutPrototype>(roleId)
+                ? new HashSet<string> { roleId }
+                : new HashSet<string>();
+        }
+
+        private void SetCombinedLoadout(CombinedLoadoutChoice choice, bool selected)
+        {
+            if (Profile == null || _playerManager.LocalSession == null)
+                return;
+
+            var collection = IoCManager.Instance;
+            if (collection == null)
+                return;
+
+            var updated = Profile;
+            var touched = new HashSet<(string Role, ProtoId<LoadoutGroupPrototype> Group)>();
+
+            var activeLocations = choice.Locations.Where(location => location.Active).ToList(); // Pirate: multiz
+            foreach (var location in selected ? activeLocations.Where(location => location.Enabled).Take(1) : activeLocations) // Pirate: multiz
+            {
+                if (selected && !location.Enabled)
+                    continue;
+
+                if (!touched.Add((location.Role, location.Group)))
+                    continue;
+
+                var roleLoadout = updated.Loadouts.TryGetValue(location.Role, out var existing)
+                    ? existing.Clone()
+                    : new RoleLoadout(location.Role);
+
+                if (!roleLoadout.SelectedLoadouts.TryGetValue(location.Group, out var groupLoadouts))
+                {
+                    groupLoadouts = new List<Loadout>();
+                    roleLoadout.SelectedLoadouts[location.Group] = groupLoadouts;
+                }
+
+                var alreadySelected = groupLoadouts.Any(loadout => loadout.Prototype == choice.Prototype.ID);
+
+                if (selected == alreadySelected)
+                    continue;
+
+                if (selected)
+                    RemoveConflictingLoadouts(roleLoadout, choice.Prototype);
+
+                if (selected)
+                    roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager);
+                else
+                    roleLoadout.RemoveLoadout(location.Group, choice.Prototype.ID, _prototypeManager);
+
+                updated = updated.WithLoadout(roleLoadout);
+            }
+
+            Profile = updated;
+            SetDirty();
+            RefreshLoadouts();
+            ReloadPreview();
+        }
+
+        private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype)
+        {
+            if (selectedPrototype.Equipment.Count == 0)
+                return;
+
+            var occupiedSlots = selectedPrototype.Equipment.Keys.ToHashSet();
+
+            foreach (var (_, loadouts) in roleLoadout.SelectedLoadouts)
+            {
+                for (var i = loadouts.Count - 1; i >= 0; i--)
+                {
+                    if (!_prototypeManager.TryIndex(loadouts[i].Prototype, out LoadoutPrototype? loadoutProto))
+                        continue;
+
+                    if (loadoutProto.Equipment.Keys.Any(occupiedSlots.Contains))
+                        loadouts.RemoveAt(i);
+                }
+            }
+        }
+
+        private void RefreshSelectedLoadoutsList(Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice> choices, LoadoutSystem loadoutSystem)
+        {
+            var showUnavailable = new CheckBox
+            {
+                Text = "Show unavailable",
+                Pressed = _showUnavailableLoadouts,
+                Margin = new Thickness(0, 0, 0, 8),
+            };
+
+            showUnavailable.OnToggled += args =>
+            {
+                _showUnavailableLoadouts = args.Pressed;
+                RefreshLoadouts();
+            };
+
+            SelectedLoadoutsList.AddChild(showUnavailable);
+
+            foreach (var choice in choices.Values
+                .Where(choice => choice.Selected)
+                .OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
+            {
+                var remove = new Button
+                {
+                    Text = "X",
+                    MinSize = new Vector2(24, 24),
+                    SetSize = new Vector2(24, 24),
+                    StyleBoxOverride = new StyleBoxEmpty(),
+                };
+
+                remove.Label.FontColorOverride = Color.Red;
+                remove.OnPressed += _ => SetCombinedLoadout(choice, false);
+
+                SelectedLoadoutsList.AddChild(new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    Margin = new Thickness(0, 0, 0, 4),
+                    Children =
+                    {
+                        remove,
+                        new Label
+                        {
+                            Text = loadoutSystem.GetName(choice.Prototype),
+                            ClipText = true,
+                            HorizontalExpand = true,
+                            Margin = new Thickness(5, 0, 0, 0),
+                        },
+                    },
+                });
+            }
+        }
+
+        private Dictionary<string, GridContainer> CreateLoadoutCategoryTabs()
+        {
+            var categories = new[]
+            {
+                "Accessories",
+                "Backpacks",
+                "Belt",
+                "Eyes",
+                "Hands",
+                "Head",
+                "Items",
+                "Mask",
+                "Neck",
+                "Outer",
+                "Shoes",
+                "Species",
+                "Uniform",
+            };
+
+            var result = new Dictionary<string, GridContainer>();
+
+            foreach (var category in categories)
+            {
+                var body = new GridContainer
+                {
+                    Columns = 8,
+                    Margin = new Thickness(5),
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                };
+
+                var scroll = new ScrollContainer
+                {
+                    HScrollEnabled = false,
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                    Children =
+                    {
+                        body,
+                    },
+                };
+
+                LoadoutSlotTabs.AddChild(scroll);
+                LoadoutSlotTabs.SetTabTitle(LoadoutSlotTabs.ChildCount - 1, GetLoadoutCategoryTitle(category));
+                result[category] = body;
+            }
+
+            return result;
+        }
+
+        private string GetLoadoutCategoryTitle(string category)
+        {
+            return Loc.TryGetString($"loadout-category-{category}", out var localized)
+                ? localized
+                : category;
+        }
+
+        private string GetLoadoutGroupCategory(LoadoutGroupPrototype group)
+        {
+            var key = $"{group.ID} {group.Name}".ToLowerInvariant();
+
+            if (key.Contains("backpack") || key.Contains("-back") || key.Contains(" back"))
+                return "Backpacks";
+
+            if (key.Contains("accessor"))
+                return "Accessories";
+
+            if (key.Contains("belt"))
+                return "Belt";
+
+            if (key.Contains("eyes") || key.Contains("glasses"))
+                return "Eyes";
+
+            if (key.Contains("gloves") || key.Contains("hands"))
+                return "Hands";
+
+            if (key.Contains("head"))
+                return "Head";
+
+            if (key.Contains("mask"))
+                return "Mask";
+
+            if (key.Contains("neck"))
+                return "Neck";
+
+            if (key.Contains("outer"))
+                return "Outer";
+
+            if (key.Contains("shoes"))
+                return "Shoes";
+
+            if (key.Contains("species"))
+                return "Species";
+
+            if (key.Contains("jumpsuit") || key.Contains("jumpskirt") || key.Contains("uniform") || key.Contains("clothing"))
+                return "Uniform";
+
+            return "Items";
+        }
+
+        private sealed class CombinedLoadoutChoice
+        {
+            public CombinedLoadoutChoice(LoadoutPrototype prototype, string category)
+            {
+                Prototype = prototype;
+                Category = category;
+            }
+
+            public LoadoutPrototype Prototype { get; }
+            public string Category { get; }
+            public bool Selected;
+            public List<CombinedLoadoutLocation> Locations { get; } = new();
+            public bool Enabled => Locations.Any(location => location.Active && location.Enabled);
+            public FormattedMessage? Reason => Locations.FirstOrDefault(location => location.Active && location.Reason != null).Reason;
+        }
+
+        private readonly record struct CombinedLoadoutLocation(
+            string Role,
+            ProtoId<LoadoutGroupPrototype> Group,
+            bool Active,
+            bool Enabled,
+            FormattedMessage? Reason);
+
+#endregion
 
         /// <summary>
         /// Reloads the entire dummy entity for preview.
@@ -1274,6 +1634,7 @@ namespace Content.Client.Lobby.UI
                         ReloadPreview();
 
                         UpdateJobPriorities();
+                        RefreshLoadouts(); // Pirate: multiz
                         RefreshTraits(); // Pirate: port and modified DV traits UI
                         SetDirty();
                     };

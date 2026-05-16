@@ -1,0 +1,355 @@
+# EE generic head
+- type: loadout
+  id: ClothingHeadHatTacticalMaidHeadband
+  equipment:
+    head: ClothingHeadHatTacticalMaidHeadband
+
+- type: loadout
+  id: ClothingHeadHatWitch1
+  equipment:
+    head: ClothingHeadHatWitch1
+
+- type: loadout
+  id: LoadoutHeadBowlerHat
+  equipment:
+    head: ClothingHeadHatBowlerHat
+
+- type: loadout
+  id: LoadoutHeadGreyFlatcap
+  equipment:
+    head: ClothingHeadHatGreyFlatcap
+
+- type: loadout
+  id: LoadoutHeadHatCorpsoftFlipped
+  equipment:
+    head: ClothingHeadHatCorpsoftFlipped
+
+- type: loadout
+  id: LoadoutHeadHatCowboyBountyHunter
+  equipment:
+    head: ClothingHeadHatCowboyBountyHunter
+
+- type: loadout
+  id: LoadoutHeadHatMimesoftFlipped
+  equipment:
+    head: ClothingHeadHatMimesoftFlipped
+
+- type: loadout
+  id: LoadoutHeadTinfoil
+  equipment:
+    head: ClothingHeadTinfoil
+
+# EE generic eyes
+- type: loadout
+  id: LoadoutEyesBlindfold
+  equipment:
+    eyes: ClothingEyesBlindfold
+
+- type: loadout
+  id: LoadoutEyesEyepatch
+  equipment:
+    eyes: ClothingEyesEyepatch
+
+- type: loadout
+  id: LoadoutItemSunglasses
+  equipment:
+    eyes: ClothingEyesGlassesSunglasses
+
+# EE generic neck
+- type: loadout
+  id: LoadoutNeckScarfStripedZebra
+  equipment:
+    neck: ClothingNeckScarfStripedZebra
+
+# EE generic outer clothing
+- type: loadout
+  id: ClothingOuterCoatDetectiveLoadout
+  equipment:
+    outerClothing: ClothingOuterCoatDetectiveLoadout
+
+- type: loadout
+  id: ClothingOuterCoatExpensive
+  equipment:
+    outerClothing: ClothingOuterCoatExpensive
+
+- type: loadout
+  id: ClothingOuterSuitWitchRobes
+  equipment:
+    outerClothing: ClothingOuterSuitWitchRobes
+
+- type: loadout
+  id: LoadoutOuterCoatBomberjacket
+  equipment:
+    outerClothing: ClothingOuterCoatBomber
+
+- type: loadout
+  id: LoadoutOuterCoatHoodieBlack
+  equipment:
+    outerClothing: ClothingOuterHoodieBlack
+
+- type: loadout
+  id: LoadoutOuterCoatHoodieGrey
+  equipment:
+    outerClothing: ClothingOuterHoodieGrey
+
+- type: loadout
+  id: LoadoutOuterCoatLettermanRed
+  equipment:
+    outerClothing: ClothingOuterCoatLettermanRed
+
+- type: loadout
+  id: LoadoutOuterVest
+  equipment:
+    outerClothing: ClothingOuterVest
+
+# EE generic shoes
+- type: loadout
+  id: LoadoutShoesBootsCowboyFancy
+  equipment:
+    shoes: ClothingShoesBootsCowboyFancy
+
+- type: loadout
+  id: LoadoutShoesBootsCowboyWhite
+  equipment:
+    shoes: ClothingShoesBootsCowboyWhite
+
+- type: loadout
+  id: LoadoutShoesBootsLaceup
+  equipment:
+    shoes: ClothingShoesBootsLaceup
+
+- type: loadout
+  id: LoadoutShoesBootsWork
+  equipment:
+    shoes: ClothingShoesBootsWork
+
+- type: loadout
+  id: LoadoutShoesLeather
+  equipment:
+    shoes: ClothingShoesLeather
+
+- type: loadout
+  id: LoadoutShoesUnderSocksBee
+  equipment:
+    shoes: ClothingUnderSocksBee
+
+# EE generic trinkets
+- type: loadout
+  id: LoadoutBookRandom
+  storage:
+    back:
+    - BookRandom
+
+- type: loadout
+  id: LoadoutHandLabeler
+  storage:
+    back:
+    - HandLabeler
+
+- type: loadout
+  id: LoadoutItemBarberScissors
+  storage:
+    back:
+    - BarberScissors
+
+- type: loadout
+  id: LoadoutItemBlunt
+  storage:
+    back:
+    - Blunt
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemBoxFolderGrey
+  storage:
+    back:
+    - BoxFolderGrey
+
+- type: loadout
+  id: LoadoutItemCig
+  storage:
+    back:
+    - Cigarette
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemCigsMixed
+  storage:
+    back:
+    - CigPackMixed
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemCrayonBox
+  storage:
+    back:
+    - CrayonBox
+
+- type: loadout
+  id: LoadoutItemDrinkLithiumFlask
+  storage:
+    back:
+    - DrinkLithiumFlask
+
+- type: loadout
+  id: LoadoutItemDrinkShinyFlask
+  storage:
+    back:
+    - DrinkShinyFlask
+
+- type: loadout
+  id: LoadoutItemDrinkVacuumFlask
+  storage:
+    back:
+    - DrinkVacuumFlask
+
+- type: loadout
+  id: LoadoutItemFlare
+  storage:
+    back:
+    - Flare
+
+- type: loadout
+  id: LoadoutItemFlashlightLantern
+  storage:
+    back:
+    - FlashlightLantern
+
+- type: loadout
+  id: LoadoutItemHandheldStationMap
+  storage:
+    back:
+    - HandheldStationMap
+
+- type: loadout
+  id: LoadoutItemJoint
+  storage:
+    back:
+    - Joint
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemLantern
+  storage:
+    back:
+    - Lantern
+
+- type: loadout
+  id: LoadoutItemLighterCheap
+  storage:
+    back:
+    - CheapLighter
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemLighterFlippo
+  storage:
+    back:
+    - FlippoLighter
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutItemPapers
+  dummyEntity: Paper
+  storage:
+    back:
+    - Paper
+    - Paper
+    - Paper
+    - Paper
+
+- type: loadout
+  id: LoadoutItemSmokingPipeFilledTobacco
+  storage:
+    back:
+    - SmokingPipeFilledTobacco
+  groupBy: "smokeables"
+
+- type: loadout
+  id: LoadoutPen
+  storage:
+    back:
+    - Pen
+
+- type: loadout
+  id: LuxuryPen
+  storage:
+    back:
+    - LuxuryPen
+
+- type: loadout
+  id: PlushieArachind
+  storage:
+    back:
+    - PlushieArachind
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieCarp
+  storage:
+    back:
+    - PlushieCarp
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieHampter
+  storage:
+    back:
+    - PlushieHampter
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieHuman
+  storage:
+    back:
+    - PlushieHuman
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieMoth
+  storage:
+    back:
+    - PlushieMoth
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieRouny
+  storage:
+    back:
+    - PlushieRouny
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieSharkBlue
+  storage:
+    back:
+    - PlushieSharkBlue
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieSharkGrey
+  storage:
+    back:
+    - PlushieSharkGrey
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieSharkPink
+  storage:
+    back:
+    - PlushieSharkPink
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieSlime
+  storage:
+    back:
+    - PlushieSlime
+  groupBy: "Plushie"
+
+- type: loadout
+  id: PlushieVox
+  storage:
+    back:
+    - PlushieVox
+  groupBy: "Plushie"
