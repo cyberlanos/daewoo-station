@@ -37,3 +37,49 @@
   - SpaceTrafficControlFriendlyEventScheduler
   - BasicRoundstartVariation
   - PsionicEventsScheduler # Pirate
+  
+- type: gamePreset
+  id: PirateRelaxed
+  alias:
+  - relaxed
+  - relax
+  - розслаблений
+  name: "Розслаблений"
+  showInVote: true
+  description: "Спокійний режим з некритичними подіями."
+  rules:
+  - PirateRelaxedEventScheduler
+  - PirateRelaxedSubGamemodesRule
+  - BasicRoundstartVariation
+  - PsionicEventsScheduler
+
+- type: entityTable
+  id: PirateRelaxedEventsTable
+  table: !type:AllSelector
+    children:
+      - !type:NestedSelector
+        tableId: BasicCalmEventsTable
+      - !type:NestedSelector
+        tableId: CargoGiftsTable
+      - !type:NestedSelector
+        tableId: CalmPestEventsTable
+      - !type:NestedSelector
+        tableId: SpicyPestEventsTable
+      - id: ParadoxCloneSpawn
+
+- type: entity
+  id: PirateRelaxedEventScheduler
+  parent: BaseGameRule
+  components:
+  - type: BasicStationEventScheduler
+    scheduledGameRules: !type:NestedSelector
+      tableId: PirateRelaxedEventsTable
+
+- type: entity
+  id: PirateRelaxedSubGamemodesRule
+  parent: BaseGameRule
+  components:
+  - type: SubGamemodes
+    rules:
+    - id: Devil
+      prob: 0.3
