@@ -92,7 +92,7 @@ namespace Content.Pirate.Shared.Traits.Trainability
 
 //Push-Ups
         [DataField("pushUpsEfficiency"), ViewVariables(VVAccess.ReadWrite)]
-        public float PushUpsEfficiency = 0.1f;
+        public float PushUpsEfficiency = 1f;
 
         [DataField("pushUpWindow")]
         public float PushUpWindow = 0.2f;
