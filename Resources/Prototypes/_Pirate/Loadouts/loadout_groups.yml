@@ -72,6 +72,62 @@
   - LoadoutEyesBlindfold
   - LoadoutEyesEyepatch
   - LoadoutItemSunglasses
+  - LoadoutEyesEyepatchColor
+  - LoadoutEyesEyepatchColorFlipped
+  - LoadoutEyesGlasses3D
+  - LoadoutEyesGlassesHipster
+  - LoadoutEyesGlassesMonocle
+  - LoadoutEyesGlassesPanto
+  - LoadoutEyesBlindfoldColor
+  - LoadoutEyesGlassesCheapSunglassesAviator
+  - LoadoutEyesGlassesCheapSunglassesBig
+  - LoadoutEyesGlassesCheapSunglassesVisor
+  - LoadoutEyesGlassesSunglassesAviator
+  - LoadoutEyesGlassesSunglassesBig
+  - LoadoutEyesGlassesSunglassesVisor
+  - LoadoutItemBlindfoldFake
+  - LoadoutEyesBlindfoldFakeColor
+
+- type: loadoutGroup
+  id: PirateEEGenericBackpacks
+  name: loadout-group-backpack
+  minLimit: 0
+  loadouts:
+  - LoadoutBackpackSatchelPurse
+  - LoadoutBackpackSatchelPurseFlipped
+
+- type: loadoutGroup
+  id: PirateEEGenericBelt
+  name: loadout-group-belt
+  minLimit: 0
+  loadouts:
+  - LoadoutBeltGeneric
+  - LoadoutBeltGenericThin
+  - LoadoutBeltGenericThick
+  - LoadoutBeltWaist
+  - LoadoutBeltWaistThin
+  - LoadoutBeltWaistbagColor
+  - ClothingBeltTCAFWebbing
+
+- type: loadoutGroup
+  id: PirateEEGenericHands
+  name: loadout-group-gloves
+  minLimit: 0
+  loadouts:
+  - LoadoutHandsGlovesFingerlessWhite
+  - LoadoutHandsGlovesEvening
+  - LoadoutHandsGlovesEnviroglovesEvening
+  - LoadoutHandsClothWrap
+  - ClothingHandsTacticalMaidGlovesLoadout
+  - ClothingHandsGlovesCombatTCAF
+
+- type: loadoutGroup
+  id: PirateEEGenericMask
+  name: loadout-group-passenger-mask
+  minLimit: 0
+  loadouts:
+  - LoadoutMaskBandWhite
+  - LoadoutMaskNeckGaiterWhite
 
 - type: loadoutGroup
   id: PirateGenericPassengerJumpsuit
@@ -345,6 +401,40 @@
   - LoadoutHeadHatCowboyBountyHunter
   - LoadoutHeadHatMimesoftFlipped
   - LoadoutHeadTinfoil
+  - LoadoutHeadFedoraWhite
+  - LoadoutHeadFlatBlack
+  - LoadoutHeadFlatBrown
+  - LoadoutHeadBellhop
+  - LoadoutHeadPoppyWhite
+  - LoadoutHeadBandWhite
+  - LoadoutHeadBeretWhite
+  - LoadoutHeadBeretArtist
+  - LoadoutHeadBeretPeaked
+  - LoadoutHeadBeanie
+  - LoadoutHeadBeanieWinter
+  - LoadoutHeadBeanieSubmariner
+  - LoadoutHeadBeanieTight
+  - LoadoutHeadSlouch
+  - LoadoutHeadSunVisor
+  - LoadoutHeadHijabColorable
+  - LoadoutHeadTurbanColorable
+  - LoadoutHeadKippahColorable
+  - LoadoutHeadHeadBandBasic
+  - LoadoutHeadPin
+  - LoadoutHeadPinClover
+  - LoadoutHeadPinButterfly
+  - LoadoutHeadPinMagnetic
+  - LoadoutHeadRibbon
+  - LoadoutHeadBow
+  - LoadoutHeadBowSmall
+  - LoadoutHeadHatBeanieGreen
+  - LoadoutHeadHatMountie
+  - ClothingHeadHatTCAFBeretDress
+  - ClothingHeadHatTCAFBeretField
+  - ClothingHeadHatTCFLBeretDress
+  - ClothingHeadHatTCFLBeretField
+  - ClothingHeadHatTCFLBeretSentinel
+  - ClothingHeadHatTCFLSoftCap
   subgroups:
   - PiratePassengerHead
 

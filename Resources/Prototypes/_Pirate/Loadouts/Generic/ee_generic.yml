@@ -39,6 +39,176 @@
   equipment:
     head: ClothingHeadTinfoil
 
+- type: loadout
+  id: LoadoutHeadFedoraWhite
+  equipment:
+    head: ClothingHeadHatFedoraWhite
+
+- type: loadout
+  id: LoadoutHeadFlatBlack
+  equipment:
+    head: ClothingHeadHatFlatBlack
+
+- type: loadout
+  id: LoadoutHeadFlatBrown
+  equipment:
+    head: ClothingHeadHatFlatBrown
+
+- type: loadout
+  id: LoadoutHeadBellhop
+  equipment:
+    head: ClothingHeadHatBellhop
+
+- type: loadout
+  id: LoadoutHeadPoppyWhite
+  equipment:
+    head: FoodPoppyWhite
+
+- type: loadout
+  id: LoadoutHeadBandWhite
+  equipment:
+    head: ClothingHeadBandWhite
+
+- type: loadout
+  id: LoadoutHeadBeretWhite
+  equipment:
+    head: ClothingHeadHatBeretWhite
+
+- type: loadout
+  id: LoadoutHeadBeretArtist
+  equipment:
+    head: ClothingHeadHatBeretArtist
+
+- type: loadout
+  id: LoadoutHeadBeretPeaked
+  equipment:
+    head: ClothingHeadHatBeretPeaked
+
+- type: loadout
+  id: LoadoutHeadBeanie
+  equipment:
+    head: ClothingHeadHatBeanie
+
+- type: loadout
+  id: LoadoutHeadBeanieWinter
+  equipment:
+    head: ClothingHeadHatBeanieWinter
+
+- type: loadout
+  id: LoadoutHeadBeanieSubmariner
+  equipment:
+    head: ClothingHeadHatBeanieSubmariner
+
+- type: loadout
+  id: LoadoutHeadBeanieTight
+  equipment:
+    head: ClothingHeadHatBeanieTight
+
+- type: loadout
+  id: LoadoutHeadSlouch
+  equipment:
+    head: ClothingHeadHatSlouch
+
+- type: loadout
+  id: LoadoutHeadSunVisor
+  equipment:
+    head: ClothingHeadHatSunVisor
+
+- type: loadout
+  id: LoadoutHeadHijabColorable
+  equipment:
+    head: ClothingHeadHatHijabColorable
+
+- type: loadout
+  id: LoadoutHeadTurbanColorable
+  equipment:
+    head: ClothingHeadHatTurbanColorable
+
+- type: loadout
+  id: LoadoutHeadKippahColorable
+  equipment:
+    head: ClothingHeadHatKippahColorable
+
+- type: loadout
+  id: LoadoutHeadHeadBandBasic
+  equipment:
+    head: ClothingHeadHatHeadBandBasic
+
+- type: loadout
+  id: LoadoutHeadPin
+  equipment:
+    head: ClothingHeadHatPin
+
+- type: loadout
+  id: LoadoutHeadPinClover
+  equipment:
+    head: ClothingHeadHatPinClover
+
+- type: loadout
+  id: LoadoutHeadPinButterfly
+  equipment:
+    head: ClothingHeadHatPinButterfly
+
+- type: loadout
+  id: LoadoutHeadPinMagnetic
+  equipment:
+    head: ClothingHeadHatPinMagnetic
+
+- type: loadout
+  id: LoadoutHeadRibbon
+  equipment:
+    head: ClothingHeadHatRibbon
+
+- type: loadout
+  id: LoadoutHeadBow
+  equipment:
+    head: ClothingHeadHatBow
+
+- type: loadout
+  id: LoadoutHeadBowSmall
+  equipment:
+    head: ClothingHeadHatBowSmall
+
+- type: loadout
+  id: LoadoutHeadHatBeanieGreen
+  equipment:
+    head: ClothingHeadHatBeanieGreen
+
+- type: loadout
+  id: LoadoutHeadHatMountie
+  equipment:
+    head: ClothingHeadHatMountie
+
+- type: loadout
+  id: ClothingHeadHatTCAFBeretDress
+  equipment:
+    head: ClothingHeadHatTCAFBeretDress
+
+- type: loadout
+  id: ClothingHeadHatTCAFBeretField
+  equipment:
+    head: ClothingHeadHatTCAFBeretField
+
+- type: loadout
+  id: ClothingHeadHatTCFLBeretDress
+  equipment:
+    head: ClothingHeadHatTCFLBeretDress
+
+- type: loadout
+  id: ClothingHeadHatTCFLBeretField
+  equipment:
+    head: ClothingHeadHatTCFLBeretField
+
+- type: loadout
+  id: ClothingHeadHatTCFLBeretSentinel
+  equipment:
+    head: ClothingHeadHatTCFLBeretSentinel
+
+- type: loadout
+  id: ClothingHeadHatTCFLSoftCap
+  equipment:
+    head: ClothingHeadHatTCFLSoftCap
+
 # EE generic eyes
 - type: loadout
   id: LoadoutEyesBlindfold
@@ -54,6 +224,81 @@
   id: LoadoutItemSunglasses
   equipment:
     eyes: ClothingEyesGlassesSunglasses
+
+- type: loadout
+  id: LoadoutEyesEyepatchColor
+  equipment:
+    eyes: ClothingEyesEyepatchColor
+
+- type: loadout
+  id: LoadoutEyesEyepatchColorFlipped
+  equipment:
+    eyes: ClothingEyesEyepatchColorFlipped
+
+- type: loadout
+  id: LoadoutEyesGlasses3D
+  equipment:
+    eyes: ClothingEyesGlasses3D
+
+- type: loadout
+  id: LoadoutEyesGlassesHipster
+  equipment:
+    eyes: ClothingEyesGlassesHipster
+
+- type: loadout
+  id: LoadoutEyesGlassesMonocle
+  equipment:
+    eyes: ClothingEyesGlassesMonocle
+
+- type: loadout
+  id: LoadoutEyesGlassesPanto
+  equipment:
+    eyes: ClothingEyesGlassesPanto
+
+- type: loadout
+  id: LoadoutEyesBlindfoldColor
+  equipment:
+    eyes: ClothingEyesBlindfoldColor
+
+- type: loadout
+  id: LoadoutEyesGlassesCheapSunglassesAviator
+  equipment:
+    eyes: ClothingEyesGlassesCheapSunglassesAviator
+
+- type: loadout
+  id: LoadoutEyesGlassesCheapSunglassesBig
+  equipment:
+    eyes: ClothingEyesGlassesCheapSunglassesBig
+
+- type: loadout
+  id: LoadoutEyesGlassesCheapSunglassesVisor
+  equipment:
+    eyes: ClothingEyesGlassesCheapSunglassesVisor
+
+- type: loadout
+  id: LoadoutEyesGlassesSunglassesAviator
+  equipment:
+    eyes: ClothingEyesGlassesSunglassesAviator
+
+- type: loadout
+  id: LoadoutEyesGlassesSunglassesBig
+  equipment:
+    eyes: ClothingEyesGlassesSunglassesBig
+
+- type: loadout
+  id: LoadoutEyesGlassesSunglassesVisor
+  equipment:
+    eyes: ClothingEyesGlassesSunglassesVisor
+
+- type: loadout
+  id: LoadoutItemBlindfoldFake
+  equipment:
+    eyes: ClothingEyesBlindfoldFake
+
+- type: loadout
+  id: LoadoutEyesBlindfoldFakeColor
+  equipment:
+    eyes: ClothingEyesBlindfoldFakeColor
 
 # EE generic neck
 - type: loadout
@@ -101,6 +346,95 @@
   id: LoadoutOuterVest
   equipment:
     outerClothing: ClothingOuterVest
+
+# EE generic backpacks
+- type: loadout
+  id: LoadoutBackpackSatchelPurse
+  equipment:
+    back: ClothingBackpackSatchelPurse
+
+- type: loadout
+  id: LoadoutBackpackSatchelPurseFlipped
+  equipment:
+    back: ClothingBackpackSatchelPurseFlipped
+
+# EE generic belt
+- type: loadout
+  id: LoadoutBeltGeneric
+  equipment:
+    belt: ClothingBeltGeneric
+
+- type: loadout
+  id: LoadoutBeltGenericThin
+  equipment:
+    belt: ClothingBeltGenericThin
+
+- type: loadout
+  id: LoadoutBeltGenericThick
+  equipment:
+    belt: ClothingBeltGenericThick
+
+- type: loadout
+  id: LoadoutBeltWaist
+  equipment:
+    belt: ClothingBeltWaist
+
+- type: loadout
+  id: LoadoutBeltWaistThin
+  equipment:
+    belt: ClothingBeltWaistThin
+
+- type: loadout
+  id: LoadoutBeltWaistbagColor
+  equipment:
+    belt: ClothingBeltStorageWaistbagColor
+
+- type: loadout
+  id: ClothingBeltTCAFWebbing
+  equipment:
+    belt: ClothingBeltTCAFWebbing
+
+# EE generic hands
+- type: loadout
+  id: LoadoutHandsGlovesFingerlessWhite
+  equipment:
+    gloves: ClothingHandsGlovesFingerlessWhite
+
+- type: loadout
+  id: LoadoutHandsGlovesEvening
+  equipment:
+    gloves: ClothingHandsGlovesEvening
+
+- type: loadout
+  id: LoadoutHandsGlovesEnviroglovesEvening
+  equipment:
+    gloves: ClothingHandsGlovesEnviroglovesEvening
+
+- type: loadout
+  id: LoadoutHandsClothWrap
+  equipment:
+    gloves: ClothingClothWrap
+
+- type: loadout
+  id: ClothingHandsTacticalMaidGlovesLoadout
+  equipment:
+    gloves: ClothingHandsTacticalMaidGlovesLoadout
+
+- type: loadout
+  id: ClothingHandsGlovesCombatTCAF
+  equipment:
+    gloves: ClothingHandsGlovesCombatTCAF
+
+# EE generic mask
+- type: loadout
+  id: LoadoutMaskBandWhite
+  equipment:
+    mask: ClothingMaskBandWhite
+
+- type: loadout
+  id: LoadoutMaskNeckGaiterWhite
+  equipment:
+    mask: ClothingMaskNeckGaiterWhite
 
 # EE generic shoes
 - type: loadout

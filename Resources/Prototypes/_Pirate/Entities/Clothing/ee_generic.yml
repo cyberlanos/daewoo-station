@@ -1,0 +1,929 @@
+﻿# Ported from Einstein Engines generic loadout targets.
+# Only includes categories requested in Resources/Prototypes/_Pirate/Loadouts/ee_generic_missing.md.
+
+- type: entity
+  abstract: true
+  parent: [Clothing, BaseFoldable]
+  id: FlippableEyesBase
+  components:
+  - type: Foldable
+    canFoldInsideContainer: true
+    unfoldVerbText: fold-flip-verb
+    foldVerbText: fold-flip-verb
+  - type: FoldableClothing
+    foldedEquippedPrefix: flipped
+
+- type: entity
+  parent: [ClothingEyesEyepatch, FlippableEyesBase]
+  id: ClothingEyesEyepatchColor
+  name: eyepatch
+  description: Yarr.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/eyepatch_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/eyepatch_color.rsi
+  - type: EyeProtection
+    protectionTime: 5
+
+
+- type: entity
+  parent: ClothingEyesEyepatchColor
+  id: ClothingEyesEyepatchColorFlipped
+  suffix: flipped
+  components:
+  - type: Foldable
+    folded: true
+  - type: Clothing
+    equippedPrefix: flipped
+
+
+- type: entity
+  parent: ClothingEyesBlindfold
+  id: ClothingEyesBlindfoldColor
+  suffix: colorable
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
+
+
+- type: entity
+  parent: ClothingEyesBase
+  id: ClothingEyesBlindfoldFake
+  name: blindfold
+  description: The bind leading the blind.
+  suffix: fake
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold.rsi
+
+
+- type: entity
+  parent: ClothingEyesBlindfoldFake
+  id: ClothingEyesBlindfoldFakeColor
+  suffix: colorable, fake
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
+
+
+- type: entity
+  parent: ClothingEyesBase
+  id: ClothingEyesGlasses3D
+  name: 3D glasses
+  description: twiin armageddon2
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/3d.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/3d.rsi
+
+
+- type: entity
+  parent: ClothingEyesGlasses
+  id: ClothingEyesGlassesHipster
+  name: hipster glasses
+  description: Made by Uncool. Co.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/hipster.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/hipster.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlasses
+  id: ClothingEyesGlassesMonocle
+  name: monocle
+  description: Such a dapper eyepiece!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/monocle.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/monocle.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlasses
+  id: ClothingEyesGlassesPanto
+  name: panto glasses
+  description: So iconic. So generic. The monobloc chair of the glasses world.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/panto.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/panto.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesCheapSunglasses
+  id: ClothingEyesGlassesCheapSunglassesAviator
+  name: aviators
+  description: A pair of designer sunglasses.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesSunglasses
+  id: ClothingEyesGlassesSunglassesAviator
+  name: shielded aviators
+  description: A pair of designer sunglasses. These ones are specially made to protect the eye from blinding flashes of light.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesCheapSunglasses
+  id: ClothingEyesGlassesCheapSunglassesBig
+  name: big sunglasses
+  description: A pair of black sunglasses with big lenses.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesSunglasses
+  id: ClothingEyesGlassesSunglassesBig
+  name: big shielded sunglasses
+  description: A pair of black sunglasses with big lenses. These ones are specially made to protect the eye from blinding flashes of light.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesCheapSunglasses
+  id: ClothingEyesGlassesCheapSunglassesVisor
+  name: visor sunglasses
+  description: A pair of visor sunglasses.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingEyesGlassesSunglasses
+  id: ClothingEyesGlassesSunglassesVisor
+  name: shielded visor sunglasses
+  description: A pair of visor sunglasses. These ones are specially made to protect the eye from blinding flashes of light.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+
+
+- type: entity
+  parent: ClothingHandsButcherable
+  id: ClothingHandsGlovesFingerlessWhite
+  name: fingerless gloves
+  description: Plain gloves without fingertips.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/fingerlesswhite.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/fingerlesswhite.rsi
+  - type: Fiber
+    fiberMaterial: fibers-synthetic
+    fiberColor: fibers-dyed
+  - type: DamageOnInteractProtection
+    damageProtection:
+      flatReductions:
+        Heat: 0 # no protection
+
+
+- type: entity
+  parent: ClothingHandsGlovesSyntheticBase
+  id: ClothingHandsGlovesEvening
+  name: evening gloves
+  description: Gloves that reach past the elbow. Serving elegance and serving looks!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/evening_gloves.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/evening_gloves.rsi
+
+
+- type: entity
+  parent: ClothingHandsGlovesSyntheticBase
+  id: ClothingHandsTacticalMaidGlovesLoadout
+  name: tactical maid gloves
+  description: Tactical maid gloves, every self-respecting maid should be able to discreetly eliminate the stains the passengers leave.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/tacticalmaidgloves.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/tacticalmaidgloves.rsi
+  - type: Fiber
+    fiberColor: fibers-black
+
+- type: entity
+  parent: ClothingHandsGlovesEnviroglovesBase
+  id: ClothingHandsGlovesEnviroglovesEvening
+  name: evening envirogloves
+  description: Who said Plasmamen can't serve elegance and looks?
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/evening_gloves.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/evening_gloves.rsi
+
+
+- type: entity
+  parent: Clothing
+  id: ClothingClothWrap
+  name: cloth wraps
+  description: A roll of treated canvas used for wrapping claws or paws.
+  components:
+  - type: Item
+    size: Small
+    storedRotation: -90
+  - type: Sprite
+    state: icon
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/clothWrap.rsi
+  - type: Clothing
+    slots:
+    - gloves
+    - FEET
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/clothWrap.rsi
+  - type: Butcherable
+    butcheringType: Knife
+    spawned:
+    - id: MaterialCloth1
+      amount: 1
+  - type: Food
+    requiresSpecialDigestion: true
+  - type: SolutionContainerManager
+    solutions:
+      food:
+        maxVol: 10
+        reagents:
+        - ReagentId: Fiber
+          Quantity: 10
+  - type: Tag
+    tags:
+    - ClothMade
+    - WhitelistChameleon
+
+- type: entity
+  parent: ClothingBeltStorageWaistbag
+  id: ClothingBeltStorageWaistbagColor
+  name: waist bag
+  description: A waist bag meant for carrying small items.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waistbag_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waistbag_color.rsi
+
+#Colorization on worn items doesn't work. If this ever gets fixed, you can duplicate this entry and change the color on the sprite to add color variants.
+#- type: entity
+#  parent: ClothingBeltStorageWaistbag
+#  id: ClothingBeltWaistbagColorRed
+#  name: red waist bag
+#  description: A waist bag meant for carrying small items.
+#  components:
+#  - type: Sprite
+#    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waistbag.rsi
+#    layers:
+#    - state: "waistbag"
+#      color: "#bf1313"
+#    - state: "waistbag-trinkets"
+#  - type: Clothing
+#    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waistbag.rsi
+#    layers:
+#    - state: "equipped-BELT"
+#      color: "#bf1313"
+#    - state: "equipped-trinkets"
+
+- type: entity
+  parent: ClothingBeltBase
+  id: ClothingBeltGeneric
+  name: belt
+  description: A plain belt made of leather.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic.rsi
+    state: icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic.rsi
+    renderLayer: innerBelt
+
+
+- type: entity
+  parent: ClothingBeltBase
+  id: ClothingBeltGenericThin
+  name: thin belt
+  description: This is thinner than your usual belt.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thin.rsi
+    state: icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thin.rsi
+    renderLayer: innerBelt
+
+
+- type: entity
+  parent: ClothingBeltBase
+  id: ClothingBeltGenericThick
+  name: thick belt
+  description: A bold fashion statement.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thick.rsi
+    state: icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thick.rsi
+    renderLayer: innerBelt
+
+
+- type: entity
+  parent: ClothingBeltBase
+  id: ClothingBeltWaist
+  name: waist belt
+  description: A belt worn around the waist, giving outfits a more fitted silhouette.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist.rsi
+    state: icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist.rsi
+    renderLayer: innerBelt
+
+
+- type: entity
+  parent: ClothingBeltBase
+  id: ClothingBeltWaistThin
+  name: thin waist belt
+  description: For highlighting that snatched waist.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist_thin.rsi
+    state: icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist_thin.rsi
+    renderLayer: innerBelt
+
+- type: entity
+  parent: ClothingBeltStorageBase
+  id: ClothingBeltTCAFWebbing
+  name: TCAF webbing
+  suffix: TCFL
+  description: Ideal for storing everything from ammo to weapons and combat essentials.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Belt/TCAF_webbing.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Belt/TCAF_webbing.rsi
+
+- type: entity
+  parent: [ClothingBackpackSatchel, BaseFoldable]
+  id: ClothingBackpackSatchelPurse
+  name: purse
+  description: A small, fashionable bag typically worn over the shoulder.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Back/Satchels/purse.rsi
+  - type: Foldable
+    canFoldInsideContainer: true
+    unfoldVerbText: fold-flip-verb
+    foldVerbText: fold-flip-verb
+  - type: FoldableClothing
+    foldedEquippedPrefix: flipped
+
+
+- type: entity
+  parent: ClothingBackpackSatchelPurse
+  id: ClothingBackpackSatchelPurseFlipped
+  suffix: flipped
+  components:
+  - type: Foldable
+    folded: true
+  - type: Clothing
+    equippedPrefix: flipped
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatPin
+  name: hair pin
+  description: A nice hair pin.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin.rsi
+    equipDelay: 0
+    unequipDelay: 0
+  - type: Item
+    size: Tiny
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatPinClover
+  name: clover pin
+  description: A hair pin in the shape of a clover leaf. Smells of mischief.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_clover.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_clover.rsi
+    equipDelay: 0
+    unequipDelay: 0
+  - type: Item
+    size: Tiny
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatPinButterfly
+  name: butterfly pin
+  description: A hair pin in the shape of a butterfly.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_butterfly.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_butterfly.rsi
+    equipDelay: 0
+    unequipDelay: 0
+  - type: Item
+    size: Tiny
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatPinMagnetic
+  name: magnetic pin
+  description: A pair of magnetic pins that stick to your head with magnetism.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_magnetic.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_magnetic.rsi
+    equipDelay: 0
+    unequipDelay: 0
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatRibbon
+  name: hair ribbon
+  description: A length of ribbon acting as a headband.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/ribbon.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/ribbon.rsi
+    equipDelay: 0.2
+    unequipDelay: 0.2
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBow
+  name: hair bow
+  description: A hair bow with a small removable clip on the back.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow.rsi
+    equipDelay: 0.2
+    unequipDelay: 0.2
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBowSmall
+  name: small hair bow
+  description: A ribbon tied into a small bow with a clip on the back to attach to hair.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow_small.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow_small.rsi
+    equipDelay: 0.2
+    unequipDelay: 0.2
+
+- type: entity
+  parent: [ClothingHeadBandBase, ClothingMaskBandWhite]
+  id: ClothingHeadBandWhite
+  name: bandana
+
+
+- type: entity
+  parent: ClothingHeadHatBeret
+  id: ClothingHeadHatBeretWhite
+  name: beret
+  description: A beret, an artists favorite headwear.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beretwhite.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beretwhite.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeretArtist
+  name: artist beret
+  description: A beret fit for an artist.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beret_artist.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beret_artist.rsi
+  - type: Tag
+    tags:
+    - ClothMade
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeretPeaked
+  name: peaked beret
+  description: A peaked beret.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beret_peaked.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beret_peaked.rsi
+  - type: Tag
+    tags:
+    - ClothMade
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeanie
+  name: beanie
+  description: A head-hugging brimless winter cap. This one is tight.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.5
+    coolingCoefficient: 0.5
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeanieWinter
+  name: winter beanie
+  description: A head-hugging brimless winter cap. This one has flaps that cover the ears.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_winter.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_winter.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.5
+    coolingCoefficient: 0.5
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeanieSubmariner
+  name: submariner beanie
+  description: A design of tightly fitting beanie popular among Submarine station workers.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_submariner.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_submariner.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.5
+    coolingCoefficient: 0.5
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeanieTight
+  name: tight beanie
+  description: A rather tight beanie that hides your hair.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_tight.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/beanie_tight.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.5
+    coolingCoefficient: 0.5
+  - type: HideLayerClothing
+    slots:
+    - Hair
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatSlouch
+  name: slouch hat
+  description: A wide brimmed hat folded to form a slouch.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/slouch.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/slouch.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatSunVisor
+  name: sun visor
+  description: A stylish visor intended for blocking out harsh sunlight.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/sun_visor.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Hats/sun_visor.rsi
+
+# Nuclear 14 hats
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBeanieGreen
+  name: green beanie
+  description: A dark green beanie.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Head/FalloutHats/beanie.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Head/FalloutHats/beanie.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatMountie
+  name: mountie hat
+  description: A flat hat made 100% of fur felt.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Head/FalloutHats/mountiehat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Head/FalloutHats/mountiehat.rsi
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatHeadBandBasic
+  name: basic headband
+  description: Perfect for martial artists, sweaty rogue operators, and tunnel gangsters.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Misc/headband.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Misc/headband.rsi
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatHijabColorable
+  name: hijab
+  description: Encompassing cloth headwear worn by some human cultures and religions.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/hijab.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/hijab.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatTurbanColorable
+  name: turban
+  description: A sturdy cloth, worn around the head.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/turban.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/turban.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatKippahColorable
+  name: kippah
+  description: A head covering commonly worn by those of Jewish faith.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/kippah.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/ReligiousHeadgear/kippah.rsi
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatBellhop
+  name: bellhop cap
+  description: All the inconvinience and humiliation of a fez with none of the style!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Head/Hats/bellhop.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Head/Hats/bellhop.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatFedoraWhite
+  name: white fedora
+  description: A white fedora. Lookin' ritzy.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/whitefedora.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/whitefedora.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatFlatBlack
+  name: black flat cap
+  description: A black flat cap, for driving cabs and delivering the papers.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/flatblack.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/flatblack.rsi
+
+
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatFlatBrown
+  name: brown flat cap
+  description: A brown flat cap, for driving cabs and delivering the papers.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/flatbrown.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Head/Hats/flatbrown.rsi
+
+
+- type: entity
+  parent: ClothingHandsGlovesCombat
+  id: ClothingHandsGlovesCombatTCAF
+  name: TCAF combat gloves
+  description: A pair of tactical gloves of an ancient Solarian design, which see common use in the Biesel Republic's armed forces.
+  suffix: TCFL
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Gloves/TCAF_combat_gloves.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Gloves/TCAF_combat_gloves.rsi
+
+- type: entity
+  parent: ClothingHeadBaseButcherable
+  id: ClothingHeadHatTCAFBeretDress
+  name: TCAF dress beret
+  suffix: TCFL
+  description: A formal beret worn by current and former members of the Tau-Ceti Armed Forces.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCAF_beret_dress.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCAF_beret_dress.rsi
+
+
+- type: entity
+  parent: ClothingHeadBaseButcherable
+  id: ClothingHeadHatTCAFBeretField
+  name: TCAF field beret
+  suffix: TCFL
+  description: A field beret worn by current and former members of the Tau-Ceti Armed Forces.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCAF_beret_field.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCAF_beret_field.rsi
+
+
+- type: entity
+  parent: ClothingHeadBaseButcherable
+  id: ClothingHeadHatTCFLBeretDress
+  name: TCFL dress beret
+  suffix: TCFL
+  description: A dress beret worn by current and former members of the Tau-Ceti Foreign Legion. This beret is a common sight in bars all across the Orion Spur.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_dress.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_dress.rsi
+
+
+- type: entity
+  parent: ClothingHeadBaseButcherable
+  id: ClothingHeadHatTCFLBeretField
+  name: TCFL field beret
+  suffix: TCFL
+  description: A field beret worn by current and former members of the Tau-Ceti Foreign Legion. This beret is a common sight in bars all across the Orion Spur.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_field.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_field.rsi
+
+
+- type: entity
+  parent: ClothingHeadBaseButcherable
+  id: ClothingHeadHatTCFLBeretSentinel
+  name: TCFL sentinel beret
+  suffix: TCFL
+  description: A dress beret worn by the elite members of the Tau-Ceti Foreign Legion.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_sentinel.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_beret_sentinel.rsi
+
+
+- type: entity
+  parent: ClothingHeadHeadHatBaseFlippable
+  id: ClothingHeadHatTCFLSoftCap
+  name: TCFL soft cap
+  suffix: TCFL
+  description: A soft wool hat worn by current and former members of the Tau-Ceti Foreign Legion.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_softcap.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Helmet/TCFL_softcap.rsi
+
+- type: entity
+  name: hairflower
+  id: FoodPoppyWhite
+  parent: FoodPoppy
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Objects/Specific/Hydroponics/poppywhite.rsi
+
+
+- type: entity
+  parent: ClothingMaskBandanaBase
+  id: ClothingMaskBandWhite
+  name: bandana
+  description: A bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Bandanas/white.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Bandanas/white.rsi
+
+
+- type: entity
+  parent: ClothingMaskNeckGaiter
+  id: ClothingMaskNeckGaiterWhite
+  name: neck gaiter
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Mask/neckgaiterwhite.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Mask/neckgaiterwhite.rsi
+
+

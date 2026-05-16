@@ -231,7 +231,8 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
             // Apply defaults if required
             // Technically it's possible for someone to game themselves into loadouts they shouldn't have
             // If you put invalid ones first but that's your fault for not using sensible defaults
-            if (loadouts.Count < groupProto.MinLimit)
+            var pirateHasLoadoutForGroupSlot = PirateHasLoadoutForGroupSlot(group, groupProto, loadouts, profile, session, collection, protoManager); // Pirate: multiz
+            if (loadouts.Count < groupProto.MinLimit && !pirateHasLoadoutForGroupSlot) // Pirate: multiz
             {
                 //foreach (var protoId in groupProto.Loadouts)
                 foreach (var protoId in groupProto.GetAllLoadouts(protoManager).Distinct()) // Pirate - port frontier subgroups
@@ -267,6 +268,49 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
             SelectedLoadouts.Remove(value);
         }
     }
+
+#region Pirate: multiz
+    private bool PirateHasLoadoutForGroupSlot(
+        ProtoId<LoadoutGroupPrototype> currentGroup,
+        LoadoutGroupPrototype currentGroupProto,
+        List<Loadout> currentLoadouts,
+        HumanoidCharacterProfile profile,
+        ICommonSession session,
+        IDependencyCollection collection,
+        IPrototypeManager protoManager)
+    {
+        if (currentLoadouts.Count >= currentGroupProto.MinLimit)
+            return false;
+
+        var groupSlots = currentGroupProto.GetAllLoadouts(protoManager)
+            .Select(protoId => protoManager.TryIndex(protoId, out LoadoutPrototype? loadoutProto)
+                ? loadoutProto.Equipment.Keys
+                : Enumerable.Empty<string>())
+            .SelectMany(slots => slots)
+            .ToHashSet();
+
+        if (groupSlots.Count == 0)
+            return false;
+
+        foreach (var (group, loadouts) in SelectedLoadouts)
+        {
+            if (group == currentGroup)
+                continue;
+
+            foreach (var loadout in loadouts)
+            {
+                if (!protoManager.TryIndex(loadout.Prototype, out LoadoutPrototype? loadoutProto) ||
+                    !loadoutProto.Equipment.Keys.Any(groupSlots.Contains) ||
+                    !IsValid(profile, session, loadout.Prototype, collection, out _))
+                    continue;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+#endregion
 
     private void Apply(LoadoutPrototype loadoutProto)
     {
