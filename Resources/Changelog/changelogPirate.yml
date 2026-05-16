@@ -1347,3 +1347,15 @@ Entries:
       message: апдйт двіжка v266.0.0 => v268.1.0
   id: 117
   time: '2026-05-16T08:31:35.0000000+00:00'
+- author: AgentMaper
+  changes:
+    - type: Add
+      message: Додана форма correction officer
+    - type: Add
+      message: Додані нові юбки для СБ
+    - type: Add
+      message: Додані вушка
+    - type: Add
+      message: Додана форма покоївки СБ
+  id: 118
+  time: '2026-05-16T10:51:31.0000000+00:00'
