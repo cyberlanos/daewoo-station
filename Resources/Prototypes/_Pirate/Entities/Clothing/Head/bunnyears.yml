@@ -1,12 +1,12 @@
 - type: entity
   parent: ClothingHeadBase
-  id: ClothingHeadHatBunnyearsStandart
+  id: ClothingHeadHatBunnyearsStandard
   name: bunnyears
   components:
   - type: Sprite
-    sprite: _Pirate/Clothing/Head/Hats/Bunnyears/standart.rsi
+    sprite: _Pirate/Clothing/Head/Hats/Bunnyears/standard.rsi
   - type: Clothing
-    sprite: _Pirate/Clothing/Head/Hats/Bunnyears/standart.rsi
+    sprite: _Pirate/Clothing/Head/Hats/Bunnyears/standard.rsi
     clothingVisuals:
       head:
       - state: equipped-HELMET
