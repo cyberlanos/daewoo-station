@@ -92,17 +92,3 @@
         Piercing: 0.7
         Heat: 0.4
         Caustic: 0.4
-
-- type: entity
-  parent: ClothingOuterArmorBasic
-  id: ClothingOuterSecurityWinterCoat
-  name: "security winter coat"
-  description: "Protects very well from the cold and enemies"
-  components:
-  - type: TemperatureProtection
-    heatingCoefficient: 0.5
-    coolingCoefficient: 0.5
-  - type: Sprite
-    sprite: _Pirate/Clothing/OuterClothing/Coats/sec_winter.rsi
-  - type: Clothing
-    sprite: _Pirate/Clothing/OuterClothing/Coats/sec_winter.rsi
