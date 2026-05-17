@@ -246,7 +246,7 @@
 - type: loadout
   id: JackBoots
   equipment:
-    shoes: ClothingShoesBootsJack # Goobstation
+    shoes: ClothingShoesBootsSecurityJack # Pirate: jackboots step sounds
 
 - type: loadout
   id: SecurityWinterBoots

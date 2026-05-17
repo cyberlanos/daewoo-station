@@ -164,6 +164,8 @@
     messagePerceivedByOthers: shutter-rattle
     interactSuccessSound:
       collection: FenceRattle
+  - type: SoundBlocker # Pirate: audio muffle
+    soundBlockPercent: 0.5 # Pirate: audio muffle
   - type: BlockWeather
   - type: InteractionVerbs # EE: Interaction Verbs
     allowedVerbs:

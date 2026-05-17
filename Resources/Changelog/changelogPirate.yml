@@ -1325,3 +1325,61 @@ Entries:
       message: Трохи зміщений в ліво варіант великого двигуна.
   id: 114
   time: '2026-05-14T20:06:37.0000000+00:00'
+- author: CyberLanos
+  changes:
+    - type: Tweak
+      message: >-
+        черевічкі охорони (всі, включаючи зимові й продвинуті хоса), найманця,
+        солівців видають потужні звуки при ходьбі
+  id: 115
+  time: '2026-05-16T08:28:51.0000000+00:00'
+- author: Slimeperson
+  changes:
+    - type: Add
+      message: Додано новий ігровий режим "Розслаблений"!
+  id: 116
+  time: '2026-05-16T08:29:50.0000000+00:00'
+- author: CyberLanos
+  changes:
+    - type: Add
+      message: 'стіни, шлюзи, вікна, перегородки приглушують звуки '
+    - type: Tweak
+      message: апдйт двіжка v266.0.0 => v268.1.0
+  id: 117
+  time: '2026-05-16T08:31:35.0000000+00:00'
+- author: AgentMaper
+  changes:
+    - type: Add
+      message: Додана форма correction officer
+    - type: Add
+      message: Додані нові юбки для СБ
+    - type: Add
+      message: Додані вушка
+    - type: Add
+      message: Додана форма покоївки СБ
+  id: 118
+  time: '2026-05-16T10:51:31.0000000+00:00'
+- author: The-Devils-Luck
+  changes:
+    - type: Fix
+      message: >-
+        Виправлено можливе дублювання SecretSalt scheduler-а, через яке на
+        старті раунду могли додаватися зайві roundstart антагоністи.
+    - type: Tweak
+      message: >-
+        SecretSalt тепер використовує окремий scheduler, не зачіпаючи SecretTP
+        та інші режими на SecretPlus.
+  id: 119
+  time: '2026-05-16T10:56:40.0000000+00:00'
+- author: Vareniko
+  changes:
+    - type: Fix
+      message: Текстурка повітряної сигналізації (а саме її положення)
+  id: 120
+  time: '2026-05-17T09:00:09.0000000+00:00'
+- author: Vareniko
+  changes:
+    - type: Fix
+      message: Перекладано імена тіньовиків з 1-шої по 36-шу строчку
+  id: 121
+  time: '2026-05-17T16:17:44.0000000+00:00'

@@ -549,7 +549,7 @@
     - id: ClothingHeadsetAltSecurity
     - id: ClothingMaskNeckGaiter
     - id: ClothingOuterCoatHoSTrench
-    - id: ClothingShoesBootsJack
+    - id: ClothingShoesBootsSecurityJack # Pirate: jackboots step sounds
     - id: DoorRemoteSecurity
     #- id: HoloprojectorSecurity Goob, you have one in the belt
     - id: RubberStampHos

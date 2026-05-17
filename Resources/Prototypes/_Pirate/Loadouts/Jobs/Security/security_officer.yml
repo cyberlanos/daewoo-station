@@ -23,3 +23,9 @@
   id: BlackBalaclava
   equipment:
     mask: Balaclava
+
+# Jumpsuit - комбінезон
+- type: loadout
+  id: SecurityOfficerBlueSkirt
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtSecurityBlue

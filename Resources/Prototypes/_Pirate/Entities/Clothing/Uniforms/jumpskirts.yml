@@ -19,3 +19,34 @@
     sprite: _Pirate/Clothing/Uniforms/Jumpskirt/headmaid.rsi
   - type: Clothing
     sprite: _Pirate/Clothing/Uniforms/Jumpskirt/headmaid.rsi
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpskirtSecurityCorrectionofficer
+  name: correction officer's jumpskirt
+  components:
+  - type: Sprite
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/correction_officer.rsi
+  - type: Clothing
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/correction_officer.rsi
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpskirtSecurityHosBlue
+  name: HOS blue skirt
+  components:
+  - type: Sprite
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/hos_elite.rsi
+  - type: Clothing
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/hos_elite.rsi
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpskirtSecurityBlue
+  name: security officer's jumpskirt
+  components:
+  - type: Sprite
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/security_elite.rsi
+  - type: Clothing
+    sprite: _Pirate/Clothing/Uniforms/Jumpskirt/Security/security_elite.rsi
+
