@@ -366,6 +366,13 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
             if (xform.ParentUid != xform.GridUid)
                 continue;
 
+            // Pirate: dock-refresh
+            // The refresh that runs when a docking port is being deleted fires via AnchorStateChangedEvent
+            // raised during entity termination, while the DockingComponent is still attached.
+            // Skip terminating entities so the refresh doesn't republish a dock the client is about to lose.
+            if (metadata.EntityLifeStage >= EntityLifeStage.Terminating)
+                continue;
+
             var gridDocks = result.GetOrNew(GetNetEntity(xform.GridUid.Value));
 
             var state = new DockingPortState()

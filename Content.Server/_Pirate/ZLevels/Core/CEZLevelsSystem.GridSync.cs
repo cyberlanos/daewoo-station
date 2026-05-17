@@ -18,6 +18,14 @@ public sealed partial class CEZLevelsSystem
 
     private bool _gridSyncing;
 
+    // Per-network record of the leader's velocity at the END of the previous sync — i.e., the
+    // velocity that was just written into every peer. If a peer's current velocity is now lower
+    // than this in the leader's direction of motion, physics has since slowed it (collision on
+    // its own map). Comparing against the just-written value avoids the false-positive that hit
+    // when comparing against the leader's *current* velocity, since the leader's velocity grows
+    // as thrust accumulates and the peer takes a frame to catch up.
+    private readonly Dictionary<EntityUid, System.Numerics.Vector2> _lastSyncedVelocity = new();
+
     private void InitGridSync()
     {
         SubscribeLocalEvent<CEZLinkedGridComponent, ComponentRemove>(OnLinkedGridRemoved);
@@ -103,6 +111,11 @@ public sealed partial class CEZLevelsSystem
                 RaiseLocalEvent(peerUid, ref ev);
             }
         }
+
+        // Drop the cached last-synced-velocity entry so EntityUid recycling can't leave us
+        // matching peers against a velocity from a long-dead network.
+        if (ent.Comp.Depth == 0)
+            _lastSyncedVelocity.Remove(ent.Comp.ZNetwork);
     }
 
     private void RaiseLinkedGridPeersChanged(IEnumerable<EntityUid> gridUids)
@@ -137,13 +150,79 @@ public sealed partial class CEZLevelsSystem
                 if (linked.PeerGrids.Count == 0)
                     continue;
 
-                // Second pass: sync all peers to leader's state
+                // What every peer was told to move at last frame — exactly the velocity we wrote
+                // into them at the end of the previous UpdateGridSync pass. Compared against the
+                // peer's current velocity below, this isolates "physics decelerated me" from
+                // "I haven't been re-synced after the leader's thrust changed."
+                _lastSyncedVelocity.TryGetValue(linked.ZNetwork, out var lastSyncedLeaderVel);
+
+                // Pass 1: scan peers for collision blockage on their own maps. The leader's map
+                // is usually empty of whatever a peer is bumping into, so the leader's physics
+                // never sees the obstacle. If any peer's velocity has been decelerated below the
+                // value sync wrote into it last frame, physics held it back — propagate that
+                // constraint up to the leader BEFORE the per-peer sync runs, so every peer in
+                // pass 2 sees the corrected leader state. Without this two-pass split, peers
+                // visited earlier in the dictionary keep their old velocity and physics drifts
+                // them forward indefinitely on subsequent ticks.
+                if (lastSyncedLeaderVel.LengthSquared() > 0.0001f)
+                {
+                    foreach (var (_, peerUid) in linked.PeerGrids)
+                    {
+                        if (!TryComp<TransformComponent>(peerUid, out var peerXform))
+                            continue;
+                        if (!TryComp<CEZLinkedGridComponent>(peerUid, out var peerLinked) ||
+                            peerLinked.ZNetwork != linked.ZNetwork)
+                            continue;
+                        if (peerXform.MapUid == xform.MapUid)
+                            continue;
+                        if (!TryComp<PhysicsComponent>(peerUid, out var peerBody))
+                            continue;
+
+                        var velDot = System.Numerics.Vector2.Dot(peerBody.LinearVelocity, lastSyncedLeaderVel);
+                        if (velDot < lastSyncedLeaderVel.LengthSquared() * 0.5f)
+                        {
+                            _transform.SetLocalPositionRotation(uid, peerXform.LocalPosition, peerXform.LocalRotation, xform);
+                            _physics.SetLinearVelocity(uid, peerBody.LinearVelocity, body: body);
+                            _physics.SetAngularVelocity(uid, peerBody.AngularVelocity, body: body);
+                            break;
+                        }
+                    }
+                }
+
+                // Pass 2: sync all peers to leader's state (possibly already corrected by pass 1).
                 foreach (var (_, peerUid) in linked.PeerGrids)
                 {
                     if (!TryComp<TransformComponent>(peerUid, out var peerXform))
                         continue;
 
+                    // Mutual-link guard. The leader's PeerGrids dictionary can carry stale entries
+                    // pointing at grids that have since been re-linked into a different ZNetwork
+                    // (e.g., a multi-level shuttle that crossed paths with a station network's
+                    // re-linking pass). Writing position/velocity into such a grid would teleport
+                    // an unrelated body and bypass its physics — observed as a moving grid passing
+                    // straight through static targets with no collision events firing. We require
+                    // the peer to agree that it belongs to the same network before syncing it.
+                    if (!TryComp<CEZLinkedGridComponent>(peerUid, out var peerLinked) ||
+                        peerLinked.ZNetwork != linked.ZNetwork)
+                    {
+                        continue;
+                    }
+
+                    // Same-map fallback guard. When FTL arrival cannot find a destination z-map
+                    // at a peer's depth offset, TryResolvePeerArrivalMap falls back to the leader's
+                    // arrival map. The peer then sits on the same map as the leader, and the sync
+                    // below would teleport that peer onto the leader's exact position every frame,
+                    // stacking dynamic shuttle bodies at the same coordinates. Box2D treats that as
+                    // perpetually-penetrating overlapping fixtures, which can corrupt the broadphase
+                    // contact graph for the leader and silently drop legitimate collisions with
+                    // unrelated grids on this map. Skip the forcible position write in that state;
+                    // the peer keeps its own physics-driven position rather than teleporting onto
+                    // the leader.
+                    if (peerXform.MapUid == xform.MapUid)
+                        continue;
+
                     TryComp<PhysicsComponent>(peerUid, out PhysicsComponent? peerBody);
+
                     var watchedPair = IsGridSyncPairWatched(uid, peerUid);
                     var transformMismatch = peerXform.LocalPosition != xform.LocalPosition ||
                                             peerXform.LocalRotation != xform.LocalRotation;
@@ -178,6 +257,11 @@ public sealed partial class CEZLevelsSystem
                             _physics.SetAngularVelocity(peerUid, body.AngularVelocity, body: peerBody);
                     }
                 }
+
+                // Record what we just wrote into peers so the next tick's collision check has a
+                // reference point. Skipped on the early-break path above, which already wrote a
+                // fresher value reflecting the corrected leader velocity.
+                _lastSyncedVelocity[linked.ZNetwork] = body.LinearVelocity;
             }
         }
         finally
