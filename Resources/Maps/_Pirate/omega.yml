@@ -8726,11 +8726,6 @@ entities:
     - type: Transform
       pos: 14.5,-25.5
       parent: 2
-    - type: DeviceNetwork
-      configurators:
-      - invalid
-      deviceLists:
-      - 10225
   - uid: 437
     components:
     - type: Transform
@@ -57399,11 +57394,6 @@ entities:
       rot: -1.5707963267948966 rad
       pos: 11.5,-24.5
       parent: 2
-    - type: DeviceNetwork
-      configurators:
-      - invalid
-      deviceLists:
-      - 10225
     - type: AtmosPipeColor
       color: '#0055CCFF'
   - uid: 14128
@@ -57424,11 +57414,6 @@ entities:
       rot: -1.5707963267948966 rad
       pos: 11.5,-26.5
       parent: 2
-    - type: DeviceNetwork
-      configurators:
-      - invalid
-      deviceLists:
-      - 10225
     - type: AtmosPipeColor
       color: '#990000FF'
   - uid: 8340
