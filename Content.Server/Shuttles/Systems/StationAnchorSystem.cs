@@ -14,7 +14,6 @@ using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
 using Content.Shared.Construction.Components;
 using Content.Shared.Popups;
-using Robust.Shared.Physics.Components; // Pirate: dock-anchor-clip diagnostic
 
 namespace Content.Server.Shuttles.Systems;
 
@@ -94,13 +93,5 @@ public sealed class StationAnchorSystem : EntitySystem
 
         shuttleComponent.Enabled = !enabled;
         ent.Comp.SwitchedOn = enabled;
-
-        // Pirate: dock-anchor-clip diagnostic
-        if (EntityManager.TryGetComponent<PhysicsComponent>(grid.Value, out var phys))
-        {
-            Log.Info($"[CLIP-DIAG] StationAnchor SetStatus enabled={enabled} on grid={ToPrettyString(grid.Value)} " +
-                     $"bodyType={phys.BodyType} canCollide={phys.CanCollide} awake={phys.Awake} " +
-                     $"fixturesMass={phys.FixturesMass} linVel={phys.LinearVelocity}");
-        }
     }
 }

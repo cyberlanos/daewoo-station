@@ -106,9 +106,6 @@ public sealed partial class ShuttleSystem
     // for _adminLogSpacing
     private Dictionary<EntityUid, TimeSpan> _impactedAt = new();
 
-    // Pirate: dock-anchor-clip diagnostic — tracks pairs we've already logged so the per-tick spam stays bounded.
-    private HashSet<(EntityUid, EntityUid)> _clipDiagLogged = new();
-
     private void InitializeImpact()
     {
         SubscribeLocalEvent<ShuttleComponent, StartCollideEvent>(OnShuttleCollide);
@@ -138,16 +135,6 @@ public sealed partial class ShuttleSystem
     /// </summary>
     private void OnShuttleCollide(EntityUid uid, ShuttleComponent component, ref StartCollideEvent args)
     {
-        // Pirate: dock-anchor-clip diagnostic — one-shot per (uid,other) pair to avoid spam (cleared per repro by server restart).
-        if (uid.Id < args.OtherEntity.Id && _clipDiagLogged.Add((uid, args.OtherEntity)))
-        {
-            var ourLinked = EntityManager.TryGetComponent<Content.Shared._Pirate.ZLevels.Core.Components.CEZLinkedGridComponent>(uid, out var oL) ? $"depth={oL.Depth} net={oL.ZNetwork} peers=[{string.Join(",", System.Linq.Enumerable.Select(oL.PeerGrids, kv => $"{kv.Key}:{ToPrettyString(kv.Value)}"))}]" : "none";
-            var otherLinked = EntityManager.TryGetComponent<Content.Shared._Pirate.ZLevels.Core.Components.CEZLinkedGridComponent>(args.OtherEntity, out var tL) ? $"depth={tL.Depth} net={tL.ZNetwork} peers=[{string.Join(",", System.Linq.Enumerable.Select(tL.PeerGrids, kv => $"{kv.Key}:{ToPrettyString(kv.Value)}"))}]" : "none";
-            var ourMap = Transform(uid).MapUid;
-            var otherMap = Transform(args.OtherEntity).MapUid;
-            Log.Info($"[CLIP-DIAG] first contact: our={ToPrettyString(uid)} (map={ourMap}, bodyType={args.OurBody.BodyType}, mass={args.OurBody.FixturesMass:F1}, vel={args.OurBody.LinearVelocity}, linked={ourLinked}) other={ToPrettyString(args.OtherEntity)} (map={otherMap}, bodyType={args.OtherBody.BodyType}, mass={args.OtherBody.FixturesMass:F1}, vel={args.OtherBody.LinearVelocity}, linked={otherLinked})");
-        }
-
         if (TerminatingOrDeleted(uid) || EntityManager.IsQueuedForDeletion(uid)
             || TerminatingOrDeleted(args.OtherEntity) || EntityManager.IsQueuedForDeletion(args.OtherEntity)
         )
