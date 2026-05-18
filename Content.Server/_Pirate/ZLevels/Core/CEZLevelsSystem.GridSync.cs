@@ -18,13 +18,13 @@ public sealed partial class CEZLevelsSystem
 
     private bool _gridSyncing;
 
-    // Per-network record of the leader's velocity at the END of the previous sync — i.e., the
-    // velocity that was just written into every peer. If a peer's current velocity is now lower
-    // than this in the leader's direction of motion, physics has since slowed it (collision on
-    // its own map). Comparing against the just-written value avoids the false-positive that hit
-    // when comparing against the leader's *current* velocity, since the leader's velocity grows
-    // as thrust accumulates and the peer takes a frame to catch up.
-    private readonly Dictionary<EntityUid, System.Numerics.Vector2> _lastSyncedVelocity = new();
+    // Per-network record of the leader's linear AND angular velocity at the END of the previous
+    // sync — i.e., the values that were just written into every peer. If a peer's current
+    // velocity is now lower than this in the leader's direction of motion, physics has since
+    // slowed it (collision or joint constraint on its own map). Tracking both axes catches
+    // angular constraints too — e.g., a peer docked via WeldJoint to a static target has its
+    // angular velocity pulled back by the joint while the leader spins freely.
+    private readonly Dictionary<EntityUid, (System.Numerics.Vector2 Linear, float Angular)> _lastSyncedVelocity = new();
 
     private void InitGridSync()
     {
@@ -150,21 +150,26 @@ public sealed partial class CEZLevelsSystem
                 if (linked.PeerGrids.Count == 0)
                     continue;
 
-                // What every peer was told to move at last frame — exactly the velocity we wrote
+                // What every peer was told to move at last frame — exactly the values we wrote
                 // into them at the end of the previous UpdateGridSync pass. Compared against the
-                // peer's current velocity below, this isolates "physics decelerated me" from
+                // peer's current values below, this isolates "physics decelerated me" from
                 // "I haven't been re-synced after the leader's thrust changed."
-                _lastSyncedVelocity.TryGetValue(linked.ZNetwork, out var lastSyncedLeaderVel);
+                _lastSyncedVelocity.TryGetValue(linked.ZNetwork, out var lastSynced);
+                var lastLinear = lastSynced.Linear;
+                var lastAngular = lastSynced.Angular;
+                var lastLinearMagSq = lastLinear.LengthSquared();
+                var lastAngularMag = MathF.Abs(lastAngular);
 
-                // Pass 1: scan peers for collision blockage on their own maps. The leader's map
-                // is usually empty of whatever a peer is bumping into, so the leader's physics
-                // never sees the obstacle. If any peer's velocity has been decelerated below the
-                // value sync wrote into it last frame, physics held it back — propagate that
+                // Pass 1: scan peers for collision/joint blockage on their own maps. The leader's
+                // map is usually empty of whatever a peer is bumping into, so the leader's physics
+                // never sees the obstacle. If any peer's linear OR angular velocity has been
+                // decelerated below the value sync wrote into it last frame, physics held it back
+                // (collision or joint constraint such as a docking WeldJoint). Propagate that
                 // constraint up to the leader BEFORE the per-peer sync runs, so every peer in
                 // pass 2 sees the corrected leader state. Without this two-pass split, peers
                 // visited earlier in the dictionary keep their old velocity and physics drifts
                 // them forward indefinitely on subsequent ticks.
-                if (lastSyncedLeaderVel.LengthSquared() > 0.0001f)
+                if (lastLinearMagSq > 0.0001f || lastAngularMag > 0.01f)
                 {
                     foreach (var (_, peerUid) in linked.PeerGrids)
                     {
@@ -178,8 +183,18 @@ public sealed partial class CEZLevelsSystem
                         if (!TryComp<PhysicsComponent>(peerUid, out var peerBody))
                             continue;
 
-                        var velDot = System.Numerics.Vector2.Dot(peerBody.LinearVelocity, lastSyncedLeaderVel);
-                        if (velDot < lastSyncedLeaderVel.LengthSquared() * 0.5f)
+                        var linearBlocked = lastLinearMagSq > 0.0001f &&
+                            System.Numerics.Vector2.Dot(peerBody.LinearVelocity, lastLinear) < lastLinearMagSq * 0.5f;
+
+                        // Angular check uses scalar sign-aware comparison: (peer · last) >= last² / 2
+                        // means peer is still spinning at least half the synced rate in the same
+                        // direction. Anything below — including outright reversal — counts as
+                        // blocked by a constraint (typically the WeldJoint to a docked static
+                        // target).
+                        var angularBlocked = lastAngularMag > 0.01f &&
+                            peerBody.AngularVelocity * lastAngular < lastAngular * lastAngular * 0.5f;
+
+                        if (linearBlocked || angularBlocked)
                         {
                             _transform.SetLocalPositionRotation(uid, peerXform.LocalPosition, peerXform.LocalRotation, xform);
                             _physics.SetLinearVelocity(uid, peerBody.LinearVelocity, body: body);
@@ -259,9 +274,8 @@ public sealed partial class CEZLevelsSystem
                 }
 
                 // Record what we just wrote into peers so the next tick's collision check has a
-                // reference point. Skipped on the early-break path above, which already wrote a
-                // fresher value reflecting the corrected leader velocity.
-                _lastSyncedVelocity[linked.ZNetwork] = body.LinearVelocity;
+                // reference point.
+                _lastSyncedVelocity[linked.ZNetwork] = (body.LinearVelocity, body.AngularVelocity);
             }
         }
         finally
