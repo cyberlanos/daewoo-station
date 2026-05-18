@@ -1383,3 +1383,15 @@ Entries:
       message: Перекладано імена тіньовиків з 1-шої по 36-шу строчку
   id: 121
   time: '2026-05-17T16:17:44.0000000+00:00'
+- author: inhat-d
+  changes:
+    - type: Add
+      message: Додано текстури
+    - type: Tweak
+      message: >-
+        Змінено `/Textures/_Goobstation/Interface/Paper/Stamps/attributions.yml`
+        (та переміщено до `/Textures/_Pirate/...`
+    - type: Tweak
+      message: змінено StampWidget.xaml.cs
+  id: 122
+  time: '2026-05-18T13:03:26.0000000+00:00'
