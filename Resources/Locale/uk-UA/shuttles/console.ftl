@@ -47,6 +47,7 @@ shuttle-console-view = Перегляд
 shuttle-console-undock = Відстикувати
 shuttle-console-dock = Стикувати
 shuttle-console-docks-label = Стикувальні порти
+shuttle-console-docks-layer-label = Шар # Pirate: multiz
 
 shuttle-console-undock-fail = Невдала відстиковка
 shuttle-console-dock-fail = Невдала стиковка

@@ -9,8 +9,18 @@ namespace Content.Shared._Pirate.ShipShields;
 [RegisterComponent]
 public sealed partial class ShipShieldEmitterComponent : Component
 {
-    public EntityUid? Shield;
-    public EntityUid? Shielded;
+    /// <summary>
+    /// All shield bubbles this emitter currently owns, keyed by the grid each one protects.
+    /// A z-linked emitter shields every peer grid in its <c>CEZLinkedGridComponent</c> network,
+    /// so this is a 1:N map even though a single grid only ever has one entry.
+    /// </summary>
+    public Dictionary<EntityUid, EntityUid> Shields = new();
+
+    /// <summary>
+    /// True while the emitter is producing shields (i.e. <see cref="Shields"/> is non-empty
+    /// or should be). Used to gate the per-tick reconciliation pass.
+    /// </summary>
+    public bool Active;
 
     [DataField]
     public float Accumulator;

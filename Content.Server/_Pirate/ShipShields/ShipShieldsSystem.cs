@@ -4,6 +4,7 @@
 
 using System.Numerics;
 using Content.Shared._Pirate.ShipShields;
+using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Physics;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Physics.Collision.Shapes;
@@ -13,6 +14,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Events;
 using Robust.Server.GameStates;
 using Content.Server.Power.Components;
+using Content.Server._Pirate.ZLevels.Power;
 using Robust.Shared.Physics;
 using Content.Shared._Mono.SpaceArtillery;
 using Content.Shared.Projectiles;
@@ -33,6 +35,10 @@ public sealed partial class ShipShieldsSystem : EntitySystem
     [Dependency] private readonly PhysicsSystem _physicsSystem = default!;
 
     [Dependency] private readonly PvsOverrideSystem _pvsSys = default!;
+
+    // Scratch buffers reused across reconcile passes so we don't allocate per tick.
+    private readonly HashSet<EntityUid> _scratchTargetGrids = new();
+    private readonly List<EntityUid> _scratchObsoleteGrids = new();
 
     public override void Update(float frameTime)
     {
@@ -73,34 +79,32 @@ public sealed partial class ShipShieldsSystem : EntitySystem
 
             AdjustEmitterLoad(uid, emitter, power);
 
-            var parent = Transform(uid).GridUid;
-
-            if (parent == null)
-                return;
-
-            var filter = _station.GetInOwningStation(uid);
-
             if (emitter.Damage > emitter.DamageLimit)
                 emitter.OverloadAccumulator = emitter.DamageOverloadTimePunishment;
 
-            if (!emitter.Recharging && emitter.Shield is null && emitter.OverloadAccumulator < 1)
+            var shouldShield = !emitter.Recharging && emitter.OverloadAccumulator < 1;
+
+            if (shouldShield && !emitter.Active)
             {
-                var shield = ShieldEntity(parent.Value, source: uid);
-                if (shield != EntityUid.Invalid)
+                if (SyncShields(uid, emitter))
                 {
-                    emitter.Shield = shield;
-                    emitter.Shielded = parent.Value;
+                    emitter.Active = true;
+                    var filter = _station.GetInOwningStation(uid);
+                    _audio.PlayGlobal(emitter.PowerUpSound, filter, true, emitter.PowerUpSound.Params);
                 }
-                _audio.PlayGlobal(emitter.PowerUpSound, filter, true, emitter.PowerUpSound.Params);
             }
-            else if ((emitter.Recharging || emitter.OverloadAccumulator > 0) && emitter.Shield is not null)
+            else if (!shouldShield && emitter.Active)
             {
-                UnshieldEntity(parent.Value);
-                emitter.Shield = null;
-                emitter.Shielded = null;
+                ClearShields(emitter);
+                emitter.Active = false;
+                var filter = _station.GetInOwningStation(uid);
                 _audio.PlayGlobal(emitter.PowerDownSound, filter, true, emitter.PowerUpSound.Params);
             }
-
+            else if (emitter.Active)
+            {
+                // Already active: catch up with z-network changes that happened between events.
+                SyncShields(uid, emitter);
+            }
         }
     }
     public override void Initialize()
@@ -108,6 +112,9 @@ public sealed partial class ShipShieldsSystem : EntitySystem
         base.Initialize();
         SubscribeLocalEvent<ShipShieldComponent, StartCollideEvent>(OnCollide);
         SubscribeLocalEvent<ShipShieldEmitterComponent, ComponentShutdown>(OnEmitterShutdown);
+        // Broadcast subscription: CEMultizCableHubSystem already owns the per-CEZLinkedGridComponent
+        // subscription for this event and Robust forbids duplicate (component, event) pairs across systems.
+        SubscribeLocalEvent<CEMultizLinkedGridPeersChangedEvent>(OnLinkedPeersChanged);
 
         InitializeCommands();
         InitializeEmitters();
@@ -149,14 +156,100 @@ public sealed partial class ShipShieldsSystem : EntitySystem
         }
     }
 
-    private void OnEmitterShutdown(EntityUid uid, ShipShieldEmitterComponent emitter, ComponentShutdown args) // Mono 
+    private void OnEmitterShutdown(EntityUid uid, ShipShieldEmitterComponent emitter, ComponentShutdown args) // Mono
     {
-        if (emitter.Shielded != null)
+        ClearShields(emitter);
+        emitter.Active = false;
+    }
+
+    /// <summary>
+    /// Re-runs the shielded-grid reconcile pass for every active emitter when a z-network's peer
+    /// set changes, so newly-linked grids gain shields and unlinked grids lose theirs immediately
+    /// without waiting for the next emitter tick.
+    /// </summary>
+    private void OnLinkedPeersChanged(ref CEMultizLinkedGridPeersChangedEvent args)
+    {
+        var query = EntityQueryEnumerator<ShipShieldEmitterComponent>();
+        while (query.MoveNext(out var emitterUid, out var emitter))
         {
-            UnshieldEntity(emitter.Shielded.Value);
-            emitter.Shield = null;
-            emitter.Shielded = null;
+            if (!emitter.Active)
+                continue;
+            SyncShields(emitterUid, emitter);
         }
+    }
+
+    /// <summary>
+    /// Reconciles the emitter's owned shields against the set of grids it should currently be
+    /// protecting. The target set is the emitter's host grid plus every peer reachable via
+    /// <see cref="CEZLinkedGridComponent.PeerGrids"/>. Returns true if at least one shield exists
+    /// at the end of the pass.
+    /// </summary>
+    private bool SyncShields(EntityUid emitterUid, ShipShieldEmitterComponent emitter)
+    {
+        var hostGrid = Transform(emitterUid).GridUid;
+        if (hostGrid is null || TerminatingOrDeleted(hostGrid.Value))
+        {
+            ClearShields(emitter);
+            return false;
+        }
+
+        _scratchTargetGrids.Clear();
+        _scratchTargetGrids.Add(hostGrid.Value);
+
+        if (TryComp<CEZLinkedGridComponent>(hostGrid.Value, out var linked))
+        {
+            foreach (var (_, peerGrid) in linked.PeerGrids)
+            {
+                if (!TerminatingOrDeleted(peerGrid))
+                    _scratchTargetGrids.Add(peerGrid);
+            }
+        }
+
+        // Drop shields for grids that have left the network, been deleted, or whose shield
+        // entity died out from under us (e.g. another emitter racing on the same grid).
+        _scratchObsoleteGrids.Clear();
+        foreach (var (gridUid, shieldUid) in emitter.Shields)
+        {
+            if (!_scratchTargetGrids.Contains(gridUid)
+                || TerminatingOrDeleted(gridUid)
+                || TerminatingOrDeleted(shieldUid))
+            {
+                _scratchObsoleteGrids.Add(gridUid);
+            }
+        }
+        foreach (var gridUid in _scratchObsoleteGrids)
+        {
+            if (!TerminatingOrDeleted(gridUid))
+                UnshieldEntity(gridUid);
+            emitter.Shields.Remove(gridUid);
+        }
+
+        // Spawn shields for grids newly present in the network.
+        foreach (var gridUid in _scratchTargetGrids)
+        {
+            if (emitter.Shields.ContainsKey(gridUid))
+                continue;
+
+            var shield = ShieldEntity(gridUid, source: emitterUid);
+            if (shield != EntityUid.Invalid)
+                emitter.Shields[gridUid] = shield;
+        }
+
+        return emitter.Shields.Count > 0;
+    }
+
+    /// <summary>
+    /// Tears down every shield this emitter owns. Used when the emitter goes offline, overloads,
+    /// or is destroyed.
+    /// </summary>
+    private void ClearShields(ShipShieldEmitterComponent emitter)
+    {
+        foreach (var (gridUid, _) in emitter.Shields)
+        {
+            if (!TerminatingOrDeleted(gridUid))
+                UnshieldEntity(gridUid);
+        }
+        emitter.Shields.Clear();
     }
 
     private EntityUid ShieldEntity(EntityUid entity, MapGridComponent? mapGrid = null, EntityUid? source = null)

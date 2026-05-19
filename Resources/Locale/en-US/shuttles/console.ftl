@@ -62,6 +62,7 @@ shuttle-console-view = View
 shuttle-console-undock = Undock
 shuttle-console-dock = Dock
 shuttle-console-docks-label = Docks
+shuttle-console-docks-layer-label = Layer # Pirate: multiz
 
 shuttle-console-undock-fail = Undocking failed
 shuttle-console-dock-fail = Docking failed

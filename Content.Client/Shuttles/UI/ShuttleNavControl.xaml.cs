@@ -30,6 +30,7 @@ using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
 using Content.Shared._Mono.Radar;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems; // Pirate: multiz
 using Robust.Shared.Physics.Collision.Shapes; // Pirate port - Monolith shields
 
@@ -80,6 +81,7 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
 
     private List<Entity<MapGridComponent>> _grids = new();
     private HashSet<EntityUid> _zLevelGrids = new(); // Pirate: multiz - grids from adjacent Z-levels
+    private readonly HashSet<EntityUid> _zIffSuppressed = new(); // Pirate: multiz - non-rep peers we hide IFF labels for
 
     #region Mono
     // These 2 handle timing updates
@@ -343,6 +345,39 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         }
         #endregion Pirate: multiz
 
+        #region Pirate: multiz - dedupe IFF labels across z-network peers
+        // A multi-deck shuttle has one grid per z-layer with the same ZNetwork; without dedup
+        // each layer would draw its own IFF label, giving the operator N copies of the same name.
+        // Pick one representative per network — prefer the grid on the player's current map so
+        // the label sits next to the bright (non-dimmed) silhouette.
+        _zIffSuppressed.Clear();
+        var zRepresentative = new Dictionary<EntityUid, EntityUid>();
+        foreach (var grid in _grids)
+        {
+            if (!EntManager.TryGetComponent<CEZLinkedGridComponent>(grid.Owner, out var linked))
+                continue;
+
+            if (zRepresentative.TryGetValue(linked.ZNetwork, out var existing))
+            {
+                var existingIsPeer = _zLevelGrids.Contains(existing);
+                var currentIsPeer = _zLevelGrids.Contains(grid.Owner);
+                if (existingIsPeer && !currentIsPeer)
+                    zRepresentative[linked.ZNetwork] = grid.Owner;
+            }
+            else
+            {
+                zRepresentative[linked.ZNetwork] = grid.Owner;
+            }
+        }
+        foreach (var grid in _grids)
+        {
+            if (!EntManager.TryGetComponent<CEZLinkedGridComponent>(grid.Owner, out var linked))
+                continue;
+            if (zRepresentative.TryGetValue(linked.ZNetwork, out var rep) && rep != grid.Owner)
+                _zIffSuppressed.Add(grid.Owner);
+        }
+        #endregion Pirate: multiz
+
         // Frontier - collect blip location data outside foreach - more changes ahead
         var blipDataList = new List<BlipData>();
 
@@ -373,7 +408,8 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
             var labelName = _shuttles.GetIFFLabel(grid, self: false, iff);
 
             var shouldDrawIFF = ShowIFF && labelName != null;
-            if (IFFFilter != null)
+            shouldDrawIFF &= !_zIffSuppressed.Contains(gUid); // Pirate: multiz - dedupe multi-deck IFF
+            if (IFFFilter != null && !_zIffSuppressed.Contains(gUid)) // Pirate: multiz - dedupe peer labels
             {
                 var gridBounds = grid.Comp.LocalAABB;
 
