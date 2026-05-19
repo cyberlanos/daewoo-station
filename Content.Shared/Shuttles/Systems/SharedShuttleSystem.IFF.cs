@@ -5,6 +5,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.Shuttles.Components;
 using JetBrains.Annotations;
 
@@ -35,7 +36,12 @@ public abstract partial class SharedShuttleSystem
 
     public string? GetIFFLabel(EntityUid gridUid, bool self = false, IFFComponent? component = null)
     {
-        var entName = MetaData(gridUid).EntityName;
+        // Pirate: multiz — for z-linked grids, the canonical name lives on the lowest-depth peer
+        // (typically the manned deck that actually got renamed). Reading the focused deck's own
+        // EntityName produces "Unknown" / default placeholder for upper decks; redirect so every
+        // peer in the network reports the same name on radar.
+        var nameSource = ResolveLinkedGridForLabel(gridUid);
+        var entName = MetaData(nameSource).EntityName;
 
         if (self)
         {
@@ -49,6 +55,31 @@ public abstract partial class SharedShuttleSystem
 
         return string.IsNullOrEmpty(entName) ? Loc.GetString("shuttle-console-unknown") : entName;
     }
+
+    #region Pirate: multiz
+    /// <summary>
+    /// For a grid that is part of a <see cref="CEZLinkedGridComponent"/> network, returns the
+    /// peer with the lowest depth (the bottom deck). For non-linked grids, returns the grid
+    /// itself. Used to canonicalise display names across linked-grid networks.
+    /// </summary>
+    private EntityUid ResolveLinkedGridForLabel(EntityUid gridUid)
+    {
+        if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
+            return gridUid;
+
+        var bestUid = gridUid;
+        var bestDepth = linked.Depth;
+        foreach (var (depth, peer) in linked.PeerGrids)
+        {
+            if (depth < bestDepth && Exists(peer))
+            {
+                bestDepth = depth;
+                bestUid = peer;
+            }
+        }
+        return bestUid;
+    }
+    #endregion Pirate: multiz
 
     /// <summary>
     /// Sets the color for this grid to appear as on radar.

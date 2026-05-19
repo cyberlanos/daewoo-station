@@ -294,7 +294,10 @@ public sealed class FireControlNavControl : BaseShuttleControl
 
             DrawGrid(handle, curGridToView, grid, labelColor);
 
-            if (ShowIFF)
+            // Pirate: multiz — only render IFF labels for the focused layer's grids. Adjacent
+            // layers stay visible as dimmed silhouettes, but their labels are suppressed so the
+            // operator sees one name per ship instead of duplicates from every deck.
+            if (ShowIFF && !_zLevelGrids.Contains(gUid))
             {
                 var labelName = _shuttles.GetIFFLabel(grid, self: false, iff);
                 if (labelName != null)

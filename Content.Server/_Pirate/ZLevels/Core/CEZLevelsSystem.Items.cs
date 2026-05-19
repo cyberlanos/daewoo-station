@@ -15,6 +15,7 @@ using Content.Shared.Throwing;
 using Robust.Shared.Containers;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Physics.Events;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server._Pirate.ZLevels.Core;
@@ -30,6 +31,7 @@ public sealed partial class CEZLevelsSystem
     {
         SubscribeLocalEvent<ItemComponent, StopThrowEvent>(OnItemStopThrow);
         SubscribeLocalEvent<ItemComponent, DroppedEvent>(OnItemDropped);
+        SubscribeLocalEvent<ItemComponent, MoveEvent>(OnItemMoved);
         SubscribeLocalEvent<ItemComponent, IsWeightlessEvent>(OnItemIsWeightless);
         SubscribeLocalEvent<CEZItemPhysicsComponent, GotEquippedHandEvent>(OnItemGotEquippedHand);
         SubscribeLocalEvent<CEZItemPhysicsComponent, GotEquippedEvent>(OnItemGotEquipped);
@@ -45,6 +47,14 @@ public sealed partial class CEZLevelsSystem
     private void OnItemDropped(Entity<ItemComponent> ent, ref DroppedEvent args)
     {
         TryAddItemZPhysics(ent.Owner);
+    }
+
+    private void OnItemMoved(Entity<ItemComponent> ent, ref MoveEvent args)
+    {
+        if (HasComp<CEZItemPhysicsComponent>(ent.Owner))
+            return;
+
+        TryAddItemZPhysics(ent.Owner, true);
     }
 
     private void OnItemGotEquippedHand(Entity<CEZItemPhysicsComponent> ent, ref GotEquippedHandEvent args)
@@ -68,10 +78,13 @@ public sealed partial class CEZLevelsSystem
             RemoveItemZPhysics(ent.Owner);
     }
 
-    private void TryAddItemZPhysics(EntityUid item)
+    private void TryAddItemZPhysics(EntityUid item, bool requireZGravity = false)
     {
         var xform = Transform(item);
         if (!IsItemRestingOnMapOrGrid(xform))
+            return;
+
+        if (requireZGravity && !CanItemExperienceZGravity(item, xform))
             return;
 
         var zItem = EnsureComp<CEZItemPhysicsComponent>(item);

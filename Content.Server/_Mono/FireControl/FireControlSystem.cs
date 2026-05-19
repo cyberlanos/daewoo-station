@@ -5,6 +5,7 @@ using Content.Server.Weapons.Ranged.Systems;
 using Content.Shared._Mono.FireControl;
 using Content.Shared._Lavaland.Weapons.Ranged.Events; // Pirate: multiz
 using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
+using Content.Shared._Pirate.ZLevels.Core.EntitySystems; // Pirate: multiz
 using Content.Shared._Pirate.ZLevels.FireControl; // Pirate: multiz
 using Content.Shared.Power;
 using Content.Shared.Weapons.Ranged.Components;
@@ -33,6 +34,7 @@ public sealed partial class FireControlSystem : EntitySystem
     [Dependency] private readonly PowerReceiverSystem _power = default!;
     [Dependency] private readonly RotateToFaceSystem _rotateToFace = default!;
     [Dependency] private readonly IMapManager _mapManager = default!; // Pirate: multiz
+    // _zLevels declared in FireControlSystem.Console.cs partial (Pirate: multiz)
 
     /// <summary>
     /// Dictionary of entities that have visualization enabled
@@ -41,12 +43,14 @@ public sealed partial class FireControlSystem : EntitySystem
 
     #region Pirate: multiz
     /// <summary>
-    /// Maps a gun to the map it should fire onto during the current synchronous AttemptShoot
-    /// call. Used by the projectile-shot subscription to teleport the newly-spawned projectile
-    /// across z-layers. Entries are added immediately before the call and cleared immediately
-    /// after, so the table is only ever non-empty inside one fire pass.
+    /// Maps a gun to the map its projectiles should be teleported to after spawn. Set by
+    /// <see cref="FireWeapons"/> when the operator picks a different z-layer than the gun
+    /// itself sits on; cleared when the gun's next fire is same-layer (or when the gun's
+    /// fire-controllable component is removed). The entry persists across separate
+    /// AttemptShoot calls so that burst-fire, automatic and otherwise gun-driven follow-up
+    /// shots all land on the layer the operator picked, not just the very first projectile.
     /// </summary>
-    private readonly Dictionary<EntityUid, EntityUid> _pendingCrossLayerTargetMap = new();
+    private readonly Dictionary<EntityUid, EntityUid> _crossLayerTargetMap = new();
     #endregion Pirate: multiz
 
     public override void Initialize()
@@ -111,6 +115,8 @@ public sealed partial class FireControlSystem : EntitySystem
 
     private void OnControllableShutdown(EntityUid uid, FireControllableComponent component, ComponentShutdown args)
     {
+        _crossLayerTargetMap.Remove(uid); // Pirate: multiz — drop stale cross-layer fire entry
+
         if (component.ControllingServer != null && TryComp<FireControlServerComponent>(component.ControllingServer, out var server))
         {
             Unregister(uid, component);
@@ -465,14 +471,17 @@ public sealed partial class FireControlSystem : EntitySystem
             if (!CanFireInDirection(localWeapon, weaponMapPos.Position, direction, targetMap.Position, gunMapId))
                 continue;
 
-            // Same-layer fire: behave exactly like before. Cross-layer fire: record the desired
-            // target map and let OnCrossLayerProjectileShot teleport the projectile after spawn.
+            // Cross-layer fire: record the desired target map and let
+            // OnCrossLayerProjectileShot teleport every projectile spawned by this gun. The
+            // entry persists past AttemptShoot so burst/automatic continuation shots also get
+            // teleported. Same-layer fire clears any stale entry so we don't accidentally
+            // teleport a projectile fired on the gun's own deck.
             if (gunMapId != targetMap.MapId)
-                _pendingCrossLayerTargetMap[localWeapon] = targetMapUid;
+                _crossLayerTargetMap[localWeapon] = targetMapUid;
+            else
+                _crossLayerTargetMap.Remove(localWeapon);
 
             _gun.AttemptShoot(localWeapon, localWeapon, gun, translatedTargetCoords);
-
-            _pendingCrossLayerTargetMap.Remove(localWeapon);
         }
         #endregion Pirate: multiz
     }
@@ -495,8 +504,12 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// True if two grids belong to the same z-network (or are the same grid). Two non-linked
-    /// grids count as equal only when they are literally the same entity.
+    /// True if two grids belong to the same z-network (or are the same grid). Two grids on the
+    /// same map are always in the same network. For grids on different maps we resolve the
+    /// network via the map → network helper instead of comparing
+    /// <see cref="CEZLinkedGridComponent.ZNetwork"/> directly: that field isn't always populated
+    /// by the time the BUI runs, which previously caused valid peer-deck guns to be silently
+    /// rejected from a fire request.
     /// </summary>
     private bool IsInSameZNetwork(EntityUid? a, EntityUid? b)
     {
@@ -504,10 +517,19 @@ public sealed partial class FireControlSystem : EntitySystem
             return false;
         if (a == b)
             return true;
-        if (!TryComp<CEZLinkedGridComponent>(a.Value, out var aLinked) ||
-            !TryComp<CEZLinkedGridComponent>(b.Value, out var bLinked))
+
+        var aMap = Transform(a.Value).MapUid;
+        var bMap = Transform(b.Value).MapUid;
+        if (aMap is null || bMap is null)
             return false;
-        return aLinked.ZNetwork == bLinked.ZNetwork;
+        if (aMap == bMap)
+            return true;
+
+        if (!_zLevels.TryGetZNetwork(aMap.Value, out var aNet))
+            return false;
+        if (!_zLevels.TryGetZNetwork(bMap.Value, out var bNet))
+            return false;
+        return aNet.Value.Owner == bNet.Value.Owner;
     }
 
     /// <summary>
@@ -521,20 +543,33 @@ public sealed partial class FireControlSystem : EntitySystem
             return 0;
 
         var hostMapId = Transform(hostGrid).MapID;
+        var hostDepth = GetGridDepth(hostGrid) ?? 0;
         if (hostMapId == mapId)
-            return GetGridDepth(hostGrid) ?? 0;
+            return hostDepth;
 
-        if (!TryComp<CEZLinkedGridComponent>(hostGrid, out var linked))
-            return 0;
-
-        if (!TryComp<Content.Shared._Pirate.ZLevels.Core.Components.CEZLevelsNetworkComponent>(linked.ZNetwork, out var network))
+        // Walk the network in both directions from the host map looking for the requested
+        // target map. Uses TryMapOffset (same path as the radar overlay) which is reliable;
+        // reading the network's ZLevels directly was racing against grid-sync init.
+        var hostMapUid = Transform(hostGrid).MapUid;
+        if (hostMapUid is not { } hostMap)
             return 0;
 
         var targetMapUid = _mapManager.GetMapEntityId(mapId);
-        foreach (var (depth, mapUid) in network.ZLevels)
+        const int probeRange = 16;
+
+        for (var offset = 1; offset <= probeRange; offset++)
         {
-            if (mapUid == targetMapUid)
-                return depth;
+            if (!_zLevels.TryMapOffset(hostMap, offset, out var aboveMap))
+                break;
+            if (aboveMap.Value.Owner == targetMapUid)
+                return hostDepth + offset;
+        }
+        for (var offset = 1; offset <= probeRange; offset++)
+        {
+            if (!_zLevels.TryMapOffset(hostMap, -offset, out var belowMap))
+                break;
+            if (belowMap.Value.Owner == targetMapUid)
+                return hostDepth - offset;
         }
 
         return 0;
@@ -547,7 +582,7 @@ public sealed partial class FireControlSystem : EntitySystem
     /// </summary>
     private void OnCrossLayerProjectileShot(EntityUid gunUid, FireControllableComponent comp, ProjectileShotEvent args)
     {
-        if (!_pendingCrossLayerTargetMap.TryGetValue(gunUid, out var targetMapUid))
+        if (!_crossLayerTargetMap.TryGetValue(gunUid, out var targetMapUid))
             return;
         if (!Exists(targetMapUid) || !Exists(args.FiredProjectile))
             return;

@@ -10,6 +10,7 @@ using Robust.Shared.Physics.Systems;
 using Robust.Shared.Physics.Collision.Shapes;
 using Robust.Shared.Physics.Components;
 using Robust.Server.GameObjects;
+using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Events;
 using Robust.Server.GameStates;
@@ -190,6 +191,7 @@ public sealed partial class ShipShieldsSystem : EntitySystem
         if (hostGrid is null || TerminatingOrDeleted(hostGrid.Value))
         {
             ClearShields(emitter);
+            emitter.TemplateGrid = null;
             return false;
         }
 
@@ -203,6 +205,47 @@ public sealed partial class ShipShieldsSystem : EntitySystem
                 if (!TerminatingOrDeleted(peerGrid))
                     _scratchTargetGrids.Add(peerGrid);
             }
+        }
+
+        // Pick the grid with the largest AABB as the shape template. Each peer's bubble will be
+        // sized and centered off this template instead of off its own LocalAABB so all layers
+        // display one matching silhouette — without it, decks of different shapes (e.g. the
+        // tile-only roof grid that sits over the shuttle) produce mismatched bubbles per layer.
+        // Ties are broken by lowest uid: HashSet enumeration order is not stable across ticks,
+        // so without a deterministic tiebreaker the template could flip between equal-area grids
+        // every tick and thrash all shields through clear+respawn forever.
+        EntityUid templateGrid = EntityUid.Invalid;
+        MapGridComponent? templateMapGrid = null;
+        var bestArea = -1f;
+        foreach (var gridUid in _scratchTargetGrids)
+        {
+            if (!TryComp<MapGridComponent>(gridUid, out var grid))
+                continue;
+
+            var aabb = grid.LocalAABB;
+            var area = aabb.Width * aabb.Height;
+            var isBetter = area > bestArea
+                || (area == bestArea && (templateGrid == EntityUid.Invalid || gridUid.Id < templateGrid.Id));
+            if (isBetter)
+            {
+                bestArea = area;
+                templateGrid = gridUid;
+                templateMapGrid = grid;
+            }
+        }
+
+        // Fallback if every target somehow lacked MapGridComponent (shouldn't happen, but
+        // keeps the rest of the method safe).
+        if (templateGrid == EntityUid.Invalid)
+            templateGrid = hostGrid.Value;
+
+        // If the template changed (largest peer was added/removed/destroyed) the existing
+        // bubble shapes are stale. Physics shapes can't be resized in place cleanly, so we
+        // tear down every shield and let the spawn pass below rebuild them with the new shape.
+        if (emitter.TemplateGrid != templateGrid)
+        {
+            ClearShields(emitter);
+            emitter.TemplateGrid = templateGrid;
         }
 
         // Drop shields for grids that have left the network, been deleted, or whose shield
@@ -224,13 +267,13 @@ public sealed partial class ShipShieldsSystem : EntitySystem
             emitter.Shields.Remove(gridUid);
         }
 
-        // Spawn shields for grids newly present in the network.
+        // Spawn shields for grids newly present in the network, all using the template shape.
         foreach (var gridUid in _scratchTargetGrids)
         {
             if (emitter.Shields.ContainsKey(gridUid))
                 continue;
 
-            var shield = ShieldEntity(gridUid, source: emitterUid);
+            var shield = ShieldEntity(gridUid, source: emitterUid, templateMapGrid: templateMapGrid);
             if (shield != EntityUid.Invalid)
                 emitter.Shields[gridUid] = shield;
         }
@@ -252,7 +295,7 @@ public sealed partial class ShipShieldsSystem : EntitySystem
         emitter.Shields.Clear();
     }
 
-    private EntityUid ShieldEntity(EntityUid entity, MapGridComponent? mapGrid = null, EntityUid? source = null)
+    private EntityUid ShieldEntity(EntityUid entity, MapGridComponent? mapGrid = null, EntityUid? source = null, MapGridComponent? templateMapGrid = null)
     {
         if (TryComp<ShipShieldedComponent>(entity, out var existingShielded))
             return existingShielded.Shield;
@@ -260,9 +303,20 @@ public sealed partial class ShipShieldsSystem : EntitySystem
         if (!Resolve(entity, ref mapGrid, false))
             return EntityUid.Invalid;
 
+        // The template grid drives the bubble's size and centering so every peer in a z-linked
+        // shuttle gets an identical-looking shield. Falls back to the parented grid when the
+        // caller doesn't supply one (e.g. the debug shieldentity command).
+        var shapeGrid = templateMapGrid ?? mapGrid;
+
         var prototype = ShipShieldPrototype;
 
         var shield = Spawn(prototype, Transform(entity).Coordinates);
+        // Disable grid traversal before SetCoordinates so the shield stays parented to the grid we
+        // pick. Without this, robust's auto-traversal can re-parent the shield onto a different
+        // overlapping grid on the same map (e.g. when two shuttle grids share a deck/map and one
+        // sits at a non-origin LocalPosition), which corrupts the shield's local pos/rot and
+        // breaks the client overlay's edge-thickness math.
+        Transform(shield).GridTraversal = false;
         var shieldPhysics = EnsureComp<PhysicsComponent>(shield);
         var shieldComp = EnsureComp<ShipShieldComponent>(shield);
         shieldComp.Shielded = entity;
@@ -275,11 +329,22 @@ public sealed partial class ShipShieldsSystem : EntitySystem
             Dirty(shield, shieldVisuals);
         }
 
-        _transformSystem.SetLocalPosition(shield, mapGrid.LocalAABB.Center);
-        _transformSystem.SetWorldRotation(shield, _transformSystem.GetWorldRotation(entity));
-        _transformSystem.SetParent(shield, entity);
+        // Parent to the host grid AND set local offset in one call. The original three-step sequence
+        // (SetLocalPosition before SetParent) interpreted the offset in the spawned-into-map's coord
+        // space and then SetParent preserved world position when reparenting to the grid, which left
+        // the shield's grid-local position offset by the grid's own LocalPosition. That was harmless
+        // when the grid sat at map origin (0,0) but produced wildly wrong localPos for grids parked
+        // anywhere else (e.g. an auto-generated roof grid floating far from the map origin), which
+        // in turn broke the client overlay's Corner() inward-edge math and rendered patches of the
+        // bubble as thin/transparent.
+        // rotation: Angle.Zero matches the original intent of "rotate with the grid" — local rotation
+        // 0 means world rotation tracks the parent grid's world rotation.
+        _transformSystem.SetCoordinates(
+            (shield, Transform(shield), MetaData(shield)),
+            new EntityCoordinates(entity, shapeGrid.LocalAABB.Center),
+            rotation: Angle.Zero);
 
-        var chain = GenerateOvalFixture(shield, "shield", shieldPhysics, mapGrid);
+        var chain = GenerateOvalFixture(shield, "shield", shieldPhysics, shapeGrid);
 
         List<Vector2> roughPoly = new();
 

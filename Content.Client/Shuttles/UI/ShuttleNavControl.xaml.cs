@@ -345,37 +345,14 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         }
         #endregion Pirate: multiz
 
-        #region Pirate: multiz - dedupe IFF labels across z-network peers
-        // A multi-deck shuttle has one grid per z-layer with the same ZNetwork; without dedup
-        // each layer would draw its own IFF label, giving the operator N copies of the same name.
-        // Pick one representative per network — prefer the grid on the player's current map so
-        // the label sits next to the bright (non-dimmed) silhouette.
+        #region Pirate: multiz - suppress IFF for adjacent-layer grids
+        // Simpler than dedup: only draw IFF for grids on the focused layer. Adjacent-layer
+        // grids stay visible as dimmed silhouettes but have their labels suppressed, so the
+        // operator sees the label from the deck that's actually rendered bright (and whose
+        // name is the one synced to the network).
         _zIffSuppressed.Clear();
-        var zRepresentative = new Dictionary<EntityUid, EntityUid>();
-        foreach (var grid in _grids)
-        {
-            if (!EntManager.TryGetComponent<CEZLinkedGridComponent>(grid.Owner, out var linked))
-                continue;
-
-            if (zRepresentative.TryGetValue(linked.ZNetwork, out var existing))
-            {
-                var existingIsPeer = _zLevelGrids.Contains(existing);
-                var currentIsPeer = _zLevelGrids.Contains(grid.Owner);
-                if (existingIsPeer && !currentIsPeer)
-                    zRepresentative[linked.ZNetwork] = grid.Owner;
-            }
-            else
-            {
-                zRepresentative[linked.ZNetwork] = grid.Owner;
-            }
-        }
-        foreach (var grid in _grids)
-        {
-            if (!EntManager.TryGetComponent<CEZLinkedGridComponent>(grid.Owner, out var linked))
-                continue;
-            if (zRepresentative.TryGetValue(linked.ZNetwork, out var rep) && rep != grid.Owner)
-                _zIffSuppressed.Add(grid.Owner);
-        }
+        foreach (var gridUid in _zLevelGrids)
+            _zIffSuppressed.Add(gridUid);
         #endregion Pirate: multiz
 
         // Frontier - collect blip location data outside foreach - more changes ahead

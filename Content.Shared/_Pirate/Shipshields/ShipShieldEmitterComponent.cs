@@ -59,6 +59,15 @@ public sealed partial class ShipShieldEmitterComponent : Component
     public Color ShieldColor = Color.White;
 
     public float OverloadAccumulator = 0f;
+
+    /// <summary>
+    /// The grid in the current shielded peer set whose AABB is being used as the shape
+    /// template for every shield bubble this emitter owns. Stored so we can detect when the
+    /// largest grid in the network changes and re-spawn all bubbles to keep them visually
+    /// uniform across z-layers.
+    /// </summary>
+    public EntityUid? TemplateGrid;
+
     /// <summary>
     /// On power up, players for all on vessel, pitched down.
     /// </summary>

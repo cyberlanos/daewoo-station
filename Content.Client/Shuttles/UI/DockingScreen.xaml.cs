@@ -130,7 +130,7 @@ public sealed partial class DockingScreen : BoxContainer
             || !_entManager.TryGetComponent(_consoleShuttle.Value, out CEZLinkedGridComponent? linked)
             || linked.PeerGrids.Count == 0)
         {
-            LayerSelectorPanel.Visible = false;
+            LayerSelectorRow.Visible = false;
             return;
         }
 
@@ -140,7 +140,15 @@ public sealed partial class DockingScreen : BoxContainer
             [linked.Depth] = _consoleShuttle.Value,
         };
 
-        LayerSelectorPanel.Visible = true;
+        LayerSelectorRow.Visible = true;
+
+        // Match the camera monitor / gunnery console "Z: 0 1 2" inline layout.
+        LayerSelectorRow.AddChild(new Label
+        {
+            Text = "Z:",
+            VerticalAlignment = VAlignment.Center,
+            Margin = new Thickness(0f, 0f, 4f, 0f),
+        });
 
         var group = new ButtonGroup();
         foreach (var (depth, gridUid) in levels)

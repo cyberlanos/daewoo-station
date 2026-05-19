@@ -286,6 +286,14 @@ public sealed partial class FireControlWindow : FancyWindow
 
         LayerSelectorRow.Visible = true;
 
+        // Match the camera/crew monitor's "Z: 0 1 2" layout so the strip looks familiar.
+        LayerSelectorRow.AddChild(new Label
+        {
+            Text = "Z:",
+            VerticalAlignment = VAlignment.Center,
+            Margin = new Thickness(0f, 0f, 4f, 0f),
+        });
+
         var group = new ButtonGroup();
         foreach (var layer in state.Layers)
         {

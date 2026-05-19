@@ -24,6 +24,7 @@ public sealed partial class FireControlSystem : EntitySystem
 {
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly ShuttleConsoleSystem _shuttleConsoleSystem = default!;
+    [Dependency] private readonly CESharedZLevelsSystem _zLevels = default!; // Pirate: multiz
 
     private const int DefaultGunLayerReach = 1; // Pirate: multiz
 
@@ -211,45 +212,47 @@ public sealed partial class FireControlSystem : EntitySystem
         if (consoleGrid is null)
             return result;
 
-        if (!TryComp<CEZLinkedGridComponent>(consoleGrid.Value, out var linked))
-        {
-            var soloMap = Transform(consoleGrid.Value).MapUid;
-            if (soloMap is { } map)
-                result[0] = new ConsoleNetworkLayer(map, consoleGrid.Value);
+        var hostMapUid = Transform(consoleGrid.Value).MapUid;
+        if (hostMapUid is not { } hostMap)
             return result;
+
+        // Peer grids of THIS shuttle, keyed by depth, so each enumerated layer can be attached
+        // to a deck when one exists. Layers in the network without a shuttle deck (empty space
+        // above/below) end up with Grid=null and are still selectable for cross-layer fire.
+        var hostDepth = 0;
+        var peerGridsByDepth = new Dictionary<int, EntityUid>();
+        if (TryComp<CEZLinkedGridComponent>(consoleGrid.Value, out var linked))
+        {
+            hostDepth = linked.Depth;
+            foreach (var (peerDepth, peerGrid) in linked.PeerGrids)
+                peerGridsByDepth[peerDepth] = peerGrid;
+            peerGridsByDepth[linked.Depth] = consoleGrid.Value;
         }
 
-        // Peer grids keyed by depth so we can attach them to the matching network map below.
-        var peerGridsByDepth = new Dictionary<int, EntityUid>(linked.PeerGrids)
-        {
-            [linked.Depth] = consoleGrid.Value,
-        };
+        result[hostDepth] = new ConsoleNetworkLayer(hostMap, consoleGrid.Value);
 
-        if (!TryComp<CEZLevelsNetworkComponent>(linked.ZNetwork, out var network))
+        // Walk the network up and down from the host map using TryMapOffset — same canonical
+        // path the shuttle radar's adjacent-level overlay uses. Going through the offset helper
+        // sidesteps the unreliability of CEZLinkedGridComponent.ZNetwork (which sometimes reads
+        // back as the default UID and made our earlier direct-dict approach miss layers).
+        const int probeRange = 16;
+
+        for (var offset = 1; offset <= probeRange; offset++)
         {
-            // No network component? Fall back to peer-grid-only enumeration so we still get
-            // a usable selector. Empty-layer reach won't show up but at least manned decks do.
-            foreach (var (depth, grid) in peerGridsByDepth)
-            {
-                if (!Exists(grid))
-                    continue;
-                var gridMap = Transform(grid).MapUid;
-                if (gridMap is { } m)
-                    result[depth] = new ConsoleNetworkLayer(m, grid);
-            }
-            return result;
+            if (!_zLevels.TryMapOffset(hostMap, offset, out var aboveMap))
+                break;
+            var depth = hostDepth + offset;
+            peerGridsByDepth.TryGetValue(depth, out var g);
+            result[depth] = new ConsoleNetworkLayer(aboveMap.Value.Owner, g == default ? null : g);
         }
 
-        foreach (var (depth, mapUidNullable) in network.ZLevels)
+        for (var offset = 1; offset <= probeRange; offset++)
         {
-            if (mapUidNullable is not { } mapUid || !Exists(mapUid))
-                continue;
-
-            EntityUid? gridForDepth = null;
-            if (peerGridsByDepth.TryGetValue(depth, out var peerGrid) && Exists(peerGrid))
-                gridForDepth = peerGrid;
-
-            result[depth] = new ConsoleNetworkLayer(mapUid, gridForDepth);
+            if (!_zLevels.TryMapOffset(hostMap, -offset, out var belowMap))
+                break;
+            var depth = hostDepth - offset;
+            peerGridsByDepth.TryGetValue(depth, out var g);
+            result[depth] = new ConsoleNetworkLayer(belowMap.Value.Owner, g == default ? null : g);
         }
 
         return result;
@@ -345,15 +348,22 @@ public sealed partial class FireControlSystem : EntitySystem
         if (layer.Grid is { } peerGrid)
         {
             // Anchor on the peer grid at the console's local xy — z-synced peers share local
-            // coordinate systems, so this lines the view up with the operator's deck.
+            // coordinate systems, so this lines the view up with the operator's deck. The
+            // radar will compose this local rotation with the peer grid's world rotation, so
+            // total = console-world rotation.
             var coords = new EntityCoordinates(peerGrid, consoleXform.LocalPosition);
             return _shuttleConsoleSystem.GetNavState(consoleUid, allDocks, coords, consoleXform.LocalRotation);
         }
 
-        // No peer grid — anchor on the empty layer's map at the console's world xy.
+        // No peer grid — anchor on the empty layer's map at the console's world xy. A bare map
+        // has zero world rotation, so the radar would otherwise apply only the console's local
+        // rotation (missing the shuttle's heading and visibly rotating the view by however many
+        // degrees the shuttle is currently pointing). Pass the console's world rotation here so
+        // total = console-world rotation, matching the peer-grid path.
         var consoleWorldPos = _xform.GetWorldPosition(consoleUid);
+        var consoleWorldRot = _xform.GetWorldRotation(consoleUid);
         var mapCoords = new EntityCoordinates(layer.Map, consoleWorldPos);
-        return _shuttleConsoleSystem.GetNavState(consoleUid, allDocks, mapCoords, consoleXform.LocalRotation);
+        return _shuttleConsoleSystem.GetNavState(consoleUid, allDocks, mapCoords, consoleWorldRot);
     }
     #endregion Pirate: multiz
 }
