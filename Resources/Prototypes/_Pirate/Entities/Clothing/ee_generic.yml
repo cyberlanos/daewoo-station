@@ -1,20 +1,56 @@
-﻿# Ported from Einstein Engines generic loadout targets.
+# Ported from Einstein Engines generic loadout targets.
 # Only includes categories requested in Resources/Prototypes/_Pirate/Loadouts/ee_generic_missing.md.
 
 - type: entity
   abstract: true
-  parent: [Clothing, BaseFoldable]
-  id: FlippableEyesBase
+  parent: [ClothingOuterBase, BaseFoldable]
+  id: ClothingOuterFoldableBase
   components:
+  - type: Appearance
   - type: Foldable
     canFoldInsideContainer: true
-    unfoldVerbText: fold-flip-verb
-    foldVerbText: fold-flip-verb
+    unfoldVerbText: fold-zip-verb
+    foldVerbText: fold-unzip-verb
   - type: FoldableClothing
-    foldedEquippedPrefix: flipped
+    foldedEquippedPrefix: open
+    foldedHeldPrefix: open
+  - type: Sprite
+    layers:
+    - state: icon
+      map: [ "unfoldedLayer" ]
+    - state: icon-open
+      map: ["foldedLayer"]
+      visible: false
 
 - type: entity
-  parent: [ClothingEyesEyepatch, FlippableEyesBase]
+  abstract: true
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterFoldableBaseOpened
+  suffix: opened
+  components:
+  - type: Foldable
+    folded: true
+  - type: Clothing
+    equippedPrefix: open
+  - type: Item
+    heldPrefix: open
+  - type: Sprite
+    layers:
+    - state: icon
+      map: [ "unfoldedLayer" ]
+      visible: false
+    - state: icon-open
+      map: ["foldedLayer"]
+      visible: true
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformSchoolgirlBase
+  description: Ready for school!
+  abstract: true
+
+- type: entity
+  parent: ClothingEyesEyepatch
   id: ClothingEyesEyepatchColor
   name: eyepatch
   description: Yarr.
@@ -28,20 +64,15 @@
 
 
 - type: entity
-  parent: ClothingEyesEyepatchColor
+  parent: [ClothingEyesEyepatchColor, ClothingHeadEyeBaseFlipped]
   id: ClothingEyesEyepatchColorFlipped
-  suffix: flipped
-  components:
-  - type: Foldable
-    folded: true
-  - type: Clothing
-    equippedPrefix: flipped
 
 
 - type: entity
   parent: ClothingEyesBlindfold
   id: ClothingEyesBlindfoldColor
   suffix: colorable
+  description: The bind leading the blind. This version can be recolored.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
@@ -53,7 +84,7 @@
   parent: ClothingEyesBase
   id: ClothingEyesBlindfoldFake
   name: blindfold
-  description: The bind leading the blind.
+  description: The bind leading the blind. Looks transparent.
   suffix: fake
   components:
   - type: Sprite
@@ -66,6 +97,7 @@
   parent: ClothingEyesBlindfoldFake
   id: ClothingEyesBlindfoldFakeColor
   suffix: colorable, fake
+  description: The bind leading the blind. Looks transparent.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/blindfold_color.rsi
@@ -146,21 +178,6 @@
 
 
 - type: entity
-  parent: ClothingEyesGlassesSunglasses
-  id: ClothingEyesGlassesSunglassesAviator
-  name: shielded aviators
-  description: A pair of designer sunglasses. These ones are specially made to protect the eye from blinding flashes of light.
-  components:
-  - type: Sprite
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
-  - type: Clothing
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/aviators.rsi
-  - type: Tag
-    tags:
-    - WhitelistChameleon
-
-
-- type: entity
   parent: ClothingEyesGlassesCheapSunglasses
   id: ClothingEyesGlassesCheapSunglassesBig
   name: big sunglasses
@@ -176,40 +193,10 @@
 
 
 - type: entity
-  parent: ClothingEyesGlassesSunglasses
-  id: ClothingEyesGlassesSunglassesBig
-  name: big shielded sunglasses
-  description: A pair of black sunglasses with big lenses. These ones are specially made to protect the eye from blinding flashes of light.
-  components:
-  - type: Sprite
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
-  - type: Clothing
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_big.rsi
-  - type: Tag
-    tags:
-    - WhitelistChameleon
-
-
-- type: entity
   parent: ClothingEyesGlassesCheapSunglasses
   id: ClothingEyesGlassesCheapSunglassesVisor
   name: visor sunglasses
   description: A pair of visor sunglasses.
-  components:
-  - type: Sprite
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
-  - type: Clothing
-    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
-  - type: Tag
-    tags:
-    - WhitelistChameleon
-
-
-- type: entity
-  parent: ClothingEyesGlassesSunglasses
-  id: ClothingEyesGlassesSunglassesVisor
-  name: shielded visor sunglasses
-  description: A pair of visor sunglasses. These ones are specially made to protect the eye from blinding flashes of light.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Glasses/sunglasses_visor.rsi
@@ -460,8 +447,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin.rsi
-    equipDelay: 0
-    unequipDelay: 0
   - type: Item
     size: Tiny
 
@@ -476,8 +461,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_clover.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_clover.rsi
-    equipDelay: 0
-    unequipDelay: 0
   - type: Item
     size: Tiny
 
@@ -492,8 +475,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_butterfly.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_butterfly.rsi
-    equipDelay: 0
-    unequipDelay: 0
   - type: Item
     size: Tiny
 
@@ -508,8 +489,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_magnetic.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/pin_magnetic.rsi
-    equipDelay: 0
-    unequipDelay: 0
 
 
 - type: entity
@@ -522,8 +501,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/ribbon.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/ribbon.rsi
-    equipDelay: 0.2
-    unequipDelay: 0.2
 
 
 - type: entity
@@ -536,8 +513,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow.rsi
-    equipDelay: 0.2
-    unequipDelay: 0.2
 
 
 - type: entity
@@ -550,8 +525,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow_small.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Head/Accessories/bow_small.rsi
-    equipDelay: 0.2
-    unequipDelay: 0.2
 
 - type: entity
   parent: [ClothingHeadBandBase, ClothingMaskBandWhite]
@@ -925,5 +898,2884 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Mask/neckgaiterwhite.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Mask/neckgaiterwhite.rsi
+
+
+
+# EE generic neck, outer clothing, shoes, and uniform
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBlack
+  name: black suit
+  description: A crisp white shirt and charcoal slacks. Reminds you of the old times.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblack.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblack.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBlackAlt
+  name: dark suit
+  description: A crisp grey shirt and charcoal slacks. Reminds you of overcast days.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblackalt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblackalt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBlackMob
+  name: red suit
+  description: A crisp red shirt and charcoal slacks. Reminds you of law enforcement.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblackmob.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitblackmob.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBrown
+  name: brown suit
+  description: A crisp white shirt and chocolate slacks. Reminds you of dusty offices.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrown.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrown.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBrownAlt
+  name: dubious suit
+  description: A crisp grey shirt and chocolate slacks. Reminds you of clandestine operators.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrownalt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrownalt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBrownMob
+  name: mafioso suit
+  description: A crisp red shirt and chocolate slacks. Reminds you of family.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrownmob.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitbrownmob.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitWhite
+  name: white suit
+  description: A crisp white shirt and ivory slacks. Reminds you of swans.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhite.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhite.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitWhiteAlt
+  name: negative suit
+  description: A crisp grey shirt and ivory slacks. Reminds you of daguerreotypes.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhitealt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhitealt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitWhiteMob
+  name: gangster suit
+  description: A crisp red shirt and ivory slacks. Reminds you of organized Japanese crime.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhitemob.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/suitwhitemob.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSober
+  name: sober sweater
+  description: For the more lucid moments.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/sober.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/sober.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitLostTourist
+  name: lost tourist uniform
+  description: The uniform of those who just want to relax on a beach... Where is the beach anyway?
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/lost_tourist.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/lost_tourist.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitJeansRed
+  name: red sweater with jeans
+  description: A red sweater with blue jeans. This one has the dominant jeans.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/jeans_red.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/jeans_red.rsi
+
+
+- type: entity
+  parent: ClothingUniformBaseFlippable
+  id: ClothingUniformJumpsuitBlackTurtleneck
+  name: black turtleneck
+  description: A simple black turtleneck. Perfect for any wannabe spy.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/black_turtleneck.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Uniforms/Jumpsuit/black_turtleneck.rsi
+
+
+- type: entity
+  parent: [ ClothingUniformBaseFlipped, ClothingUniformJumpsuitBlackTurtleneck ]
+  id: ClothingUniformJumpsuitBlackTurtleneckFlipped
+  name: black turtleneck
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesMiscWhite
+  name: white leather shoes
+  description: Impeccably shined white leather shoes. Don't tread on these tootsies.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Shoes/Misc/whiteleather.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Shoes/Misc/whiteleather.rsi
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsFishing
+  name: fishing boots
+  description: Smells fishy!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Shoes/Boots/fishing_boots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/Shoes/Boots/fishing_boots.rsi
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformSkirtTurtle
+  name: decorated turtle skirt
+  description: A turtle skirt with yellow straps and soft fabric.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpskirt/Decorskirt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpskirt/Decorskirt.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterCorporateJacket
+  name: Nanotrasen Corporate Jacket
+  description: A cozy jacket with the Nanotrasen logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/WinterCoats/corpo_jacket.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/WinterCoats/corpo_jacket.rsi
+    
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterDenimJacket
+  name: Denim jacket
+  description: A jean jacket with a warm inner lining.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/WinterCoats/denim_jacket.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/WinterCoats/denim_jacket.rsi
+
+
+- type: entity
+  parent: ClothingOuterStorageBase
+  id: ClothingOuterCoatOvercoat
+  name: overcoat
+  description: A warm, dark overcoat, suitable for formal occasions.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/Coats/overcoat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/DeltaV/Clothing/OuterClothing/Coats/overcoat.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.1
+    coolingCoefficient: 0.1
+  - type: Armor
+    modifiers:
+      coefficients:
+        Slash: 0.9
+        Heat: 0.75
+
+
+- type: entity
+  parent: ClothingOuterStorageBase
+  id: ClothingOuterCoatIdrisIncorporatedWindbreaker
+  name: idris incorporated windbreaker
+  description: A windbreaker, sporting the official heraldry of the Idris Incorporated Corporate Finances division. Its made of sturdy futuristic fiber.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/idris_windbreaker.rsi
+    layers:
+    - state: icon
+    - state: icon-unshaded
+      shader: unshaded
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/idris_windbreaker.rsi
+    clothingVisuals:
+      outerClothing:
+      - state: equipped-OUTERCLOTHING
+      - state: equipped-OUTERCLOTHING-unshaded
+        shader: unshaded
+  - type: TemperatureProtection
+    heatingCoefficient: 0.1
+    coolingCoefficient: 0.1
+  - type: Armor
+    modifiers:
+      coefficients:
+        Slash: 0.9
+        Heat: 0.75
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTshirtJeans
+  name: white t-shirt and jeans
+  description: Even in space, this combo is still in style.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeans.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeans.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTshirtJeansGray
+  name: gray t-shirt and jeans
+  description: Even though there are no forests in space, this combo is still practical.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeansgray.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeansgray.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTshirtJeansPeach
+  name: peach t-shirt and jeans
+  description: Even though your favorite emo clothing store is back at home, this combo is still edgy.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeanspeach.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirtjeanspeach.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformTShirtKhakiPants
+  name: drab t-shirt and khaki pants
+  description: Some drab but functional clothing.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirt_khaki.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Jumpsuit/tshirt_khaki.rsi
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingCostumeArcDress
+  name: white shirt and purple skirt
+  description: You feel a supernatural urge to put these on. It must be fate.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/arc.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/arc.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: UniformGeisha
+  name: geisha dress
+  description: For a good hostess.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/geisha.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/geisha.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingCostumeMioSkirt
+  name: yellow skirt with rose hoodie
+  description: Soft and comfortable, it sports bright colors with a neat yellow bow at the neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Misc/mio.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Misc/mio.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingCostumeNaota
+  name: turquoise hoodie and shorts
+  description: A hoodie with a small kangaroo pouch.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/naota.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/naota.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformDressRed
+  name: red dress
+  description: A voluminous, fancy red dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/red_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/red_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlRed
+  name: red schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/red.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/red.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlBlack
+  name: black schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/black.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/black.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlBlue
+  name: blue schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/blue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/blue.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlCyan
+  name: cyan schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/cyan.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/cyan.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlGreen
+  name: green schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/green.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/green.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlOrange
+  name: orange schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/orange.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/orange.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlPink
+  name: pink schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/pink.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/pink.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlPurple
+  name: purple schoolgirl uniform
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/purple.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/Schoolgirl/purple.rsi
+
+## kendo
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformKendoHakama
+  name: hakama
+  description: An elegant black and blue hakama that could be worn for kendo or formal events.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/hakama.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/hakama.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformMartialGi
+  name: gi
+  description: A white top and bottom traditionally used in martial arts, often paired with a belt.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/gi.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/gi.rsi
+
+## kimono
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingKimonoBlue
+  name: blue kimono
+  description: I'm blue da ba dee da ba da-ee!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-blue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-blue.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingKimonoPink
+  name: pink kimono
+  description: Pretty in pink, isn't she?
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-pink.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-pink.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingKimonoPurple
+  name: purple kimono
+  description: You definitely won't look like a maroon in this.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-purple.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-purple.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingKimonoSky
+  name: sky blue kimono
+  description: Reminds you of natsu matsuri.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-sky.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-sky.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingKimonoGreen
+  name: sea green kimono
+  description: Colors and textures reminiscent of seaweed.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-green.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/kimono-green.rsi
+
+## new school uniforms
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlDusk
+  name: dusk schoolgirl uniform
+  description: Ready for school in modern style.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/SchoolgirlModern/dusk.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/SchoolgirlModern/dusk.rsi
+
+
+- type: entity
+  parent: ClothingUniformSchoolgirlBase
+  id: UniformSchoolgirlBlazerTan
+  name: tan blazer schoolgirl uniform
+  description: Ready for school in modern style. This set comes with a tan blazer.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/SchoolgirlModern/blazer-tan.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/SchoolgirlModern/blazer-tan.rsi
+
+# gakuran
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformSchoolGakuranBlack
+  name: gakuran uniform
+  description: A sleek school uniform.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/gakuran.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Uniforms/Costume/gakuran.rsi
+
+## mnk
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesGeta
+  name: geta sandals
+  description: A pair of traditional japanese sandals.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Shoes/Misc/geta.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Shoes/Misc/geta.rsi
+
+
+- type: entity
+  parent: ClothingOuterStorageBase
+  id: ClothingOuterCoatHyenhSweater
+  name: comfy sweater
+  description: It's comfy.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/hyenh.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/hyenh.rsi
+    - type: TemperatureProtection
+      heatingCoefficient: 0.1
+      coolingCoefficient: 0.1
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterWinterCoatLong
+  name: long winter coat
+  description: Even your legs will be warm with this stylish coat.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/long_winter_coat.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/long_winter_coat.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterWinterCoatPlaid
+  name: plaid winter coat
+  description: It might be made out of actual wool.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/plaid_winter_coat.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/WinterCoats/plaid_winter_coat.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterVestValet
+  name: valet vest
+  description: A goofy red vest almost certainly designed with the sole purpose of being demeaning.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/Vests/valet.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/OuterClothing/Vests/valet.rsi
+
+- type: entity
+  parent: ClothingOuterStorageBase
+  id: ClothingOuterCoatLettermanBlue
+  name: blue letterman jacket
+  description: It's a blue highschool jacket with a big '14' stitched onto the back.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Misc/letterman_jacket_blue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Nyanotrasen/Clothing/Misc/letterman_jacket_blue.rsi
+  - type: TemperatureProtection
+    heatingCoefficient: 0.4
+    coolingCoefficient: 0.4
+
+
+- type: entity
+  parent: ClothingOuterStorageToggleableBase
+  id: ClothingOuterCoatAcidRaincoat
+  name: acid raincoat
+  description: Mostly transparent raincoat made out of acid resistant polymers. Please, for the love of Space God, do wear undergarments.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Caustic: 0.4
+  - type: ToggleableClothing
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoat
+
+
+- type: entity
+  parent: ClothingOuterCoatAcidRaincoat
+  id: ClothingOuterCoatAcidRaincoatBlue
+  name: blue acid raincoat
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_blue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_blue.rsi
+  - type: ToggleableClothing
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoatBlue
+
+
+- type: entity
+  parent: ClothingOuterCoatAcidRaincoat
+  id: ClothingOuterCoatAcidRaincoatGreen
+  name: green acid raincoat
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_green.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_green.rsi
+  - type: ToggleableClothing
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoatGreen
+
+
+- type: entity
+  parent: ClothingOuterCoatAcidRaincoat
+  id: ClothingOuterCoatAcidRaincoatMagenta
+  name: magenta acid raincoat
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_magenta.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_magenta.rsi
+  - type: ToggleableClothing
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoatMagenta
+
+
+- type: entity
+  parent: ClothingOuterCoatAcidRaincoat
+  id: ClothingOuterCoatAcidRaincoatYellow
+  name: yellow acid raincoat
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_yellow.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_yellow.rsi
+  - type: ToggleableClothing
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoatGreen
+
+# Jackets
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitAmish
+  name: amish suit
+  description: It's a very Amish-looking suit.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/amish_suit.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/amish_suit.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitAristocratic
+  name: aristocratic suit
+  description: A dapper-looking suit with blue accents that make you feel like an aristocrat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/aristocratic_suit.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/aristocratic_suit.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitAristocraticTuxedo
+  name: aristocratic tuxedo
+  description: You can almost smell the spesos this was sewn from.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/aristocratic_tuxedo.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/aristocratic_tuxedo.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitAscetic
+  name: plain ascetic garb
+  description: A rather plain-looking uniform.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/ascetic.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/ascetic.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitBarber
+  name: barber jumpsuit
+  description: Makes you want to cut hair.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/barber.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/barber.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitBlueBlazer
+  name: blue blazer
+  description: A bold yet conservative outfit, red corduroys, navy blazer and a tie.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/blue_blazer.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/blue_blazer.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitDisheveled
+  name: disheveled suit
+  description: What might pass as well-maintained formal attire, if you're blind.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/disheveled.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/disheveled.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitRegal
+  name: regal suit
+  description: An elegant red suit with yellow accents.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/regal_suit.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/regal_suit.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitRegalTuxedo
+  name: regal tuxedo
+  description: An elegant dapper suit with a red coat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/regal_tuxedo.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/regal_tuxedo.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitRippedPunk
+  name: ripped punk jeans
+  description: Black ripped jeans and a fishnet top. How punk.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/rippedpunk.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/rippedpunk.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSailor
+  name: sailor suit
+  description: Popular in the Submarine station.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/sailor.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/sailor.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitStriped
+  name: striped suit
+  description: A red and white striped ensemble with dark suspenders.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/striped_suit.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/striped_suit.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTrackpants
+  name: track pants
+  description: A plain t-shirt and track pants.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/trackpants.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/trackpants.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTurtleneckGrey
+  name: grey turtleneck
+  description: A warm looking sweater and a pair of dark blue slacks.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/turtleneck_grey.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/turtleneck_grey.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitVictorianRedBlack
+  name: red and black victorian suit
+  description: A Victorian-style suit, fancy!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_red_black.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_red_black.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitVictorianRedVest
+  name: red victorian suit
+  description: A Victorian-style suit, fancy!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_red_vest.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_red_vest.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitVictorianVest
+  name: victorian suit
+  description: A Victorian-style suit, fancy!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_vest.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/victorian_vest.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitWaiter
+  name: waiter's outfit
+  description: Waiter! Waiter! More serves with that outfit please!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/waiter.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/waiter.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitYogaGymBra
+  name: yoga gym bra
+  description: A gym bra paired with yoga pants, perfect for working out and looking good at the same time.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/yoga_gym_bra.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/yoga_gym_bra.rsi
+
+# Nuclear 14 outfits
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitSuitRolledSleeves
+  name: rolled sleeves suit
+  description: A dapper suit with a vest and a red tie, sleeves rolled up to show your forearms.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/detectivealt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/detectivealt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitBartenderGrey
+  name: grey bartender's uniform
+  description: A nice and tidy grey uniform. Shame about the bar, though.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/bartenderalt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/bartenderalt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitCheckered
+  name: checkered suit
+  description: The game was rigged from the start.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/checkered.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/checkered.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitFlannelOveralls
+  name: flannel overalls
+  description: Oh, I'm goin' down this road feelin' bad... Lord, I'm goin' down this road feelin' bad...
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/caravaneer.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/caravaneer.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitCowboyBrown
+  name: brown cowboy outfit
+  description: Yeehaw, partner!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/cowboybrown.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/cowboybrown.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitCowboyGrey
+  name: grey cowboy outfit
+  description: Yeehaw, partner!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/cowboygrey.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/cowboygrey.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitCamouflageShirt
+  name: camouflage shirt
+  description: A long-sleeve camouflage shirt paired with a classic pair of jeans.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/fudd.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/fudd.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitOliveSweater
+  name: olive sweater
+  description: A cozy sweater that fits snugly on top of grey work pants.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/olive_sweater.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/olive_sweater.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitDesertUniform
+  name: desert uniform
+  description: A replica of vintage Solarian combat uniforms, for LARPing purposes.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/desertbdu.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/desertbdu.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitLumberjack
+  name: lumberjack overalls
+  description: Overalls that make you look like a lumberjack.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/lumberjack.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/lumberjack.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitLightBlueShirt
+  name: light blue shirt
+  description: A light blue shirt with pale khakis, lightweight and comfy.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/lightblue_shirt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/lightblue_shirt.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitGreyShirt
+  name: grey shirt and olive pants
+  description: Sometimes all you need is a tried but true combo, grey and olive.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/rangerv3.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_Nuclear14/Clothing/Uniforms/FalloutSuits/rangerv3.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitFlannelJeans
+  name: flannel shirt and jeans
+  description: A red flannel shirt paired with pale blue jeans. How original.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/flannel_jeans.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/flannel_jeans.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitFlannelBlackJeans
+  name: black flannel shirt and jeans
+  description: Not just any flannel, a flannel shirt that's black! Daring today, aren't we?
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/black_flannel_jeans.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/black_flannel_jeans.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitFlannelKhakis
+  name: flannel shirt and khakis
+  description: A red flannel shirt with tan khaki pants, a smart pairing.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/flannel_khakis.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/flannel_khakis.rsi
+
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitFlannelBlackKhakis
+  name: black flannel shirt and khakis
+  description: A black flannel shirt with tan khaki pants, a smart pairing.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/black_flannel_khakis.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpsuit/black_flannel_khakis.rsi
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressAsymmetric
+  name: asymmetric dress
+  description: This dress forced the mothermatter to deyassinate in slaygineering.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/asymmetric_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/asymmetric_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressEvening
+  name: evening gown
+  description: A floor-length dress to impress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressMidi
+  name: midi dress
+  description: Contrary to popular belief, you can't play music with this dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/midi_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/midi_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressTea
+  name: tea-length dress
+  description: Perfect for tea time!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSleeveless
+  name: sleeveless A-line dress
+  description: A simple sleeveless dress with a flared bottom.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sleeveless_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sleeveless_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressLongSleeve
+  name: long sleeve A-line dress
+  description: A dress with a flared bottom and sleeves that cover the arms.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/longsleeve_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/longsleeve_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressBlackAndGold
+  name: black and gold gown
+  description: Luckily it's not a white and blue gown.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_and_gold.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_and_gold.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressBlackTango
+  name: black tango dress
+  description: An earthen black tango dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
+
+
+- type: entity
+  parent: ClothingUniformJumpskirtDressBlackTango
+  id: ClothingUniformJumpskirtDressBlackTangoAlt
+  suffix: alternative
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCheongsamBlue
+  name: blue cheongsam
+  description: A Chinese dress that hugs the body. This one is blue, the fabric styled with flowering tree branches.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCheongsamGreen
+  name: green cheongsam
+  description: A Chinese dress that hugs the body. This one is green, patterned with overlapping jade fans.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCheongsamPurple
+  name: purple cheongsam
+  description: A Chinese dress that hugs the body. This one is purple, embroidered with plum blossoms.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCheongsamRed
+  name: red cheongsam
+  description: A Chinese dress that hugs the body. This one is red, with a golden leaf trim that climbs up the garment.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCheongsamWhite
+  name: white cheongsam
+  description: A Chinese dress that hugs the body. This one is white, embroidered with a bright golden dragon.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtSuitBlueBlazer
+  name: blue blazer skirt
+  description: A bold yet conservative outfit, a red pencil skirt and a navy blazer.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/blue_blazer.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/blue_blazer.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressBlueSundress
+  name: long blue sundress
+  description: A long blue sun dress with white frills towards the bottom.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/blue_sundress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/blue_sundress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressClub
+  name: club dress
+  description: This well-tailored dress ate and left no crumbs.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/club_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/club_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressCoveter
+  name: coveter dress
+  description: Others will covet how your outfit slays with this dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/coveter.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/coveter.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressFlamenco
+  name: flamenco dress
+  description: A Mexican flamenco dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressFire
+  name: flame dress
+  description: A small black dress with a blue flames print on it.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_fire.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_fire.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressOrange
+  name: orange dress
+  description: A fancy orange gown for those who like to show leg.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressYellow
+  name: yellow dress
+  description: A flirty, little yellow dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_yellow.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_yellow.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressFlowergirl
+  name: flower dress
+  description: What did the flowers do to deserve this?
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flowergirl.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flowergirl.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressFluffy
+  name: fluffy dress
+  description: A lovely fluffed out dress with a black lacy top.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressFormalRed
+  name: formal red dress
+  description: A big formal red dress, a totally regular outfit in NanoTrasen stations.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressGothic
+  name: gothic dress
+  description: A black dress with a sheer mesh over it, tastefully old-school goth.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtKimonoColor
+  name: kimono
+  description: A traditional Japanese kimono.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressLacyGown
+  name: lacy gown
+  description: A beautiful lacy gown with laces at the bottom.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressLong
+  name: long dress
+  description: A long dress that reaches the floor.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressLongFlared
+  name: long flared dress
+  description: A long dress that flares out at the bottom.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtQipao
+  name: qipao
+  description: A traditional Solarian garment, typically made of (synthetic) silk.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao.rsi
+
+
+- type: entity
+  parent: ClothingUniformJumpskirtQipao
+  id: ClothingUniformJumpskirtQipaoSlim
+  name: slim qipao
+  description: A traditional Solarian garment, typically made of (synthetic) silk. This one is fairly slim.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressRedSwept
+  name: red swept dress
+  description: A red dress that sweeps to the side.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/red_swept_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/red_swept_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtPencilSkirtGymBra
+  name: pencil skirt and gym bra
+  description: A fashion-forward pair popularized by an iconic space influencer.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/skirt_pencil_gym_bra.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/skirt_pencil_gym_bra.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressPuffy
+  name: puffy dress
+  description: An iconic dress with a very puffy bottom.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtSailor
+  name: sailor dress
+  description: Formal wear for the leader.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sailor_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sailor_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSariGreen
+  name: green sari
+  description: A colorful red traditional dress originating from India.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSariRed
+  name: red sari
+  description: A colorful red traditional dress originating from India.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressShort
+  name: short dress
+  description: A short, plain dress.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/short_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/short_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSpider
+  name: spider dress
+  description: A black dress with spider web patterns that instills fear in your arachnophobic enemies.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressStriped
+  name: striped dress
+  description: Fashion in space.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/striped_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/striped_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSundress
+  name: sundress
+  description: Makes you want to frolic in a field of daisies.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sundress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sundress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressSundressWhite
+  name: white sundress
+  description: A white sundress decorated with purple lilies.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sundress_white.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sundress_white.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressVictorianBlack
+  name: black victorian dress
+  description: A black Victorian-style dress often paired with the black Victorian coat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressVictorianRed
+  name: red victorian dress
+  description: A red Victorian-style dress often paired with the red Victorian coat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtWaitress
+  name: waitress's outfit
+  description: Waitress! Waitress! More serves with that outfit please!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/waitress.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/waitress.rsi
+
+
+- type: entity
+  parent: ClothingUniformSkirtBase
+  id: ClothingUniformJumpskirtDressYellowSwoop
+  name: yellow swooped dress
+  description: A yellow dress that swoops to the side.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/yellowswoop.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/yellowswoop.rsi
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesHighHeels
+  name: high heels
+  description: These heels help you sashay into the station like it's a catwalk.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepHighHeels
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesHighHeelsLong
+  name: long high heels
+  description: Slay the house down boots!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepHighHeels
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesFlats
+  name: flats
+  description: Fashionable and comfortable flats.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/flats.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/flats.rsi
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepHighHeels
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesSkater
+  name: skater shoes
+  description: A pair of wide shoes with thick soles. Designed for skating.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/skater.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/skater.rsi
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesSandalsFlipFlops
+  name: flip flops
+  description: A pair of flip flops. For those not afraid to show a little ankle.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Sandals/flipflops.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Sandals/flipflops.rsi
+
+
+- type: entity
+  parent: ClothingShoesSandalsFlipFlops
+  id: ClothingShoesSandalsFlipFlopsAlt
+  description: A pair of flip flops. The strap colors are lighter than the usual flip flops.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Sandals/flipflops_alt.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Sandals/flipflops_alt.rsi
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsWorkColor
+  name: workboots
+  description: Lace-up work boots for the especially blue-collar. In a variety of colors!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/workboots_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/workboots_color.rsi
+
+
+- type: entity
+  parent: ClothingShoesMilitaryBase
+  id: ClothingShoesBootsJackFake
+  name: jackboots
+  description: Civilian-grade replica of Nanotrasen Security combat boots. Looks the part but lacks the performanceвЂ”ideal for the heated situations.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots.rsi
+
+
+- type: entity
+  parent: ClothingShoesMilitaryBase
+  id: ClothingShoesBootsJackColor
+  name: fashion jackboots
+  description: Civilian-grade replica of Nanotrasen Security combat boots, impractical but fashionable.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots_color.rsi
+  - type: ClothingModifyStunTime # Goobstation
+    modifier: 0.8
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsAnkle
+  name: ankle boots
+  description: A pair of low-heeled boots, if you need inclosed shoes.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/ankleboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/ankleboots.rsi
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsFull
+  name: full-length boots
+  description: A pair of boots that cover the entire leg.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/fullboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/fullboots.rsi
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsMud
+  name: mudboots
+  description: A nice pair of weatherproof mudboots to keep your feet dry.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/mudboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/mudboots.rsi
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsMudThigh
+  name: thigh-high mudboots
+  description: A nice pair of weatherproof mudboots to keep your legs dry.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/thighmudboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/thighmudboots.rsi
+
+
+- type: entity
+  parent: ClothingShoesBaseButcherable
+  id: ClothingShoesBootsThigh
+  name: thigh-high boots
+  description: A pair of casual boots that reach up to the thighs.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/thighboots.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/thighboots.rsi
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterCsCorporateJacket
+  name: Cybersun Corporate Jacket
+  description: A cozy jacket with the Cybersun logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_cybersun.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_cybersun.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterEeCorporateJacket
+  name: Einstein Engines Corporate Jacket
+  description: A cozy jacket with the Einstein Engines logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_einstein_engines.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_einstein_engines.rsi
+  - type: GuideHelp
+    guides: [ EinsteinEngines ]
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterHiCorporateJacket
+  name: Hephaestus Industries Corporate Jacket
+  description: A cozy jacket with the Hephaestus Industries logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hephestus_industries.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hephestus_industries.rsi
+  - type: GuideHelp
+    guides: [ HephaestusIndustries ]
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterHmCorporateJacket
+  name: Hawkmoon Acquisitions Corporate Jacket
+  description: A cozy jacket with the Hawkmoon Acquisitions logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hawkmoon_aquisitions.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hawkmoon_aquisitions.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterIdCorporateJacket
+  name: Interdyne Corporate Jacket
+  description: A cozy jacket with the Interdyne logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_interdyne.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_interdyne.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterBcCorporateJacket
+  name: Bishop Cybernetics Corporate Jacket
+  description: A cozy jacket with the Bishop Cybernetics logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_bishop_cybernetics.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_bishop_cybernetics.rsi
+  - type: GuideHelp
+    guides: [ ZengHuPharmaceuticals ]
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterDdCorporateJacket
+  name: Discount Dan's Corporate Jacket
+  description: A cozy jacket with the Discount Dan's logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_discount_dans.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_discount_dans.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterFaCorporateJacket
+  name: Five Points Armory Corporate Jacket
+  description: A cozy jacket with the Five Points Armory logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_five_points_armory.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_five_points_armory.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterGeCorporateJacket
+  name: Gilthari Exports Corporate Jacket
+  description: A cozy jacket with the Gilthari Exports logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_gilthari_exports.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_gilthari_exports.rsi
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterZhCorporateJacket
+  name: Zeng-Hu Pharmaceuticals Corporate Jacket
+  description: A cozy jacket with the Zeng-Hu Pharmaceuticals logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_zeng_hu_pharma.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_zeng_hu_pharma.rsi
+  - type: GuideHelp
+    guides: [ ZengHuPharmaceuticals ]
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterIiCorporateJacket
+  name: Idris Incorporated Corporate Jacket
+  description: A cozy jacket with the Idris Incorporated logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_idris_incorporated.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_idris_incorporated.rsi
+  - type: GuideHelp
+    guides: [ ZengHuPharmaceuticals ]
+
+
+- type: entity
+  parent: ClothingOuterWinterCoat
+  id: ClothingOuterOeCorporateJacket
+  name: Orion Express Corporate Jacket
+
+  description: A cozy jacket with the Orion Express logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_orion_express.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_orion_express.rsi
+  - type: GuideHelp
+    guides: [ ZengHuPharmaceuticals ]
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterVestColorable
+  name: vest
+  description: You have a vested interest in looking good, and this vest is the vest choice to achieve that!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Vests/vest_colorable.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Vests/vest_colorable.rsi
+
+
+- type: entity
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterVestThick
+  name: thick vest
+  description: A vest made of synthetic leather.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Vests/vest_thick.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Vests/vest_thick.rsi
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterSuitJacket
+  name: suit jacket
+  description: A snappy dress jacket.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/suit_jacket.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/suit_jacket.rsi
+
+
+- type: entity
+  parent: [ClothingOuterStorageFoldableBaseOpened, ClothingOuterSuitJacket]
+  id: ClothingOuterSuitJacketOpened
+  name: suit jacket
+
+
+- type: entity
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterCardigan
+  name: cardigan
+  description: Only slightly worse than a blanket.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCardigan]
+  id: ClothingOuterCardiganOpened
+  name: cardigan
+
+
+- type: entity
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterCardiganSweater
+  name: sweater cardigan
+  description: Half as warm as a sweater, and half as fashionable as a cardigan. Not like it matters for coffee-house dwelling beatniks like yourself.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_sweater.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_sweater.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCardiganSweater]
+  id: ClothingOuterCardiganSweaterOpened
+  name: sweater cardigan
+
+
+- type: entity
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterCardiganArgyle
+  name: argyle cardigan
+  description: You'll never get dumped if you never get in a relationship in the first place. With this, you'll never have to worry again.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_argyle.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_argyle.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCardiganArgyle]
+  id: ClothingOuterCardiganArgyleOpened
+  name: argyle cardigan
+
+
+- type: entity
+  parent: ClothingOuterFoldableBase
+  id: ClothingOuterCardiganSlim
+  name: slim cardigan
+  description: A cozy sleek cardigan in a classic style.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_slim.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cardigan_slim.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCardiganSlim]
+  id: ClothingOuterCardiganSlimOpened
+  name: slim cardigan
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterCowboyDuster
+  name: cowboy duster
+  description: A duster commonly seen on cowboys from Earth's late 1800's.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cowboy_duster.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/cowboy_duster.rsi
+
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterBlazer
+  name: blazer
+  description: A charming jacket for when you want to play ball sports like an aristocrat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterBlazer]
+  id: ClothingOuterBlazerOpened
+  name: blazer
+
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterBlazerLong
+  name: long blazer
+  description: A charming long jacket that almost substitutes for a coat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_long.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_long.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterBlazerLong]
+  id: ClothingOuterBlazerLongOpened
+  name: long blazer
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterBlazerFormal
+  name: formal blazer
+  description: A slim-fit blazer suitable for both smart casual and formal outfits.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_formal.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_formal.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterBlazerLooseSleeve
+  name: loose sleeve blazer
+  description: One of those hippie-formal wannabe blazers.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_loose_sleeve.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_loose_sleeve.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterBlazerFlatCollar
+  name: flat collar blazer
+  description: For those grown ups that didn't wanna.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_flat_collar.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_flat_collar.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterBlazerPosh
+  name: posh blazer
+  description: This is a bit fancy, like the new service worker in Saltern who is trying too hard to impress the heads.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_posh.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Misc/blazer_posh.rsi
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterCoatModern
+  name: modern coat
+  description: A coat that has a nice finished feel.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/modern_coat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/modern_coat.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterTailcoat
+  name: tailcoat
+  description: A fancy Victorian-style tailcoat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/tailcoat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/tailcoat.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterCoatVictorian
+  name: black victorian coat
+  description: A fancy Victorian-style coat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/victorian_coat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/victorian_coat.rsi
+
+
+- type: entity
+  parent: ClothingOuterBase
+  id: ClothingOuterCoatVictorianRed
+  name: red victorian coat
+  description: A fancy Victorian-style coat in a red hue.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/victorian_coat_red.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/victorian_coat_red.rsi
+
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterCoatPeacoat
+  name: peacoat
+  description: A well-tailored, stylish peacoat.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/peacoat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/peacoat.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCoatPeacoat]
+  id: ClothingOuterCoatPeacoatOpened
+  name: peacoat
+
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterCoatAsymmetric
+  name: asymmetric coat
+  description: A solid sleeveless coat that only covers the upper body and the back of the legs.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/asymmetric_coat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/asymmetric_coat.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCoatAsymmetric]
+  id: ClothingOuterCoatAsymmetricOpened
+  name: asymmetric coat
+
+
+- type: entity
+  parent: ClothingOuterStorageFoldableBase
+  id: ClothingOuterCoatSubmariner
+  name: submariner coat
+  description: A leather jacket with a synthetic fur collar perfect for exploring the caves of Submarine.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/submariner.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/Coats/submariner.rsi
+
+
+- type: entity
+  parent: [ClothingOuterFoldableBaseOpened, ClothingOuterCoatSubmariner]
+  id: ClothingOuterCoatSubmarinerOpened
+  name: submariner coat
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTieColor
+  name: tie
+  description: A neosilk clip-on tie.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/color.rsi
+    renderLayer: innerNeck
+  - type: Tag
+    tags:
+    - WhitelistChameleon
+    - ClothMade
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTieShort
+  name: short tie
+  description: A short tie, perfect for vests.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/shorttie.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/shorttie.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTieBow
+  name: neck bow
+  description: A bow for adorning the neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/bow.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/bow.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTieBowTie
+  name: bow tie
+  description: A bow tie. Snazzy!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/bowtie.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/bowtie.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTieRibbon
+  name: neck ribbon
+  description: A ribbon for adorning the neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/ribbon.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/ribbon.rsi
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixColor
+  name: crucifix
+  description: A small cross on a piece of string. Commonly associated with the Christian faith, it is a main symbol of this religion.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/color.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixColorSaintPeter
+  name: Saint Peter crucifix
+  description: A small cross on a piece of string. Being inverted and thus upside down marks it as the cross of Saint Peter.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/color-inverted.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/color-inverted.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixGold
+  name: gold crucifix
+  description: A small, gold cross on a piece of string. Commonly associated with the Christian faith, it is a main symbol of this religion.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/gold.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/gold.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixGoldSaintPeter
+  name: gold Saint Peter crucifix
+  description: A small, gold cross on a piece of string. Being inverted and thus upside down marks it as the cross of Saint Peter.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/gold-inverted.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/gold-inverted.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixSilver
+  name: silver crucifix
+  description: A small, silver cross on a piece of string. Commonly associated with the Christian faith, it is a main symbol of this religion.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/silver.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/silver.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckCrucifixSilverSaintPeter
+  name: silver Saint Peter crucifix
+  description: A small, silver cross on a piece of string. Being inverted and thus upside down marks it as the cross of Saint Peter.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/silver-inverted.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Crucifixes/silver-inverted.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckScapular
+  name: scapular
+  description: As Christian garment that serves to remind the wearer of their commitment to live a Christian life.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/scapular.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/scapular.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckTallit
+  name: tallit
+  description: A fringed garment worn as a prayer shawl by Jewish people.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/tallit.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/tallit.rsi
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceStandard
+  name: necklace
+  description: A piece of jewelry that goes around your neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/standard.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/standard.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceLow
+  name: low-hanging necklace
+  description: A long piece of jewelry that hangs quite low from the neck of its wearer.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/low.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/low.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceRound
+  name: round necklace
+  description: A piece of jewelry that goes around your neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/round.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/round.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceSmall
+  name: small necklace
+  description: A diminutive necklace.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/small.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/small.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceGold
+  name: gold necklace
+  description: A piece of golden jewelry that goes around your neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/gold.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/gold.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceSilver
+  name: silver necklace
+  description: A piece of silver jewelry that goes around your neck.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/silver.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/silver.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceChainGold
+  name: gold chain necklace
+  description: A winding chain of golden links, fashioned into an exquisite necklace.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/chain_gold.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/chain_gold.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklaceChainSilver
+  name: silver chain necklace
+  description: A winding chain of silver links, fashioned into an exquisite necklace.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/chain_silver.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/chain_silver.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklacePendantGold
+  name: gold pendant necklace
+  description: A heavy gemstone tethered to a golden necklace by a chain.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_gold.rsi
+    layers:
+    - state: icon
+    - state: pendant-icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_gold.rsi
+    clothingVisuals:
+      neck:
+      - state: equipped-NECK
+      - state: pendant-equipped-NECK
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklacePendantGoldLarge
+  name: large gold pendant necklace
+  description: A large gemstone tethered to a golden necklace by a chain.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_gold_large.rsi
+    layers:
+    - state: icon
+    - state: pendant-icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_gold_large.rsi
+    clothingVisuals:
+      neck:
+      - state: equipped-NECK
+      - state: pendant-equipped-NECK
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklacePendantSilver
+  name: silver pendant necklace
+  description: A heavy gemstone tethered to a silver necklace by a chain.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_silver.rsi
+    layers:
+    - state: icon
+    - state: pendant-icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_silver.rsi
+    clothingVisuals:
+      neck:
+      - state: equipped-NECK
+      - state: pendant-equipped-NECK
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckNecklacePendantSilverLarge
+  name: large silver pendant necklace
+  description: A large gemstone tethered to a silver necklace by a chain.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_silver_large.rsi
+    layers:
+    - state: icon
+    - state: pendant-icon
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Necklaces/pendant_silver_large.rsi
+    clothingVisuals:
+      neck:
+      - state: equipped-NECK
+      - state: pendant-equipped-NECK
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckHeadphones
+  name: headphones
+  description: Quality headphones from Drunk Masters, with good sound insulation.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/headphones.rsi
+    layers:
+    - state: icon
+      map: [ "enum.ToggleableVisuals.Layer" ]
+  - type: Clothing
+    equippedPrefix: off
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/headphones.rsi
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.ToggleableVisuals.Enabled:
+        enum.ToggleableVisuals.Layer:
+          True: {state: icon-on}
+          False: {state: icon}
+  - type: ItemToggle
+    predictable: false
+    soundActivate:
+      path: /Audio/Items/flashlight_on.ogg
+    soundDeactivate:
+      path: /Audio/Items/flashlight_off.ogg
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckBellCollar
+  name: bell collar
+  description: A way to inform others about your presence, or just to annoy everyone around you!
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/bellcollar.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/bellcollar.rsi
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckDogtags
+  name: dogtags
+  description: A pair of engraved metal identification tags.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/dogtags.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Misc/dogtags.rsi
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckOldMantle
+  name: old wrap
+  description: A tattered fabric wrap, faded over the years. Smells faintly of cigars.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/mantles/oldmantle.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/mantles/oldmantle.rsi
+
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckUnathiMantle
+  name: hide mantle
+  description: A rather grisly selection of cured hides and skin, sewn together to form a ragged mantle.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/mantles/unathimantle.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/mantles/unathimantle.rsi
+
+- type: entity
+  parent: ClothingUniformBase
+  id: ClothingUniformJumpsuitTCAFArmsman
+  name: TCAF Armsman uniform
+  suffix: TCFL
+  description: A uniform worn by current and former infantry in the Tau-Ceti Armed Forces
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCAF_armsman.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCAF_armsman.rsi
+
+
+- type: entity
+  parent: [ClothingUniformBase, ClothingUniformFoldableBase]
+  id: ClothingUniformJumpsuitTCFLLegate
+  name: TCFL Legate uniform
+  suffix: TCFL
+  description: A uniform worn by commissioned officers in the Tau-Ceti Foreign Legion
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_legate.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_legate.rsi
+
+
+- type: entity
+  parent: [ClothingUniformBase, ClothingUniformFoldableBase]
+  id: ClothingUniformJumpsuitTCFLPilot
+  name: TCFL pilot uniform
+  suffix: TCFL
+  description: A uniform worn by current and former pilots in the Tau-Ceti Foreign Legion
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_pilot.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_pilot.rsi
+
+
+- type: entity
+  parent: [ClothingUniformBase, ClothingUniformFoldableBase]
+  id: ClothingUniformJumpsuitTCFLSentinel
+  name: TCFL Sentinel uniform
+  suffix: TCFL
+  description: A uniform worn by the non-commissioned officers of the Tau-Ceti Foreign Legion
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_sentinel.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_sentinel.rsi
+
+
+- type: entity
+  parent: [ClothingUniformBase, ClothingUniformFoldableBase]
+  id: ClothingUniformJumpsuitTCFLVolunteer
+  name: TCFL volunteer uniform
+  suffix: TCFL
+  description: A uniform worn by the enlisted members of the Tau-Ceti Foreign Legion. As an all-volunteer service that accepts any, regardless of race, species, or creed, every member of the TCFL starts out at this level.
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_volunteer.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Uniforms/TCFL_volunteer.rsi
+
+- type: entity
+  parent: [ClothingOuterStorageBase, AllowSuitStorageClothing]
+  id: ClothingOuterJacketTCAF
+  name: TCAF Jacket
+  suffix: TCFL
+  description: A high quality jacket made from a blend of tear resistant and fire retardant fabric. It's commonly worn by current and former members of the Tau-Ceti Armed Forces
+  components:
+    - type: Sprite
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/OuterClothing/TCAF_jacket.rsi
+    - type: Clothing
+      sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/OuterClothing/TCAF_jacket.rsi
+    - type: Armor
+      modifiers:
+        coefficients:
+          Blunt: 0.95
+          Slash: 0.95
+          Piercing: 0.95
+          Heat: 0.85
+    - type: TemperatureProtection
+      heatingCoefficient: 0.1
+      coolingCoefficient: 0.1
+
+- type: entity
+  parent: ClothingNeckBase
+  id: ClothingNeckFurWrap
+  name: fur mantle
+  description: A synthetic fur mantle.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/Generic/Neck/fur_wrap.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/Generic/Neck/fur_wrap.rsi
 
 

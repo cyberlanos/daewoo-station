@@ -818,6 +818,11 @@ namespace Content.Server.Database
         /// </summary>
         public string LoadoutName { get; set; } = string.Empty;
 
+#region Pirate: loadout
+        [MaxLength(16)]
+        public string? CustomColorTint { get; set; }
+#endregion
+
         /*
          * Insert extra data here like custom descriptions or colors or whatever.
          */

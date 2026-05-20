@@ -63,6 +63,8 @@
   - PlushieSharkPink
   - PlushieSlime
   - PlushieVox
+  subgroups:
+  - Trinkets
 
 - type: loadoutGroup
   id: PirateEEGenericEyes
@@ -71,9 +73,7 @@
   loadouts:
   - LoadoutEyesBlindfold
   - LoadoutEyesEyepatch
-  - LoadoutItemSunglasses
   - LoadoutEyesEyepatchColor
-  - LoadoutEyesEyepatchColorFlipped
   - LoadoutEyesGlasses3D
   - LoadoutEyesGlassesHipster
   - LoadoutEyesGlassesMonocle
@@ -82,9 +82,6 @@
   - LoadoutEyesGlassesCheapSunglassesAviator
   - LoadoutEyesGlassesCheapSunglassesBig
   - LoadoutEyesGlassesCheapSunglassesVisor
-  - LoadoutEyesGlassesSunglassesAviator
-  - LoadoutEyesGlassesSunglassesBig
-  - LoadoutEyesGlassesSunglassesVisor
   - LoadoutItemBlindfoldFake
   - LoadoutEyesBlindfoldFakeColor
 
@@ -123,7 +120,7 @@
 
 - type: loadoutGroup
   id: PirateEEGenericMask
-  name: loadout-group-passenger-mask
+  name: loadout-group-generic-mask
   minLimit: 0
   loadouts:
   - LoadoutMaskBandWhite
@@ -131,15 +128,152 @@
 
 - type: loadoutGroup
   id: PirateGenericPassengerJumpsuit
-  name: loadout-group-passenger-jumpsuit
+  name: loadout-group-generic-uniform
   minLimit: 0
   loadouts: []
   subgroups:
   - PiratePassengerJumpsuit
 
 - type: loadoutGroup
+  id: PirateEEGenericUniform
+  name: loadout-group-generic-uniform
+  minLimit: 0
+  loadouts:
+  - LoadoutUniformJumpsuitTshirtJeans
+  - LoadoutUniformJumpsuitTshirtJeansGray
+  - LoadoutUniformJumpsuitTshirtJeansPeach
+  - LoadoutUniformJumpsuitTShirtKhakiPants
+  - LoadoutUniformJumpsuitJeansRed
+  - LoadoutUniformJumpsuitLostTourist
+  - LoadoutUniformDressRed
+  - LoadoutUniformJumpsuitSober
+  - LoadoutUniformSkirtTurtle
+  - LoadoutUniformGeisha
+  - LoadoutUniformCostumeArcDress
+  - LoadoutUniformCostumeMioSkirt
+  - LoadoutUniformCostumeNaota
+  - LoadoutUniformKendoHakama
+  - LoadoutUniformMartialGi
+  - LoadoutClothingKimonoBlue
+  - LoadoutClothingKimonoPink
+  - LoadoutClothingKimonoPurple
+  - LoadoutClothingKimonoSky
+  - LoadoutClothingKimonoGreen
+  - LoadoutUniformSchoolGakuranBlack
+  - LoadoutUniformSchoolgirlBlack
+  - LoadoutUniformSchoolgirlBlue
+  - LoadoutUniformSchoolgirlCyan
+  - LoadoutUniformSchoolgirlGreen
+  - LoadoutUniformSchoolgirlOrange
+  - LoadoutUniformSchoolgirlPink
+  - LoadoutUniformSchoolgirlPurple
+  - LoadoutUniformSchoolgirlRed
+  - LoadoutUniformSchoolgirlDusk
+  - LoadoutUniformSchoolgirlBlazerTan
+  - LoadoutClothingJumpsuitSuitBlack
+  - LoadoutClothingJumpsuitSuitBlackAlt
+  - LoadoutClothingJumpsuitSuitBlackMob
+  - LoadoutClothingJumpsuitSuitBrown
+  - LoadoutClothingJumpsuitSuitBrownAlt
+  - LoadoutClothingJumpsuitSuitBrownMob
+  - LoadoutClothingJumpsuitSuitWhite
+  - LoadoutClothingJumpsuitSuitWhiteAlt
+  - LoadoutClothingJumpsuitSuitWhiteMob
+  - LoadoutUniformJumpskirtDressAsymmetric
+  - LoadoutUniformJumpskirtDressEvening
+  - LoadoutUniformJumpskirtDressMidi
+  - LoadoutUniformJumpskirtDressTea
+  - LoadoutUniformJumpskirtDressSleeveless
+  - LoadoutUniformJumpskirtDressLongSleeve
+  - LoadoutUniformJumpskirtDressBlackAndGold
+  - LoadoutUniformJumpskirtDressBlackTango
+  - LoadoutUniformJumpskirtDressBlackTangoAlt
+  - LoadoutUniformJumpskirtSuitBlueBlazer
+  - LoadoutUniformJumpskirtDressBlueSundress
+  - LoadoutUniformJumpskirtDressCheongsamBlue
+  - LoadoutUniformJumpskirtDressCheongsamGreen
+  - LoadoutUniformJumpskirtDressCheongsamPurple
+  - LoadoutUniformJumpskirtDressCheongsamRed
+  - LoadoutUniformJumpskirtDressCheongsamWhite
+  - LoadoutUniformJumpskirtDressClub
+  - LoadoutUniformJumpskirtDressCoveter
+  - LoadoutUniformJumpskirtDressFlamenco
+  - LoadoutUniformJumpskirtDressFire
+  - LoadoutUniformJumpskirtDressOrange
+  - LoadoutUniformJumpskirtDressYellow
+  - LoadoutUniformJumpskirtDressFlowergirl
+  - LoadoutUniformJumpskirtDressFluffy
+  - LoadoutUniformJumpskirtDressFormalRed
+  - LoadoutUniformJumpskirtDressGothic
+  - LoadoutUniformJumpskirtKimonoColor
+  - LoadoutUniformJumpskirtDressLacyGown
+  - LoadoutUniformJumpskirtDressLong
+  - LoadoutUniformJumpskirtDressLongFlared
+  - LoadoutUniformJumpskirtQipao
+  - LoadoutUniformJumpskirtQipaoSlim
+  - LoadoutUniformJumpskirtDressRedSwept
+  - LoadoutUniformJumpskirtPencilSkirtGymBra
+  - LoadoutUniformJumpskirtDressPuffy
+  - LoadoutUniformJumpskirtSailor
+  - LoadoutUniformJumpskirtDressSariGreen
+  - LoadoutUniformJumpskirtDressSariRed
+  - LoadoutUniformJumpskirtDressShort
+  - LoadoutUniformJumpskirtDressSpider
+  - LoadoutUniformJumpskirtDressStriped
+  - LoadoutUniformJumpskirtDressSundress
+  - LoadoutUniformJumpskirtDressSundressWhite
+  - LoadoutUniformJumpskirtDressVictorianBlack
+  - LoadoutUniformJumpskirtDressVictorianRed
+  - LoadoutUniformJumpskirtWaitress
+  - LoadoutUniformJumpskirtDressYellowSwoop
+  - LoadoutUniformJumpsuitSuitAmish
+  - LoadoutUniformJumpsuitSuitAristocratic
+  - LoadoutUniformJumpsuitSuitAristocraticTuxedo
+  - LoadoutUniformJumpsuitAscetic
+  - LoadoutUniformJumpsuitBarber
+  - LoadoutUniformJumpsuitSuitBlueBlazer
+  - LoadoutUniformJumpsuitDisheveled
+  - LoadoutUniformJumpsuitSuitRegal
+  - LoadoutUniformJumpsuitSuitRegalTuxedo
+  - LoadoutUniformJumpsuitRippedPunk
+  - LoadoutUniformJumpsuitSailor
+  - LoadoutUniformJumpsuitSuitStriped
+  - LoadoutUniformJumpsuitTrackpants
+  - LoadoutUniformJumpsuitTurtleneckGrey
+  - LoadoutUniformJumpsuitSuitVictorianRedBlack
+  - LoadoutUniformJumpsuitSuitVictorianRedVest
+  - LoadoutUniformJumpsuitSuitVictorianVest
+  - LoadoutUniformJumpsuitWaiter
+  - LoadoutUniformJumpsuitYogaGymBra
+  - LoadoutUniformJumpsuitBlackTurtleneck
+  - LoadoutUniformJumpsuitBlackTurtleneckFlipped
+  - LoadoutUniformJumpsuitSuitRolledSleeves
+  - LoadoutUniformJumpsuitBartenderGrey
+  - LoadoutUniformJumpsuitCheckered
+  - LoadoutUniformJumpsuitFlannelOveralls
+  - LoadoutUniformJumpsuitCowboyBrown
+  - LoadoutUniformJumpsuitCowboyGrey
+  - LoadoutUniformJumpsuitCamouflageShirt
+  - LoadoutUniformJumpsuitOliveSweater
+  - LoadoutUniformJumpsuitDesertUniform
+  - LoadoutUniformJumpsuitLumberjack
+  - LoadoutUniformJumpsuitLightBlueShirt
+  - LoadoutUniformJumpsuitGreyShirt
+  - LoadoutUniformJumpsuitFlannelJeans
+  - LoadoutUniformJumpsuitFlannelBlackJeans
+  - LoadoutUniformJumpsuitFlannelKhakis
+  - LoadoutUniformJumpsuitFlannelBlackKhakis
+  - ClothingUniformTCAFArmsman
+  - ClothingUniformTCFLLegate
+  - ClothingUniformTCFLPilot
+  - ClothingUniformTCFLSentinel
+  - ClothingUniformTCFLVolunteer
+  subgroups:
+  - PiratePassengerJumpsuit
+
+- type: loadoutGroup
   id: PirateGenericPassengerFace
-  name: loadout-group-passenger-mask
+  name: loadout-group-generic-mask
   minLimit: 0
   loadouts: []
   subgroups:
@@ -147,7 +281,7 @@
 
 - type: loadoutGroup
   id: PirateGenericPassengerGloves
-  name: loadout-group-passenger-gloves
+  name: loadout-group-gloves
   minLimit: 0
   loadouts: []
   subgroups:
@@ -262,7 +396,6 @@
   minLimit: 0
   loadouts:
   - Mantle
-  - OldNeckWrap
   - WardrobeCloakSanabi
   - WardrobeScarfStripedPurple
   - WardrobeScarfStripedOrange
@@ -342,8 +475,6 @@
   - WardrobeShoesColorPurple
   - WinterBoots
   - WardrobeBootsPerformer
-  - WardrobeUnderSocksCoder
-  - WardrobeClothwrap
   - WardrobeFlippers
   - WardrobeSlippers
   - WardrobeSlippersDuck
@@ -390,7 +521,7 @@
 
 - type: loadoutGroup
   id: PirateEEGenericHead
-  name: loadout-group-passenger-head
+  name: loadout-group-generic-head
   minLimit: 0
   loadouts:
   - ClothingHeadHatTacticalMaidHeadband
@@ -440,16 +571,47 @@
 
 - type: loadoutGroup
   id: PirateEEGenericNeck
-  name: loadout-group-passenger-neck
+  name: loadout-group-generic-neck
   minLimit: 0
   loadouts:
   - LoadoutNeckScarfStripedZebra
+  - LoadoutNeckHeadphones
+  - LoadoutNeckBellCollar
+  - LoadoutNeckOldMantle
+  - LoadoutNeckUnathiMantle
+  - LoadoutNeckDogtags
+  - LoadoutNeckFurMantle
+  - LoadoutNeckTieWhite
+  - LoadoutNeckTieShort
+  - LoadoutNeckTieBow
+  - LoadoutNeckTieBowTie
+  - LoadoutNeckTieRibbon
+  - LoadoutNeckCrucifixColor
+  - LoadoutNeckCrucifixColorSaintPeter
+  - LoadoutNeckCrucifixGold
+  - LoadoutNeckCrucifixGoldSaintPeter
+  - LoadoutNeckCrucifixSilver
+  - LoadoutNeckCrucifixSilverSaintPeter
+  - LoadoutNeckScapular
+  - LoadoutNeckTallit
+  - LoadoutNeckNecklaceStandard
+  - LoadoutNeckNecklaceLow
+  - LoadoutNeckNecklaceRound
+  - LoadoutNeckNecklaceSmall
+  - LoadoutNeckNecklaceGold
+  - LoadoutNeckNecklaceSilver
+  - LoadoutNeckNecklaceChainGold
+  - LoadoutNeckNecklaceChainSilver
+  - LoadoutNeckNecklacePendantGold
+  - LoadoutNeckNecklacePendantGoldLarge
+  - LoadoutNeckNecklacePendantSilver
+  - LoadoutNeckNecklacePendantSilverLarge
   subgroups:
   - PiratePassengerNeck
 
 - type: loadoutGroup
   id: PirateEEGenericShoes
-  name: loadout-group-passenger-shoes
+  name: loadout-group-generic-shoes
   minLimit: 0
   loadouts:
   - LoadoutShoesBootsCowboyFancy
@@ -457,13 +619,30 @@
   - LoadoutShoesBootsLaceup
   - LoadoutShoesBootsWork
   - LoadoutShoesLeather
-  - LoadoutShoesUnderSocksBee
+  - LoadoutShoesGeta
+  - LoadoutShoesBootsWorkColor
+  - LoadoutShoesBootsJackFake
+  - LoadoutShoesBootsJackColor
+  - LoadoutShoesBootsFishing
+  - LoadoutShoesBootsAnkle
+  - LoadoutShoesBootsFull
+  - LoadoutShoesBootsMud
+  - LoadoutShoesBootsMudThigh
+  - LoadoutShoesBootsThigh
+  - LoadoutShoesMiscWhite
+  - LoadoutShoesClothWrap
+  - LoadoutShoesHighHeels
+  - LoadoutShoesHighHeelsLong
+  - LoadoutShoesFlats
+  - LoadoutShoesSkater
+  - LoadoutShoesSandalsFlipFlops
+  - LoadoutShoesSandalsFlipFlopsAlt
   subgroups:
   - PiratePassengerShoes
 
 - type: loadoutGroup
   id: PirateEEGenericOuterClothing
-  name: loadout-group-passenger-outerclothing
+  name: loadout-group-generic-outerclothing
   minLimit: 0
   loadouts:
   - ClothingOuterCoatDetectiveLoadout
@@ -474,6 +653,64 @@
   - LoadoutOuterCoatHoodieGrey
   - LoadoutOuterCoatLettermanRed
   - LoadoutOuterVest
+  - LoadoutOuterCoatHyenhSweater
+  - LoadoutOuterWinterCoatLong
+  - LoadoutOuterWinterCoatPlaid
+  - LoadoutOuterVestValet
+  - LoadoutOuterCoatLettermanBlue
+  - LoadoutOuterCorporateJacket
+  - LoadoutOuterCsCorporateJacket
+  - LoadoutOuterEeCorporateJacket
+  - LoadoutOuterHiCorporateJacket
+  - LoadoutOuterHmCorporateJacket
+  - LoadoutOuterIdCorporateJacket
+  - LoadoutOuterBcCorporateJacket
+  - LoadoutOuterDdCorporateJacket
+  - LoadoutOuterFaCorporateJacket
+  - LoadoutOuterGeCorporateJacket
+  - LoadoutOuterZhCorporateJacket
+  - LoadoutOuterIiCorporateJacket
+  - LoadoutOuterOeCorporateJacket
+  - LoadoutOuterIdrisIncorporatedWindbreaker
+  - LoadoutOuterDenimJacket
+  - LoadoutOuterCoatOvercoat
+  - LoadoutOuterCoatAcidRaincoat
+  - LoadoutOuterCoatAcidRaincoatBlue
+  - LoadoutOuterCoatAcidRaincoatGreen
+  - LoadoutOuterCoatAcidRaincoatMagenta
+  - LoadoutOuterCoatAcidRaincoatYellow
+  - LoadoutOuterSuitJacket
+  - LoadoutOuterSuitJacketOpened
+  - LoadoutOuterCoatModern
+  - LoadoutOuterTailcoat
+  - LoadoutOuterCoatVictorian
+  - LoadoutOuterCoatVictorianRed
+  - LoadoutOuterCardiganBasic
+  - LoadoutOuterCardiganBasicOpened
+  - LoadoutOuterCardiganArgyle
+  - LoadoutOuterCardiganArgyleOpened
+  - LoadoutOuterCardiganSweater
+  - LoadoutOuterCardiganSweaterOpened
+  - LoadoutOuterCardiganSlim
+  - LoadoutOuterCardiganSlimOpened
+  - LoadoutOuterCowboyDuster
+  - LoadoutOuterBlazerBasic
+  - LoadoutOuterBlazerBasicOpened
+  - LoadoutOuterBlazerLong
+  - LoadoutOuterBlazerLongOpened
+  - LoadoutOuterBlazerFormal
+  - LoadoutOuterBlazerLooseSleeve
+  - LoadoutOuterBlazerFlatCollar
+  - LoadoutOuterBlazerPosh
+  - LoadoutOuterCoatPeacoat
+  - LoadoutOuterCoatPeacoatOpened
+  - LoadoutOuterCoatAsymmetric
+  - LoadoutOuterCoatAsymmetricOpened
+  - LoadoutOuterCoatSubmariner
+  - LoadoutOuterCoatSubmarinerOpened
+  - LoadoutOuterVestColorable
+  - LoadoutOuterVestThick
+  - LoadoutOuterJacketTCAF
   subgroups:
   - PiratePassengerOuterClothing
 

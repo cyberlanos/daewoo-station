@@ -1314,6 +1314,11 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("loadout_name");
 
+                    b.Property<string>("CustomColorTint")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("custom_color_tint");
+
                     b.Property<int>("ProfileLoadoutGroupId")
                         .HasColumnType("integer")
                         .HasColumnName("profile_loadout_group_id");

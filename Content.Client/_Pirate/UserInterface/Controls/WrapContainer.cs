@@ -20,22 +20,23 @@ public class WrapContainer : Container
 
     public int? SeparationOverride { get; set; }
 
+    private float _lastArrangeWidth;
+
     private int ActualSeparation =>
         SeparationOverride ?? (TryGetStyleProperty(StylePropertySeparation, out int separation) ? separation : DefaultSeparation);
 
-    /// <summary>Computes row-wrap layout over visible children. Calls onArrange for each (x,y,w,h) when non-null. Returns (total height, true if any child).</summary>
-    private (float TotalHeight, bool HadChildren) ComputeLayout(
+    private delegate void ArrangeChild(Control child, float x, float y, float w, float h);
+
+    private static float ComputeLayout(
         float maxWidth,
         int sep,
-        IEnumerable<Control> visible,
+        List<Control> visible,
         ArrangeChild? onArrange)
     {
         float x = 0, y = 0, rowHeight = 0;
         var firstInRow = true;
-        var hadChildren = false;
         foreach (var child in visible)
         {
-            hadChildren = true;
             var w = child.DesiredSize.X;
             var h = child.DesiredSize.Y;
             if (!firstInRow && x + sep + w > maxWidth)
@@ -52,32 +53,52 @@ public class WrapContainer : Container
             x += w;
             rowHeight = Math.Max(rowHeight, h);
         }
-        return (y + rowHeight, hadChildren);
+        return y + rowHeight;
     }
-
-    private delegate void ArrangeChild(Control child, float x, float y, float w, float h);
 
     protected override Vector2 MeasureOverride(Vector2 availableSize)
     {
         var sep = ActualSeparation;
         var visible = Children.Where(c => c.Visible).ToList();
+        if (visible.Count == 0)
+            return Vector2.Zero;
+
         foreach (var child in visible)
             child.Measure(new Vector2(availableSize.X, float.PositiveInfinity));
-        float maxRight = 0f;
-        var (totalHeight, hadChildren) = ComputeLayout(availableSize.X, sep, visible,
-            (child, x, y, w, h) => maxRight = Math.Max(maxRight, x + w));
-        if (!hadChildren)
-            return Vector2.Zero;
-        var desiredWidth = float.IsPositiveInfinity(availableSize.X) ? maxRight : availableSize.X;
+
+        var widestChild = visible.Max(child => child.DesiredSize.X);
+
+        float wrapWidth;
+        var hasFiniteAvailable = !float.IsPositiveInfinity(availableSize.X) && availableSize.X > 0f;
+        if (hasFiniteAvailable && _lastArrangeWidth > 0f)
+            wrapWidth = Math.Min(availableSize.X, _lastArrangeWidth);
+        else if (hasFiniteAvailable)
+            wrapWidth = availableSize.X;
+        else if (_lastArrangeWidth > 0f)
+            wrapWidth = _lastArrangeWidth;
+        else
+            wrapWidth = widestChild;
+
+        wrapWidth = Math.Max(wrapWidth, widestChild);
+
+        var totalHeight = ComputeLayout(wrapWidth, sep, visible, null);
+        var desiredWidth = hasFiniteAvailable ? availableSize.X : wrapWidth;
         return new Vector2(desiredWidth, totalHeight);
     }
 
     protected override Vector2 ArrangeOverride(Vector2 finalSize)
     {
         var sep = ActualSeparation;
-        var visible = Children.Where(c => c.Visible);
+        var visible = Children.Where(c => c.Visible).ToList();
         ComputeLayout(finalSize.X, sep, visible, (child, x, y, w, h) =>
             child.Arrange(UIBox2.FromDimensions(x, y, w, h)));
+
+        if (!MathHelper.CloseTo(_lastArrangeWidth, finalSize.X, 0.5f))
+        {
+            _lastArrangeWidth = finalSize.X;
+            InvalidateMeasure();
+        }
+
         return finalSize;
     }
 }

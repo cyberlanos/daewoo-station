@@ -156,7 +156,8 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: multiz
+using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: loadout
+using PirateWrapContainer = Content.Client._Pirate.UserInterface.Controls.WrapContainer; // Pirate: loadout
 using Content.Client.Humanoid;
 using Content.Client.Lobby.UI.Loadouts;
 using Content.Client.Lobby.UI.Roles;
@@ -226,7 +227,8 @@ namespace Content.Client.Lobby.UI
 
         // One at a time.
         private LoadoutWindow? _loadoutWindow;
-        private bool _showUnavailableLoadouts; // Pirate: multiz
+        private bool _showUnavailableLoadouts; // Pirate: loadout
+        private readonly Dictionary<(ProtoId<LoadoutGroupPrototype> Group, ProtoId<LoadoutPrototype> Loadout), List<LoadoutIconButton>> _loadoutIconButtons = new(); // Pirate: loadout
 
         private bool _exporting;
         private bool _imaging;
@@ -648,13 +650,13 @@ namespace Content.Client.Lobby.UI
 
             TabContainer.SetTabTitle(2, Loc.GetString("humanoid-profile-editor-antags-tab"));
             TabContainer.SetTabTitle(3, Loc.GetString("trait-editor-title")); // Pirate: port and modified DV traits UI
-            TabContainer.SetTabTitle(4, Loc.GetString("loadout-window")); // Pirate: multiz
+            TabContainer.SetTabTitle(4, Loc.GetString("loadout-window")); // Pirate: loadout
 
             RefreshTraits();
 
             #region Markings
 
-            TabContainer.SetTabTitle(5, Loc.GetString("humanoid-profile-editor-markings-tab")); // Pirate: multiz
+            TabContainer.SetTabTitle(5, Loc.GetString("humanoid-profile-editor-markings-tab")); // Pirate: loadout
 
             Markings.OnMarkingAdded += OnMarkingChange;
             Markings.OnMarkingRemoved += OnMarkingChange;
@@ -1008,9 +1010,10 @@ namespace Content.Client.Lobby.UI
         public void RefreshLoadouts()
         {
             _loadoutWindow?.Dispose();
-#region Pirate: multiz
+            #region Pirate: loadout
             LoadoutSlotTabs.DisposeAllChildren();
             SelectedLoadoutsList.DisposeAllChildren();
+            _loadoutIconButtons.Clear();
 
             if (Profile == null || _playerManager.LocalSession == null)
                 return;
@@ -1023,29 +1026,35 @@ namespace Content.Client.Lobby.UI
             var categoryTabs = CreateLoadoutCategoryTabs();
             var loadoutSystem = _entManager.System<LoadoutSystem>();
 
-            foreach (var choice in choices.Values.OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
+            foreach (var category in categoryTabs.Keys)
             {
-                if (!choice.Enabled && !choice.Selected && !_showUnavailableLoadouts)
-                    continue;
+                var categoryChoices = choices.Values
+                    .Where(choice => choice.Category == category)
+                    .Where(ShouldShowCombinedLoadout)
+                    .OrderBy(choice => loadoutSystem.GetName(choice.Prototype))
+                    .ToList();
 
-                if (!categoryTabs.TryGetValue(choice.Category, out var categoryBody))
-                    categoryBody = categoryTabs["Items"];
-
-                var icon = new LoadoutIconButton(choice.Prototype, loadoutSystem.GetName(choice.Prototype), choice.Enabled ? null : choice.Reason)
-                {
-                    Disabled = !choice.Enabled,
-                    Pressed = choice.Selected,
-                };
-
-                icon.OnPressed += args => SetCombinedLoadout(choice, args.Button.Pressed);
-                categoryBody.AddChild(icon);
+                AddLoadoutChoiceSections(categoryTabs[category], categoryChoices, CombinedLoadoutKind.Job, loadoutSystem);
+                AddLoadoutChoiceSections(categoryTabs[category], categoryChoices, CombinedLoadoutKind.Generic, loadoutSystem);
             }
 
             RefreshSelectedLoadoutsList(choices, loadoutSystem);
-#endregion
+            #endregion
         }
 
-#region Pirate: multiz
+        #region Pirate: loadout
+        private static readonly HashSet<ProtoId<LoadoutGroupPrototype>> AbsorbedLoadoutGroups = new()
+        {
+            "Trinkets",
+            "PassengerFace",
+            "PassengerGloves",
+            "PiratePassengerJumpsuit",
+            "PiratePassengerHead",
+            "PiratePassengerNeck",
+            "PiratePassengerOuterClothing",
+            "PiratePassengerShoes",
+        };
+
         private Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice> CollectLoadoutChoices(IDependencyCollection collection)
         {
             var result = new Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice>();
@@ -1054,9 +1063,7 @@ namespace Content.Client.Lobby.UI
                 return result;
 
             var activeRoleIds = GetActiveLoadoutRoleIds();
-            var roleIds = _prototypeManager.EnumeratePrototypes<JobPrototype>()
-                .Select(job => LoadoutSystem.GetJobPrototype(job.ID))
-                .Distinct();
+            var roleIds = activeRoleIds;
 
             foreach (var roleId in roleIds)
             {
@@ -1071,16 +1078,21 @@ namespace Content.Client.Lobby.UI
                 roleLoadout.EnsureValid(Profile, _playerManager.LocalSession, collection);
 
                 var shownGroups = new HashSet<ProtoId<LoadoutGroupPrototype>>();
-                foreach (var groupId in roleLoadoutProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups)) // Pirate: multiz
+                foreach (var groupId in roleLoadoutProto.Groups.Concat(GlobalLoadoutGroups.Groups)) // Pirate: loadout
                 {
-                    if (!shownGroups.Add(groupId) ||
+                    if (AbsorbedLoadoutGroups.Contains(groupId) ||
+                        !shownGroups.Add(groupId) ||
                         !_prototypeManager.TryIndex(groupId, out LoadoutGroupPrototype? groupProto) ||
                         groupProto.Hidden)
                         continue;
 
                     var category = GetLoadoutGroupCategory(groupProto);
+                    if (!CreateLoadoutCategoryNames().Contains(category))
+                        category = "Items";
+
                     Profile.Loadouts.TryGetValue(roleId, out var savedRoleLoadout);
                     var selected = savedRoleLoadout?.SelectedLoadouts.GetValueOrDefault(groupId);
+                    var generic = GlobalLoadoutGroups.Groups.Contains(groupId);
 
                     foreach (var loadoutId in groupProto.GetAllLoadouts(_prototypeManager).Distinct())
                     {
@@ -1094,8 +1106,10 @@ namespace Content.Client.Lobby.UI
                         }
 
                         var enabled = roleLoadout.IsValid(Profile, _playerManager.LocalSession, loadoutId, collection, out var reason);
-                        choice.Locations.Add(new CombinedLoadoutLocation(roleId, groupId, active, enabled, reason));
-                        choice.Selected |= active && selected?.Any(loadout => loadout.Prototype == loadoutId) == true;
+                        var selectedLoadout = selected?.FirstOrDefault(loadout => loadout.Prototype == loadoutId); // Pirate: loadout
+                        var selectedInGroup = active && selectedLoadout != null; // Pirate: loadout
+                        choice.Locations.Add(new CombinedLoadoutLocation(roleId, groupId, active, enabled, selectedInGroup, generic, reason, selectedLoadout?.CustomColorTint)); // Pirate: loadout
+                        choice.Selected |= selectedInGroup;
                     }
                 }
             }
@@ -1117,7 +1131,132 @@ namespace Content.Client.Lobby.UI
                 : new HashSet<string>();
         }
 
-        private void SetCombinedLoadout(CombinedLoadoutChoice choice, bool selected)
+        private bool ShouldShowCombinedLoadout(CombinedLoadoutChoice choice)
+        {
+            return choice.Enabled || choice.Selected || _showUnavailableLoadouts;
+        }
+
+        private bool ShouldShowCombinedLoadoutLocation(CombinedLoadoutLocation location)
+        {
+            return location.Enabled || location.Selected || _showUnavailableLoadouts;
+        }
+
+        private void AddLoadoutChoiceSections(
+            BoxContainer categoryBody,
+            List<CombinedLoadoutChoice> choices,
+            CombinedLoadoutKind kind,
+            LoadoutSystem loadoutSystem)
+        {
+            var groupIds = choices
+                .SelectMany(choice => choice.Locations)
+                .Where(location => location.Active && location.Kind == kind)
+                .Where(ShouldShowCombinedLoadoutLocation)
+                .Select(location => location.Group)
+                .Distinct()
+                .ToList();
+
+            var sections = new List<CombinedLoadoutSection>();
+            foreach (var groupId in groupIds)
+            {
+                if (!_prototypeManager.TryIndex(groupId, out LoadoutGroupPrototype? group))
+                    continue;
+
+                var sectionChoices = choices
+                    .Where(choice => choice.Locations.Any(location =>
+                        location.Active &&
+                        location.Group == groupId &&
+                        ShouldShowCombinedLoadoutLocation(location)))
+                    .OrderBy(choice => loadoutSystem.GetName(choice.Prototype))
+                    .ToList();
+
+                if (sectionChoices.Count == 0)
+                    continue;
+
+                sections.Add(new CombinedLoadoutSection(groupId, $"{Loc.GetString(group.Name)}: {group.MaxLimit}", sectionChoices));
+            }
+
+            foreach (var section in sections.OrderBy(section => section.Title))
+            {
+                AddLoadoutChoiceSection(categoryBody, section, loadoutSystem);
+            }
+        }
+
+        private void AddLoadoutChoiceSection(
+            BoxContainer categoryBody,
+            CombinedLoadoutSection section,
+            LoadoutSystem loadoutSystem)
+        {
+            var visibleChoices = section.Choices;
+            if (visibleChoices.Count == 0)
+                return;
+
+            categoryBody.AddChild(new Label
+            {
+                Text = section.Title,
+                Margin = new Thickness(5, 6, 5, 4),
+            });
+
+            var iconRows = new PirateWrapContainer // Pirate: loadout
+            {
+                SeparationOverride = 6,
+                Margin = new Thickness(5, 0, 5, 8),
+                HorizontalExpand = true,
+            };
+
+            foreach (var choice in visibleChoices)
+            {
+                var enabled = choice.IsEnabledForGroup(section.Group);
+                var icon = new LoadoutIconButton(choice.Prototype, loadoutSystem.GetName(choice.Prototype), choice.CustomColorForGroup(section.Group), enabled ? null : choice.ReasonForGroup(section.Group)) // Pirate: loadout
+                {
+                    Disabled = !enabled,
+                    Pressed = choice.IsSelectedInGroup(section.Group),
+                };
+
+                icon.OnPressed += args => SetCombinedLoadout(choice, args.Button.Pressed, section.Group);
+                icon.OnCustomizePressed += () => OpenLoadoutColorPicker(choice, section.Group, loadoutSystem.GetName(choice.Prototype)); // Pirate: loadout
+                iconRows.AddChild(icon);
+                RegisterLoadoutIconButton(section.Group, choice.Prototype.ID, icon);
+            }
+
+            categoryBody.AddChild(iconRows);
+        }
+
+        private void RegisterLoadoutIconButton(ProtoId<LoadoutGroupPrototype> group, ProtoId<LoadoutPrototype> loadout, LoadoutIconButton icon)
+        {
+            var key = (group, loadout);
+            if (!_loadoutIconButtons.TryGetValue(key, out var buttons))
+            {
+                buttons = new List<LoadoutIconButton>();
+                _loadoutIconButtons[key] = buttons;
+            }
+
+            buttons.Add(icon);
+        }
+
+        private void RefreshDisplayedLoadoutState(IDependencyCollection collection)
+        {
+            var choices = CollectLoadoutChoices(collection);
+            var loadoutSystem = _entManager.System<LoadoutSystem>();
+
+            foreach (var choice in choices.Values)
+            {
+                foreach (var location in choice.Locations.Where(location => location.Active))
+                {
+                    if (!_loadoutIconButtons.TryGetValue((location.Group, choice.Prototype.ID), out var buttons))
+                        continue;
+
+                    foreach (var button in buttons)
+                    {
+                        button.Disabled = !location.Enabled;
+                        button.Pressed = location.Selected;
+                    }
+                }
+            }
+
+            RefreshSelectedLoadoutsList(choices, loadoutSystem);
+        }
+
+        private void SetCombinedLoadout(CombinedLoadoutChoice choice, bool selected, ProtoId<LoadoutGroupPrototype>? group = null)
         {
             if (Profile == null || _playerManager.LocalSession == null)
                 return;
@@ -1129,8 +1268,12 @@ namespace Content.Client.Lobby.UI
             var updated = Profile;
             var touched = new HashSet<(string Role, ProtoId<LoadoutGroupPrototype> Group)>();
 
-            var activeLocations = choice.Locations.Where(location => location.Active).ToList(); // Pirate: multiz
-            foreach (var location in selected ? activeLocations.Where(location => location.Enabled).Take(1) : activeLocations) // Pirate: multiz
+            var activeLocations = choice.Locations
+                .Where(location => location.Active)
+                .Where(location => group == null || location.Group == group.Value)
+                .ToList();
+
+            foreach (var location in selected ? activeLocations.Where(location => location.Enabled).Take(1) : activeLocations)
             {
                 if (selected && !location.Enabled)
                     continue;
@@ -1154,7 +1297,7 @@ namespace Content.Client.Lobby.UI
                     continue;
 
                 if (selected)
-                    RemoveConflictingLoadouts(roleLoadout, choice.Prototype);
+                    RemoveConflictingLoadouts(roleLoadout, choice.Prototype, location.Group);
 
                 if (selected)
                     roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager);
@@ -1166,32 +1309,82 @@ namespace Content.Client.Lobby.UI
 
             Profile = updated;
             SetDirty();
+            RefreshDisplayedLoadoutState(collection);
+            ReloadPreview();
+        }
+
+        private void OpenLoadoutColorPicker(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string loadoutName)
+        {
+            var initialColor = Color.FromHex(choice.CustomColorForGroup(group), Color.White);
+            var window = new LoadoutColorPickerWindow(loadoutName, initialColor);
+            window.OnColorSubmitted += color => SetCombinedLoadoutColor(choice, group, color.ToHex());
+            window.OpenCentered();
+        }
+
+        private void SetCombinedLoadoutColor(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string customColorTint)
+        {
+            if (Profile == null || _playerManager.LocalSession == null || !choice.Prototype.CustomColorTint)
+                return;
+
+            var collection = IoCManager.Instance;
+            if (collection == null)
+                return;
+
+            var location = choice.Locations.FirstOrDefault(location => location.Active && location.Group == group && location.Enabled);
+            if (!location.Active)
+                return;
+
+            var roleLoadout = Profile.Loadouts.TryGetValue(location.Role, out var existing)
+                ? existing.Clone()
+                : new RoleLoadout(location.Role);
+
+            if (!roleLoadout.SelectedLoadouts.TryGetValue(location.Group, out var groupLoadouts))
+            {
+                groupLoadouts = new List<Loadout>();
+                roleLoadout.SelectedLoadouts[location.Group] = groupLoadouts;
+            }
+
+            var selected = groupLoadouts.FirstOrDefault(loadout => loadout.Prototype == choice.Prototype.ID);
+            if (selected == null)
+            {
+                RemoveConflictingLoadouts(roleLoadout, choice.Prototype, location.Group);
+                roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager, customColorTint);
+            }
+            else
+            {
+                selected.CustomColorTint = customColorTint;
+            }
+
+            Profile = Profile.WithLoadout(roleLoadout);
+            SetDirty();
             RefreshLoadouts();
             ReloadPreview();
         }
 
-        private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype)
+        private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype, ProtoId<LoadoutGroupPrototype> groupId)
         {
             if (selectedPrototype.Equipment.Count == 0)
                 return;
 
             var occupiedSlots = selectedPrototype.Equipment.Keys.ToHashSet();
 
-            foreach (var (_, loadouts) in roleLoadout.SelectedLoadouts)
-            {
-                for (var i = loadouts.Count - 1; i >= 0; i--)
-                {
-                    if (!_prototypeManager.TryIndex(loadouts[i].Prototype, out LoadoutPrototype? loadoutProto))
-                        continue;
+            if (!roleLoadout.SelectedLoadouts.TryGetValue(groupId, out var loadouts))
+                return;
 
-                    if (loadoutProto.Equipment.Keys.Any(occupiedSlots.Contains))
-                        loadouts.RemoveAt(i);
-                }
+            for (var i = loadouts.Count - 1; i >= 0; i--)
+            {
+                if (!_prototypeManager.TryIndex(loadouts[i].Prototype, out LoadoutPrototype? loadoutProto))
+                    continue;
+
+                if (loadoutProto.Equipment.Keys.Any(occupiedSlots.Contains))
+                    loadouts.RemoveAt(i);
             }
         }
 
         private void RefreshSelectedLoadoutsList(Dictionary<ProtoId<LoadoutPrototype>, CombinedLoadoutChoice> choices, LoadoutSystem loadoutSystem)
         {
+            SelectedLoadoutsList.DisposeAllChildren();
+
             var showUnavailable = new CheckBox
             {
                 Text = "Show unavailable",
@@ -1211,15 +1404,22 @@ namespace Content.Client.Lobby.UI
                 .Where(choice => choice.Selected)
                 .OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
             {
-                var remove = new Button
+                var remove = new ContainerButton
                 {
-                    Text = "X",
+                    StyleBoxOverride = new StyleBoxEmpty(),
                     MinSize = new Vector2(24, 24),
                     SetSize = new Vector2(24, 24),
-                    StyleBoxOverride = new StyleBoxEmpty(),
+                    ToolTip = Loc.GetString("loadout-window"),
                 };
+                remove.AddChild(new TextureRect
+                {
+                    TexturePath = "/Textures/_Pirate/Interface/VerbIcons/ChemRecipes/recipe-cancel.svg.192dpi.png",
+                    SetSize = new Vector2(16, 16),
+                    VerticalAlignment = VAlignment.Center,
+                    HorizontalAlignment = HAlignment.Center,
+                    Stretch = TextureRect.StretchMode.KeepAspectCentered,
+                });
 
-                remove.Label.FontColorOverride = Color.Red;
                 remove.OnPressed += _ => SetCombinedLoadout(choice, false);
 
                 SelectedLoadoutsList.AddChild(new BoxContainer
@@ -1242,35 +1442,19 @@ namespace Content.Client.Lobby.UI
             }
         }
 
-        private Dictionary<string, GridContainer> CreateLoadoutCategoryTabs()
+        private Dictionary<string, BoxContainer> CreateLoadoutCategoryTabs()
         {
-            var categories = new[]
-            {
-                "Accessories",
-                "Backpacks",
-                "Belt",
-                "Eyes",
-                "Hands",
-                "Head",
-                "Items",
-                "Mask",
-                "Neck",
-                "Outer",
-                "Shoes",
-                "Species",
-                "Uniform",
-            };
+            var categories = CreateLoadoutCategoryNames();
 
-            var result = new Dictionary<string, GridContainer>();
+            var result = new Dictionary<string, BoxContainer>();
 
             foreach (var category in categories)
             {
-                var body = new GridContainer
+                var body = new BoxContainer
                 {
-                    Columns = 8,
+                    Orientation = BoxContainer.LayoutOrientation.Vertical,
                     Margin = new Thickness(5),
                     HorizontalExpand = true,
-                    VerticalExpand = true,
                 };
 
                 var scroll = new ScrollContainer
@@ -1306,9 +1490,6 @@ namespace Content.Client.Lobby.UI
             if (key.Contains("backpack") || key.Contains("-back") || key.Contains(" back"))
                 return "Backpacks";
 
-            if (key.Contains("accessor"))
-                return "Accessories";
-
             if (key.Contains("belt"))
                 return "Belt";
 
@@ -1333,13 +1514,28 @@ namespace Content.Client.Lobby.UI
             if (key.Contains("shoes"))
                 return "Shoes";
 
-            if (key.Contains("species"))
-                return "Species";
-
             if (key.Contains("jumpsuit") || key.Contains("jumpskirt") || key.Contains("uniform") || key.Contains("clothing"))
                 return "Uniform";
 
             return "Items";
+        }
+
+        private static string[] CreateLoadoutCategoryNames()
+        {
+            return new[]
+            {
+                "Backpacks",
+                "Belt",
+                "Eyes",
+                "Hands",
+                "Head",
+                "Items",
+                "Mask",
+                "Neck",
+                "Outer",
+                "Shoes",
+                "Uniform",
+            };
         }
 
         private sealed class CombinedLoadoutChoice
@@ -1355,7 +1551,32 @@ namespace Content.Client.Lobby.UI
             public bool Selected;
             public List<CombinedLoadoutLocation> Locations { get; } = new();
             public bool Enabled => Locations.Any(location => location.Active && location.Enabled);
-            public FormattedMessage? Reason => Locations.FirstOrDefault(location => location.Active && location.Reason != null).Reason;
+
+            public bool IsSelectedInGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.Any(location => location.Active && location.Group == group && location.Selected);
+            }
+
+            public bool IsEnabledForGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.Any(location => location.Active && location.Group == group && location.Enabled);
+            }
+
+            public FormattedMessage? ReasonForGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.Reason != null).Reason;
+            }
+
+            public string? CustomColorForGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.CustomColorTint != null).CustomColorTint;
+            }
+        }
+
+        private enum CombinedLoadoutKind
+        {
+            Job,
+            Generic,
         }
 
         private readonly record struct CombinedLoadoutLocation(
@@ -1363,9 +1584,22 @@ namespace Content.Client.Lobby.UI
             ProtoId<LoadoutGroupPrototype> Group,
             bool Active,
             bool Enabled,
-            FormattedMessage? Reason);
+            bool Selected,
+            bool IsGeneric,
+            FormattedMessage? Reason,
+            string? CustomColorTint)
+        {
+            public CombinedLoadoutKind Kind => IsGeneric
+                ? CombinedLoadoutKind.Generic
+                : CombinedLoadoutKind.Job;
+        }
 
-#endregion
+        private readonly record struct CombinedLoadoutSection(
+            ProtoId<LoadoutGroupPrototype> Group,
+            string Title,
+            List<CombinedLoadoutChoice> Choices);
+
+        #endregion
 
         /// <summary>
         /// Reloads the entire dummy entity for preview.
@@ -1634,7 +1868,7 @@ namespace Content.Client.Lobby.UI
                         ReloadPreview();
 
                         UpdateJobPriorities();
-                        RefreshLoadouts(); // Pirate: multiz
+                        RefreshLoadouts(); // Pirate: loadout
                         RefreshTraits(); // Pirate: port and modified DV traits UI
                         SetDirty();
                     };
@@ -1697,7 +1931,7 @@ namespace Content.Client.Lobby.UI
                     _jobPriorities.Add((job.ID, selector));
                     jobContainer.AddChild(selector);
                     jobContainer.AddChild(altJobSelector); // Pirate - Alternative Jobs
-                    jobContainer.AddChild(loadoutWindowBtn);
+                    // jobContainer.AddChild(loadoutWindowBtn); // Pirate: loadout
                     category.AddChild(jobContainer);
                 }
             }

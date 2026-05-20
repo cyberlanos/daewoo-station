@@ -106,6 +106,11 @@ public sealed partial class LoadoutPrototype : IPrototype, IEquipmentLoadout
     [DataField]
     public EntProtoId? DummyEntity;
 
+#region Pirate: loadout
+    [DataField]
+    public bool CustomColorTint;
+#endregion
+
     [DataField]
     public ProtoId<StartingGearPrototype>? StartingGear;
 

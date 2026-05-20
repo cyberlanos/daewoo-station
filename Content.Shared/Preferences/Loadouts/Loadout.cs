@@ -20,11 +20,25 @@ public sealed partial class Loadout : IEquatable<Loadout>
     [DataField]
     public ProtoId<LoadoutPrototype> Prototype;
 
+#region Pirate: loadout
+    [DataField]
+    public string? CustomColorTint;
+
+    public Loadout Clone()
+    {
+        return new Loadout
+        {
+            Prototype = Prototype,
+            CustomColorTint = CustomColorTint,
+        };
+    }
+#endregion
+
     public bool Equals(Loadout? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Prototype.Equals(other.Prototype);
+        return Prototype.Equals(other.Prototype) && CustomColorTint == other.CustomColorTint; // Pirate: loadout
     }
 
     public override bool Equals(object? obj)
@@ -34,6 +48,6 @@ public sealed partial class Loadout : IEquatable<Loadout>
 
     public override int GetHashCode()
     {
-        return Prototype.GetHashCode();
+        return HashCode.Combine(Prototype, CustomColorTint); // Pirate: loadout
     }
 }

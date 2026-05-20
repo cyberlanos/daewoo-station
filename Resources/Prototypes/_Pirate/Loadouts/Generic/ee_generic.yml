@@ -31,16 +31,19 @@
 
 - type: loadout
   id: LoadoutHeadHatMimesoftFlipped
+  customColorTint: true
   equipment:
     head: ClothingHeadHatMimesoftFlipped
 
 - type: loadout
   id: LoadoutHeadTinfoil
+  customColorTint: true
   equipment:
     head: ClothingHeadTinfoil
 
 - type: loadout
   id: LoadoutHeadFedoraWhite
+  customColorTint: true
   equipment:
     head: ClothingHeadHatFedoraWhite
 
@@ -61,111 +64,133 @@
 
 - type: loadout
   id: LoadoutHeadPoppyWhite
+  customColorTint: true
   equipment:
     head: FoodPoppyWhite
 
 - type: loadout
   id: LoadoutHeadBandWhite
+  customColorTint: true
   equipment:
     head: ClothingHeadBandWhite
 
 - type: loadout
   id: LoadoutHeadBeretWhite
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeretWhite
 
 - type: loadout
   id: LoadoutHeadBeretArtist
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeretArtist
 
 - type: loadout
   id: LoadoutHeadBeretPeaked
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeretPeaked
 
 - type: loadout
   id: LoadoutHeadBeanie
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeanie
 
 - type: loadout
   id: LoadoutHeadBeanieWinter
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeanieWinter
 
 - type: loadout
   id: LoadoutHeadBeanieSubmariner
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeanieSubmariner
 
 - type: loadout
   id: LoadoutHeadBeanieTight
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBeanieTight
 
 - type: loadout
   id: LoadoutHeadSlouch
+  customColorTint: true
   equipment:
     head: ClothingHeadHatSlouch
 
 - type: loadout
   id: LoadoutHeadSunVisor
+  customColorTint: true
   equipment:
     head: ClothingHeadHatSunVisor
 
 - type: loadout
   id: LoadoutHeadHijabColorable
+  customColorTint: true
   equipment:
     head: ClothingHeadHatHijabColorable
 
 - type: loadout
   id: LoadoutHeadTurbanColorable
+  customColorTint: true
   equipment:
     head: ClothingHeadHatTurbanColorable
 
 - type: loadout
   id: LoadoutHeadKippahColorable
+  customColorTint: true
   equipment:
     head: ClothingHeadHatKippahColorable
 
 - type: loadout
   id: LoadoutHeadHeadBandBasic
+  customColorTint: true
   equipment:
     head: ClothingHeadHatHeadBandBasic
 
 - type: loadout
   id: LoadoutHeadPin
+  customColorTint: true
   equipment:
     head: ClothingHeadHatPin
 
 - type: loadout
   id: LoadoutHeadPinClover
+  customColorTint: true
   equipment:
     head: ClothingHeadHatPinClover
 
 - type: loadout
   id: LoadoutHeadPinButterfly
+  customColorTint: true
   equipment:
     head: ClothingHeadHatPinButterfly
 
 - type: loadout
   id: LoadoutHeadPinMagnetic
+  customColorTint: true
   equipment:
     head: ClothingHeadHatPinMagnetic
 
 - type: loadout
   id: LoadoutHeadRibbon
+  customColorTint: true
   equipment:
     head: ClothingHeadHatRibbon
 
 - type: loadout
   id: LoadoutHeadBow
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBow
 
 - type: loadout
   id: LoadoutHeadBowSmall
+  customColorTint: true
   equipment:
     head: ClothingHeadHatBowSmall
 
@@ -221,19 +246,10 @@
     eyes: ClothingEyesEyepatch
 
 - type: loadout
-  id: LoadoutItemSunglasses
-  equipment:
-    eyes: ClothingEyesGlassesSunglasses
-
-- type: loadout
   id: LoadoutEyesEyepatchColor
+  customColorTint: true
   equipment:
     eyes: ClothingEyesEyepatchColor
-
-- type: loadout
-  id: LoadoutEyesEyepatchColorFlipped
-  equipment:
-    eyes: ClothingEyesEyepatchColorFlipped
 
 - type: loadout
   id: LoadoutEyesGlasses3D
@@ -242,26 +258,31 @@
 
 - type: loadout
   id: LoadoutEyesGlassesHipster
+  customColorTint: true
   equipment:
     eyes: ClothingEyesGlassesHipster
 
 - type: loadout
   id: LoadoutEyesGlassesMonocle
+  customColorTint: true
   equipment:
     eyes: ClothingEyesGlassesMonocle
 
 - type: loadout
   id: LoadoutEyesGlassesPanto
+  customColorTint: true
   equipment:
     eyes: ClothingEyesGlassesPanto
 
 - type: loadout
   id: LoadoutEyesBlindfoldColor
+  customColorTint: true
   equipment:
     eyes: ClothingEyesBlindfoldColor
 
 - type: loadout
   id: LoadoutEyesGlassesCheapSunglassesAviator
+  customColorTint: true
   equipment:
     eyes: ClothingEyesGlassesCheapSunglassesAviator
 
@@ -276,27 +297,13 @@
     eyes: ClothingEyesGlassesCheapSunglassesVisor
 
 - type: loadout
-  id: LoadoutEyesGlassesSunglassesAviator
-  equipment:
-    eyes: ClothingEyesGlassesSunglassesAviator
-
-- type: loadout
-  id: LoadoutEyesGlassesSunglassesBig
-  equipment:
-    eyes: ClothingEyesGlassesSunglassesBig
-
-- type: loadout
-  id: LoadoutEyesGlassesSunglassesVisor
-  equipment:
-    eyes: ClothingEyesGlassesSunglassesVisor
-
-- type: loadout
   id: LoadoutItemBlindfoldFake
   equipment:
     eyes: ClothingEyesBlindfoldFake
 
 - type: loadout
   id: LoadoutEyesBlindfoldFakeColor
+  customColorTint: true
   equipment:
     eyes: ClothingEyesBlindfoldFakeColor
 
@@ -319,11 +326,13 @@
 
 - type: loadout
   id: ClothingOuterSuitWitchRobes
+  customColorTint: true
   equipment:
     outerClothing: ClothingOuterSuitWitchRobes
 
 - type: loadout
   id: LoadoutOuterCoatBomberjacket
+  customColorTint: true
   equipment:
     outerClothing: ClothingOuterCoatBomber
 
@@ -334,6 +343,7 @@
 
 - type: loadout
   id: LoadoutOuterCoatHoodieGrey
+  customColorTint: true
   equipment:
     outerClothing: ClothingOuterHoodieGrey
 
@@ -350,42 +360,50 @@
 # EE generic backpacks
 - type: loadout
   id: LoadoutBackpackSatchelPurse
+  customColorTint: true
   equipment:
     back: ClothingBackpackSatchelPurse
 
 - type: loadout
   id: LoadoutBackpackSatchelPurseFlipped
+  customColorTint: true
   equipment:
     back: ClothingBackpackSatchelPurseFlipped
 
 # EE generic belt
 - type: loadout
   id: LoadoutBeltGeneric
+  customColorTint: true
   equipment:
     belt: ClothingBeltGeneric
 
 - type: loadout
   id: LoadoutBeltGenericThin
+  customColorTint: true
   equipment:
     belt: ClothingBeltGenericThin
 
 - type: loadout
   id: LoadoutBeltGenericThick
+  customColorTint: true
   equipment:
     belt: ClothingBeltGenericThick
 
 - type: loadout
   id: LoadoutBeltWaist
+  customColorTint: true
   equipment:
     belt: ClothingBeltWaist
 
 - type: loadout
   id: LoadoutBeltWaistThin
+  customColorTint: true
   equipment:
     belt: ClothingBeltWaistThin
 
 - type: loadout
   id: LoadoutBeltWaistbagColor
+  customColorTint: true
   equipment:
     belt: ClothingBeltStorageWaistbagColor
 
@@ -397,21 +415,25 @@
 # EE generic hands
 - type: loadout
   id: LoadoutHandsGlovesFingerlessWhite
+  customColorTint: true
   equipment:
     gloves: ClothingHandsGlovesFingerlessWhite
 
 - type: loadout
   id: LoadoutHandsGlovesEvening
+  customColorTint: true
   equipment:
     gloves: ClothingHandsGlovesEvening
 
 - type: loadout
   id: LoadoutHandsGlovesEnviroglovesEvening
+  customColorTint: true
   equipment:
     gloves: ClothingHandsGlovesEnviroglovesEvening
 
 - type: loadout
   id: LoadoutHandsClothWrap
+  customColorTint: true
   equipment:
     gloves: ClothingClothWrap
 
@@ -428,22 +450,26 @@
 # EE generic mask
 - type: loadout
   id: LoadoutMaskBandWhite
+  customColorTint: true
   equipment:
     mask: ClothingMaskBandWhite
 
 - type: loadout
   id: LoadoutMaskNeckGaiterWhite
+  customColorTint: true
   equipment:
     mask: ClothingMaskNeckGaiterWhite
 
 # EE generic shoes
 - type: loadout
   id: LoadoutShoesBootsCowboyFancy
+  customColorTint: true
   equipment:
     shoes: ClothingShoesBootsCowboyFancy
 
 - type: loadout
   id: LoadoutShoesBootsCowboyWhite
+  customColorTint: true
   equipment:
     shoes: ClothingShoesBootsCowboyWhite
 
@@ -462,14 +488,10 @@
   equipment:
     shoes: ClothingShoesLeather
 
-- type: loadout
-  id: LoadoutShoesUnderSocksBee
-  equipment:
-    shoes: ClothingUnderSocksBee
-
 # EE generic trinkets
 - type: loadout
   id: LoadoutBookRandom
+  dummyEntity: PirateLoadoutDummyRandomBook
   storage:
     back:
     - BookRandom
@@ -521,18 +543,21 @@
 
 - type: loadout
   id: LoadoutItemDrinkLithiumFlask
+  customColorTint: true
   storage:
     back:
     - DrinkLithiumFlask
 
 - type: loadout
   id: LoadoutItemDrinkShinyFlask
+  customColorTint: true
   storage:
     back:
     - DrinkShinyFlask
 
 - type: loadout
   id: LoadoutItemDrinkVacuumFlask
+  customColorTint: true
   storage:
     back:
     - DrinkVacuumFlask
@@ -570,6 +595,7 @@
 
 - type: loadout
   id: LoadoutItemLighterCheap
+  customColorTint: true
   storage:
     back:
     - CheapLighter
@@ -577,6 +603,7 @@
 
 - type: loadout
   id: LoadoutItemLighterFlippo
+  customColorTint: true
   storage:
     back:
     - FlippoLighter
@@ -687,3 +714,1279 @@
     back:
     - PlushieVox
   groupBy: "Plushie"
+
+# EE generic neck, outer clothing, shoes, and uniform
+- type: loadout
+  id: LoadoutNeckHeadphones
+  equipment:
+    neck: ClothingNeckHeadphones
+
+- type: loadout
+  id: LoadoutNeckBellCollar
+  equipment:
+    neck: ClothingNeckBellCollar
+
+- type: loadout
+  id: LoadoutNeckOldMantle
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckOldMantle
+
+- type: loadout
+  id: LoadoutNeckUnathiMantle
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckUnathiMantle
+
+- type: loadout
+  id: LoadoutNeckDogtags
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckDogtags
+
+- type: loadout
+  id: LoadoutNeckFurMantle
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckFurWrap
+
+- type: loadout
+  id: LoadoutNeckTieWhite
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTieColor
+
+- type: loadout
+  id: LoadoutNeckTieShort
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTieShort
+
+- type: loadout
+  id: LoadoutNeckTieBow
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTieBow
+
+- type: loadout
+  id: LoadoutNeckTieBowTie
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTieBowTie
+
+- type: loadout
+  id: LoadoutNeckTieRibbon
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTieRibbon
+
+- type: loadout
+  id: LoadoutNeckCrucifixColor
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckCrucifixColor
+
+- type: loadout
+  id: LoadoutNeckCrucifixColorSaintPeter
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckCrucifixColorSaintPeter
+
+- type: loadout
+  id: LoadoutNeckCrucifixGold
+  equipment:
+    neck: ClothingNeckCrucifixGold
+
+- type: loadout
+  id: LoadoutNeckCrucifixGoldSaintPeter
+  equipment:
+    neck: ClothingNeckCrucifixGoldSaintPeter
+
+- type: loadout
+  id: LoadoutNeckCrucifixSilver
+  equipment:
+    neck: ClothingNeckCrucifixSilver
+
+- type: loadout
+  id: LoadoutNeckCrucifixSilverSaintPeter
+  equipment:
+    neck: ClothingNeckCrucifixSilverSaintPeter
+
+- type: loadout
+  id: LoadoutNeckScapular
+  equipment:
+    neck: ClothingNeckScapular
+
+- type: loadout
+  id: LoadoutNeckTallit
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckTallit
+
+- type: loadout
+  id: LoadoutNeckNecklaceStandard
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckNecklaceStandard
+
+- type: loadout
+  id: LoadoutNeckNecklaceLow
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckNecklaceLow
+
+- type: loadout
+  id: LoadoutNeckNecklaceRound
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckNecklaceRound
+
+- type: loadout
+  id: LoadoutNeckNecklaceSmall
+  customColorTint: true
+  equipment:
+    neck: ClothingNeckNecklaceSmall
+
+- type: loadout
+  id: LoadoutNeckNecklaceGold
+  equipment:
+    neck: ClothingNeckNecklaceGold
+
+- type: loadout
+  id: LoadoutNeckNecklaceSilver
+  equipment:
+    neck: ClothingNeckNecklaceSilver
+
+- type: loadout
+  id: LoadoutNeckNecklaceChainGold
+  equipment:
+    neck: ClothingNeckNecklaceChainGold
+
+- type: loadout
+  id: LoadoutNeckNecklaceChainSilver
+  equipment:
+    neck: ClothingNeckNecklaceChainSilver
+
+- type: loadout
+  id: LoadoutNeckNecklacePendantGold
+  equipment:
+    neck: ClothingNeckNecklacePendantGold
+
+- type: loadout
+  id: LoadoutNeckNecklacePendantGoldLarge
+  equipment:
+    neck: ClothingNeckNecklacePendantGoldLarge
+
+- type: loadout
+  id: LoadoutNeckNecklacePendantSilver
+  equipment:
+    neck: ClothingNeckNecklacePendantSilver
+
+- type: loadout
+  id: LoadoutNeckNecklacePendantSilverLarge
+  equipment:
+    neck: ClothingNeckNecklacePendantSilverLarge
+
+- type: loadout
+  id: LoadoutOuterCoatHyenhSweater
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatHyenhSweater
+
+- type: loadout
+  id: LoadoutOuterWinterCoatLong
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterWinterCoatLong
+
+- type: loadout
+  id: LoadoutOuterWinterCoatPlaid
+  equipment:
+    outerClothing: ClothingOuterWinterCoatPlaid
+
+- type: loadout
+  id: LoadoutOuterVestValet
+  equipment:
+    outerClothing: ClothingOuterVestValet
+
+- type: loadout
+  id: LoadoutOuterCoatLettermanBlue
+  equipment:
+    outerClothing: ClothingOuterCoatLettermanBlue
+
+- type: loadout
+  id: LoadoutOuterCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterCsCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterCsCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterEeCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterEeCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterHiCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterHiCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterHmCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterHmCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterIdCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterIdCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterBcCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterBcCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterDdCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterDdCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterFaCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterFaCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterGeCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterGeCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterZhCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterZhCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterIiCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterIiCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterOeCorporateJacket
+  equipment:
+    outerClothing: ClothingOuterOeCorporateJacket
+
+- type: loadout
+  id: LoadoutOuterIdrisIncorporatedWindbreaker
+  equipment:
+    outerClothing: ClothingOuterCoatIdrisIncorporatedWindbreaker
+
+- type: loadout
+  id: LoadoutOuterDenimJacket
+  equipment:
+    outerClothing: ClothingOuterDenimJacket
+
+- type: loadout
+  id: LoadoutOuterCoatOvercoat
+  equipment:
+    outerClothing: ClothingOuterCoatOvercoat
+
+- type: loadout
+  id: LoadoutOuterCoatAcidRaincoat
+  equipment:
+    outerClothing: ClothingOuterCoatAcidRaincoat
+
+- type: loadout
+  id: LoadoutOuterCoatAcidRaincoatBlue
+  equipment:
+    outerClothing: ClothingOuterCoatAcidRaincoatBlue
+
+- type: loadout
+  id: LoadoutOuterCoatAcidRaincoatGreen
+  equipment:
+    outerClothing: ClothingOuterCoatAcidRaincoatGreen
+
+- type: loadout
+  id: LoadoutOuterCoatAcidRaincoatMagenta
+  equipment:
+    outerClothing: ClothingOuterCoatAcidRaincoatMagenta
+
+- type: loadout
+  id: LoadoutOuterCoatAcidRaincoatYellow
+  equipment:
+    outerClothing: ClothingOuterCoatAcidRaincoatYellow
+
+- type: loadout
+  id: LoadoutOuterSuitJacket
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterSuitJacket
+
+- type: loadout
+  id: LoadoutOuterSuitJacketOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterSuitJacketOpened
+
+- type: loadout
+  id: LoadoutOuterCoatModern
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatModern
+
+- type: loadout
+  id: LoadoutOuterTailcoat
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterTailcoat
+
+- type: loadout
+  id: LoadoutOuterCoatVictorian
+  equipment:
+    outerClothing: ClothingOuterCoatVictorian
+
+- type: loadout
+  id: LoadoutOuterCoatVictorianRed
+  equipment:
+    outerClothing: ClothingOuterCoatVictorianRed
+
+- type: loadout
+  id: LoadoutOuterCardiganBasic
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardigan
+
+- type: loadout
+  id: LoadoutOuterCardiganBasicOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganOpened
+
+- type: loadout
+  id: LoadoutOuterCardiganArgyle
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganArgyle
+
+- type: loadout
+  id: LoadoutOuterCardiganArgyleOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganArgyleOpened
+
+- type: loadout
+  id: LoadoutOuterCardiganSweater
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganSweater
+
+- type: loadout
+  id: LoadoutOuterCardiganSweaterOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganSweaterOpened
+
+- type: loadout
+  id: LoadoutOuterCardiganSlim
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganSlim
+
+- type: loadout
+  id: LoadoutOuterCardiganSlimOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCardiganSlimOpened
+
+- type: loadout
+  id: LoadoutOuterCowboyDuster
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCowboyDuster
+
+- type: loadout
+  id: LoadoutOuterBlazerBasic
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazer
+
+- type: loadout
+  id: LoadoutOuterBlazerBasicOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerOpened
+
+- type: loadout
+  id: LoadoutOuterBlazerLong
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerLong
+
+- type: loadout
+  id: LoadoutOuterBlazerLongOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerLongOpened
+
+- type: loadout
+  id: LoadoutOuterBlazerFormal
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerFormal
+
+- type: loadout
+  id: LoadoutOuterBlazerLooseSleeve
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerLooseSleeve
+
+- type: loadout
+  id: LoadoutOuterBlazerFlatCollar
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterBlazerFlatCollar
+
+- type: loadout
+  id: LoadoutOuterBlazerPosh
+  equipment:
+    outerClothing: ClothingOuterBlazerPosh
+
+- type: loadout
+  id: LoadoutOuterCoatPeacoat
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatPeacoat
+
+- type: loadout
+  id: LoadoutOuterCoatPeacoatOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatPeacoatOpened
+
+- type: loadout
+  id: LoadoutOuterCoatAsymmetric
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatAsymmetric
+
+- type: loadout
+  id: LoadoutOuterCoatAsymmetricOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatAsymmetricOpened
+
+- type: loadout
+  id: LoadoutOuterCoatSubmariner
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatSubmariner
+
+- type: loadout
+  id: LoadoutOuterCoatSubmarinerOpened
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterCoatSubmarinerOpened
+
+- type: loadout
+  id: LoadoutOuterVestColorable
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterVestColorable
+
+- type: loadout
+  id: LoadoutOuterVestThick
+  customColorTint: true
+  equipment:
+    outerClothing: ClothingOuterVestThick
+
+- type: loadout
+  id: LoadoutOuterJacketTCAF
+  equipment:
+    outerClothing: ClothingOuterJacketTCAF
+
+- type: loadout
+  id: LoadoutShoesGeta
+  equipment:
+    shoes: ClothingShoesGeta
+
+- type: loadout
+  id: LoadoutShoesBootsWorkColor
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsWorkColor
+
+- type: loadout
+  id: LoadoutShoesBootsJackFake
+  equipment:
+    shoes: ClothingShoesBootsJackFake
+
+- type: loadout
+  id: LoadoutShoesBootsJackColor
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsJackColor
+
+- type: loadout
+  id: LoadoutShoesBootsFishing
+  equipment:
+    shoes: ClothingShoesBootsFishing
+
+- type: loadout
+  id: LoadoutShoesBootsAnkle
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsAnkle
+
+- type: loadout
+  id: LoadoutShoesBootsFull
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsFull
+
+- type: loadout
+  id: LoadoutShoesBootsMud
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsMud
+
+- type: loadout
+  id: LoadoutShoesBootsMudThigh
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsMudThigh
+
+- type: loadout
+  id: LoadoutShoesBootsThigh
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesBootsThigh
+
+- type: loadout
+  id: LoadoutShoesMiscWhite
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesMiscWhite
+
+- type: loadout
+  id: LoadoutShoesClothWrap
+  customColorTint: true
+  equipment:
+    shoes: ClothingClothWrap
+
+- type: loadout
+  id: LoadoutShoesHighHeels
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesHighHeels
+
+- type: loadout
+  id: LoadoutShoesHighHeelsLong
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesHighHeelsLong
+
+- type: loadout
+  id: LoadoutShoesFlats
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesFlats
+
+- type: loadout
+  id: LoadoutShoesSkater
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesSkater
+
+- type: loadout
+  id: LoadoutShoesSandalsFlipFlops
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesSandalsFlipFlops
+
+- type: loadout
+  id: LoadoutShoesSandalsFlipFlopsAlt
+  customColorTint: true
+  equipment:
+    shoes: ClothingShoesSandalsFlipFlopsAlt
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTshirtJeans
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTshirtJeans
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTshirtJeansGray
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTshirtJeansGray
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTshirtJeansPeach
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTshirtJeansPeach
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTShirtKhakiPants
+  equipment:
+    jumpsuit: ClothingUniformTShirtKhakiPants
+
+- type: loadout
+  id: LoadoutUniformJumpsuitJeansRed
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitJeansRed
+
+- type: loadout
+  id: LoadoutUniformJumpsuitLostTourist
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitLostTourist
+
+- type: loadout
+  id: LoadoutUniformDressRed
+  equipment:
+    jumpsuit: ClothingUniformDressRed
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSober
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSober
+
+- type: loadout
+  id: LoadoutUniformSkirtTurtle
+  equipment:
+    jumpsuit: ClothingUniformSkirtTurtle
+
+- type: loadout
+  id: LoadoutUniformGeisha
+  equipment:
+    jumpsuit: UniformGeisha
+
+- type: loadout
+  id: LoadoutUniformCostumeArcDress
+  equipment:
+    jumpsuit: ClothingCostumeArcDress
+
+- type: loadout
+  id: LoadoutUniformCostumeMioSkirt
+  equipment:
+    jumpsuit: ClothingCostumeMioSkirt
+
+- type: loadout
+  id: LoadoutUniformCostumeNaota
+  equipment:
+    jumpsuit: ClothingCostumeNaota
+
+- type: loadout
+  id: LoadoutUniformKendoHakama
+  equipment:
+    jumpsuit: ClothingUniformKendoHakama
+
+- type: loadout
+  id: LoadoutUniformMartialGi
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformMartialGi
+
+- type: loadout
+  id: LoadoutClothingKimonoBlue
+  equipment:
+    jumpsuit: ClothingKimonoBlue
+
+- type: loadout
+  id: LoadoutClothingKimonoPink
+  equipment:
+    jumpsuit: ClothingKimonoPink
+
+- type: loadout
+  id: LoadoutClothingKimonoPurple
+  equipment:
+    jumpsuit: ClothingKimonoPurple
+
+- type: loadout
+  id: LoadoutClothingKimonoSky
+  equipment:
+    jumpsuit: ClothingKimonoSky
+
+- type: loadout
+  id: LoadoutClothingKimonoGreen
+  equipment:
+    jumpsuit: ClothingKimonoGreen
+
+- type: loadout
+  id: LoadoutUniformSchoolGakuranBlack
+  equipment:
+    jumpsuit: ClothingUniformSchoolGakuranBlack
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlBlack
+  equipment:
+    jumpsuit: UniformSchoolgirlBlack
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlBlue
+  equipment:
+    jumpsuit: UniformSchoolgirlBlue
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlCyan
+  equipment:
+    jumpsuit: UniformSchoolgirlCyan
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlGreen
+  equipment:
+    jumpsuit: UniformSchoolgirlGreen
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlOrange
+  equipment:
+    jumpsuit: UniformSchoolgirlOrange
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlPink
+  equipment:
+    jumpsuit: UniformSchoolgirlPink
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlPurple
+  equipment:
+    jumpsuit: UniformSchoolgirlPurple
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlRed
+  equipment:
+    jumpsuit: UniformSchoolgirlRed
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlDusk
+  equipment:
+    jumpsuit: UniformSchoolgirlDusk
+
+- type: loadout
+  id: LoadoutUniformSchoolgirlBlazerTan
+  equipment:
+    jumpsuit: UniformSchoolgirlBlazerTan
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBlack
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBlack
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBlackAlt
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBlackAlt
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBlackMob
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBlackMob
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBrown
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBrown
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBrownAlt
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBrownAlt
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitBrownMob
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBrownMob
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitWhite
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitWhite
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitWhiteAlt
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitWhiteAlt
+
+- type: loadout
+  id: LoadoutClothingJumpsuitSuitWhiteMob
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitWhiteMob
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressAsymmetric
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressAsymmetric
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressEvening
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressEvening
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressMidi
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressMidi
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressTea
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressTea
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSleeveless
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSleeveless
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressLongSleeve
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressLongSleeve
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressBlackAndGold
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressBlackAndGold
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressBlackTango
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressBlackTango
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressBlackTangoAlt
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressBlackTangoAlt
+
+- type: loadout
+  id: LoadoutUniformJumpskirtSuitBlueBlazer
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtSuitBlueBlazer
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressBlueSundress
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressBlueSundress
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCheongsamBlue
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCheongsamBlue
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCheongsamGreen
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCheongsamGreen
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCheongsamPurple
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCheongsamPurple
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCheongsamRed
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCheongsamRed
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCheongsamWhite
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCheongsamWhite
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressClub
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressClub
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressCoveter
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressCoveter
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressFlamenco
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressFlamenco
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressFire
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressFire
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressOrange
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressOrange
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressYellow
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressYellow
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressFlowergirl
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressFlowergirl
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressFluffy
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressFluffy
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressFormalRed
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressFormalRed
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressGothic
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressGothic
+
+- type: loadout
+  id: LoadoutUniformJumpskirtKimonoColor
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtKimonoColor
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressLacyGown
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressLacyGown
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressLong
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressLong
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressLongFlared
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressLongFlared
+
+- type: loadout
+  id: LoadoutUniformJumpskirtQipao
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtQipao
+
+- type: loadout
+  id: LoadoutUniformJumpskirtQipaoSlim
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtQipaoSlim
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressRedSwept
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressRedSwept
+
+- type: loadout
+  id: LoadoutUniformJumpskirtPencilSkirtGymBra
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtPencilSkirtGymBra
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressPuffy
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressPuffy
+
+- type: loadout
+  id: LoadoutUniformJumpskirtSailor
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtSailor
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSariGreen
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSariGreen
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSariRed
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSariRed
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressShort
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressShort
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSpider
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSpider
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressStriped
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressStriped
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSundress
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSundress
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressSundressWhite
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressSundressWhite
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressVictorianBlack
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressVictorianBlack
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressVictorianRed
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressVictorianRed
+
+- type: loadout
+  id: LoadoutUniformJumpskirtWaitress
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtWaitress
+
+- type: loadout
+  id: LoadoutUniformJumpskirtDressYellowSwoop
+  equipment:
+    jumpsuit: ClothingUniformJumpskirtDressYellowSwoop
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitAmish
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitAmish
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitAristocratic
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitAristocratic
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitAristocraticTuxedo
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitAristocraticTuxedo
+
+- type: loadout
+  id: LoadoutUniformJumpsuitAscetic
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitAscetic
+
+- type: loadout
+  id: LoadoutUniformJumpsuitBarber
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitBarber
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitBlueBlazer
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitBlueBlazer
+
+- type: loadout
+  id: LoadoutUniformJumpsuitDisheveled
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitDisheveled
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitRegal
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitRegal
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitRegalTuxedo
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitRegalTuxedo
+
+- type: loadout
+  id: LoadoutUniformJumpsuitRippedPunk
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitRippedPunk
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSailor
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSailor
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitStriped
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitStriped
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTrackpants
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTrackpants
+
+- type: loadout
+  id: LoadoutUniformJumpsuitTurtleneckGrey
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTurtleneckGrey
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitVictorianRedBlack
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitVictorianRedBlack
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitVictorianRedVest
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitVictorianRedVest
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitVictorianVest
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitVictorianVest
+
+- type: loadout
+  id: LoadoutUniformJumpsuitWaiter
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitWaiter
+
+- type: loadout
+  id: LoadoutUniformJumpsuitYogaGymBra
+  customColorTint: true
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitYogaGymBra
+
+- type: loadout
+  id: LoadoutUniformJumpsuitBlackTurtleneck
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitBlackTurtleneck
+
+- type: loadout
+  id: LoadoutUniformJumpsuitBlackTurtleneckFlipped
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitBlackTurtleneckFlipped
+
+- type: loadout
+  id: LoadoutUniformJumpsuitSuitRolledSleeves
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitSuitRolledSleeves
+
+- type: loadout
+  id: LoadoutUniformJumpsuitBartenderGrey
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitBartenderGrey
+
+- type: loadout
+  id: LoadoutUniformJumpsuitCheckered
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitCheckered
+
+- type: loadout
+  id: LoadoutUniformJumpsuitFlannelOveralls
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitFlannelOveralls
+
+- type: loadout
+  id: LoadoutUniformJumpsuitCowboyBrown
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitCowboyBrown
+
+- type: loadout
+  id: LoadoutUniformJumpsuitCowboyGrey
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitCowboyGrey
+
+- type: loadout
+  id: LoadoutUniformJumpsuitCamouflageShirt
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitCamouflageShirt
+
+- type: loadout
+  id: LoadoutUniformJumpsuitOliveSweater
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitOliveSweater
+
+- type: loadout
+  id: LoadoutUniformJumpsuitDesertUniform
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitDesertUniform
+
+- type: loadout
+  id: LoadoutUniformJumpsuitLumberjack
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitLumberjack
+
+- type: loadout
+  id: LoadoutUniformJumpsuitLightBlueShirt
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitLightBlueShirt
+
+- type: loadout
+  id: LoadoutUniformJumpsuitGreyShirt
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitGreyShirt
+
+- type: loadout
+  id: LoadoutUniformJumpsuitFlannelJeans
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitFlannelJeans
+
+- type: loadout
+  id: LoadoutUniformJumpsuitFlannelBlackJeans
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitFlannelBlackJeans
+
+- type: loadout
+  id: LoadoutUniformJumpsuitFlannelKhakis
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitFlannelKhakis
+
+- type: loadout
+  id: LoadoutUniformJumpsuitFlannelBlackKhakis
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitFlannelBlackKhakis
+
+- type: loadout
+  id: ClothingUniformTCAFArmsman
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTCAFArmsman
+
+- type: loadout
+  id: ClothingUniformTCFLLegate
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTCFLLegate
+
+- type: loadout
+  id: ClothingUniformTCFLPilot
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTCFLPilot
+
+- type: loadout
+  id: ClothingUniformTCFLSentinel
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTCFLSentinel
+
+- type: loadout
+  id: ClothingUniformTCFLVolunteer
+  equipment:
+    jumpsuit: ClothingUniformJumpsuitTCFLVolunteer
+

@@ -2,17 +2,17 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Shared.Preferences.Loadouts;
 
-public static class PirateGlobalLoadoutGroups
+public static class GlobalLoadoutGroups
 {
     public static readonly ProtoId<LoadoutGroupPrototype>[] Groups =
     {
-        "PirateGenericPassengerJumpsuit",
         "PirateEEGenericBackpacks",
         "PirateEEGenericHead",
         "PirateEEGenericEyes",
         "PirateEEGenericBelt",
         "PirateEEGenericNeck",
         "PirateEEGenericOuterClothing",
+        "PirateEEGenericUniform",
         "PirateEEGenericShoes",
         "PirateGenericPassengerFace",
         "PirateGenericPassengerGloves",

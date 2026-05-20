@@ -118,7 +118,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
 
         foreach (var selected in SelectedLoadouts)
         {
-            weh.SelectedLoadouts.Add(selected.Key, new List<Loadout>(selected.Value));
+            weh.SelectedLoadouts.Add(selected.Key, selected.Value.Select(loadout => loadout.Clone()).ToList()); // Pirate: loadout
         }
 
         weh.EntityName = EntityName;
@@ -167,7 +167,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         }
 
         // In some instances we might not have picked up a new group for existing data.
-        foreach (var groupProto in roleProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups)) // Pirate: multiz
+        foreach (var groupProto in roleProto.Groups.Concat(GlobalLoadoutGroups.Groups)) // Pirate: loadout
         {
             if (SelectedLoadouts.ContainsKey(groupProto))
                 continue;
@@ -182,7 +182,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         foreach (var (group, groupLoadouts) in SelectedLoadouts)
         {
             // Check the group is even valid for this role.
-            if (!roleProto.Groups.Contains(group) && !PirateGlobalLoadoutGroups.Groups.Contains(group)) // Pirate: multiz
+            if (!roleProto.Groups.Contains(group) && !GlobalLoadoutGroups.Groups.Contains(group)) // Pirate: loadout
             {
                 groupRemove.Add(group);
                 continue;
@@ -225,14 +225,17 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
                     continue;
                 }
 
+                if (!loadoutProto.CustomColorTint) // Pirate: loadout
+                    loadout.CustomColorTint = null; // Pirate: loadout
+
                 Apply(loadoutProto);
             }
 
             // Apply defaults if required
             // Technically it's possible for someone to game themselves into loadouts they shouldn't have
             // If you put invalid ones first but that's your fault for not using sensible defaults
-            var pirateHasLoadoutForGroupSlot = PirateHasLoadoutForGroupSlot(group, groupProto, loadouts, profile, session, collection, protoManager); // Pirate: multiz
-            if (loadouts.Count < groupProto.MinLimit && !pirateHasLoadoutForGroupSlot) // Pirate: multiz
+            var pirateHasLoadoutForGroupSlot = PirateHasLoadoutForGroupSlot(group, groupProto, loadouts, profile, session, collection, protoManager); // Pirate: loadout
+            if (loadouts.Count < groupProto.MinLimit && !pirateHasLoadoutForGroupSlot) // Pirate: loadout
             {
                 //foreach (var protoId in groupProto.Loadouts)
                 foreach (var protoId in groupProto.GetAllLoadouts(protoManager).Distinct()) // Pirate - port frontier subgroups
@@ -269,7 +272,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         }
     }
 
-#region Pirate: multiz
+    #region Pirate: loadout
     private bool PirateHasLoadoutForGroupSlot(
         ProtoId<LoadoutGroupPrototype> currentGroup,
         LoadoutGroupPrototype currentGroupProto,
@@ -292,9 +295,11 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         if (groupSlots.Count == 0)
             return false;
 
+        var currentGroupIsGeneric = GlobalLoadoutGroups.Groups.Contains(currentGroup);
+
         foreach (var (group, loadouts) in SelectedLoadouts)
         {
-            if (group == currentGroup)
+            if (group == currentGroup || GlobalLoadoutGroups.Groups.Contains(group) != currentGroupIsGeneric)
                 continue;
 
             foreach (var loadout in loadouts)
@@ -310,7 +315,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
 
         return false;
     }
-#endregion
+    #endregion
 
     private void Apply(LoadoutPrototype loadoutProto)
     {
@@ -334,10 +339,10 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         var collection = IoCManager.Instance!;
         var roleProto = protoManager.Index(Role);
 
-        var defaultGroups = roleProto.Groups.Concat(PirateGlobalLoadoutGroups.Groups).ToList(); // Pirate: multiz
-        for (var i = defaultGroups.Count - 1; i >= 0; i--) // Pirate: multiz
+        var defaultGroups = roleProto.Groups.Concat(GlobalLoadoutGroups.Groups).ToList(); // Pirate: loadout
+        for (var i = defaultGroups.Count - 1; i >= 0; i--) // Pirate: loadout
         {
-            var group = defaultGroups[i]; // Pirate: multiz
+            var group = defaultGroups[i]; // Pirate: loadout
 
             if (!protoManager.TryIndex(group, out var groupProto))
                 continue;
@@ -412,7 +417,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
     /// <summary>
     /// Applies the specified loadout to this group.
     /// </summary>
-    public bool AddLoadout(ProtoId<LoadoutGroupPrototype> selectedGroup, ProtoId<LoadoutPrototype> selectedLoadout, IPrototypeManager protoManager)
+    public bool AddLoadout(ProtoId<LoadoutGroupPrototype> selectedGroup, ProtoId<LoadoutPrototype> selectedLoadout, IPrototypeManager protoManager, string? customColorTint = null) // Pirate: loadout
     {
         var groupLoadouts = SelectedLoadouts[selectedGroup];
 
@@ -443,6 +448,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         groupLoadouts.Add(new Loadout()
         {
             Prototype = selectedLoadout,
+            CustomColorTint = customColorTint, // Pirate: loadout
         });
 
         return true;

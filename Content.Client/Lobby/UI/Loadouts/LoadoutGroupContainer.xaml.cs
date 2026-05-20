@@ -7,7 +7,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Linq;
-using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: multiz
+using System.Collections.Generic; // Pirate: loadout
+using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: loadout
 using Content.Shared.Clothing;
 using Content.Shared.Preferences;
 using Content.Shared.Preferences.Loadouts;
@@ -22,15 +23,10 @@ namespace Content.Client.Lobby.UI.Loadouts;
 [GenerateTypedNameReferences]
 public sealed partial class LoadoutGroupContainer : BoxContainer
 {
-    private const string ClosedGroupMark = "▶";
-    private const string OpenedGroupMark = "▼";
-
-    /// <summary>
-    /// A dictionary that stores open groups
-    /// </summary>
-    private Dictionary<string, bool> _openedGroups = new();
-
     private readonly LoadoutGroupPrototype _groupProto;
+    private const string ClosedGroupMark = "+"; // Pirate: loadout
+    private const string OpenedGroupMark = "-"; // Pirate: loadout
+    private readonly Dictionary<string, bool> _openedGroups = new(); // Pirate: loadout
 
     public event Action<ProtoId<LoadoutPrototype>>? OnLoadoutPressed;
     public event Action<ProtoId<LoadoutPrototype>>? OnLoadoutUnpressed;
@@ -92,7 +88,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             .Select(proto => proto!);
         // Pirate edit end - port frontier subgroups
 
-#region Pirate: multiz
+        #region Pirate: loadout
         var eligible = validProtos
             .Where(proto => loadout.IsValid(profile, session, proto.ID, collection, out _))
             .OrderBy(loadoutSystem.GetName)
@@ -110,7 +106,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
         }
 
         LoadoutsContainer.AddChild(iconRows);
-#endregion
+        #endregion
     }
 
     private ToggleLoadoutButton CreateToggleButton(KeyValuePair<string, List<LoadoutPrototype>> kvp, LoadoutContainer firstElement, SubLoadoutContainer subContainer)
@@ -194,7 +190,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
         return cont;
     }
 
-#region Pirate: multiz
+#region Pirate: loadout
     private LoadoutIconButton CreateLoadoutIcon(LoadoutPrototype proto, HumanoidCharacterProfile profile, RoleLoadout loadout, ICommonSession session, IDependencyCollection collection, LoadoutSystem loadoutSystem)
     {
         loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
@@ -202,7 +198,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
 
         loadout.IsValid(profile, session, proto.ID, collection, out var reason);
 
-        var icon = new LoadoutIconButton(proto, loadoutSystem.GetName(proto), reason)
+        var icon = new LoadoutIconButton(proto, loadoutSystem.GetName(proto), reason: reason) // Pirate: loadout
         {
             Pressed = pressed,
         };
