@@ -33,7 +33,6 @@ public sealed class LoadoutIconButton : Button
         ToggleMode = true;
         MinSize = new Vector2(108, 108);
         SetSize = new Vector2(108, 108);
-        Margin = new Thickness(0, 0, 6, 6);
         StyleBoxOverride = NormalStyle;
         ModulateSelfOverride = Color.White;
 
