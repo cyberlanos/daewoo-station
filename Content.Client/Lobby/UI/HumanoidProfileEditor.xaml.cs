@@ -1308,7 +1308,10 @@ namespace Content.Client.Lobby.UI
 
             Profile = updated;
             SetDirty();
-            RefreshDisplayedLoadoutState(collection);
+            if (_showUnavailableLoadouts)
+                RefreshDisplayedLoadoutState(collection);
+            else
+                RefreshLoadouts();
             ReloadPreview();
         }
 

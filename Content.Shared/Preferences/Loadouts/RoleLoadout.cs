@@ -122,6 +122,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         }
 
         weh.EntityName = EntityName;
+        weh.Points = Points; // Pirate: loadout
 
         return weh;
     }
