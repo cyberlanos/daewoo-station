@@ -102,11 +102,10 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             .OrderBy(entry => loadoutSystem.GetName(entry.Prototype))
             .ToList();
 
-        var iconRows = new AdaptiveIconGrid
+        var iconRows = new GridContainer
         {
+            Columns = 8,
             Margin = new Thickness(5, 0, 5, 5),
-            HSeparationOverride = 6,
-            VSeparationOverride = 6,
         };
 
         foreach (var entry in eligible)

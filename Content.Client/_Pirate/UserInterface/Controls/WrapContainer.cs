@@ -56,6 +56,52 @@ public class WrapContainer : Container
         return y + rowHeight;
     }
 
+    /// <summary>
+    /// Picks the width to wrap at when computing desired height.
+    ///
+    /// Why not just <c>availableSize.X</c>? Because <see cref="BoxContainer"/>
+    /// and other stretch-ratio containers pass the full available width during
+    /// measure and only divide it among children during arrange. Trusting
+    /// availableSize.X here over-estimates the number of columns we'll get,
+    /// under-reports our desired height, and leaves the parent allocating too
+    /// little vertical space — content clips and no scrollbar appears.
+    ///
+    /// Why not just <c>widestChild</c> (worst-case 1-column)? Because for tabs
+    /// whose content fits within the viewport, this over-reports height and the
+    /// parent reserves an oversized slot, leaving a visible gap below our items
+    /// until a corrective layout pass settles (which is unreliable under engine
+    /// load — see UserInterfaceManager's per-frame Measure/Arrange queues).
+    ///
+    /// Best heuristic: walk up the parent chain for an already-arranged
+    /// ancestor and use its <c>Size.X</c>. That's the post-stretch width, which
+    /// closely matches what we'll actually be arranged at.
+    /// </summary>
+    private float ResolveWrapWidth(float availableX, float widestChild)
+    {
+        var hasFiniteAvailable = !float.IsPositiveInfinity(availableX) && availableX > 0f;
+
+        if (_lastArrangeWidth > 0f)
+        {
+            return hasFiniteAvailable
+                ? Math.Min(availableX, _lastArrangeWidth)
+                : _lastArrangeWidth;
+        }
+
+        for (var p = Parent; p != null; p = p.Parent)
+        {
+            if (p.Size.X > 0)
+            {
+                return hasFiniteAvailable
+                    ? Math.Min(availableX, p.Size.X)
+                    : p.Size.X;
+            }
+        }
+
+        // Nothing's been arranged yet anywhere up the chain — fall back to
+        // widestChild (1-column worst case) so we never under-allocate.
+        return widestChild;
+    }
+
     protected override Vector2 MeasureOverride(Vector2 availableSize)
     {
         var sep = ActualSeparation;
@@ -67,21 +113,10 @@ public class WrapContainer : Container
             child.Measure(new Vector2(availableSize.X, float.PositiveInfinity));
 
         var widestChild = visible.Max(child => child.DesiredSize.X);
-
-        float wrapWidth;
-        var hasFiniteAvailable = !float.IsPositiveInfinity(availableSize.X) && availableSize.X > 0f;
-        if (hasFiniteAvailable && _lastArrangeWidth > 0f)
-            wrapWidth = Math.Min(availableSize.X, _lastArrangeWidth);
-        else if (hasFiniteAvailable)
-            wrapWidth = availableSize.X;
-        else if (_lastArrangeWidth > 0f)
-            wrapWidth = _lastArrangeWidth;
-        else
-            wrapWidth = widestChild;
-
-        wrapWidth = Math.Max(wrapWidth, widestChild);
+        var wrapWidth = Math.Max(ResolveWrapWidth(availableSize.X, widestChild), widestChild);
 
         var totalHeight = ComputeLayout(wrapWidth, sep, visible, null);
+        var hasFiniteAvailable = !float.IsPositiveInfinity(availableSize.X) && availableSize.X > 0f;
         var desiredWidth = hasFiniteAvailable ? availableSize.X : wrapWidth;
         return new Vector2(desiredWidth, totalHeight);
     }
@@ -93,6 +128,9 @@ public class WrapContainer : Container
         ComputeLayout(finalSize.X, sep, visible, (child, x, y, w, h) =>
             child.Arrange(UIBox2.FromDimensions(x, y, w, h)));
 
+        // If the actual arrange width disagrees with what we wrapped at during
+        // measure, request a remeasure so DesiredSize updates with the real
+        // column count next pass.
         if (!MathHelper.CloseTo(_lastArrangeWidth, finalSize.X, 0.5f))
         {
             _lastArrangeWidth = finalSize.X;
