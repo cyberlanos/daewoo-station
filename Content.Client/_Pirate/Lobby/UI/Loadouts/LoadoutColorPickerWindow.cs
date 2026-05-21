@@ -23,7 +23,7 @@ public sealed class LoadoutColorPickerWindow : DefaultWindow
 
         var apply = new Button
         {
-            Text = "Apply",
+            Text = Loc.GetString("loadout-color-picker-apply"),
             HorizontalAlignment = HAlignment.Right,
             MinWidth = 96,
         };

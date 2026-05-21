@@ -341,7 +341,6 @@
     state: icon
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic.rsi
-    renderLayer: innerBelt
 
 
 - type: entity
@@ -355,7 +354,6 @@
     state: icon
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thin.rsi
-    renderLayer: innerBelt
 
 
 - type: entity
@@ -369,7 +367,6 @@
     state: icon
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/generic_thick.rsi
-    renderLayer: innerBelt
 
 
 - type: entity
@@ -383,7 +380,6 @@
     state: icon
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist.rsi
-    renderLayer: innerBelt
 
 
 - type: entity
@@ -397,7 +393,6 @@
     state: icon
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Belt/waist_thin.rsi
-    renderLayer: innerBelt
 
 - type: entity
   parent: ClothingBeltStorageBase
@@ -1573,6 +1568,66 @@
     coolingCoefficient: 0.4
 
 
+# Acid raincoat hoods
+- type: entity
+  parent: ClothingHeadBase
+  id: ClothingHeadHatHoodAcidRaincoat
+  categories: [ HideSpawnMenu ]
+  name: acid raincoat hood
+  description: Mostly transparent raincoat hood made out of acid resistant polymers.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat.rsi
+  - type: Armor
+    modifiers:
+      coefficients:
+        Caustic: 0.9
+  - type: HideLayerClothing
+    slots:
+    - Hair
+
+- type: entity
+  parent: ClothingHeadHatHoodAcidRaincoat
+  id: ClothingHeadHatHoodAcidRaincoatBlue
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_blue.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_blue.rsi
+
+- type: entity
+  parent: ClothingHeadHatHoodAcidRaincoat
+  id: ClothingHeadHatHoodAcidRaincoatGreen
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_green.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_green.rsi
+
+- type: entity
+  parent: ClothingHeadHatHoodAcidRaincoat
+  id: ClothingHeadHatHoodAcidRaincoatMagenta
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_magenta.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_magenta.rsi
+
+- type: entity
+  parent: ClothingHeadHatHoodAcidRaincoat
+  id: ClothingHeadHatHoodAcidRaincoatYellow
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_yellow.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/Head/Hoods/Coat/acid_raincoat_yellow.rsi
+
 - type: entity
   parent: ClothingOuterStorageToggleableBase
   id: ClothingOuterCoatAcidRaincoat
@@ -1640,7 +1695,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/_NF/Clothing/OuterClothing/Coats/acid_raincoat_yellow.rsi
   - type: ToggleableClothing
-    clothingPrototype: ClothingHeadHatHoodAcidRaincoatGreen
+    clothingPrototype: ClothingHeadHatHoodAcidRaincoatYellow
 
 # Jackets
 
@@ -2637,7 +2692,6 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
   - type: HideLayerClothing
-    force: true
     slots:
     - LFoot
     - RFoot
@@ -2657,7 +2711,6 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
   - type: HideLayerClothing
-    force: true
     slots:
     - LFoot
     - RFoot
@@ -2834,8 +2887,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_einstein_engines.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_einstein_engines.rsi
-  - type: GuideHelp
-    guides: [ EinsteinEngines ]
 
 
 - type: entity
@@ -2848,8 +2899,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hephestus_industries.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_hephestus_industries.rsi
-  - type: GuideHelp
-    guides: [ HephaestusIndustries ]
 
 
 - type: entity
@@ -2886,8 +2935,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_bishop_cybernetics.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_bishop_cybernetics.rsi
-  - type: GuideHelp
-    guides: [ ZengHuPharmaceuticals ]
 
 
 - type: entity
@@ -2936,8 +2983,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_zeng_hu_pharma.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/OuterClothing/WinterCoats/corpo_jacket_zeng_hu_pharma.rsi
-  - type: GuideHelp
-    guides: [ ZengHuPharmaceuticals ]
 
 
 - type: entity
@@ -2950,8 +2995,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_idris_incorporated.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_idris_incorporated.rsi
-  - type: GuideHelp
-    guides: [ ZengHuPharmaceuticals ]
 
 
 - type: entity
@@ -2965,8 +3008,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_orion_express.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/corpo_jacket_orion_express.rsi
-  - type: GuideHelp
-    guides: [ ZengHuPharmaceuticals ]
 
 - type: entity
   parent: ClothingOuterBase
@@ -3287,7 +3328,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/color.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Neck/Ties/color.rsi
-    renderLayer: innerNeck
   - type: Tag
     tags:
     - WhitelistChameleon

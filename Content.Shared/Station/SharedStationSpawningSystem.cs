@@ -136,6 +136,8 @@ public abstract class SharedStationSpawningSystem : EntitySystem
     public void EquipRoleLoadout(EntityUid entity, RoleLoadout loadout, RoleLoadoutPrototype roleProto)
     {
         // Order loadout selections by the order they appear on the prototype.
+        #region Pirate: loadout
+        var selectedLoadouts = new List<(Loadout Loadout, LoadoutPrototype Prototype)>();
         foreach (var group in loadout.SelectedLoadouts.OrderBy(x => roleProto.Groups.FindIndex(e => e == x.Key)))
         {
             foreach (var items in group.Value)
@@ -146,13 +148,32 @@ public abstract class SharedStationSpawningSystem : EntitySystem
                     continue;
                 }
 
-                // Pirate: cameras (photo persistence)
-                EquipStartingGear(entity, loadoutProto, raiseEvent: false, pirateFromSelectedLoadout: true, pirateLoadoutTint: items.CustomColorTint); // Pirate: loadout
+                selectedLoadouts.Add((items, loadoutProto));
             }
         }
 
+        // Backpack loadouts must equip before storage-only selections try to insert into them.
+        foreach (var (items, loadoutProto) in selectedLoadouts.OrderByDescending(selected => HasEquipment(selected.Prototype)))
+        {
+            // Pirate: cameras (photo persistence)
+            EquipStartingGear(entity, loadoutProto, raiseEvent: false, pirateFromSelectedLoadout: true, pirateLoadoutTint: items.CustomColorTint); // Pirate: loadout
+        }
+        #endregion
+
         EquipRoleName(entity, loadout, roleProto);
     }
+
+    #region Pirate: loadout
+    private bool HasEquipment(LoadoutPrototype loadout)
+    {
+        if (loadout.Equipment.Count > 0)
+            return true;
+
+        return loadout.StartingGear != null &&
+               PrototypeManager.TryIndex(loadout.StartingGear, out StartingGearPrototype? startingGear) &&
+               startingGear.Equipment.Count > 0;
+    }
+    #endregion
 
     /// <summary>
     /// Applies the role's name as applicable to the entity.

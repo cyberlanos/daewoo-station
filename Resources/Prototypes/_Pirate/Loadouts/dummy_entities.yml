@@ -4,3 +4,14 @@
   categories: [ HideSpawnMenu ]
   name: random book
   description: A notebook with a random cover. Can be used as a diary, or for writing fanfiction drafts for SpacePad.
+  components:
+  - type: Sprite
+    sprite: Objects/Misc/books.rsi
+    layers:
+    - state: paper
+    - state: cover_base
+      color: "#332d27"
+    - state: decor_wingette
+      color: "#453f3a"
+    - state: icon_text
+    - state: overlay_null

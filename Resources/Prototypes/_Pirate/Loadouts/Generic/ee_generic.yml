@@ -512,7 +512,7 @@
   id: LoadoutItemBlunt
   storage:
     back:
-    - Blunt
+    - BluntCigar
   groupBy: "smokeables"
 
 - type: loadout
