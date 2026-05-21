@@ -1,6 +1,3 @@
-# Ported from Einstein Engines generic loadout targets.
-# Only includes categories requested in Resources/Prototypes/_Pirate/Loadouts/ee_generic_missing.md.
-
 - type: entity
   abstract: true
   parent: [ClothingOuterBase, BaseFoldable]

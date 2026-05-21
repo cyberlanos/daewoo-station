@@ -818,7 +818,7 @@ namespace Content.Server.Database
         /// </summary>
         public string LoadoutName { get; set; } = string.Empty;
 
-#region Pirate: loadout
+        #region Pirate: loadout
         /// <summary>
         /// Optional loadout tint stored as a hex color string from <see cref="Color.ToHex"/>.
         /// </summary>
@@ -827,7 +827,7 @@ namespace Content.Server.Database
         /// </remarks>
         [MaxLength(16)]
         public string? CustomColorTint { get; set; }
-#endregion
+        #endregion
 
         /*
          * Insert extra data here like custom descriptions or colors or whatever.

@@ -106,7 +106,7 @@ public sealed partial class LoadoutPrototype : IPrototype, IEquipmentLoadout
     [DataField]
     public EntProtoId? DummyEntity;
 
-#region Pirate: loadout
+    #region Pirate: loadout
     /// <summary>
     /// Whether this loadout prototype supports custom color tinting.
     /// </summary>
@@ -116,7 +116,7 @@ public sealed partial class LoadoutPrototype : IPrototype, IEquipmentLoadout
     /// </remarks>
     [DataField]
     public bool CustomColorTint;
-#endregion
+    #endregion
 
     [DataField]
     public ProtoId<StartingGearPrototype>? StartingGear;

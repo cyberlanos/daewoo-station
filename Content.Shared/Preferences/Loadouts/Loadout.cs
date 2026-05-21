@@ -20,7 +20,7 @@ public sealed partial class Loadout : IEquatable<Loadout>
     [DataField]
     public ProtoId<LoadoutPrototype> Prototype;
 
-#region Pirate: loadout
+    #region Pirate: loadout
     /// <summary>
     /// Optional custom tint stored as a hex color string accepted by <see cref="Color.FromHex"/>.
     /// </summary>
@@ -47,7 +47,7 @@ public sealed partial class Loadout : IEquatable<Loadout>
             CustomColorTint = CustomColorTint,
         };
     }
-#endregion
+    #endregion
 
     public bool Equals(Loadout? other)
     {

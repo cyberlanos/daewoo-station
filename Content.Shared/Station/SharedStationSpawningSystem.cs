@@ -173,6 +173,19 @@ public abstract class SharedStationSpawningSystem : EntitySystem
                PrototypeManager.TryIndex(loadout.StartingGear, out StartingGearPrototype? startingGear) &&
                startingGear.Equipment.Count > 0;
     }
+    private void ApplyLoadoutTint(EntityUid entity, string? tint)
+    {
+        if (string.IsNullOrEmpty(tint))
+            return;
+
+        var parsed = Color.TryFromHex(tint);
+        if (!parsed.HasValue)
+            return;
+
+        var component = EnsureComp<LoadoutTintComponent>(entity);
+        component.Color = parsed.Value;
+        Dirty(entity, component);
+    }
     #endregion
 
     /// <summary>
@@ -337,22 +350,6 @@ public abstract class SharedStationSpawningSystem : EntitySystem
             RaiseLocalEvent(entity, ref ev);
         }
     }
-
-    #region Pirate: loadout
-    private void ApplyLoadoutTint(EntityUid entity, string? tint)
-    {
-        if (string.IsNullOrEmpty(tint))
-            return;
-
-        var parsed = Color.TryFromHex(tint);
-        if (!parsed.HasValue)
-            return;
-
-        var component = EnsureComp<LoadoutTintComponent>(entity);
-        component.Color = parsed.Value;
-        Dirty(entity, component);
-    }
-    #endregion
 
     #region Pirate: cameras (photo persistence)
     private void RaiseSelectedLoadoutEntitySpawned(EntityUid spawnedEntity, EntityUid owner, bool pirateFromSelectedLoadout)

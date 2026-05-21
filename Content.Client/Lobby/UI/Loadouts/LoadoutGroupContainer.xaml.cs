@@ -89,7 +89,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             .Select(proto => proto!);
         // Pirate edit end - port frontier subgroups
 
-#region Pirate: loadout
+        #region Pirate: loadout
         loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
         var selectedIds = selected?.Select(entry => entry.Prototype).ToHashSet() ?? new HashSet<ProtoId<LoadoutPrototype>>();
         var eligible = validProtos
@@ -198,7 +198,7 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
         return cont;
     }
 
-#region Pirate: loadout
+    #region Pirate: loadout
     private LoadoutIconButton CreateLoadoutIcon(LoadoutPrototype proto, RoleLoadout loadout, LoadoutSystem loadoutSystem, bool enabled, FormattedMessage? reason)
     {
         loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
@@ -220,5 +220,5 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
 
         return icon;
     }
-#endregion
+    #endregion
 }

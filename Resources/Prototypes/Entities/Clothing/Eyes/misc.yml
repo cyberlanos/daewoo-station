@@ -16,7 +16,7 @@
   parent: ClothingEyesBase
   id: ClothingEyesBlindfold
   name: blindfold
-  description: A blindfold that blocks your sight. # Pirate: loadout
+  description: The bind leading the blind.
   components:
   - type: Sprite
     sprite: Clothing/Eyes/Misc/blindfold.rsi
