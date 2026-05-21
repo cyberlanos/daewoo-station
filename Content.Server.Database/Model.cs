@@ -819,6 +819,12 @@ namespace Content.Server.Database
         public string LoadoutName { get; set; } = string.Empty;
 
 #region Pirate: loadout
+        /// <summary>
+        /// Optional loadout tint stored as a hex color string from <see cref="Color.ToHex"/>.
+        /// </summary>
+        /// <remarks>
+        /// Parsed with <see cref="Color.FromHex(string)"/> and limited to 16 characters by <see cref="MaxLengthAttribute"/>.
+        /// </remarks>
         [MaxLength(16)]
         public string? CustomColorTint { get; set; }
 #endregion

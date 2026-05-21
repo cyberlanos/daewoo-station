@@ -225,7 +225,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
                     continue;
                 }
 
-                if (!loadoutProto.CustomColorTint) // Pirate: loadout
+                if (!loadoutProto.CustomColorTint || string.IsNullOrEmpty(loadout.CustomColorTint) || !loadout.IsValidColorTint()) // Pirate: loadout
                     loadout.CustomColorTint = null; // Pirate: loadout
 
                 Apply(loadoutProto);

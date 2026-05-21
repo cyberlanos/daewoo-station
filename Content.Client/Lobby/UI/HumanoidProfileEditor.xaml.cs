@@ -1090,8 +1090,7 @@ namespace Content.Client.Lobby.UI
                     if (!CreateLoadoutCategoryNames().Contains(category))
                         category = "Items";
 
-                    Profile.Loadouts.TryGetValue(roleId, out var savedRoleLoadout);
-                    var selected = savedRoleLoadout?.SelectedLoadouts.GetValueOrDefault(groupId);
+                    var selected = roleLoadout.SelectedLoadouts.GetValueOrDefault(groupId);
                     var generic = GlobalLoadoutGroups.Groups.Contains(groupId);
 
                     foreach (var loadoutId in groupProto.GetAllLoadouts(_prototypeManager).Distinct())
@@ -1297,7 +1296,7 @@ namespace Content.Client.Lobby.UI
                     continue;
 
                 if (selected)
-                    RemoveConflictingLoadouts(roleLoadout, choice.Prototype, location.Group);
+                    RemoveConflictingLoadouts(roleLoadout, choice.Prototype);
 
                 if (selected)
                     roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager);
@@ -1347,7 +1346,7 @@ namespace Content.Client.Lobby.UI
             var selected = groupLoadouts.FirstOrDefault(loadout => loadout.Prototype == choice.Prototype.ID);
             if (selected == null)
             {
-                RemoveConflictingLoadouts(roleLoadout, choice.Prototype, location.Group);
+                RemoveConflictingLoadouts(roleLoadout, choice.Prototype);
                 roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager, customColorTint);
             }
             else
@@ -1361,23 +1360,23 @@ namespace Content.Client.Lobby.UI
             ReloadPreview();
         }
 
-        private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype, ProtoId<LoadoutGroupPrototype> groupId)
+        private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype)
         {
             if (selectedPrototype.Equipment.Count == 0)
                 return;
 
             var occupiedSlots = selectedPrototype.Equipment.Keys.ToHashSet();
 
-            if (!roleLoadout.SelectedLoadouts.TryGetValue(groupId, out var loadouts))
-                return;
-
-            for (var i = loadouts.Count - 1; i >= 0; i--)
+            foreach (var loadouts in roleLoadout.SelectedLoadouts.Values)
             {
-                if (!_prototypeManager.TryIndex(loadouts[i].Prototype, out LoadoutPrototype? loadoutProto))
-                    continue;
+                for (var i = loadouts.Count - 1; i >= 0; i--)
+                {
+                    if (!_prototypeManager.TryIndex(loadouts[i].Prototype, out LoadoutPrototype? loadoutProto))
+                        continue;
 
-                if (loadoutProto.Equipment.Keys.Any(occupiedSlots.Contains))
-                    loadouts.RemoveAt(i);
+                    if (loadoutProto.Equipment.Keys.Any(occupiedSlots.Contains))
+                        loadouts.RemoveAt(i);
+                }
             }
         }
 
@@ -1387,7 +1386,7 @@ namespace Content.Client.Lobby.UI
 
             var showUnavailable = new CheckBox
             {
-                Text = "Show unavailable",
+                Text = Loc.GetString("humanoid-profile-editor-show-unavailable"), // Pirate: loadout
                 Pressed = _showUnavailableLoadouts,
                 Margin = new Thickness(0, 0, 0, 8),
             };

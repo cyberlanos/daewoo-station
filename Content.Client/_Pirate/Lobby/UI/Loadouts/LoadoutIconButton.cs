@@ -123,7 +123,7 @@ public sealed class LoadoutIconButton : Button
             SetSize = new Vector2(24, 24),
             HorizontalAlignment = HAlignment.Left,
             VerticalAlignment = VAlignment.Top,
-            ToolTip = "Customize color",
+            ToolTip = Loc.GetString("loadout-customize-color-tooltip"),
         };
 
         customize.AddChild(new TextureRect

@@ -17,6 +17,7 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Utility; // Pirate: loadout
 
 namespace Content.Client.Lobby.UI.Loadouts;
 
@@ -88,10 +89,17 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             .Select(proto => proto!);
         // Pirate edit end - port frontier subgroups
 
-        #region Pirate: loadout
+#region Pirate: loadout
+        loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
+        var selectedIds = selected?.Select(entry => entry.Prototype).ToHashSet() ?? new HashSet<ProtoId<LoadoutPrototype>>();
         var eligible = validProtos
-            .Where(proto => loadout.IsValid(profile, session, proto.ID, collection, out _))
-            .OrderBy(loadoutSystem.GetName)
+            .Select(proto =>
+            {
+                var enabled = loadout.IsValid(profile, session, proto.ID, collection, out var reason);
+                return (Prototype: proto, Enabled: enabled, Reason: reason);
+            })
+            .Where(entry => entry.Enabled || selectedIds.Contains(entry.Prototype.ID))
+            .OrderBy(entry => loadoutSystem.GetName(entry.Prototype))
             .ToList();
 
         var iconRows = new AdaptiveIconGrid
@@ -101,9 +109,9 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             VSeparationOverride = 6,
         };
 
-        foreach (var proto in eligible)
+        foreach (var entry in eligible)
         {
-            iconRows.AddChild(CreateLoadoutIcon(proto, profile, loadout, session, collection, loadoutSystem));
+            iconRows.AddChild(CreateLoadoutIcon(entry.Prototype, loadout, loadoutSystem, entry.Enabled, entry.Reason));
         }
 
         LoadoutsContainer.AddChild(iconRows);
@@ -192,15 +200,14 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
     }
 
 #region Pirate: loadout
-    private LoadoutIconButton CreateLoadoutIcon(LoadoutPrototype proto, HumanoidCharacterProfile profile, RoleLoadout loadout, ICommonSession session, IDependencyCollection collection, LoadoutSystem loadoutSystem)
+    private LoadoutIconButton CreateLoadoutIcon(LoadoutPrototype proto, RoleLoadout loadout, LoadoutSystem loadoutSystem, bool enabled, FormattedMessage? reason)
     {
         loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
         var pressed = selected?.Any(e => e.Prototype == proto.ID) == true;
 
-        loadout.IsValid(profile, session, proto.ID, collection, out var reason);
-
         var icon = new LoadoutIconButton(proto, loadoutSystem.GetName(proto), reason: reason) // Pirate: loadout
         {
+            Disabled = !enabled,
             Pressed = pressed,
         };
 

@@ -21,8 +21,23 @@ public sealed partial class Loadout : IEquatable<Loadout>
     public ProtoId<LoadoutPrototype> Prototype;
 
 #region Pirate: loadout
+    /// <summary>
+    /// Optional custom tint stored as a hex color string accepted by <see cref="Color.FromHex"/>.
+    /// </summary>
+    /// <remarks>
+    /// Persisted loadout tint strings must not exceed 16 characters.
+    /// </remarks>
     [DataField]
     public string? CustomColorTint;
+
+    /// <summary>
+    /// Checks whether the custom tint is empty or a persisted parser-valid hex color string.
+    /// </summary>
+    public bool IsValidColorTint()
+    {
+        return string.IsNullOrEmpty(CustomColorTint) ||
+               CustomColorTint.Length <= 16 && Color.TryFromHex(CustomColorTint) != null;
+    }
 
     public Loadout Clone()
     {
