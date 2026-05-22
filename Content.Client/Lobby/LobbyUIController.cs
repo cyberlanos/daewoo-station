@@ -83,6 +83,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Linq;
+using Content.Client._Pirate.Loadouts; // Pirate: loadout
 using Content.Client.Guidebook;
 using Content.Client.Humanoid;
 using Content.Client.Inventory;
@@ -448,7 +449,7 @@ public sealed class LobbyUIController : UIController, IOnStateEntered<LobbyState
                 if (!_prototypeManager.TryIndex(loadout.Prototype, out var loadoutProto))
                     continue;
 
-                _spawn.EquipStartingGear(uid, loadoutProto);
+                _spawn.EquipStartingGear(uid, loadoutProto, pirateLoadoutTint: loadout.CustomColorTint); // Pirate: loadout
             }
         }
     }
@@ -487,6 +488,7 @@ public sealed class LobbyUIController : UIController, IOnStateEntered<LobbyState
                             if (itemType != string.Empty)
                             {
                                 var item = EntityManager.SpawnEntity(itemType, MapCoordinates.Nullspace);
+                                ApplyLoadoutTint(item, loadout.CustomColorTint); // Pirate: loadout
                                 _inventory.TryEquip(dummy, item, slot.Name, true, true);
                             }
                         }
@@ -502,6 +504,7 @@ public sealed class LobbyUIController : UIController, IOnStateEntered<LobbyState
                             if (itemType != string.Empty)
                             {
                                 var item = EntityManager.SpawnEntity(itemType, MapCoordinates.Nullspace);
+                                ApplyLoadoutTint(item, loadout.CustomColorTint); // Pirate: loadout
                                 _inventory.TryEquip(dummy, item, slot.Name, true, true);
                             }
                         }
@@ -530,6 +533,16 @@ public sealed class LobbyUIController : UIController, IOnStateEntered<LobbyState
         }
     }
 
+    #region Pirate: loadout
+    private void ApplyLoadoutTint(EntityUid item, string? customColorTint)
+    {
+        if (string.IsNullOrEmpty(customColorTint))
+            return;
+
+        EntityManager.System<LoadoutTintSystem>().SetTint(item, Color.FromHex(customColorTint));
+    }
+    #endregion
+
     /// <summary>
     /// Loads the profile onto a dummy entity.
     /// </summary>
@@ -542,7 +555,7 @@ public sealed class LobbyUIController : UIController, IOnStateEntered<LobbyState
         {
             job ??= GetPreferredJob(humanoid);
 
-            previewEntity = job.JobPreviewEntity ?? (EntProtoId?)job?.JobEntity;
+            previewEntity = job.JobPreviewEntity ?? (EntProtoId?) job?.JobEntity;
         }
 
         if (previewEntity != null)

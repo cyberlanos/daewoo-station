@@ -1249,6 +1249,11 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasColumnName("loadout_name");
 
+                    b.Property<string>("CustomColorTint")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("custom_color_tint");
+
                     b.Property<int>("ProfileLoadoutGroupId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("profile_loadout_group_id");

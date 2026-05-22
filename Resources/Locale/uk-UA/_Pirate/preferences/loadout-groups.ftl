@@ -11,6 +11,14 @@ loadout-group-technical-assistant-equipment = Оснащення технічн�
 
 
 loadout-group-passenger-head = Головний убір пасажира
+loadout-group-generic-head = Головний убір
+loadout-group-generic-mask = Маска
+loadout-group-generic-uniform = Комбінезон
+loadout-group-generic-neck = Шийна прикраса
+loadout-group-generic-shoes = Взуття
+loadout-group-generic-outerclothing = Верхній одяг
+loadout-group-belt = Пояс
+loadout-group-gloves = Рукавиці
 loadout-group-syndicate-suit = Уніформа синдикату
 loadout-group-interdyne-officer-head = Головний убір офіцера Інтердайну
 loadout-group-interdyne-head = Головний убір Інтердайну

@@ -194,6 +194,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <!-- Pirate start: port and modified DV traits UI -->
                     <pirate:TraitsTab Name="TraitsTab" />
                     <!-- Pirate end: port and modified DV traits UI -->
+                <!-- Pirate: loadout -->
+                <BoxContainer Name="LoadoutsTab" Orientation="Horizontal" Margin="10">
+                    <TabContainer Name="LoadoutSlotTabs" HorizontalExpand="True" VerticalExpand="True" SizeFlagsStretchRatio="4" />
+                    <ScrollContainer HorizontalExpand="True" VerticalExpand="True" SizeFlagsStretchRatio="1" Margin="8 0 0 0" HScrollEnabled="False">
+                        <BoxContainer Name="SelectedLoadoutsList" Orientation="Vertical" HorizontalExpand="True" />
+                    </ScrollContainer>
+                </BoxContainer>
+                <!-- Pirate: loadout -->
                 <BoxContainer Name="MarkingsTab" Orientation="Vertical" Margin="10">
                     <!-- Markings -->
                     <ScrollContainer VerticalExpand="True">
