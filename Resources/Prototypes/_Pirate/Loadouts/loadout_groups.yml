@@ -104,7 +104,7 @@
   - LoadoutBeltWaist
   - LoadoutBeltWaistThin
   - LoadoutBeltWaistbagColor
-  - ClothingBeltTCAFWebbing
+  # - ClothingBeltTCAFWebbing
 
 - type: loadoutGroup
   id: PirateEEGenericHands

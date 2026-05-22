@@ -2,3 +2,14 @@
   license: "CC-BY-NC-4.0"
   copyright: "Taken from bzakirasantjago via freesound.org"
   source: "https://freesound.org/people/bzakirasantjago/sounds/404462/"
+
+- files:
+  - Footsteps/gear1.ogg
+  - Footsteps/gear2.ogg
+  - Footsteps/gear3.ogg
+  - Footsteps/gear4.ogg
+  - Footsteps/gear5.ogg
+  - Footsteps/gear6.ogg
+  license: "Custom"
+  copyright: "Valve Software, Non-Commercial Steam Subscriber Agreement"
+  source: "https://store.steampowered.com/app/220/HalfLife_2/"
