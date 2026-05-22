@@ -58,6 +58,7 @@
 
 using Content.Shared.Armor;
 using Content.Shared.Atmos;
+using Content.Shared._Pirate.Clothing.Events; // Pirate: gear step sounds
 using Content.Shared.Chat;
 using Content.Shared.Chat.RadioIconsEvents; // Goobstation
 using Content.Shared.Chemistry;
@@ -100,6 +101,7 @@ public partial class InventorySystem
         SubscribeLocalEvent<InventoryComponent, ElectrocutionAttemptEvent>(RelayInventoryEvent);
         SubscribeLocalEvent<InventoryComponent, SlipAttemptEvent>(RelayInventoryEvent);
         SubscribeLocalEvent<InventoryComponent, RefreshMovementSpeedModifiersEvent>(RelayInventoryEvent);
+        SubscribeLocalEvent<InventoryComponent, PirateMakeFootstepSoundEvent>(RelayInventoryEvent); // Pirate: gear step sounds
         SubscribeLocalEvent<InventoryComponent, BeforeStripEvent>(RelayInventoryEvent);
         SubscribeLocalEvent<InventoryComponent, SeeIdentityAttemptEvent>(RelayInventoryEvent);
         SubscribeLocalEvent<InventoryComponent, ModifyChangedTemperatureEvent>(RelayInventoryEvent);

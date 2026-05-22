@@ -94,6 +94,11 @@
     - 0,0,6,2
   - type: ExplosionResistance
     damageCoefficient: 0.05
+  - type: EmitsSoundOnMove # Pirate: gear step sounds
+    soundCollection: # Pirate: gear step sounds
+      collection: PirateFootstepTacticalWebbing # Pirate: gear step sounds
+      params: # Pirate: gear step sounds
+        volume: -10 # Pirate: gear step sounds
 
 - type: entity
   parent: ClothingBeltSecurity
@@ -139,6 +144,11 @@
   - type: GuideHelp
     guides:
     - CorporateJudo
+  - type: EmitsSoundOnMove # Pirate: gear step sounds
+    soundCollection: # Pirate: gear step sounds
+      collection: PirateFootstepTacticalWebbing # Pirate: gear step sounds
+      params: # Pirate: gear step sounds
+        volume: -10 # Pirate: gear step sounds
 
 - type: entity
   parent: [ ChemBag, BaseSyndicateContraband ]

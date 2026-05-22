@@ -118,6 +118,7 @@ using Content.Shared.Maps;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Events;
+using Content.Shared._Pirate.Clothing.Events; // Pirate: gear step sounds
 using Content.Shared._DV.StepTrigger.Components; // DeltaV - NoShoesSilentFootstepsComponent
 using Content.Shared.Tag;
 using Robust.Shared.Audio;
@@ -701,6 +702,9 @@ public abstract partial class SharedMoverController : VirtualController
 
         if (mobMover.StepSoundDistance < distanceNeeded)
             return false;
+
+        var movementSoundEv = new PirateMakeFootstepSoundEvent(); // Pirate: gear step sounds
+        RaiseLocalEvent(uid, movementSoundEv); // Pirate: gear step sounds
 
         mobMover.StepSoundDistance -= distanceNeeded;
 
