@@ -1395,3 +1395,11 @@ Entries:
       message: змінено StampWidget.xaml.cs
   id: 122
   time: '2026-05-18T13:03:26.0000000+00:00'
+- author: CyberLanos
+  changes:
+    - type: Tweak
+      message: фотографії всередині альбомів не горять від вогню
+    - type: Tweak
+      message: фотографії всередині альбомів не руйнуються від вибухів
+  id: 123
+  time: '2026-05-22T07:54:43.0000000+00:00'
