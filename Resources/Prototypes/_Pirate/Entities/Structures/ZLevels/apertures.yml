@@ -2,7 +2,7 @@
   id: CEZLevelAperture
   name: z-level aperture
   description: A small reinforced opening that exposes the level below.
-  noSpawn: true
+  categories: [ HideSpawnMenu ]
   placement:
     mode: SnapgridCenter
   components:
