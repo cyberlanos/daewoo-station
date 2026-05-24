@@ -2806,8 +2806,11 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     [PublicAPI]
-    public bool TryMoveUp(EntityUid ent)
+    public bool TryMoveUp(EntityUid ent, bool bypassPassability = false)
     {
+        if (!bypassPassability && IsLandingBlocked(ent, Transform(ent)))
+            return false;
+
         return TryMove(ent, 1);
     }
 

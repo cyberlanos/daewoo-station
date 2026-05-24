@@ -32,6 +32,6 @@ public abstract class CESharedZLevelGhostMoverSystem : EntitySystem
         if (args.Handled)
             return;
 
-        args.Handled = _zLevel.TryMoveUp(ent);
+        args.Handled = _zLevel.TryMoveUp(ent, bypassPassability: true);
     }
 }

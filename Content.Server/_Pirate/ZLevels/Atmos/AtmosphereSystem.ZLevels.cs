@@ -70,7 +70,12 @@ public sealed partial class AtmosphereSystem
             _zAtmosLinkedMaps.Remove(oldMapUid);
         }
 
+        // Vertical transfer pairs/refs were computed against the old projection; drop them and
+        // let InvalidateZAtmosOpenings rebuild them on the new map.
+        RemoveZAtmosTransferCandidatesForGrid(ent.Owner);
+
         TrackZAtmosMap(ent.Owner);
+        InvalidateZAtmosOpenings(ent.Owner);
     }
 
     private void TrackZAtmosMap(EntityUid gridUid)
