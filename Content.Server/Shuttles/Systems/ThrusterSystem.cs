@@ -224,11 +224,22 @@ public sealed class ThrusterSystem : EntitySystem
         // TODO: Don't make them rotatable and make it require anchoring.
 
         if (!component.Enabled ||
-            !TryComp(uid, out TransformComponent? xform) ||
-            !TryComp(xform.GridUid, out ShuttleComponent? shuttleComponent))
+            !TryComp(uid, out TransformComponent? xform))
         {
             return;
         }
+
+        var shuttleGridUid = xform.GridUid; // Pirate: multiz
+        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
+        if (shuttleGridUid != null && TryComp<CEZLinkedGridComponent>(shuttleGridUid, out var linked) && linked.Depth != 0)
+        {
+            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
+                shuttleGridUid = leaderGrid;
+        }
+        #endregion Pirate: multiz
+
+        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
+            return;
 
         var canEnable = CanEnable(uid, component);
 
@@ -256,7 +267,15 @@ public sealed class ThrusterSystem : EntitySystem
 
         if (args.ParentChanged)
         {
-            oldShuttleComponent = Comp<ShuttleComponent>(args.OldPosition.EntityId);
+            #region Pirate: multiz - resolve old leader grid for Z-linked thrusters
+            var oldGridUid = args.OldPosition.EntityId;
+            if (TryComp<CEZLinkedGridComponent>(oldGridUid, out var oldLinked) && oldLinked.Depth != 0)
+            {
+                if (oldLinked.PeerGrids.TryGetValue(0, out var oldLeader))
+                    oldGridUid = oldLeader;
+            }
+            #endregion Pirate: multiz
+            oldShuttleComponent = Comp<ShuttleComponent>(oldGridUid);
 
             // If no parent change doesn't matter for angular.
             if (component.Type == ThrusterType.Angular)

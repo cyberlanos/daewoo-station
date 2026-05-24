@@ -42,7 +42,7 @@ public sealed class CEZLevelPullingSystem : EntitySystem
         var query = EntityQueryEnumerator<CEZLevelPullingTransitionComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
-            if (!Exists(uid) || comp.TargetPuller is not { } puller || !Exists(puller))
+            if (comp.TargetPuller is not { } puller || !Exists(puller))
             {
                 RemComp<CEZLevelPullingTransitionComponent>(uid);
                 continue;

@@ -82,10 +82,11 @@ public abstract class SharedFloatingVisualizerSystem : EntitySystem
             if (transform.GridUid != args.ChangedGridIndex)
                 continue;
 
-            floating.CanFloat = !args.HasGravity;
+            // Pirate: multiz — AND with previous value so the z-gravity-from-below veto set by CanFloat() survives.
+            floating.CanFloat = floating.CanFloat && !args.HasGravity;
             Dirty(uid, floating);
 
-            if (!args.HasGravity)
+            if (floating.CanFloat)
                 FloatAnimation(uid, floating.Offset, floating.AnimationKey, floating.AnimationTime);
         }
     }

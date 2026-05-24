@@ -48,6 +48,7 @@ public sealed class FireControlNavControl : BaseShuttleControl
 
     private List<Entity<MapGridComponent>> _grids = new();
     private readonly HashSet<EntityUid> _zLevelGrids = new(); // Pirate: multiz — marks grids pulled from adjacent z-layers so we can dim them.
+    private List<Entity<MapGridComponent>> _adjGrids = new(); // Pirate: multiz — reused per-frame scratch for adjacent-z grid query.
 
     #region Mono
 
@@ -261,9 +262,9 @@ public sealed class FireControlNavControl : BaseShuttleControl
                 if (!EntManager.TryGetComponent<MapComponent>(adjMap.Value, out var adjMapComp))
                     continue;
 
-                var adjGrids = new List<Entity<MapGridComponent>>();
-                _mapManager.FindGridsIntersecting(adjMapComp.MapId, queryBox, ref adjGrids, approx: true, includeMap: false);
-                foreach (var g in adjGrids)
+                _adjGrids.Clear();
+                _mapManager.FindGridsIntersecting(adjMapComp.MapId, queryBox, ref _adjGrids, approx: true, includeMap: false);
+                foreach (var g in _adjGrids)
                 {
                     _zLevelGrids.Add(g.Owner);
                     _grids.Add(g);

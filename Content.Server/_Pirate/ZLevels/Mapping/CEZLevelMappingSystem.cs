@@ -39,6 +39,9 @@ public sealed class CEZLevelMappingSystem : EntitySystem
 
             if (hasInitializedMaps)
                 _map.InitializeMap(ent.Owner);
+            // Else: this map and all peers are still pre-init. Components from
+            // args.Network.Comp.ZLevels are deliberately deferred — OnMapInit will add them once
+            // the map initializes naturally.
         }
     }
 

@@ -232,9 +232,11 @@ namespace Content.Server.Shuttles.Systems
             if (!args.Anchored)
             {
                 Undock(entity);
+                return;
             }
 
-            _console.RefreshShuttleConsoles(); // Pirate: multiz
+            // Pirate: multiz — anchoring path only; unanchoring is covered by Undock's own refresh.
+            _console.RefreshShuttleConsoles();
         }
 
         private void OnDockingReAnchor(Entity<DockingComponent> entity, ref ReAnchorEvent args)

@@ -51,12 +51,6 @@ public sealed class CEAddMapAboveZNetworkCommand : LocalizedEntityCommands
 
     public override void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        if (shell.Player is not { } player)
-        {
-            shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
-            return;
-        }
-
         if (args.Length != 2)
         {
             shell.WriteError(Loc.GetString("shell-wrong-arguments-number"));
