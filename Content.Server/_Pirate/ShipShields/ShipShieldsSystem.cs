@@ -99,7 +99,7 @@ public sealed partial class ShipShieldsSystem : EntitySystem
                 ClearShields(emitter);
                 emitter.Active = false;
                 var filter = _station.GetInOwningStation(uid);
-                _audio.PlayGlobal(emitter.PowerDownSound, filter, true, emitter.PowerUpSound.Params);
+                _audio.PlayGlobal(emitter.PowerDownSound, filter, true, emitter.PowerDownSound.Params);
             }
             else if (emitter.Active)
             {

@@ -224,11 +224,17 @@ public sealed partial class ScalingViewport
         {
             viewEntity = _player.LocalEntity.Value;
             if (!_xformQuery.Value.TryComp(viewEntity, out playerXform))
+            {
+                viewport.Render();
                 return;
+            }
         }
 
         if (playerXform.MapUid is null)
+        {
+            viewport.Render();
             return;
+        }
 
         var visibleBelow = Math.Clamp(
             _cfg.GetCVar(CCVars.CEZLevelsVisibleBelow),

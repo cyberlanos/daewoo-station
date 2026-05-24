@@ -107,7 +107,10 @@ public sealed class CEZLevelPullingSystem : EntitySystem
         transComp.TransferAttempted = false;
 
         var distance = Vector2.Distance(transComp.StartPosition, transComp.TargetPosition);
-        var duration = TimeSpan.FromSeconds(Math.Max(0.25f, distance / transComp.TransitionSpeed));
+        var safeSpeed = float.IsFinite(transComp.TransitionSpeed) && transComp.TransitionSpeed > 0f
+            ? transComp.TransitionSpeed
+            : 1f;
+        var duration = TimeSpan.FromSeconds(Math.Max(0.25f, distance / safeSpeed));
         transComp.NextTransition = _timing.CurTime + duration + TimeSpan.FromSeconds(0.75f);
 
         Dirty(pulledEntity, transComp);

@@ -277,7 +277,7 @@ public partial class NavMapControl : MapGridControl
         _ceZLevelSelectorPanel.Visible = true;
         _ceZLevelSelectorRow.AddChild(new Label
         {
-            Text = "Z:",
+            Text = Loc.GetString("pinpointer-z-label"),
             VerticalAlignment = VAlignment.Center,
             Margin = new Thickness(0f, 0f, 4f, 0f),
         });

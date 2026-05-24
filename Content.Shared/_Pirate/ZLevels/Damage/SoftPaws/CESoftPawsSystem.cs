@@ -22,6 +22,10 @@ public sealed class CESoftPawsSystem : EntitySystem
 
     private void OnFallingDamageCalculate(Entity<CESoftPawsComponent> ent, ref CEZFallingDamageCalculateEvent args)
     {
+        // Event also fires on landed-on entities; soft paws only apply to the faller's own legs.
+        if (ent.Owner != args.Fallen)
+            return;
+
         if (_standingState.IsDown(ent.Owner))
             return;
 

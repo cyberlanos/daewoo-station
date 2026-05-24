@@ -7,12 +7,14 @@ using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Actions;
 using Content.Shared.Maps;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 public abstract partial class CESharedZLevelsSystem
 {
     [Dependency] protected readonly ITileDefinitionManager TilDefMan = default!;
+    [Dependency] private readonly IMapManager _mapMan = default!;
     private void InitView()
     {
         SubscribeLocalEvent<CEZLevelViewerComponent, MoveEvent>(OnViewerMove);
@@ -58,10 +60,14 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryMapUp(currentMapUid.Value, out var mapAboveUid))
             return false;
 
-        if (!_gridQuery.TryComp(mapAboveUid.Value, out var mapAboveGrid))
+        // TryMapUp returns the *map* entity, not a grid. Resolve the grid at the entity's world
+        // position on the above map so we can sample the actual tile above.
+        var worldPos = _transform.GetWorldPosition(ent);
+        var aboveMapId = Transform(mapAboveUid.Value.Owner).MapID;
+        if (!_mapMan.TryFindGridAt(aboveMapId, worldPos, out var aboveGridUid, out var aboveGrid))
             return false;
 
-        if (!_map.TryGetTileRef(mapAboveUid.Value, mapAboveGrid, _transform.GetWorldPosition(ent), out var tileRef))
+        if (!_map.TryGetTileRef(aboveGridUid, aboveGrid, worldPos, out var tileRef))
             return false;
 
         var tileDef = (ContentTileDefinition)TilDefMan[tileRef.Tile.TypeId];
