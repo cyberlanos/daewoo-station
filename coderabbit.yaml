@@ -1,0 +1,8 @@
+reviews:
+  path_filters:
+    - "!Resources/Maps/**"
+    - "!Resources/Prototypes/_Pirate/ZLevels/**"
+    - "!**/meta.json"
+    - "!**/*.swsl"
+    - "!**/*.ftl"
+    - "!**/*.yml"
