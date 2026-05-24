@@ -50,6 +50,13 @@ public sealed class CEZLevelLadderSystem : EntitySystem
         SubscribeLocalEvent<CEZLevelLadderComponent, RadialSelectorSelectedMessage>(OnRadialSelected);
         SubscribeLocalEvent<CEZLevelLadderComponent, CEZLevelLadderClimbUpDoAfterEvent>(OnClimbUpDoAfter);
         SubscribeLocalEvent<CEZLevelLadderComponent, CEZLevelLadderClimbDownDoAfterEvent>(OnClimbDownDoAfter);
+        SubscribeLocalEvent<EntityTerminatingEvent>(OnEntityTerminating);
+    }
+
+    private void OnEntityTerminating(ref EntityTerminatingEvent ev)
+    {
+        _nextClimb.Remove(ev.Entity.Owner);
+        _activeClimbs.Remove(ev.Entity.Owner);
     }
 
     private void OnOpenAttempt(Entity<CEZLevelLadderComponent> ent, ref ActivatableUIOpenAttemptEvent args)

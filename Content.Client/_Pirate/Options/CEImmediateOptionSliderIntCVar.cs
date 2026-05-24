@@ -91,7 +91,7 @@ public sealed class CEImmediateOptionSliderIntCVar : BaseOption
 
     public override bool IsModifiedFromDefault()
     {
-        return Value != _cVar.DefaultValue;
+        return Value != Math.Clamp(_cVar.DefaultValue, _minValue, _maxValue);
     }
 
     private void UpdateLabelValue()

@@ -30,7 +30,9 @@ public sealed partial class AtmosphereSystem
             if (gridA.Id > gridB.Id)
                 return new ZAtmosTilePair(keyB, keyA);
 
-            return tileA.GetHashCode() <= tileB.GetHashCode()
+            // Same grid: deterministic lexicographic tile order so the pair is canonical.
+            var aFirst = tileA.X < tileB.X || (tileA.X == tileB.X && tileA.Y <= tileB.Y);
+            return aFirst
                 ? new ZAtmosTilePair(keyA, keyB)
                 : new ZAtmosTilePair(keyB, keyA);
         }

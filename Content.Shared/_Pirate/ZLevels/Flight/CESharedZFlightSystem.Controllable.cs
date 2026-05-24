@@ -112,7 +112,8 @@ public abstract partial class CESharedZFlightSystem
                     CancelDuplicate = true,
                 };
 
-                _doAfter.TryStartDoAfter(doAfter);
+                if (!_doAfter.TryStartDoAfter(doAfter))
+                    StopFlightVisuals(ent.Owner);
             }
             else
             {

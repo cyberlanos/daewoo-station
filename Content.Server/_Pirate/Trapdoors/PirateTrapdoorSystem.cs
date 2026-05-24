@@ -79,9 +79,9 @@ public sealed class PirateTrapdoorSystem : EntitySystem
         if (!args.IsInDetailsRange)
             return;
 
-        args.PushText(ent.Comp.Open
-            ? "The trapdoor is open, leaving a clear drop to the level below."
-            : "A thin wired seam outlines a linked trapdoor mechanism.");
+        args.PushText(Loc.GetString(ent.Comp.Open
+            ? "pirate-trapdoor-examine-open"
+            : "pirate-trapdoor-examine-closed"));
     }
 
     public bool Toggle(Entity<PirateTrapdoorComponent> ent)
