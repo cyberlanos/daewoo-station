@@ -39,13 +39,13 @@ public sealed class CEWeatherCommand : LocalizedCommands
         if (!NetEntity.TryParse(args[0], out var targetNet) ||
             !_entities.TryGetEntity(targetNet, out target))
         {
-            shell.WriteError($"Unable to find entity {args[1]}");
+            shell.WriteError($"Unable to find entity {args[0]}");
             return;
         }
 
         if (!_entities.TryGetComponent<CEZLevelsNetworkComponent>(target, out var levelComp))
         {
-            shell.WriteError($"Target entity doesnt have CEZLevelsNetworkComponent {args[1]}");
+            shell.WriteError($"Target entity doesnt have CEZLevelsNetworkComponent {args[0]}");
             return;
         }
 
@@ -72,6 +72,7 @@ public sealed class CEWeatherCommand : LocalizedCommands
             else
             {
                 shell.WriteError(Loc.GetString("cmd-weather-error-wrong-time"));
+                return;
             }
         }
 

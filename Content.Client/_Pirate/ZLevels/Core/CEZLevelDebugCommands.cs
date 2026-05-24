@@ -155,9 +155,9 @@ public sealed class CEZDebugAllCommand : LocalizedCommands
 
         var boolText = enabled ? "true" : "false";
         var verboseText = enabled && verbose ? "true" : "false";
-        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugMovement.Name} {boolText}");
-        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugMovementVerbose.Name} {verboseText}");
-        shell.RemoteExecuteCommand($"sudo cvar {SharedCCVars.CEDebugStairs.Name} {boolText}");
+        shell.RemoteExecuteCommand($"cvar {SharedCCVars.CEDebugMovement.Name} {boolText}");
+        shell.RemoteExecuteCommand($"cvar {SharedCCVars.CEDebugMovementVerbose.Name} {verboseText}");
+        shell.RemoteExecuteCommand($"cvar {SharedCCVars.CEDebugStairs.Name} {boolText}");
 
         shell.WriteLine($"Z-level debug logging {(enabled ? "enabled" : "disabled")} in {(verbose ? "full" : "slim")} mode on client; matching server cvars requested remotely.");
     }

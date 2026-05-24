@@ -80,6 +80,7 @@ public sealed partial class CEZLevelsSystem
         catch (Exception e)
         {
             Log.Error($"LinkNetworkGrids crashed: {e}");
+            success = false;
         }
 
         return success;

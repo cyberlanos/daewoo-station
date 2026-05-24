@@ -60,9 +60,6 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         if (!TryComp<SpriteComponent>(ent, out var sprite))
             return;
 
-        if (sprite.SnapCardinals)
-            return;
-
         ent.Comp.NoRotDefault = sprite.NoRotation;
         ent.Comp.DrawDepthDefault = sprite.DrawDepth;
         ent.Comp.SpriteOffsetDefault = sprite.Offset;
@@ -102,12 +99,11 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         var query2 = EntityQueryEnumerator<StaminaComponent, SpriteComponent, CEZPhysicsComponent>();
         while (query2.MoveNext(out var uid, out var stamina, out var sprite, out var zPhys))
         {
-            // Only update if animation is running
             if (!_animation.HasRunningAnimation(uid, StaminaSystem.StaminaAnimationKey))
                 continue;
 
-            // Update the base offset to track changes made by other systems
-            stamina.StartOffset = zPhys.SpriteOffsetDefault;
+            // Track the live sprite position (including z-level shift), not the static default.
+            stamina.StartOffset = sprite.Offset;
         }
 
         var itemQuery = EntityQueryEnumerator<CEZItemPhysicsComponent, SpriteComponent>();

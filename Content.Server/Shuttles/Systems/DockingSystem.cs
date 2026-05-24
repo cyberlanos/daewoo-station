@@ -234,10 +234,7 @@ namespace Content.Server.Shuttles.Systems
                 Undock(entity);
             }
 
-            // Pirate: dock-refresh
-            // Anchoring/unanchoring a docking port must repush the BUI state so consoles show the new dock list without needing a respawn.
-            // Undock already refreshes via UndockEvent, but only when the port was actually docked; placement/removal of an undocked port otherwise wouldn't update.
-            _console.RefreshShuttleConsoles();
+            _console.RefreshShuttleConsoles(); // Pirate: multiz
         }
 
         private void OnDockingReAnchor(Entity<DockingComponent> entity, ref ReAnchorEvent args)

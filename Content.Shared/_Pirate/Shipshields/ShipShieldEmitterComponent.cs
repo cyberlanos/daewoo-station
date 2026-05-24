@@ -9,17 +9,9 @@ namespace Content.Shared._Pirate.ShipShields;
 [RegisterComponent]
 public sealed partial class ShipShieldEmitterComponent : Component
 {
-    /// <summary>
-    /// All shield bubbles this emitter currently owns, keyed by the grid each one protects.
-    /// A z-linked emitter shields every peer grid in its <c>CEZLinkedGridComponent</c> network,
-    /// so this is a 1:N map even though a single grid only ever has one entry.
-    /// </summary>
+    /// <summary>Shield bubbles owned by this emitter, keyed by the grid each protects.</summary>
     public Dictionary<EntityUid, EntityUid> Shields = new();
 
-    /// <summary>
-    /// True while the emitter is producing shields (i.e. <see cref="Shields"/> is non-empty
-    /// or should be). Used to gate the per-tick reconciliation pass.
-    /// </summary>
     public bool Active;
 
     [DataField]
@@ -60,12 +52,7 @@ public sealed partial class ShipShieldEmitterComponent : Component
 
     public float OverloadAccumulator = 0f;
 
-    /// <summary>
-    /// The grid in the current shielded peer set whose AABB is being used as the shape
-    /// template for every shield bubble this emitter owns. Stored so we can detect when the
-    /// largest grid in the network changes and re-spawn all bubbles to keep them visually
-    /// uniform across z-layers.
-    /// </summary>
+    /// <summary>Shape-template grid for the current shielded peer set; rebuild on change.</summary>
     public EntityUid? TemplateGrid;
 
     /// <summary>

@@ -407,9 +407,10 @@ public sealed partial class FireControlSystem : EntitySystem
             return;
 
         var targetMapUid = _mapManager.GetMapEntityId(targetMap.MapId);
-        // Resolve target depth by matching the map's grids against the server-grid network so
-        // we can reject guns whose own deck is too far from the picked layer.
+        // Resolve target depth via the console's z-network; null = not in network, reject all guns.
         var targetDepth = ResolveLayerDepthForMap(targetMap.MapId, component);
+        if (targetDepth is null)
+            return;
 
         foreach (var weapon in weapons)
         {
@@ -437,7 +438,7 @@ public sealed partial class FireControlSystem : EntitySystem
             // Per-gun z-reach gate: skip guns whose own deck is too far from the picked layer.
             var gunDepth = GetGridDepth(_xform.GetGrid(localWeapon)) ?? 0;
             var reach = TryComp<CEZGunLayerReachComponent>(localWeapon, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach;
-            if (Math.Abs(gunDepth - targetDepth) > reach)
+            if (Math.Abs(gunDepth - targetDepth.Value) > reach)
                 continue;
 
             // Translate the target onto the gun's map. Z-synced peer grids share local
@@ -533,26 +534,23 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Resolves the z-depth of a given map by looking up the console-grid's z-network maps. Uses
-    /// the network's <c>ZLevels</c> dict so empty-space layers (which have a map but no peer
-    /// grid) resolve correctly. Returns <c>0</c> if the target map isn't in the network.
+    /// Resolves the z-depth of a given map within the console's z-network. Returns null if the
+    /// target map isn't in the network so callers can reject fire requests rather than collide
+    /// with a legitimate depth of 0.
     /// </summary>
-    private int ResolveLayerDepthForMap(MapId mapId, FireControlServerComponent serverComp)
+    private int? ResolveLayerDepthForMap(MapId mapId, FireControlServerComponent serverComp)
     {
         if (serverComp.ConnectedGrid is not { } hostGrid)
-            return 0;
+            return null;
 
         var hostMapId = Transform(hostGrid).MapID;
         var hostDepth = GetGridDepth(hostGrid) ?? 0;
         if (hostMapId == mapId)
             return hostDepth;
 
-        // Walk the network in both directions from the host map looking for the requested
-        // target map. Uses TryMapOffset (same path as the radar overlay) which is reliable;
-        // reading the network's ZLevels directly was racing against grid-sync init.
         var hostMapUid = Transform(hostGrid).MapUid;
         if (hostMapUid is not { } hostMap)
-            return 0;
+            return null;
 
         var targetMapUid = _mapManager.GetMapEntityId(mapId);
         const int probeRange = 16;
@@ -572,7 +570,7 @@ public sealed partial class FireControlSystem : EntitySystem
                 return hostDepth - offset;
         }
 
-        return 0;
+        return null;
     }
 
     /// <summary>

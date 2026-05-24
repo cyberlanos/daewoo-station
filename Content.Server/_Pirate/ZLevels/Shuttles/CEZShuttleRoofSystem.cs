@@ -12,12 +12,8 @@ using Robust.Shared.Map.Components;
 namespace Content.Server._Pirate.ZLevels.Shuttles;
 
 /// <summary>
-/// Generates a temporary "roof" grid one z-level above a shuttle's topmost layer whenever the
-/// shuttle is positioned in a z-network that has more levels above it. The roof is a plating-only
-/// silhouette of the topmost shuttle grid, linked as a peer in the shuttle's
-/// <see cref="CEZLinkedGridComponent"/> so it follows the shuttle through movement and FTL via the
-/// existing grid-sync pipeline. The roof is cleaned up on FTL departure and when no level above
-/// exists at the arrival point.
+/// Spawns a subfloor-silhouette roof grid above a shuttle's topmost layer when a z-level above exists,
+/// linked as a peer so it follows the shuttle. Cleaned up on FTL departure or when no level above exists.
 /// </summary>
 public sealed class CEZShuttleRoofSystem : EntitySystem
 {
@@ -34,8 +30,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
     {
         base.Initialize();
 
-        // FTL events are subscribed broadcast because ShuttleSystem already owns the per-ShuttleComponent
-        // subscription for these and Robust forbids duplicate (component, event) pairs across systems.
+        // Broadcast subs; ShuttleSystem already owns the per-ShuttleComponent FTL subscription.
         SubscribeLocalEvent<FTLCompletedEvent>(OnFTLCompleted);
         SubscribeLocalEvent<FTLStartedEvent>(OnFTLStarted);
         SubscribeLocalEvent<ShuttleComponent, MapInitEvent>(OnShuttleMapInit);
@@ -53,8 +48,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
     {
         if (!HasComp<ShuttleComponent>(args.Entity))
             return;
-        // In hyperspace each peer is on its own isolated FTL map, so no upper level exists.
-        // Tear the roof down before departure; we will regenerate it at the destination if needed.
+        // Hyperspace puts each peer on its own FTL map; rebuild at destination.
         RemoveRoof(args.Entity);
     }
 
@@ -68,10 +62,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         RemoveRoof(ent);
     }
 
-    /// <summary>
-    /// Ensures the shuttle has a correctly-placed roof grid above its topmost layer when needed,
-    /// creating, repositioning, or removing as appropriate for its current z-network context.
-    /// </summary>
     public void EnsureRoof(EntityUid shuttleUid)
     {
         if (!TryFindTopShuttleGrid(shuttleUid, out var topGrid, out var topDepth))
@@ -86,7 +76,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
         if (!_zLevels.TryMapOffset(topMapUid, 1, out var aboveMap))
         {
-            // No z-level exists above the topmost shuttle layer, so the shuttle is already sealed.
             RemoveRoof(shuttleUid);
             return;
         }
@@ -97,9 +86,13 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         EntityUid roofGrid;
         if (TryFindExistingRoof(shuttleUid, out var existingRoof))
         {
-            if (Transform(existingRoof).MapUid != aboveMapUid)
+            var existingDepth = TryComp<CEZLinkedGridComponent>(existingRoof, out var existingLinked)
+                ? existingLinked.Depth
+                : (int?)null;
+
+            if (Transform(existingRoof).MapUid != aboveMapUid || existingDepth != roofDepth)
             {
-                // The shuttle moved to a new z-network; the old roof is stranded on a different map.
+                // Stranded on a different z-network or linked at a stale depth; rebuild.
                 RemoveRoofGrid(existingRoof);
                 roofGrid = CreateRoofGrid(aboveMapUid, topGrid, shuttleUid);
                 LinkRoofToShuttle(shuttleUid, roofGrid, roofDepth);
@@ -119,9 +112,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         CopyTiles(topGrid, roofGrid);
     }
 
-    /// <summary>
-    /// Removes any roof currently associated with the given shuttle root grid.
-    /// </summary>
     public void RemoveRoof(EntityUid shuttleUid)
     {
         if (TryFindExistingRoof(shuttleUid, out var roof))
@@ -139,7 +129,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         topDepth = linked.Depth;
         foreach (var (depth, peer) in linked.PeerGrids)
         {
-            // Skip our own roof so we never treat it as the source for itself.
             if (HasComp<CEZShuttleRoofComponent>(peer))
                 continue;
 
@@ -185,10 +174,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         return gridUid;
     }
 
-    /// <summary>
-    /// Snaps the roof grid onto the topmost shuttle grid's transform so the first frame is aligned
-    /// before the regular grid-sync update kicks in.
-    /// </summary>
     private void SyncRoofTransform(EntityUid topShuttleGrid, EntityUid roofGrid)
     {
         var topXform = Transform(topShuttleGrid);
@@ -197,11 +182,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         _transform.SetLocalPositionRotation(roofGrid, topXform.LocalPosition, topXform.LocalRotation, roofXform);
     }
 
-    /// <summary>
-    /// Mirrors the topmost shuttle grid's tile silhouette onto the roof using subfloor tiles.
-    /// Floor tiles fall back to their <see cref="ContentTileDefinition.BaseTurf"/> so the roof
-    /// never carries the surface tile placed on top of a plating — only the structural base.
-    /// </summary>
     private void CopyTiles(EntityUid topGrid, EntityUid roofGrid)
     {
         if (!TryComp<MapGridComponent>(topGrid, out var topMapGrid) ||
@@ -224,13 +204,12 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
             if (sourceDef.IsSubFloor)
             {
-                // Plating / lattice / etc. is the structural base — copy as-is.
                 targetDef = sourceDef;
             }
             else if (!string.IsNullOrEmpty(sourceDef.BaseTurf) &&
                      _tileDefMan.TryGetDefinition(sourceDef.BaseTurf, out var baseDef))
             {
-                // Floor tiles drop down to the subfloor they sit on.
+                // Drop floor tiles to their subfloor.
                 targetDef = baseDef;
             }
             else
@@ -241,8 +220,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
             tilesToSet.Add((tileRef.GridIndices, new Tile(targetDef.TileId)));
         }
 
-        // Clear any roof tiles that no longer exist on the source so resyncs after shuttle damage
-        // or construction don't leave orphan plating floating in the air above the shuttle.
+        // Clear orphan roof tiles whose source disappeared (shuttle damage/deconstruction).
         foreach (var existingTile in _mapSystem.GetAllTiles(roofGrid, roofMapGrid))
         {
             if (!sourcePositions.Contains(existingTile.GridIndices))
@@ -253,10 +231,6 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
             _mapSystem.SetTiles(roofGrid, roofMapGrid, tilesToSet);
     }
 
-    /// <summary>
-    /// Adds the roof to the shuttle's <see cref="CEZLinkedGridComponent"/> peer graph so the
-    /// existing grid-sync pipeline moves it together with the shuttle.
-    /// </summary>
     private void LinkRoofToShuttle(EntityUid shuttleUid, EntityUid roofUid, int roofDepth)
     {
         var shuttleLinked = EnsureComp<CEZLinkedGridComponent>(shuttleUid);
@@ -288,9 +262,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private void RemoveRoofGrid(EntityUid roofUid)
     {
-        // Pre-emptively drop the roof from peers and dirty them; CEZLinkedGridComponent's own
-        // ComponentRemove handler does the same removal but doesn't dirty, which would let
-        // clients see a stale peer entry pointing at a deleted grid.
+        // Drop and dirty peers ourselves; CEZLinkedGridComponent's removal handler doesn't dirty.
         if (TryComp<CEZLinkedGridComponent>(roofUid, out var roofLinked))
         {
             var roofDepth = roofLinked.Depth;

@@ -41,6 +41,7 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
         SubscribeLocalEvent<CEWeightlessZLevelMoverComponent, CEZLevelActionUp>(OnZLevelUp);
         SubscribeLocalEvent<CEWeightlessZLevelMoverComponent, CEZLevelActionDown>(OnZLevelDown);
         SubscribeLocalEvent<CEZPhysicsComponent, ComponentShutdown>(OnZPhysicsShutdown);
+        SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentRemove>(OnActiveZPhysicsRemove);
     }
 
     public override void Update(float frameTime)
@@ -178,6 +179,7 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
             return false;
 
         if (!HasComp<CEZPhysicsComponent>(uid) ||
+            !HasComp<CEActiveZPhysicsComponent>(uid) ||
             !TryComp<PhysicsComponent>(uid, out var physics))
         {
             return false;
@@ -203,6 +205,11 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
     }
 
     private void OnZPhysicsShutdown(Entity<CEZPhysicsComponent> ent, ref ComponentShutdown args)
+    {
+        RemCompDeferred<CEWeightlessZLevelMoverComponent>(ent);
+    }
+
+    private void OnActiveZPhysicsRemove(Entity<CEActiveZPhysicsComponent> ent, ref ComponentRemove args)
     {
         RemCompDeferred<CEWeightlessZLevelMoverComponent>(ent);
     }

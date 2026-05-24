@@ -44,11 +44,7 @@ public sealed class ShipShieldOverlay : Overlay
 
     protected override void Draw(in OverlayDrawArgs args)
     {
-        // Z-stack: only draw the shield bubble for the player's own deck. The physics fixture and the
-        // ShipShieldVisualsComponent stay alive on every peer grid (so projectile deflection and any
-        // off-ship displays like radar/monitors keep working from their separate data paths), but the
-        // visible bubble overlay would otherwise render once per z-pass and look messy when stacked
-        // through transparent floors.
+        // Only draw the bubble on the player's own deck; physics/visuals data still exist on every peer.
         var playerXform = _entManager.GetComponentOrNull<TransformComponent>(_player.LocalEntity);
         if (playerXform == null || playerXform.MapID != args.MapId)
             return;
