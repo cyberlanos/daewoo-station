@@ -6,9 +6,13 @@
 using System;
 using System.Linq;
 using Content.Server._Pirate.Photo;
+using Content.Server.Atmos.EntitySystems;
 using Content.Server.GameTicking;
 using Content.Server.Popups;
 using Content.Shared._Pirate.RoundEnd;
+using Content.Shared.Atmos;
+using Content.Shared.Damage;
+using Content.Shared.Destructible;
 using Content.Shared.Examine;
 using Content.Shared.GameTicking;
 using Content.Shared.Tag;
@@ -29,6 +33,7 @@ public sealed class PhotoAlbumSystem : EntitySystem
     [Dependency] private readonly AudioSystem _audio = default!;
     [Dependency] private readonly TagSystem _tags = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
+    [Dependency] private readonly FlammableSystem _flammable = default!;
     private readonly HashSet<EntityUid> _unsignedAutoSignAlbums = new();
     private readonly Dictionary<Guid, byte[]> _roundEndImageData = new();
 
@@ -47,6 +52,10 @@ public sealed class PhotoAlbumSystem : EntitySystem
         SubscribeLocalEvent<PhotoAlbumComponent, ComponentShutdown>(OnPhotoAlbumShutdown);
         SubscribeLocalEvent<PhotoAlbumComponent, EntInsertedIntoContainerMessage>(OnPhotoAlbumInserted);
         SubscribeLocalEvent<PhotoAlbumComponent, EntRemovedFromContainerMessage>(OnPhotoAlbumRemoved);
+
+        SubscribeLocalEvent<PhotoAlbumProtectionComponent, BeforeDamageChangedEvent>(OnProtectedPhotoDamaged);
+        SubscribeLocalEvent<PhotoAlbumProtectionComponent, DestructionAttemptEvent>(OnProtectedPhotoDestruction);
+        SubscribeLocalEvent<PhotoAlbumProtectionComponent, IgnitedEvent>(OnProtectedPhotoIgnited);
     }
 
     private void OnPhotoAlbumImageRequest(PhotoAlbumImageRequestEvent ev, EntitySessionEventArgs args)
@@ -62,6 +71,7 @@ public sealed class PhotoAlbumSystem : EntitySystem
     private void OnPhotoAlbumStartup(Entity<PhotoAlbumComponent> entity, ref ComponentStartup args)
     {
         RefreshUnsignedAutoSignTracking(entity.Owner);
+        ProtectStoredPhotos(entity);
 
         if (entity.Comp.IsSigned)
             UpdateSignedAlbumName(entity);
@@ -84,12 +94,59 @@ public sealed class PhotoAlbumSystem : EntitySystem
 
     private void OnPhotoAlbumInserted(EntityUid uid, PhotoAlbumComponent component, EntInsertedIntoContainerMessage args)
     {
+        if (args.Container.ID == component.ContainerId)
+            ProtectStoredPhoto(args.Entity);
+
         RefreshUnsignedAutoSignTracking(uid, component);
     }
 
     private void OnPhotoAlbumRemoved(EntityUid uid, PhotoAlbumComponent component, EntRemovedFromContainerMessage args)
     {
+        if (args.Container.ID == component.ContainerId)
+            ReleaseStoredPhoto(args.Entity);
+
         RefreshUnsignedAutoSignTracking(uid, component);
+    }
+
+    private void OnProtectedPhotoDamaged(Entity<PhotoAlbumProtectionComponent> entity, ref BeforeDamageChangedEvent args)
+    {
+        args.Cancelled = true;
+    }
+
+    private void OnProtectedPhotoDestruction(Entity<PhotoAlbumProtectionComponent> entity, ref DestructionAttemptEvent args)
+    {
+        args.Cancel();
+    }
+
+    private void OnProtectedPhotoIgnited(Entity<PhotoAlbumProtectionComponent> entity, ref IgnitedEvent args)
+    {
+        _flammable.Extinguish(entity.Owner);
+    }
+
+    private void ProtectStoredPhotos(Entity<PhotoAlbumComponent> entity)
+    {
+        if (!_container.TryGetContainer(entity.Owner, entity.Comp.ContainerId, out var container))
+            return;
+
+        foreach (var photo in container.ContainedEntities)
+        {
+            ProtectStoredPhoto(photo);
+        }
+    }
+
+    private void ProtectStoredPhoto(EntityUid photo)
+    {
+        _flammable.Extinguish(photo);
+        EnsureComp<PhotoAlbumProtectionComponent>(photo);
+    }
+
+    private void ReleaseStoredPhoto(EntityUid photo)
+    {
+        if (!HasComp<PhotoAlbumProtectionComponent>(photo))
+            return;
+
+        _flammable.Extinguish(photo);
+        RemComp<PhotoAlbumProtectionComponent>(photo);
     }
 
     private void RefreshUnsignedAutoSignTracking(EntityUid uid, PhotoAlbumComponent? photoAlbum = null)

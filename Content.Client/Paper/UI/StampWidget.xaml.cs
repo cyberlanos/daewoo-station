@@ -33,7 +33,7 @@ public sealed partial class StampWidget : PanelContainer
 
     public StampDisplayInfo StampInfo {
         set {
-            // Goobstation - start
+            // Goobstation + Pirate - start
 
            // StampedByLabel.Text = Loc.GetString(value.StampedName);
            // StampedByLabel.FontColorOverride = value.StampedColor;
@@ -44,7 +44,7 @@ public sealed partial class StampWidget : PanelContainer
            {
                var resCache = IoCManager.Resolve<IResourceCache>();
                var borderImage = resCache.GetResource<TextureResource>(
-                   "/Textures/_Goobstation/Interface/Paper/Stamps/" + icon + ".png");
+                   "/Textures/_Pirate/Interface/Paper/Stamps/" + icon + ".png"); // Pirate (!)
 
                _borderTexture = new StyleBoxTexture { Texture = borderImage };
                PanelOverride = _borderTexture;

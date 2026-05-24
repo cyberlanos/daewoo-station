@@ -355,10 +355,10 @@
     weight: 5
     duration: 1
     minimumPlayers: 10
-    eventType: Chaotic # Goobstation
+    eventType: FriendlySpawn # Pirate - closet skeletons are crew-aligned.
   # Goobstation
   - type: GameRule
-    chaosScore: 60
+    chaosScore: -10 # Pirate - friendly crew-aligned spawn.
   - type: RandomEntityStorageSpawnRule
     prototype: MobSkeletonCloset
 

@@ -87,6 +87,7 @@
     - fullstatereset
     - dumpentities
     - showaccessreaders
+    - showaudiomuffle # Pirate: audio muffle
 
 - Flags: MAPPING
   Commands:

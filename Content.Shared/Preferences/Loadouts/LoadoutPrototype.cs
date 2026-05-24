@@ -106,6 +106,18 @@ public sealed partial class LoadoutPrototype : IPrototype, IEquipmentLoadout
     [DataField]
     public EntProtoId? DummyEntity;
 
+    #region Pirate: loadout
+    /// <summary>
+    /// Whether this loadout prototype supports custom color tinting.
+    /// </summary>
+    /// <remarks>
+    /// This boolean capability flag does not store a tint value; the selected loadout's <see cref="Loadout.CustomColorTint"/>
+    /// string holds the actual custom color when this is true. When false, the prototype uses its predefined colors.
+    /// </remarks>
+    [DataField]
+    public bool CustomColorTint;
+    #endregion
+
     [DataField]
     public ProtoId<StartingGearPrototype>? StartingGear;
 

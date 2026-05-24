@@ -386,6 +386,7 @@ namespace Content.Server.Database
                         groupLoadouts.Add(new Loadout()
                         {
                             Prototype = profLoadout.LoadoutName,
+                            CustomColorTint = profLoadout.CustomColorTint, // Pirate: loadout
                         });
                     }
                 }
@@ -502,6 +503,7 @@ namespace Content.Server.Database
                         profileGroup.Loadouts.Add(new ProfileLoadout()
                         {
                             LoadoutName = loadout.Prototype,
+                            CustomColorTint = loadout.CustomColorTint, // Pirate: loadout
                         });
                     }
 

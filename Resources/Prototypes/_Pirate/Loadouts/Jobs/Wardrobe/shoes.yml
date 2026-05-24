@@ -7,20 +7,6 @@
 
 
 - type: loadout
-  id: WardrobeUnderSocksCoder
-  equipment:
-    shoes: ClothingUnderSocksCoder
-  groupBy: "ShoesOther"
-
-
-- type: loadout
-  id: WardrobeClothwrap
-  equipment:
-    shoes: ClothingShoesClothwrap
-  groupBy: "ShoesOther"
-
-
-- type: loadout
   id: WardrobeFlippers
   equipment:
     shoes: ClothingShoesFlippers

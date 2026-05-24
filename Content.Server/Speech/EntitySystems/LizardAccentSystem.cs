@@ -7,13 +7,18 @@
 using System.Text.RegularExpressions;
 using Content.Server.Speech.Components;
 using Content.Shared.Speech;
+using Robust.Shared.Random; // Pirate edit
 
 namespace Content.Server.Speech.EntitySystems;
 
 public sealed class LizardAccentSystem : EntitySystem
 {
-    private static readonly Regex RegexLowerS = new("s+");
-    private static readonly Regex RegexUpperS = new("S+");
+    // Pirate edit start
+    [Dependency] private readonly IRobustRandom _random = default!;
+
+    private static readonly Regex RegexLowerS = new("s+|с+|ш+|щ+|ц+|ч+");
+    private static readonly Regex RegexUpperS = new("S+|С+|Ш+|Щ+|Ц+|Ч+");
+    // Pirate edit end
     private static readonly Regex RegexInternalX = new(@"(\w)x");
     private static readonly Regex RegexLowerEndX = new(@"\bx([\-|r|R]|\b)");
     private static readonly Regex RegexUpperEndX = new(@"\bX([\-|r|R]|\b)");
@@ -29,9 +34,9 @@ public sealed class LizardAccentSystem : EntitySystem
         var message = args.Message;
 
         // hissss
-        message = RegexLowerS.Replace(message, "sss");
+        message = RegexLowerS.Replace(message, m => new string(m.Value[0], _random.Next(2, 4))); // Pirate edit
         // hiSSS
-        message = RegexUpperS.Replace(message, "SSS");
+        message = RegexUpperS.Replace(message, m => new string(m.Value[0], _random.Next(2, 4))); // Pirate edit
         // ekssit
         message = RegexInternalX.Replace(message, "$1kss");
         // ecks

@@ -8,13 +8,18 @@
 using System.Text.RegularExpressions;
 using Content.Server.Speech.Components;
 using Content.Shared.Speech;
+using Robust.Shared.Random; // Pirate edit
 
 namespace Content.Server.Speech.EntitySystems;
 
 public sealed class MothAccentSystem : EntitySystem
 {
-    private static readonly Regex RegexLowerBuzz = new Regex("z{1,3}");
-    private static readonly Regex RegexUpperBuzz = new Regex("Z{1,3}");
+    // Pirate edit start
+    [Dependency] private readonly IRobustRandom _random = default!;
+
+    private static readonly Regex RegexLowerBuzz = new("z+|з+|ж+");
+    private static readonly Regex RegexUpperBuzz = new("Z+|З+|Ж+");
+    // Pirate edit end
 
     public override void Initialize()
     {
@@ -27,9 +32,23 @@ public sealed class MothAccentSystem : EntitySystem
         var message = args.Message;
 
         // buzzz
-        message = RegexLowerBuzz.Replace(message, "zzz");
+        // // Pirate edit start
+        message = RegexLowerBuzz.Replace(message, m =>
+        {
+            var first = m.Value[0];
+            var count = _random.Next(2, 4);
+            if (first == 'ж') return "з" + new string('ж', count - 1);
+            return new string(first, count);
+        });
         // buZZZ
-        message = RegexUpperBuzz.Replace(message, "ZZZ");
+        message = RegexUpperBuzz.Replace(message, m =>
+        {
+            var first = m.Value[0];
+            var count = _random.Next(2, 4);
+            if (first == 'Ж') return "З" + new string('Ж', count - 1);
+            return new string(first, count);
+        });
+        // Pirate edit end
 
         args.Message = message;
     }

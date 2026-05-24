@@ -59,3 +59,7 @@ names-slasher-dataset-29 = Жахіття
 names-slasher-dataset-30 = Привид
 names-slasher-dataset-31 = Примара
 names-slasher-dataset-32 = Мара
+
+names-slasher-title-dataset-29 = Шкіряний
+names-slasher-title-dataset-30 = Мідвіч
+names-slasher-dataset-33 = Зуби

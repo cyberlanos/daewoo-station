@@ -65,17 +65,13 @@
     minimumPlayers: 15
     maxOccurrences: 2
     chaos:
-      Hostile: 40
-      Medical: 40
-      Death: 40
-    eventType: Chaotic
+      Friend: -10 # Pirate - closet skeletons are crew-aligned.
+    eventType: FriendlySpawn # Pirate
   - type: GameRule
-    chaosScore: 150
+    chaosScore: -10 # Pirate - friendly crew-aligned spawn.
   - type: RandomEntityStorageSpawnRule
     prototype: MobSkeletonCloset
-  - type: Tag
-    tags:
-      - MidroundAntag
+  # Pirate - no MidroundAntag tag; closet skeletons are crew-aligned.
 
 # Blob Midround
 - type: entity

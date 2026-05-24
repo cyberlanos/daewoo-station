@@ -7,6 +7,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Linq;
+using System.Collections.Generic; // Pirate: loadout
+using Content.Client._Pirate.Lobby.UI.Loadouts; // Pirate: loadout
 using Content.Shared.Clothing;
 using Content.Shared.Preferences;
 using Content.Shared.Preferences.Loadouts;
@@ -15,22 +17,17 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
-using System.Linq;
+using Robust.Shared.Utility; // Pirate: loadout
 
 namespace Content.Client.Lobby.UI.Loadouts;
 
 [GenerateTypedNameReferences]
 public sealed partial class LoadoutGroupContainer : BoxContainer
 {
-    private const string ClosedGroupMark = "▶";
-    private const string OpenedGroupMark = "▼";
-
-    /// <summary>
-    /// A dictionary that stores open groups
-    /// </summary>
-    private Dictionary<string, bool> _openedGroups = new();
-
     private readonly LoadoutGroupPrototype _groupProto;
+    private const string ClosedGroupMark = "+"; // Pirate: loadout
+    private const string OpenedGroupMark = "-"; // Pirate: loadout
+    private readonly Dictionary<string, bool> _openedGroups = new(); // Pirate: loadout
 
     public event Action<ProtoId<LoadoutPrototype>>? OnLoadoutPressed;
     public event Action<ProtoId<LoadoutPrototype>>? OnLoadoutUnpressed;
@@ -92,84 +89,32 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
             .Select(proto => proto!);
         // Pirate edit end - port frontier subgroups
 
-        /*
-         * Group the prototypes based on their GroupBy field.
-         * - If GroupBy is null or empty, fallback to grouping by the prototype ID itself.
-         * - The result is a dictionary where:
-         *   - The key is either GroupBy or ID (if GroupBy is not set).
-         *   - The value is the list of prototypes that belong to that group.
-         *
-         * This allows grouping loadouts into sub-categories within the group.
-         */
-        var groups = validProtos
-        .GroupBy(p => string.IsNullOrEmpty(p.GroupBy)
-                         ? p.ID
-                         : p.GroupBy)
-        .ToDictionary(g => g.Key, g => g.ToList());
+        #region Pirate: loadout
+        loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
+        var selectedIds = selected?.Select(entry => entry.Prototype).ToHashSet() ?? new HashSet<ProtoId<LoadoutPrototype>>();
+        var eligible = validProtos
+            .Select(proto =>
+            {
+                var enabled = loadout.IsValid(profile, session, proto.ID, collection, out var reason);
+                return (Prototype: proto, Enabled: enabled, Reason: reason);
+            })
+            .Where(entry => entry.Enabled || selectedIds.Contains(entry.Prototype.ID))
+            .OrderBy(entry => loadoutSystem.GetName(entry.Prototype))
+            .ToList();
 
-        foreach (var kvp in groups)
+        var iconRows = new GridContainer
         {
-            var protos = kvp.Value;
+            Columns = 8,
+            Margin = new Thickness(5, 0, 5, 5),
+        };
 
-            if (protos.Count > 1)
-            {
-                /*
-                 * Build the list of UI elements for each loadout prototype:
-                 * - For each prototype, create its corresponding LoadoutContainer UI element.
-                 * - Set HorizontalExpand to true so elements properly stretch in layout.
-                 * - Collect all UI elements into a list for further processing.
-                 */
-                var uiElements = protos
-                    .Select(proto =>
-                    {
-                        var elem = CreateLoadoutUI(proto, profile, loadout, session, collection, loadoutSystem);
-                        elem.HorizontalExpand = true;
-                        return elem;
-                    })
-                    .ToList();
-
-                /* 
-                * Determine which element should be displayed first: 
-                * - If any element is currently selected (its button is pressed), use it. 
-                * - Otherwise, fallback to the first element in the list. 
-                * 
-                * This moves the selected item outside of the sublist for better usability, 
-                * making it easier for players to quickly toggle loadout options (e.g. clothing, accessories) 
-                * without having to search inside expanded subgroups. 
-                */
-                var firstElement = uiElements.FirstOrDefault(e => e.Select.Pressed) ?? uiElements[0];
-
-                /*
-                 * Get all remaining elements except the first one:
-                 * - Use ReferenceEquals to ensure we exclude the exact instance used as firstElement.
-                 */
-                var otherElements = uiElements.Where(e => !ReferenceEquals(e, firstElement)).ToList();
-
-                firstElement.HorizontalExpand = true;
-                var subContainer = new SubLoadoutContainer()
-                {
-                    Visible = _openedGroups.GetValueOrDefault(kvp.Key, false)
-                };
-                var toggle = CreateToggleButton(kvp, firstElement, subContainer);
-
-                LoadoutsContainer.AddChild(firstElement);
-                LoadoutsContainer.AddChild(subContainer);
-
-                var subList = subContainer.Grid;
-                foreach (var proto in otherElements)
-                {
-                    subList.AddChild(proto);
-                }
-                var itemName = firstElement.Text ?? "";
-                UpdateSubGroupSelectedInfo(firstElement, itemName, subList);
-            }
-            else
-            {
-                LoadoutsContainer.AddChild(
-                    CreateLoadoutUI(protos[0], profile, loadout, session, collection, loadoutSystem)
-                );
-            }
+        foreach (var entry in eligible)
+        {
+            iconRows.AddChild(CreateLoadoutIcon(entry.Prototype, loadout, loadoutSystem, entry.Enabled, entry.Reason));
         }
+
+        LoadoutsContainer.AddChild(iconRows);
+        #endregion
     }
 
     private ToggleLoadoutButton CreateToggleButton(KeyValuePair<string, List<LoadoutPrototype>> kvp, LoadoutContainer firstElement, SubLoadoutContainer subContainer)
@@ -252,4 +197,28 @@ public sealed partial class LoadoutGroupContainer : BoxContainer
 
         return cont;
     }
+
+    #region Pirate: loadout
+    private LoadoutIconButton CreateLoadoutIcon(LoadoutPrototype proto, RoleLoadout loadout, LoadoutSystem loadoutSystem, bool enabled, FormattedMessage? reason)
+    {
+        loadout.SelectedLoadouts.TryGetValue(_groupProto.ID, out var selected);
+        var pressed = selected?.Any(e => e.Prototype == proto.ID) == true;
+
+        var icon = new LoadoutIconButton(proto, loadoutSystem.GetName(proto), reason: reason) // Pirate: loadout
+        {
+            Disabled = !enabled,
+            Pressed = pressed,
+        };
+
+        icon.OnPressed += args =>
+        {
+            if (args.Button.Pressed)
+                OnLoadoutPressed?.Invoke(proto.ID);
+            else
+                OnLoadoutUnpressed?.Invoke(proto.ID);
+        };
+
+        return icon;
+    }
+    #endregion
 }

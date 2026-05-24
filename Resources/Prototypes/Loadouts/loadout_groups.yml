@@ -323,6 +323,7 @@
   - CaptainHead
   - CaptainCap
   - CaptainCapcapSenior # goob
+  - CaptainBunnyears # Pirate
 
 - type: loadoutGroup
   id: CaptainJumpsuit
@@ -369,6 +370,7 @@
   minLimit: 0
   loadouts:
   - HoPHead
+  - HOPHeadBunnyears # Pirate
 
 - type: loadoutGroup
   id: HoPJumpsuit
@@ -434,6 +436,7 @@
   - MaroonMJ
   - QuarterzipJumpsuit
  # goob changes end
+  - UniformRat # Pirate
 
 - type: loadoutGroup
   id: PassengerFace
@@ -865,6 +868,7 @@
   loadouts:
   - QuartermasterHead
   - QuartermasterBeret
+  - QuartermasterHeadBunnyears # Pirate
 
 - type: loadoutGroup
   id: QuartermasterJumpsuit
@@ -976,6 +980,7 @@
   - ChiefEngineerHead
   - ChiefEngineerBeret
   - HatAwaria
+  - ChiefEngineerHeadBunnyears
 
 - type: loadoutGroup
   id: ChiefEngineerJumpsuit
@@ -1273,6 +1278,7 @@
   - HeadofSecurityHead
   - HeadofSecurityBeret
   - HeadofSecuritySpecialBeret # Goobstation
+  - HeadOfSecurityBunnyears # Pirate
 
 - type: loadoutGroup
   id: HeadofSecurityJumpsuit
@@ -1285,6 +1291,7 @@
   - HeadofSecurityFormalSuit
   - HeadofSecurityFormalSkirt
   - HoSSummerShirt # goob
+  - HeadOfSecurityBlueSkirt # Pirate
 
 - type: loadoutGroup
   id: HeadofSecurityNeck
@@ -1352,6 +1359,7 @@
   #- SeniorOfficerJumpskirt # Pirate
   #- TrooperUniform # Pirate
   #- VeteranOfficerBlackJumpsuit # Goobstation
+  - SecurityOfficerBlueSkirt # Pirate
 
 - type: loadoutGroup
   id: SecurityBackpack
