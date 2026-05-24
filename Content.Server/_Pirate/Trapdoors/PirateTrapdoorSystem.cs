@@ -1,3 +1,4 @@
+using System.Linq;
 using Content.Server.Popups;
 using Content.Shared._Pirate.Trapdoors;
 using Content.Shared._Pirate.ZLevels.Apertures.Components;
@@ -103,7 +104,12 @@ public sealed class PirateTrapdoorSystem : EntitySystem
             StoreTile(ent.Comp, tileRef.Tile);
 
         var occupants = _lookup.GetEntitiesInTile(tileRef, LookupFlags.Dynamic | LookupFlags.Static);
-        _map.SetTile(gridUid, grid, indices, Tile.Empty);
+
+        // Skip the tile clear if it would orphan the grid (single-tile grid). Robust auto-deletes
+        // empty grids, which would also delete this trapdoor mid-Open. The aperture/passage
+        // components below still let entities traverse z-levels through this tile.
+        if (_map.GetAllTiles(gridUid, grid).Any(t => t.GridIndices != indices))
+            _map.SetTile(gridUid, grid, indices, Tile.Empty);
 
         ent.Comp.Open = true;
         EnsureComp<CEZLevelApertureComponent>(ent.Owner);

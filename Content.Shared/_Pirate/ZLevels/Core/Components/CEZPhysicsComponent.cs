@@ -36,32 +36,28 @@ public sealed partial class CEZPhysicsComponent : Component
     /// <summary>
     /// Cached value of the current z-level map height
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [AutoNetworkedField]
     public int CurrentZLevel;
 
     /// <summary>
     /// Cached value of the current distance to the ground in the current z-level. Updates only on MoveEvent and when tiles below change.
     /// </summary>
-    [DataField]
     public float CurrentGroundHeight;
 
     /// <summary>
     /// Cached value of whether the entity is currently on sticky ground (ladders).
     /// </summary>
-    [DataField]
     public bool CurrentStickyGround;
 
     /// <summary>
     /// Cached flag: true when the Z-level directly below has a real floor or high-ground entity
     /// at this entity's XY tile position. Updated on MoveEvent / TileChangedEvent.
     /// </summary>
-    [DataField]
     public bool CurrentHasSupportBelow;
 
     /// <summary>
     /// Cached grid uid that provides the support directly below, if any.
     /// </summary>
-    [DataField]
     public EntityUid CurrentSupportGridUid = EntityUid.Invalid;
 
     /// <summary>
@@ -69,7 +65,6 @@ public sealed partial class CEZPhysicsComponent : Component
     /// (stairs or ladder), rather than a plain tile. This only permits automatic descent
     /// when the supporting grid/map has gravity.
     /// </summary>
-    [DataField]
     public bool CurrentHighGroundBelow;
 
     /// <summary>
@@ -78,7 +73,6 @@ public sealed partial class CEZPhysicsComponent : Component
     /// When true, AutoStep and Bounce are suppressed so the entity falls through naturally
     /// instead of being held up by a stair peak that pokes above the current-level floor plane.
     /// </summary>
-    [DataField]
     public bool CurrentGroundFromBelowLevel;
 
     // Physics
@@ -112,10 +106,8 @@ public sealed partial class CEZPhysicsComponent : Component
     /// Runtime cache of the last upper-grid local XY while detaching to the map for descent.
     /// This keeps moving-stair landings anchored to the deck frame that the mover actually left.
     /// </summary>
-    [DataField]
     public EntityUid DetachedCarrierGridUid = EntityUid.Invalid;
 
-    [DataField]
     public Vector2 DetachedCarrierLocalPosition = Vector2.Zero;
 
     public TimeSpan DetachedCarrierReferenceExpiresAt;
