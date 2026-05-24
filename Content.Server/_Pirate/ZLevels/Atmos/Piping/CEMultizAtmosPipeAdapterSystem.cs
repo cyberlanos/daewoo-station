@@ -9,6 +9,8 @@ namespace Content.Server._Pirate.ZLevels.Atmos.Piping;
 public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
 {
     [Dependency] private readonly NodeGroupSystem _nodeGroup = default!;
+    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
+    [Dependency] private readonly SharedTransformSystem _transform = default!;
 
     public override void Initialize()
     {
@@ -56,12 +58,15 @@ public sealed class CEMultizAtmosPipeAdapterSystem : EntitySystem
         if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
             return;
 
+        // Source-grid tile won't line up on peer decks that have a different transform; reproject via world pos.
+        var worldPos = _transform.GetWorldPosition(xform);
+
         foreach (var peerGridUid in linked.PeerGrids.Values)
         {
             if (!TryComp<MapGridComponent>(peerGridUid, out var peerGrid))
                 continue;
 
-            var peerTile = tile;
+            var peerTile = _mapSystem.WorldToTile(peerGridUid, peerGrid, worldPos);
             QueueAdapterRefloodsInTile(nodeQuery, peerGrid, peerTile);
         }
     }

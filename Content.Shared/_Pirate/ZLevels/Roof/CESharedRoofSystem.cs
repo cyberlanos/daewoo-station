@@ -75,11 +75,19 @@ public abstract class CESharedRoofSystem : EntitySystem
 
             var roofBelow = EnsureComp<RoofComponent>(mapBelow);
 
+            List<Vector2i>? promoted = null;
             foreach (var (indices, rooved) in roofMap)
             {
                 Roof.SetRoof((mapBelow, mapGridBelow, roofBelow), indices, rooved);
 
+                // Defer dictionary mutation until after enumeration; setter bumps version and throws.
                 if (Map.TryGetTile(mapGridBelow, indices, out var tile) && !tile.IsEmpty)
+                    (promoted ??= new List<Vector2i>()).Add(indices);
+            }
+
+            if (promoted != null)
+            {
+                foreach (var indices in promoted)
                     roofMap[indices] = true;
             }
         }

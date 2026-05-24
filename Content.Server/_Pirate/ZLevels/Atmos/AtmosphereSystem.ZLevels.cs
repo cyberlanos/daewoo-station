@@ -42,6 +42,7 @@ public sealed partial class AtmosphereSystem
     {
         SubscribeLocalEvent<CEZLinkedGridComponent, ComponentStartup>(OnZLinkedGridStartup);
         SubscribeLocalEvent<CEZLinkedGridComponent, ComponentShutdown>(OnZLinkedGridShutdown);
+        SubscribeLocalEvent<CEZLinkedGridComponent, EntParentChangedMessage>(OnZLinkedGridParentChanged);
     }
 
     private void RunZAtmosProcessing()
@@ -59,6 +60,17 @@ public sealed partial class AtmosphereSystem
     {
         UntrackZAtmosMap(ent.Owner);
         RemoveZAtmosTransferCandidatesForGrid(ent.Owner);
+    }
+
+    private void OnZLinkedGridParentChanged(Entity<CEZLinkedGridComponent> ent, ref EntParentChangedMessage args)
+    {
+        if (args.OldMapId is { } oldMapUid &&
+            !HasOtherZAtmosGridOnMap(oldMapUid, ent.Owner))
+        {
+            _zAtmosLinkedMaps.Remove(oldMapUid);
+        }
+
+        TrackZAtmosMap(ent.Owner);
     }
 
     private void TrackZAtmosMap(EntityUid gridUid)

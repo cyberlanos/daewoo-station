@@ -1110,7 +1110,7 @@ public abstract partial class CESharedZLevelsSystem
 
             if (!restingOnGround)
             {
-                var velocityEv = new CEGetZVelocityEvent((uid, zPhys));
+                var velocityEv = new CEGetZVelocityEvent((uid, zPhys), frameTime);
                 RaiseLocalEvent(uid, velocityEv);
                 zPhys.Velocity += velocityEv.VelocityDelta * frameTime;
             }
@@ -2967,9 +2967,10 @@ public struct CEZLevelHitEvent(float impactPower)
 /// <summary>
 /// Is called every frame to calculate the current vertical velocity of the object with CEActiveZPhysicsComponent.
 /// </summary>
-public sealed class CEGetZVelocityEvent(Entity<CEZPhysicsComponent> target) : EntityEventArgs
+public sealed class CEGetZVelocityEvent(Entity<CEZPhysicsComponent> target, float frameTime) : EntityEventArgs
 {
     public Entity<CEZPhysicsComponent> Target = target;
+    public float FrameTime = frameTime;
     public float VelocityDelta = 0;
 }
 

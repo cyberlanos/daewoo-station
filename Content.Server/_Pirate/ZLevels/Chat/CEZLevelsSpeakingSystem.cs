@@ -47,6 +47,7 @@ public sealed partial class CEZLevelsSpeakingSystem : EntitySystem
             return;
 
         var globalPosition = _transform.GetWorldPosition(xform);
+        var sourceGrid = xform.GridUid;
         var message = args.Message;
 
         //Try transmit message to 1 zlevel down
@@ -55,7 +56,7 @@ public sealed partial class CEZLevelsSpeakingSystem : EntitySystem
         {
             TransmitMessageToZLevel(
                 belowMapComp,
-                globalPosition,
+                ReprojectToPeerMap(globalPosition, sourceGrid, belowMapUid.Value),
                 message,
                 Loc.GetString("ce-zlevel-voice-from-up", ("name", Identity.Name(ent, EntityManager))));
         }
@@ -66,10 +67,39 @@ public sealed partial class CEZLevelsSpeakingSystem : EntitySystem
         {
             TransmitMessageToZLevel(
                 aboveMapComp,
-                globalPosition,
+                ReprojectToPeerMap(globalPosition, sourceGrid, aboveMapUid.Value),
                 message,
                 Loc.GetString("ce-zlevel-voice-from-down", ("name", Identity.Name(ent, EntityManager))));
         }
+    }
+
+    /// <summary>
+    /// Peer grids on a linked z-network may sit on differently-positioned parent maps; convert the speaker's
+    /// world position into the speaker grid's local frame, then back to world on the matching peer grid.
+    /// </summary>
+    private Vector2 ReprojectToPeerMap(Vector2 worldPos, EntityUid? sourceGrid, EntityUid targetMapUid)
+    {
+        if (sourceGrid is not { } srcGrid ||
+            !TryComp<CEZLinkedGridComponent>(srcGrid, out var linked))
+            return worldPos;
+
+        EntityUid? peerGrid = null;
+        foreach (var peer in linked.PeerGrids.Values)
+        {
+            if (Transform(peer).MapUid == targetMapUid)
+            {
+                peerGrid = peer;
+                break;
+            }
+        }
+
+        if (peerGrid is null)
+            return worldPos;
+
+        var srcXform = Transform(srcGrid);
+        var srcInv = _transform.GetInvWorldMatrix(srcXform);
+        var local = Vector2.Transform(worldPos, srcInv);
+        return Vector2.Transform(local, _transform.GetWorldMatrix(peerGrid.Value));
     }
 
     private void TransmitMessageToZLevel(MapComponent mapComp, Vector2 position, string message, string nameOverride)

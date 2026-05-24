@@ -105,6 +105,7 @@ public abstract partial class CESharedZFlightSystem : EntitySystem
         var currentPos = zPhys.CurrentZLevel + zPhys.LocalPosition;
         var targetPos = ent.Comp.TargetMapHeight + 0.2f;
         var currentVelocity = zPhys.Velocity;
+        var dt = args.FrameTime;
 
         var distanceToTarget = targetPos - currentPos;
 
@@ -114,18 +115,22 @@ public abstract partial class CESharedZFlightSystem : EntitySystem
         var upperBound = ent.Comp.TargetMapHeight + 0.9f;
         var lowerBound = ent.Comp.TargetMapHeight + 0.1f;
 
-        var newVelocity = currentVelocity + velocityDelta;
-        var nextPos = currentPos + newVelocity;
+        // Match the integrator: Velocity += delta*dt; LocalPosition += Velocity*dt.
+        if (dt > 0f)
+        {
+            var newVelocity = currentVelocity + velocityDelta * dt;
+            var nextPos = currentPos + newVelocity * dt;
 
-        if (nextPos > upperBound)
-        {
-            var maxAllowedVelocity = upperBound - currentPos;
-            velocityDelta = maxAllowedVelocity - currentVelocity;
-        }
-        else if (nextPos < lowerBound)
-        {
-            var maxAllowedVelocity = lowerBound - currentPos;
-            velocityDelta = maxAllowedVelocity - currentVelocity;
+            if (nextPos > upperBound)
+            {
+                var maxAllowedVelocity = (upperBound - currentPos) / dt;
+                velocityDelta = (maxAllowedVelocity - currentVelocity) / dt;
+            }
+            else if (nextPos < lowerBound)
+            {
+                var maxAllowedVelocity = (lowerBound - currentPos) / dt;
+                velocityDelta = (maxAllowedVelocity - currentVelocity) / dt;
+            }
         }
 
         args.VelocityDelta = velocityDelta;
