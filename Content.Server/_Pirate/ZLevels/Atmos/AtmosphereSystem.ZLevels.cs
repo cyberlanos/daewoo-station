@@ -64,11 +64,13 @@ public sealed partial class AtmosphereSystem
 
     private void OnZLinkedGridParentChanged(Entity<CEZLinkedGridComponent> ent, ref EntParentChangedMessage args)
     {
-        if (args.OldMapId is { } oldMapUid &&
-            !HasOtherZAtmosGridOnMap(oldMapUid, ent.Owner))
-        {
+        // Only act on real map-to-map moves; ignore initial parenting / teardown where the parent didn't transition between maps.
+        var newMapUid = Transform(ent.Owner).MapUid;
+        if (args.OldMapId is not { } oldMapUid || oldMapUid == newMapUid)
+            return;
+
+        if (!HasOtherZAtmosGridOnMap(oldMapUid, ent.Owner))
             _zAtmosLinkedMaps.Remove(oldMapUid);
-        }
 
         // Vertical transfer pairs/refs were computed against the old projection; drop them and
         // let InvalidateZAtmosOpenings rebuild them on the new map.

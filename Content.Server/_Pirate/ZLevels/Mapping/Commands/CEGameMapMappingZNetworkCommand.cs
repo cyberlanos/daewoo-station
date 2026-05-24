@@ -111,6 +111,7 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
         if (!_mapLoader.TryLoadMap(mapProto.MapPath, out var defaultMapEnt, out _, opts))
         {
             shell.WriteError($"Failed to load default zNetwork map: {mapProto.MapPath.ToString()}!");
+            CleanupCreatedResources(createdMaps, network);
             return;
         }
         dict.Add(defaultMapEnt!.Value, 0);
@@ -124,6 +125,7 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
             if (!_mapLoader.TryLoadMap(path, out var mapEnt, out _, opts))
             {
                 shell.WriteError($"Failed to load zNetwork map (depth {depth}): {path.ToString()}!");
+                CleanupCreatedResources(createdMaps, network);
                 return;
             }
 
@@ -139,6 +141,7 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
             if (!_mapLoader.TryLoadMap(path, out var mapEnt, out _, opts))
             {
                 shell.WriteError($"Failed to load zNetwork map (depth {depth}): {path.ToString()}!");
+                CleanupCreatedResources(createdMaps, network);
                 return;
             }
 
@@ -162,23 +165,20 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
         if (!_zLevel.TryAddMapsIntoZNetwork(network, dict))
         {
             shell.WriteError($"Failed to create zNetwork from loaded maps!");
+            CleanupCreatedResources(createdMaps, network);
             return;
         }
 
         if (!success)
         {
             shell.WriteError("Unloading all created maps...");
-            foreach (var mapId in createdMaps)
-            {
-                _map.DeleteMap(mapId);
-            }
-            EntityManager.QueueDeleteEntity(network);
+            CleanupCreatedResources(createdMaps, network);
             return;
         }
 
         //Maps successfully created. run misc helpful mapping commands
         if (player.AttachedEntity is { Valid: true } playerEntity &&
-            (EntityManager.GetComponent<MetaDataComponent>(playerEntity).EntityPrototype is not { } proto || proto != GameTicker.AdminObserverPrototypeName))
+            (EntityManager.GetComponent<MetaDataComponent>(playerEntity).EntityPrototype is not { } proto || proto.ID != GameTicker.AdminObserverPrototypeName))
         {
             shell.ExecuteCommand("aghost");
         }
@@ -195,5 +195,16 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
         {
             DebugTools.Assert(_map.IsPaused(mapId));
         }
+    }
+
+    private void CleanupCreatedResources(List<MapId> createdMaps, EntityUid network)
+    {
+        foreach (var mapId in createdMaps)
+        {
+            if (_map.MapExists(mapId))
+                _map.DeleteMap(mapId);
+        }
+
+        EntityManager.QueueDeleteEntity(network);
     }
 }

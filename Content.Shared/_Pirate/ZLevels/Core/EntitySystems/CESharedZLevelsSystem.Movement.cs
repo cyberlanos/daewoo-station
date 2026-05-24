@@ -1363,7 +1363,7 @@ public abstract partial class CESharedZLevelsSystem
                 }
                 else //Move up
                 {
-                    var movedUp = TryMoveUp(uid);
+                    var movedUp = TryMoveUp(uid, bypassPassability: true);
                     DebugZStairCsv(uid,
                         "up_result",
                         $"success={StairCsvBool(movedUp)},reason={(movedUp ? "ok" : "move_failed")}",

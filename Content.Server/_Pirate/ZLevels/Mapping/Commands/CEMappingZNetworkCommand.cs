@@ -102,6 +102,11 @@ public sealed class CEMappingZNetworkCommand : LocalizedEntityCommands
         if (!_zLevel.TryAddMapsIntoZNetwork(network, dict))
         {
             shell.WriteError($"Failed to create zNetwork from loaded maps!");
+            foreach (var mapId in createdMaps)
+            {
+                _map.DeleteMap(mapId);
+            }
+            EntityManager.QueueDeleteEntity(network);
             return;
         }
 
@@ -118,7 +123,7 @@ public sealed class CEMappingZNetworkCommand : LocalizedEntityCommands
 
         //Maps successfully created. run misc helpful mapping commands
         if (player.AttachedEntity is { Valid: true } playerEntity &&
-            (EntityManager.GetComponent<MetaDataComponent>(playerEntity).EntityPrototype is not { } proto || proto != GameTicker.AdminObserverPrototypeName))
+            (EntityManager.GetComponent<MetaDataComponent>(playerEntity).EntityPrototype is not { } proto || proto.ID != GameTicker.AdminObserverPrototypeName))
         {
             shell.ExecuteCommand("aghost");
         }

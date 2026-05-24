@@ -58,13 +58,13 @@ public sealed class CESaveZNetworkCommand : LocalizedEntityCommands
         if (!NetEntity.TryParse(args[0], out var targetNet) ||
             !_entities.TryGetEntity(targetNet, out target))
         {
-            shell.WriteError($"Unable to find entity {args[1]}");
+            shell.WriteError($"Unable to find entity {args[0]}");
             return;
         }
 
         if (!_entities.TryGetComponent<CEZLevelsNetworkComponent>(target, out var levelComp))
         {
-            shell.WriteError($"Target entity doesnt have CEZLevelsNetworkComponent {args[1]}");
+            shell.WriteError($"Target entity doesnt have CEZLevelsNetworkComponent {args[0]}");
             return;
         }
 
@@ -80,18 +80,18 @@ public sealed class CESaveZNetworkCommand : LocalizedEntityCommands
 
             // no saving null space
             if (mapId == MapId.Nullspace)
-                return;
+                continue;
 
             if (!_map.MapExists(mapId))
             {
                 shell.WriteError($"Map {mapId} doesnt exist!");
-                return;
+                continue;
             }
 
             if (_map.IsInitialized(mapId))
             {
                 shell.WriteError($"Map {mapId} is already initialized, cannot save initialized maps!");
-                return;
+                continue;
             }
 
             var savePath = new ResPath($"/ZNetworkSaves/{args[1]}/{args[1]}{depth}.yml");

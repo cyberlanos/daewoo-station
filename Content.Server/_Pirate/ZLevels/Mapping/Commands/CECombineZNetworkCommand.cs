@@ -30,7 +30,7 @@ public sealed class CECombineZNetworkCommand : LocalizedEntityCommands
 
     public override void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        if (args.Length == 1)
+        if (args.Length < 2)
         {
             shell.WriteError("Not enough maps to form a network of levels");
             return;
@@ -81,8 +81,13 @@ public sealed class CECombineZNetworkCommand : LocalizedEntityCommands
         var success = _zLevels.TryAddMapsIntoZNetwork(network, dict);
 
         if (success)
+        {
             shell.WriteLine($"Created z-level network! Z-Network entity: {network}");
+        }
         else
-            shell.WriteLine($"Created z-level network {network}, but something went wrong!");
+        {
+            _entities.QueueDeleteEntity(network);
+            shell.WriteError("Failed to combine maps into a z-network; the network entity was cleaned up.");
+        }
     }
 }

@@ -41,37 +41,38 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         if (ent.Comp.MapsAbove.Count == 0 && ent.Comp.MapsBelow.Count == 0)
             return;
 
-        var stationName = MetaData(ent).EntityName;
-        var stationNetwork = CreateZNetwork(ent.Comp.ZLevelsComponentOverrides);
-        ent.Comp.ZNetworkEntity = stationNetwork;
-        _meta.SetEntityName(ent.Comp.ZNetworkEntity.Value, $"Station z-Network: {stationName}");
-
-        // Pirate: multiz - lanos uses StationDataComponent.Grids instead of GetLargestGrid
+        // Validate base map before creating the network so a missing base grid doesn't leak a network entity.
         EntityUid? mainMap = null;
+        EntityUid? mainGrid = null;
         if (TryComp<StationDataComponent>(ent, out var stationData))
         {
             foreach (var grid in stationData.Grids)
             {
                 mainMap = Transform(grid).MapUid;
+                mainGrid = grid;
                 break;
             }
         }
 
-        if (mainMap is null)
-            throw new Exception("Station has no grids to base z-levels off of!");
+        if (mainMap is null || mainGrid is null)
+        {
+            Log.Error($"Station {ToPrettyString(ent.Owner)} has no grids to base z-levels off of; skipping z-network setup.");
+            return;
+        }
+
+        var stationName = MetaData(ent).EntityName;
+        var stationNetwork = CreateZNetwork(ent.Comp.ZLevelsComponentOverrides);
+        ent.Comp.ZNetworkEntity = stationNetwork;
+        _meta.SetEntityName(ent.Comp.ZNetworkEntity.Value, $"Station z-Network: {stationName}");
 
         Dictionary<EntityUid, int> dict = new();
         dict.Add(mainMap.Value, 0);
 
         // Collect grid UIDs per depth for direct linking
-        var gridsByDepth = new Dictionary<int, EntityUid>();
-
-        // Get the main grid from the station
-        foreach (var grid in stationData!.Grids)
+        var gridsByDepth = new Dictionary<int, EntityUid>
         {
-            gridsByDepth[0] = grid;
-            break;
-        }
+            [0] = mainGrid.Value,
+        };
 
         //Loading maps below first
         var depth = ent.Comp.MapsBelow.Count * -1;
@@ -117,7 +118,12 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             depth++;
         }
 
-        TryAddMapsIntoZNetwork(stationNetwork, dict);
+        if (!TryAddMapsIntoZNetwork(stationNetwork, dict))
+        {
+            Log.Error($"Failed to populate station z-network {ToPrettyString(stationNetwork)}; skipping grid linking.");
+            return;
+        }
+
         LinkGridsDirectly(stationNetwork, gridsByDepth);
     }
 
