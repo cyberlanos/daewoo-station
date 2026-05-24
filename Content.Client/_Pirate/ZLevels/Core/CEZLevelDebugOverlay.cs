@@ -21,7 +21,7 @@ public sealed class CEZLevelDebugOverlay : Overlay
     private readonly SharedTransformSystem _transform = default!;
     public override OverlaySpace Space => OverlaySpace.ScreenSpace;
 
-    private readonly Font _font;
+    private readonly Font? _font;
 
     public CEZLevelDebugOverlay()
     {
@@ -30,11 +30,22 @@ public sealed class CEZLevelDebugOverlay : Overlay
         _zLevels = _entityManager.System<CESharedZLevelsSystem>();
         _transform = _entityManager.System<SharedTransformSystem>();
 
-        _font = new VectorFont(_cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Regular.ttf"), 8);
+        try
+        {
+            _font = new VectorFont(_cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Regular.ttf"), 8);
+        }
+        catch (Exception e)
+        {
+            Logger.GetSawmill("ce.zlevel.debug").Error($"Failed to load debug overlay font: {e}");
+            _font = null;
+        }
     }
 
     protected override void Draw(in OverlayDrawArgs args)
     {
+        if (_font is null)
+            return;
+
         var query = _entityManager.EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var zPhys, out _, out var xform))
         {

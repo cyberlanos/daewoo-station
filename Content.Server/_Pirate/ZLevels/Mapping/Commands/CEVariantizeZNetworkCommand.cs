@@ -18,6 +18,7 @@ namespace Content.Server._Pirate.ZLevels.Mapping.Commands;
 public sealed class CEVariantizeZNetworkCommand : LocalizedEntityCommands
 {
     [Dependency] private readonly IEntityManager _entities = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _map = default!;
     [Dependency] private readonly TileSystem _tile = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
@@ -63,17 +64,20 @@ public sealed class CEVariantizeZNetworkCommand : LocalizedEntityCommands
 
         foreach (var (_, mapUid) in levelComp.ZLevels)
         {
-            if (!_entities.TryGetComponent<MapGridComponent>(mapUid, out var gridComp))
+            if (!_entities.TryGetComponent<MapComponent>(mapUid, out var mapComp))
             {
-                shell.WriteError($"Euid '{mapUid}' does not exist or is not a grid.");
+                shell.WriteError($"Euid '{mapUid}' is missing MapComponent.");
                 continue;
             }
 
-            foreach (var tile in _map.GetAllTiles(mapUid.Value, gridComp))
+            foreach (var grid in _mapManager.GetAllGrids(mapComp.MapId))
             {
-                var def = _turf.GetContentTileDefinition(tile);
-                var newTile = new Tile(tile.Tile.TypeId, tile.Tile.Flags, _tile.PickVariant(def), tile.Tile.RotationMirroring);
-                _map.SetTile(mapUid.Value, gridComp, tile.GridIndices, newTile);
+                foreach (var tile in _map.GetAllTiles(grid.Owner, grid.Comp))
+                {
+                    var def = _turf.GetContentTileDefinition(tile);
+                    var newTile = new Tile(tile.Tile.TypeId, tile.Tile.Flags, _tile.PickVariant(def), tile.Tile.RotationMirroring);
+                    _map.SetTile(grid.Owner, grid.Comp, tile.GridIndices, newTile);
+                }
             }
         }
     }

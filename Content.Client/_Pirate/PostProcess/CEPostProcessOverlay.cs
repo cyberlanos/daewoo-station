@@ -37,7 +37,10 @@ public sealed class CEPostProcessOverlay : Overlay
         if (args.Viewport.Eye != eyeComp.Eye)
             return false;
 
-        if (!_lightManager.Enabled || !eyeComp.Eye.DrawLight || !eyeComp.Eye.DrawFov)
+        if (eyeComp.Eye is not { } eye)
+            return false;
+
+        if (!_lightManager.Enabled || !eye.DrawLight || !eye.DrawFov)
             return false;
 
         if (_player.LocalSession?.AttachedEntity == null)

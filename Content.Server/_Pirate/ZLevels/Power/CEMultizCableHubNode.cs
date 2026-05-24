@@ -32,6 +32,9 @@ public sealed partial class CEMultizCableHubNode : CableDeviceNode
         }
 
         var gridTile = grid.TileIndicesFor(xform.Coordinates);
+        var mapSys = entMan.System<SharedMapSystem>();
+        var transformSys = entMan.System<SharedTransformSystem>();
+        var worldPos = transformSys.GetWorldPosition(xform);
 
         foreach (var depthOffset in DepthOffsets)
         {
@@ -41,7 +44,8 @@ public sealed partial class CEMultizCableHubNode : CableDeviceNode
                 continue;
             }
 
-            var peerTile = gridTile;
+            // Peer decks may have a different transform than the source grid; reproject via world pos.
+            var peerTile = mapSys.WorldToTile(peerGridUid, peerGrid, worldPos);
             foreach (var node in NodeHelpers.GetNodesInTile(nodeQuery, peerGrid, peerTile))
             {
                 if (node is CEMultizCableHubNode && node != this && node.NodeGroupID == NodeGroupID)
