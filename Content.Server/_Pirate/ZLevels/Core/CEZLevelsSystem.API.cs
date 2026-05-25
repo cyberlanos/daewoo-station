@@ -6,6 +6,7 @@
 using Content.Server._Pirate.PVS;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using JetBrains.Annotations;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server._Pirate.ZLevels.Core;
@@ -33,6 +34,12 @@ public sealed partial class CEZLevelsSystem
     /// </summary>
     private bool TryAddMapIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, EntityUid mapUid, int depth)
     {
+        if (!HasComp<MapComponent>(mapUid))
+        {
+            Log.Error($"Failed to add {ToPrettyString(mapUid)} to ZLevelNetwork {network}: not a map entity.");
+            return false;
+        }
+
         if (network.Comp.ZLevels.ContainsKey(depth))
         {
             Log.Error($"Failed to add map {mapUid} to ZLevelNetwork {network}: This depth is already occupied.");
