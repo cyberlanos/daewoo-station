@@ -506,26 +506,11 @@ public sealed partial class AtmosphereSystem
         AddActiveTile(ent.Comp1, tile);
         AddActiveTile(otherEnt.Comp1, otherTile);
 
-        // Mirror LINDA's ExcitedGroup bookkeeping so LastShareCheck has a group to suspend/reset.
-        if (ExcitedGroups)
-        {
-            var excitedGroup = tile.ExcitedGroup ?? otherTile.ExcitedGroup;
-            if (excitedGroup == null)
-            {
-                excitedGroup = new ExcitedGroup();
-                ent.Comp1.ExcitedGroups.Add(excitedGroup);
-            }
-
-            if (tile.ExcitedGroup == null)
-                ExcitedGroupAddTile(excitedGroup, tile);
-
-            if (otherTile.ExcitedGroup == null)
-                ExcitedGroupAddTile(excitedGroup, otherTile);
-        }
+        // ExcitedGroups are tracked per-grid; can't span across linked grids without breaking
+        // ExcitedGroupMerge's grid-locality assertion. Skip the group attachment here and accept
+        // that LastShareCheck cooldown bookkeeping is a no-op on cross-grid z-shared tiles.
 
         Share(tile, otherTile, CountZLevelAtmosAdjacentTiles(tile));
-        LastShareCheck(tile);
-        LastShareCheck(otherTile);
 
         InvalidateVisuals(ent, tile);
         InvalidateVisuals(otherEnt, otherTile);

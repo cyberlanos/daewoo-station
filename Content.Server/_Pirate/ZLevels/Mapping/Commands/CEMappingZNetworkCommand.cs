@@ -79,6 +79,13 @@ public sealed class CEMappingZNetworkCommand : LocalizedEntityCommands
             if (!_mapLoader.TryLoadMap(path, out var mapEnt, out _, opts))
             {
                 shell.WriteError($"Failed to load zNetwork map (depth {depth}): {path.ToString()}!");
+                // Roll back any maps loaded before this failure plus the orphan network entity.
+                foreach (var mapId in createdMaps)
+                {
+                    if (_map.MapExists(mapId))
+                        _map.DeleteMap(mapId);
+                }
+                EntityManager.QueueDeleteEntity(network);
                 return;
             }
 

@@ -113,7 +113,7 @@ public sealed partial class CEZLevelsSystem
             }
 
             if (HasComp<ThrownItemComponent>(uid) ||
-                TryComp<PhysicsComponent>(uid, out var physics) && physics.Awake)
+                (TryComp<PhysicsComponent>(uid, out var physics) && physics.Awake))
                 continue;
 
             var oldLocalPosition = zItem.LocalPosition;

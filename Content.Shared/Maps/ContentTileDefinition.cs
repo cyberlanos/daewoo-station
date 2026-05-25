@@ -185,8 +185,16 @@ namespace Content.Shared.Maps
         /// </summary>
         [DataField("indestructible")] public bool Indestructible = false;
 
+        #region Pirate: multiz
+        /// <summary>
+        /// Whether this tile lets the multi-z roof system "see through" it to the deck below.
+        /// When true, a tile placed above this one does not mark this column as rooved, so the
+        /// lower level remains visible (e.g. open catwalks, glass floors). When false the tile
+        /// acts as a solid roof for whatever sits below.
+        /// </summary>
         [DataField]
-        public bool Transparent = false; // Pirate: multiz
+        public bool Transparent = false;
+        #endregion
 
         public void AssignTileId(ushort id)
         {

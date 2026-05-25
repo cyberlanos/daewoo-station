@@ -133,7 +133,7 @@ public sealed class PirateTrapdoorSystem : EntitySystem
 
         if (_map.TryGetTileRef(gridUid, grid, indices, out var current) && !current.Tile.IsEmpty)
         {
-            _popup.PopupEntity("The trapdoor tries to shut, but something has already filled the opening.", ent.Owner);
+            _popup.PopupEntity(Loc.GetString("pirate-trapdoor-close-blocked"), ent.Owner);
             return false;
         }
 

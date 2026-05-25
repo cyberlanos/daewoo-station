@@ -133,7 +133,12 @@ public abstract partial class CESharedZFlightSystem
             return;
         }
 
-        TryActivateFlight(ent.Owner);
+        if (!TryActivateFlight(ent.Owner))
+        {
+            StopFlightVisuals(ent.Owner);
+            return;
+        }
+
         args.Handled = true;
     }
 }

@@ -5,8 +5,8 @@ namespace Content.Shared._Pirate.ZLevels.Monitoring;
 [Serializable, NetSerializable]
 public sealed class CEZMonitoringConsoleLevelSelectedMessage : BoundUserInterfaceMessage
 {
-    public NetEntity? Grid;
-    public int Depth;
+    public NetEntity? Grid { get; init; }
+    public int Depth { get; init; }
 
     public CEZMonitoringConsoleLevelSelectedMessage(NetEntity? grid, int depth)
     {

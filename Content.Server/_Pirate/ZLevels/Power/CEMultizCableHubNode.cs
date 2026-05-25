@@ -31,7 +31,6 @@ public sealed partial class CEMultizCableHubNode : CableDeviceNode
             yield break;
         }
 
-        var gridTile = grid.TileIndicesFor(xform.Coordinates);
         var mapSys = entMan.System<SharedMapSystem>();
         var transformSys = entMan.System<SharedTransformSystem>();
         var worldPos = transformSys.GetWorldPosition(xform);

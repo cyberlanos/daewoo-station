@@ -86,7 +86,7 @@ public sealed partial class AtmosPipeAppearanceSystem : SharedAtmosPipeAppearanc
                 continue;
             #endregion
 
-            var otherTile = _map.TileIndicesFor(xform.GridUid.Value, grid, Transform(neighbour).Coordinates);
+            var otherTile = _map.TileIndicesFor(xform.GridUid.Value, grid, neighbourXform.Coordinates); // Pirate: multiz
             var pipeLayerDirections = connectedDirections[pipeIndex];
 
             pipeLayerDirections |= (otherTile - tile) switch
