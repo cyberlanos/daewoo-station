@@ -235,9 +235,8 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
         if (!TryComp<GridAtmosphereComponent>(gridUid, out var atmosphere))
             return;
 
-        // The grid must have a NavMapComponent to visualize the map in the UI
-        EnsureComp<NavMapComponent>(gridUid);
-        UpdateAtmosMonitoringConsoleGridData(uid, component, gridUid); // Pirate: multiz
+        // Console init, selection changes, and pipe/device rebuild paths already populate AtmosDevices/AtmosPipeChunks
+        // and dirty the component; redoing it every 1-second UI refresh turned an idle console into a constant resender.
 
         // Gathering data to be send to the client
         var atmosNetworks = new List<AtmosMonitoringConsoleEntry>();
