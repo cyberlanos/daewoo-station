@@ -171,12 +171,14 @@ public sealed class CEZLevelLadderSystem : EntitySystem
 
         var ladderWorldPos = _transform.GetWorldPosition(ladder);
         var hasLadderBelow = HasLadderAtOffset(ladder, user, -1);
-        var wasWeightless = IsWeightless(user);
 
         if (!_zLevels.TryMove(user, -1, targetWorldPositionOverride: ladderWorldPos, allowStairExitLanding: false))
             return false;
 
-        if (hasLadderBelow || wasWeightless)
+        // Evaluate weightlessness on the destination layer — source gravity is irrelevant once we've descended.
+        var isWeightlessAfter = IsWeightless(user);
+
+        if (hasLadderBelow || isWeightlessAfter)
         {
             _zLevels.NormalizeTransferredPullable(user, -1);
             return true;

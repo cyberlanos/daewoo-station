@@ -111,8 +111,15 @@ namespace Content.Server.DeviceNetwork.Systems
             if (!TryComp<WirelessNetworkComponent>(args.Sender, out var sendingComponent))
                 return;
 
-            if (!CanReachAcrossMapOrZStack(args.SenderTransform, xform) // Pirate: multiz
-                || (ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
+            // Pirate: multiz — only apply the Euclidean range check when both ends share a MapID; cross-map z-linked packets bypass the range gate since world-space distance is meaningless across maps.
+            if (!CanReachAcrossMapOrZStack(args.SenderTransform, xform)) // Pirate: multiz
+            {
+                args.Cancel();
+                return;
+            }
+
+            if (args.SenderTransform.MapID == xform.MapID // Pirate: multiz
+                && (ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
             {
                 args.Cancel();
             }

@@ -3,6 +3,7 @@
  * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
  */
 
+using System.Numerics;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared.Actions;
@@ -62,9 +63,15 @@ public sealed partial class CEZLevelsSystem
                 continue;
             }
 
+            // viewer.Eyes order matches desiredMaps insertion order from UpdateViewer / GetViewerAdjacentMaps.
+            var i = 0;
             foreach (var eye in viewer.Eyes)
             {
-                _transform.SetWorldPosition(eye, _transform.GetWorldPosition(xform));
+                if (i >= desiredMaps.Count)
+                    break;
+
+                _transform.SetWorldPosition(eye, desiredMaps[i].WorldPosition);
+                i++;
             }
         }
     }
@@ -137,28 +144,29 @@ public sealed partial class CEZLevelsSystem
     }
 
     // Build the exact map subscription set for the viewer, preferring linked shuttle peers so multiz decks stay visible together.
-    private List<EntityUid> GetViewerAdjacentMaps(Entity<TransformComponent> ent)
+    private List<CEZLevelViewerTarget> GetViewerAdjacentMaps(Entity<TransformComponent> ent)
     {
-        var result = new List<EntityUid>();
+        var result = new List<CEZLevelViewerTarget>();
 
         for (var i = 1; i <= MaxZLevelsBelowRendering; i++)
         {
-            if (!TryResolveViewerMap(ent, -i, out var belowMapUid))
+            if (!TryResolveViewerMap(ent, -i, out var belowTarget))
                 break;
 
-            result.Add(belowMapUid);
+            result.Add(belowTarget);
         }
 
         // We constantly load the upper z-level for the client so that you can quickly look up and climb stairs without PVS lag.
-        if (TryResolveViewerMap(ent, 1, out var aboveMapUid))
-            result.Add(aboveMapUid);
+        if (TryResolveViewerMap(ent, 1, out var aboveTarget))
+            result.Add(aboveTarget);
 
         return result;
     }
 
-    private bool TryResolveViewerMap(Entity<TransformComponent> ent, int depthOffset, out EntityUid mapUid)
+    private bool TryResolveViewerMap(Entity<TransformComponent> ent, int depthOffset, out CEZLevelViewerTarget target)
     {
-        mapUid = default;
+        target = default;
+        var viewerWorld = _transform.GetWorldPosition(ent.Comp);
 
         if (ent.Comp.GridUid is { } gridUid &&
             TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
@@ -169,7 +177,12 @@ public sealed partial class CEZLevelsSystem
                 TryComp<TransformComponent>(peerGridUid, out var peerXform) &&
                 peerXform.MapUid is { } peerMapUid)
             {
-                mapUid = peerMapUid;
+                // Reproject the viewer's world pos via the source grid's inverse and the peer grid's matrix
+                // so an eye on the peer deck lines up with the viewer's corresponding tile.
+                var srcInv = _transform.GetInvWorldMatrix(gridUid);
+                var local = Vector2.Transform(viewerWorld, srcInv);
+                var peerWorld = Vector2.Transform(local, _transform.GetWorldMatrix(peerGridUid));
+                target = new CEZLevelViewerTarget(peerMapUid, peerWorld);
                 return true;
             }
         }
@@ -180,12 +193,15 @@ public sealed partial class CEZLevelsSystem
             return false;
         }
 
-        mapUid = targetMapUid.Value;
+        // No peer grid; map-aligned z-stacks share world XY, so reuse the viewer's world pos as-is.
+        target = new CEZLevelViewerTarget(targetMapUid.Value, viewerWorld);
         return true;
     }
 
+    private readonly record struct CEZLevelViewerTarget(EntityUid MapUid, Vector2 WorldPosition);
+
     // Avoid respawning view eyes every tick when the adjacent-map set has not actually changed.
-    private bool ViewerEyesMatch(CEZLevelViewerComponent viewer, IReadOnlyCollection<EntityUid> desiredMaps)
+    private bool ViewerEyesMatch(CEZLevelViewerComponent viewer, IReadOnlyList<CEZLevelViewerTarget> desiredMaps)
     {
         if (viewer.Eyes.Count != desiredMaps.Count)
             return false;
@@ -199,10 +215,14 @@ public sealed partial class CEZLevelsSystem
             currentMaps.Add(eyeMapUid);
         }
 
-        return currentMaps.SetEquals(desiredMaps);
+        var desiredSet = new HashSet<EntityUid>();
+        foreach (var t in desiredMaps)
+            desiredSet.Add(t.MapUid);
+
+        return currentMaps.SetEquals(desiredSet);
     }
 
-    private void UpdateViewer(Entity<CEZLevelViewerComponent> ent, TransformComponent? xform = null, List<EntityUid>? desiredMaps = null)
+    private void UpdateViewer(Entity<CEZLevelViewerComponent> ent, TransformComponent? xform = null, List<CEZLevelViewerTarget>? desiredMaps = null)
     {
         var eyes = ent.Comp.Eyes;
         foreach (var eye in ent.Comp.Eyes)
@@ -217,13 +237,12 @@ public sealed partial class CEZLevelsSystem
         if (!Resolve(ent, ref xform))
             return;
 
-        var globalPos = _transform.GetWorldPosition(xform);
         // Reuse the precomputed desired-map list when UpdateView already resolved it, so eye rebuilds and movement stay in sync.
         desiredMaps ??= GetViewerAdjacentMaps((ent.Owner, xform));
 
-        foreach (var targetMapUid in desiredMaps)
+        foreach (var target in desiredMaps)
         {
-            var newEye = SpawnAtPosition(_zEyeProto, new EntityCoordinates(targetMapUid, globalPos));
+            var newEye = SpawnAtPosition(_zEyeProto, new EntityCoordinates(target.MapUid, target.WorldPosition));
 
             Transform(newEye).GridTraversal = false;
             _viewSubscriber.AddViewSubscriber(newEye, actor.PlayerSession);

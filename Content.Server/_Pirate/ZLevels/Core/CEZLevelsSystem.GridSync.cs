@@ -86,7 +86,9 @@ public sealed partial class CEZLevelsSystem
             if (!mapToDepth.TryGetValue(gridXform.MapUid.Value, out var depth))
                 continue;
 
-            grids.TryAdd(depth, gridUid);
+            // Multiple grids on the same map → pick the smallest UID so the choice is stable across runs.
+            if (!grids.TryGetValue(depth, out var existing) || gridUid.Id < existing.Id)
+                grids[depth] = gridUid;
         }
 
         ApplyLinkage(network, grids);
@@ -108,6 +110,31 @@ public sealed partial class CEZLevelsSystem
     /// </summary>
     private void ApplyLinkage(Entity<CEZLevelsNetworkComponent> network, Dictionary<int, EntityUid> gridsByDepth)
     {
+        // Evict any grid that used to belong to THIS network but is no longer present in gridsByDepth,
+        // including the case where the network has shrunk to zero or one grid (which would otherwise
+        // early-out below and leave stale CEZLinkedGridComponent state behind).
+        var keepSet = new HashSet<EntityUid>(gridsByDepth.Values);
+        var orphanQuery = AllEntityQuery<CEZLinkedGridComponent>();
+        var orphans = new List<(EntityUid Uid, CEZLinkedGridComponent Comp)>();
+        while (orphanQuery.MoveNext(out var orphanUid, out var orphanComp))
+        {
+            if (orphanComp.ZNetwork != network.Owner)
+                continue;
+            if (keepSet.Contains(orphanUid))
+                continue;
+            orphans.Add((orphanUid, orphanComp));
+        }
+
+        foreach (var (orphanUid, orphanComp) in orphans)
+        {
+            UnlinkFromPriorNetwork(orphanComp);
+
+            if (orphanComp.Depth == 0)
+                _lastSyncedVelocity.Remove(orphanComp.ZNetwork);
+
+            RemComp<CEZLinkedGridComponent>(orphanUid);
+        }
+
         if (gridsByDepth.Count < 2)
             return;
 

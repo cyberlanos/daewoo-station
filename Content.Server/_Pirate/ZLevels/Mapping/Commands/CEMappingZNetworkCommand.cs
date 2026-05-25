@@ -134,7 +134,11 @@ public sealed class CEMappingZNetworkCommand : LocalizedEntityCommands
 
         //TODO: Autosaves
 
-        shell.ExecuteCommand($"tp 0 0 {createdMaps[0]}");
+        if (createdMaps.Count > 0)
+            shell.ExecuteCommand($"tp 0 0 {createdMaps[0]}");
+        else
+            shell.WriteError($"No maps were loaded for prototype {indexedZMap.ID}; skipping teleport.");
+
         shell.RemoteExecuteCommand("mappingclientsidesetup");
         foreach (var mapId in createdMaps)
         {
