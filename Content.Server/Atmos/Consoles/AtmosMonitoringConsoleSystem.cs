@@ -40,6 +40,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
     // Note: this data does not need to be saved
     private Dictionary<EntityUid, Dictionary<Vector2i, AtmosPipeChunk>> _gridAtmosPipeChunks = new();
     private readonly Dictionary<EntityUid, EntityUid> _selectedMonitorGrids = new(); // Pirate: multiz
+    private readonly Dictionary<EntityUid, EntityUid> _appliedMonitorGrids = new(); // Pirate: multiz
     private float _updateTimer = 1.0f;
 
     // Constants
@@ -89,6 +90,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
     private void OnConsoleShutdown(EntityUid uid, AtmosMonitoringConsoleComponent component, ComponentShutdown args)
     {
         _selectedMonitorGrids.Remove(uid);
+        _appliedMonitorGrids.Remove(uid);
     }
 
     private void OnZLevelSelected(EntityUid uid, AtmosMonitoringConsoleComponent component, CEZMonitoringConsoleLevelSelectedMessage args)
@@ -104,6 +106,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
         _selectedMonitorGrids[uid] = targetGrid.Value;
         EnsureComp<NavMapComponent>(targetGrid.Value);
         UpdateAtmosMonitoringConsoleGridData(uid, component, targetGrid.Value);
+        _appliedMonitorGrids[uid] = targetGrid.Value;
         UpdateUIState(uid, component, xform);
     }
     private EntityUid GetSelectedMonitoringGrid(EntityUid consoleUid, TransformComponent xform)
@@ -234,6 +237,16 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
 
         if (!TryComp<GridAtmosphereComponent>(gridUid, out var atmosphere))
             return;
+
+        #region Pirate: multiz
+        // If the resolved grid differs from what we last populated for (e.g. selection was invalidated and
+        // GetSelectedMonitoringGrid fell back to the console's grid), repopulate cached chunks/devices.
+        if (!_appliedMonitorGrids.TryGetValue(uid, out var appliedGrid) || appliedGrid != gridUid)
+        {
+            UpdateAtmosMonitoringConsoleGridData(uid, component, gridUid);
+            _appliedMonitorGrids[uid] = gridUid;
+        }
+        #endregion Pirate: multiz
 
         // Console init, selection changes, and pipe/device rebuild paths already populate AtmosDevices/AtmosPipeChunks
         // and dirty the component; redoing it every 1-second UI refresh turned an idle console into a constant resender.

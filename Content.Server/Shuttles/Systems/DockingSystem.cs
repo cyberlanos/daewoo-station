@@ -496,6 +496,10 @@ namespace Content.Server.Shuttles.Systems
             if (!TryComp<CEZLinkedGridComponent>(dockGridUid, out var dockLinked))
                 return false;
 
+            // Treat unassigned/default ZNetwork as not-equal so two ungrouped grids don't appear linked.
+            if (!consoleLinked.ZNetwork.IsValid() || !dockLinked.ZNetwork.IsValid())
+                return false;
+
             return consoleLinked.ZNetwork == dockLinked.ZNetwork;
         }
         #endregion Pirate: multiz

@@ -62,14 +62,14 @@ public sealed class CEZLevelPullingSystem : EntitySystem
                 _zLevels.TeleportToZLevelCoordinates(uid, Transform(puller).Coordinates, comp.TargetZLevel, comp.TargetOffset);
                 _zLevels.NormalizeTransferredPullable(uid, comp.TargetOffset);
                 comp.TransferAttempted = true;
-                comp.TargetPosition = GetDesiredFollowPosition(puller);
+                comp.TargetPosition = GetDesiredFollowPosition(puller, comp);
                 Dirty(uid, comp);
             }
 
             if (Transform(uid).MapUid != Transform(puller).MapUid)
                 continue;
 
-            comp.TargetPosition = GetDesiredFollowPosition(puller);
+            comp.TargetPosition = GetDesiredFollowPosition(puller, comp);
             Dirty(uid, comp);
 
             _transform.SetWorldPosition(uid, comp.TargetPosition);
@@ -154,9 +154,10 @@ public sealed class CEZLevelPullingSystem : EntitySystem
         }
     }
 
-    private Vector2 GetDesiredFollowPosition(EntityUid puller)
+    private Vector2 GetDesiredFollowPosition(EntityUid puller, CEZLevelPullingTransitionComponent comp)
     {
-        return _transform.GetWorldPosition(puller);
+        // Preserve the recorded pull offset so the pulled entity trails behind the puller instead of snapping on top.
+        return _transform.GetWorldPosition(puller) + comp.PullDirection * comp.PullDistance;
     }
 
     private void RestorePullRange(EntityUid pulled, float pullDistance)

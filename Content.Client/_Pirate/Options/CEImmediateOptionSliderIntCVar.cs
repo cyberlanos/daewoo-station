@@ -37,6 +37,9 @@ public sealed class CEImmediateOptionSliderIntCVar : BaseOption
         Func<int, string>? format = null)
         : base(controller)
     {
+        if (minValue > maxValue)
+            throw new ArgumentException($"minValue ({minValue}) must be <= maxValue ({maxValue}) for cvar '{cVar.Name}'.", nameof(minValue));
+
         _cfg = cfg;
         _cVar = cVar;
         _slider = slider;

@@ -104,7 +104,7 @@ public sealed class CESaveZNetworkCommand : LocalizedEntityCommands
                 continue;
             }
 
-            var savePath = new ResPath($"/ZNetworkSaves/{args[1]}/{args[1]}{depth}.yml");
+            var savePath = new ResPath($"/ZNetworkSaves/{saveName}/{saveName}{depth}.yml");
             shell.WriteLine(Loc.GetString("cmd-savemap-attempt", ("mapId", mapId), ("path", savePath)));
             if (_mapLoader.TrySaveMap(mapId, savePath))
             {

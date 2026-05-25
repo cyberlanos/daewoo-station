@@ -34,7 +34,7 @@ namespace Content.Server.Gravity
                 return;
 
             var targets = GetGravityTargets(uid); // Pirate: multiz
-            var enabled = LinkedTargetsHaveActiveGravityGenerator(targets); // Pirate: multiz
+            var enabled = LinkedTargetsHaveInherentGravity(targets) || LinkedTargetsHaveActiveGravityGenerator(targets); // Pirate: multiz
             ApplyGravityState(targets, enabled); // Pirate: multiz
         }
 
@@ -88,6 +88,17 @@ namespace Content.Server.Gravity
             }
 
             return targets;
+        }
+
+        private bool LinkedTargetsHaveInherentGravity(List<EntityUid> targets)
+        {
+            foreach (var targetUid in targets)
+            {
+                if (TryComp<GravityComponent>(targetUid, out var gravity) && gravity.Inherent)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool LinkedTargetsHaveActiveGravityGenerator(List<EntityUid> targets)

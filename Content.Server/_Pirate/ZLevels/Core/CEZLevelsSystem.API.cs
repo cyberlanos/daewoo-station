@@ -78,8 +78,6 @@ public sealed partial class CEZLevelsSystem
                 success = false;
         }
 
-        RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());
-
         try
         {
             LinkNetworkGrids(network);
@@ -89,6 +87,11 @@ public sealed partial class CEZLevelsSystem
             Log.Error($"LinkNetworkGrids crashed: {e}");
             success = false;
         }
+
+        // Only signal a successful network update once linking completed without errors so listeners
+        // don't observe partial state.
+        if (success)
+            RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());
 
         return success;
     }

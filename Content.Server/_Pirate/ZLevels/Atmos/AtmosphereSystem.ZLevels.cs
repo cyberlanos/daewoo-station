@@ -59,7 +59,35 @@ public sealed partial class AtmosphereSystem
     private void OnZLinkedGridShutdown(Entity<CEZLinkedGridComponent> ent, ref ComponentShutdown args)
     {
         UntrackZAtmosMap(ent.Owner);
+
+        // Mark surviving peer tiles that paired with us as invalid before dropping the candidates,
+        // so any stale protected-air the disappearing grid was anchoring gets recomputed.
+        InvalidateSurvivingZAtmosPeers(ent.Owner);
+
         RemoveZAtmosTransferCandidatesForGrid(ent.Owner);
+    }
+
+    private void InvalidateSurvivingZAtmosPeers(EntityUid removedGridUid)
+    {
+        if (_zAtmosVerticalTransferPairs.Count == 0)
+            return;
+
+        foreach (var pair in _zAtmosVerticalTransferPairs)
+        {
+            ZAtmosTileKey? survivor = null;
+            if (pair.A.GridUid == removedGridUid && pair.B.GridUid != removedGridUid)
+                survivor = pair.B;
+            else if (pair.B.GridUid == removedGridUid && pair.A.GridUid != removedGridUid)
+                survivor = pair.A;
+
+            if (survivor is not { } key ||
+                !TryComp<GridAtmosphereComponent>(key.GridUid, out var atmos))
+            {
+                continue;
+            }
+
+            InvalidateZAtmosTileAndNeighbors(atmos, key.Tile);
+        }
     }
 
     private void OnZLinkedGridParentChanged(Entity<CEZLinkedGridComponent> ent, ref EntParentChangedMessage args)

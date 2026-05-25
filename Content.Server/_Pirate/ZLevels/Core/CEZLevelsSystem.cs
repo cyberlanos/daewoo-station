@@ -65,8 +65,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
 
         var stationName = MetaData(ent).EntityName;
         var stationNetwork = CreateZNetwork(ent.Comp.ZLevelsComponentOverrides);
-        ent.Comp.ZNetworkEntity = stationNetwork;
-        _meta.SetEntityName(ent.Comp.ZNetworkEntity.Value, $"Station z-Network: {stationName}");
+        _meta.SetEntityName(stationNetwork, $"Station z-Network: {stationName}");
 
         Dictionary<EntityUid, int> dict = new();
         dict.Add(mainMap.Value, 0);
@@ -123,10 +122,12 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
 
         if (!TryAddMapsIntoZNetwork(stationNetwork, dict))
         {
-            Log.Error($"Failed to populate station z-network {ToPrettyString(stationNetwork)}; skipping grid linking.");
+            Log.Error($"Failed to populate station z-network {ToPrettyString(stationNetwork)}; tearing it down.");
+            QueueDel(stationNetwork);
             return;
         }
 
+        ent.Comp.ZNetworkEntity = stationNetwork;
         LinkGridsDirectly(stationNetwork, gridsByDepth);
     }
 

@@ -152,6 +152,9 @@ public sealed partial class ScalingViewport
                     return true;
                 }
             }
+
+            // Linked grid present but peer at requested depth missing — don't fall back to map-level.
+            return false;
         }
 
         // Fallback: map-level Z-network lookup (for players not on a linked grid)

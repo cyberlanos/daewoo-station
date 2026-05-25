@@ -229,14 +229,7 @@ public sealed class ThrusterSystem : EntitySystem
             return;
         }
 
-        var shuttleGridUid = xform.GridUid; // Pirate: multiz
-        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
-        if (shuttleGridUid != null && TryComp<CEZLinkedGridComponent>(shuttleGridUid, out var linked) && linked.Depth != 0)
-        {
-            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
-                shuttleGridUid = leaderGrid;
-        }
-        #endregion Pirate: multiz
+        var shuttleGridUid = ResolveZLinkedLeaderGrid(xform.GridUid); // Pirate: multiz
 
         if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
             return;
@@ -267,14 +260,7 @@ public sealed class ThrusterSystem : EntitySystem
 
         if (args.ParentChanged)
         {
-            #region Pirate: multiz - resolve old leader grid for Z-linked thrusters
-            var oldGridUid = args.OldPosition.EntityId;
-            if (TryComp<CEZLinkedGridComponent>(oldGridUid, out var oldLinked) && oldLinked.Depth != 0)
-            {
-                if (oldLinked.PeerGrids.TryGetValue(0, out var oldLeader))
-                    oldGridUid = oldLeader;
-            }
-            #endregion Pirate: multiz
+            var oldGridUid = ResolveZLinkedLeaderGrid(args.OldPosition.EntityId) ?? args.OldPosition.EntityId; // Pirate: multiz
             oldShuttleComponent = Comp<ShuttleComponent>(oldGridUid);
 
             // If no parent change doesn't matter for angular.
@@ -365,14 +351,7 @@ public sealed class ThrusterSystem : EntitySystem
 
         component.IsOn = true;
 
-        var shuttleGridUid = xform.GridUid; // Pirate: multiz
-        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
-        if (shuttleGridUid != null && TryComp<CEZLinkedGridComponent>(shuttleGridUid, out var linked) && linked.Depth != 0)
-        {
-            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
-                shuttleGridUid = leaderGrid;
-        }
-        #endregion Pirate: multiz
+        var shuttleGridUid = ResolveZLinkedLeaderGrid(xform.GridUid); // Pirate: multiz
         if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
             return;
 
@@ -470,13 +449,7 @@ public sealed class ThrusterSystem : EntitySystem
 
         component.IsOn = false;
 
-        #region Pirate: multiz - resolve leader grid for Z-linked thrusters
-        if (gridId != null && TryComp<CEZLinkedGridComponent>(gridId, out var linked) && linked.Depth != 0)
-        {
-            if (linked.PeerGrids.TryGetValue(0, out var leaderGrid))
-                gridId = leaderGrid;
-        }
-        #endregion Pirate: multiz
+        gridId = ResolveZLinkedLeaderGrid(gridId); // Pirate: multiz
         if (!TryComp(gridId, out ShuttleComponent? shuttleComponent))
             return;
 
@@ -694,4 +667,18 @@ public sealed class ThrusterSystem : EntitySystem
     {
         return (int)Math.Log2((int)flag);
     }
+
+    #region Pirate: multiz
+    // Thrusters on non-leader peer grids contribute to the leader's ShuttleComponent.
+    private EntityUid? ResolveZLinkedLeaderGrid(EntityUid? gridUid)
+    {
+        if (gridUid is null)
+            return null;
+
+        if (!TryComp<CEZLinkedGridComponent>(gridUid.Value, out var linked) || linked.Depth == 0)
+            return gridUid;
+
+        return linked.PeerGrids.TryGetValue(0, out var leaderGrid) ? leaderGrid : gridUid;
+    }
+    #endregion Pirate: multiz
 }

@@ -162,13 +162,17 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
         {
             var targetDepth = linked.Depth + depthOffset;
 
-            if (linked.PeerGrids.TryGetValue(targetDepth, out var peerGridUid) &&
-                TryComp<TransformComponent>(peerGridUid, out var peerXform) &&
+            if (!linked.PeerGrids.TryGetValue(targetDepth, out var peerGridUid))
+                return false;
+
+            if (TryComp<TransformComponent>(peerGridUid, out var peerXform) &&
                 peerXform.MapUid is { } peerMapUid)
             {
                 target = new ZViewTarget(peerMapUid, GetPeerGridWorldPosition(camera.Comp, gridUid, peerGridUid));
                 return true;
             }
+
+            return false;
         }
 
         if (camera.Comp.MapUid is not { } currentMapUid ||

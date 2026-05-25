@@ -106,20 +106,21 @@ public sealed class CEMappingZNetworkCommand : LocalizedEntityCommands
             }
         }
 
-        if (!_zLevel.TryAddMapsIntoZNetwork(network, dict))
+        if (!success)
         {
-            shell.WriteError($"Failed to create zNetwork from loaded maps!");
+            shell.WriteError("Unloading all created maps...");
             foreach (var mapId in createdMaps)
             {
-                _map.DeleteMap(mapId);
+                if (_map.MapExists(mapId))
+                    _map.DeleteMap(mapId);
             }
             EntityManager.QueueDeleteEntity(network);
             return;
         }
 
-        if (!success)
+        if (!_zLevel.TryAddMapsIntoZNetwork(network, dict))
         {
-            shell.WriteError("Unloading all created maps...");
+            shell.WriteError($"Failed to create zNetwork from loaded maps!");
             foreach (var mapId in createdMaps)
             {
                 _map.DeleteMap(mapId);

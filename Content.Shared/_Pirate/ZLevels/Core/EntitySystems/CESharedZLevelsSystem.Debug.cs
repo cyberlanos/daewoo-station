@@ -240,6 +240,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!ZDebugStairsEnabled)
             return false;
 
+        (EntityUid Uid, string EventName, string DedupeKey)? pendingDedupeKey = null;
         if (dedupeKey != null)
         {
             PruneStairDebugKeys();
@@ -249,12 +250,15 @@ public abstract partial class CESharedZLevelsSystem
                 _timing.CurTime - previousTime < StairDebugRepeatWindow)
                 return false;
 
-            _stairDebugKeys[key] = _timing.CurTime;
+            pendingDedupeKey = key;
         }
 
         var xform = Transform(ent);
         if (!HasTraversalContext(xform))
             return false;
+
+        if (pendingDedupeKey is { } persistKey)
+            _stairDebugKeys[persistKey] = _timing.CurTime;
 
         var basePayload =
             $"uid={ToPrettyString(ent)},parent={xform.ParentUid},grid={xform.GridUid},map={xform.MapUid}";

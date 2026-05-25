@@ -44,9 +44,9 @@ public sealed class ShipShieldOverlay : Overlay
 
     protected override void Draw(in OverlayDrawArgs args)
     {
-        // Only draw the bubble on the player's own deck; physics/visuals data still exist on every peer.
+        // Per-entity xform.MapID vs args.MapId filtering below handles map scoping; don't gate on the player's map (Draw is per-viewport).
         var playerXform = _entManager.GetComponentOrNull<TransformComponent>(_player.LocalEntity);
-        if (playerXform == null || playerXform.MapID != args.MapId)
+        if (playerXform == null)
             return;
 
         var handle = args.WorldHandle;
