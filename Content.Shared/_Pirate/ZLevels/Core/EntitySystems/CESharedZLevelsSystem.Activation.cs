@@ -6,15 +6,70 @@
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Ghost;
 using Content.Shared.Ghost;
+using JetBrains.Annotations;
 using Robust.Shared.Physics;
-using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
 
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
+/// <summary>
+/// Raised on a z-physics entity when it wakes (becomes active) or sleeps (becomes inactive).
+/// Replaces what used to be <c>CEActiveZPhysicsComponent</c> ComponentInit / ComponentShutdown.
+/// </summary>
+[ByRefEvent]
+public readonly record struct CEZPhysicsActivationChangedEvent(bool Active);
+
 public abstract partial class CESharedZLevelsSystem
 {
     private static readonly TimeSpan StartupActivationDelay = TimeSpan.FromSeconds(0.5);
+
+    /// <summary>
+    /// Entities currently driven by the z-physics update loop.
+    /// Membership is mutated only through <see cref="WakeBody"/> / <see cref="SleepBody"/>.
+    /// </summary>
+    private readonly List<EntityUid> _activeBodies = new();
+
+    /// <summary>
+    /// Entities whose movement cache will be refreshed at the start of the next physics update.
+    /// Used to deduplicate cache work when many entities are invalidated at once (e.g. tile
+    /// changes hitting an AABB full of bodies, or a grid moving its children).
+    /// </summary>
+    private readonly List<EntityUid> _dirtyMovementBodies = new();
+
+    [PublicAPI]
+    public IReadOnlyList<EntityUid> ActiveBodies => _activeBodies;
+
+    [PublicAPI]
+    public bool IsBodyActive(EntityUid uid) => _activeBodies.Contains(uid);
+
+    /// <summary>
+    /// Queues a movement-cache refresh for <paramref name="uid"/> to be drained at the start of
+    /// the next physics update. Safe to call repeatedly with the same uid — duplicates are
+    /// coalesced. Use this when many bodies are invalidated at once; for synchronous callers
+    /// that need the cache up-to-date before the next read, call <see cref="CacheMovement"/>
+    /// directly.
+    /// </summary>
+    [PublicAPI]
+    public void DirtyMovement(EntityUid uid)
+    {
+        if (_dirtyMovementBodies.Contains(uid))
+            return;
+
+        _dirtyMovementBodies.Add(uid);
+    }
+
+    /// <summary>Drains the dirty-movement queue, refreshing each body's cache once.</summary>
+    protected void UpdateDirtyMovement()
+    {
+        for (var i = _dirtyMovementBodies.Count - 1; i >= 0; i--)
+        {
+            var uid = _dirtyMovementBodies[i];
+            if (ZPhysQuery.TryComp(uid, out var zPhys))
+                CacheMovement((uid, zPhys));
+        }
+
+        _dirtyMovementBodies.Clear();
+    }
 
     private void InitializeActivation()
     {
@@ -28,13 +83,13 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnAnchorStateChange(Entity<CEZPhysicsComponent> ent, ref AnchorStateChangedEvent args)
     {
-        CheckActivation(ent);
+        RefreshBody(ent);
     }
 
     private void OnMapInit(Entity<CEZPhysicsComponent> ent, ref MapInitEvent args)
     {
         ent.Comp.StartupSuppressedUntil = _timing.CurTime + StartupActivationDelay;
-        CheckActivation(ent);
+        RefreshBody(ent);
 
         if (!TryGetTraversalDepth(Transform(ent), out var depth))
             return;
@@ -45,12 +100,12 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnPhysicsBodyTypeChange(Entity<CEZPhysicsComponent> ent, ref PhysicsBodyTypeChangedEvent args)
     {
-        CheckActivation(ent);
+        RefreshBody(ent);
     }
 
     private void OnParentChanged(Entity<CEZPhysicsComponent> ent, ref EntParentChangedMessage args)
     {
-        CheckActivation(ent);
+        RefreshBody(ent);
 
         var xform = Transform(ent);
 
@@ -86,7 +141,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!ZPhysQuery.TryComp(uid, out var zPhys))
             return;
 
-        CheckActivation((uid, zPhys));
+        RefreshBody((uid, zPhys));
     }
 
     private bool IsAutomaticZPhysicsExcluded(EntityUid uid)
@@ -95,15 +150,22 @@ public abstract partial class CESharedZLevelsSystem
                HasComp<CEZLevelGhostMoverComponent>(uid);
     }
 
-    private void CheckActivation(Entity<CEZPhysicsComponent> ent)
+    /// <summary>
+    /// Re-evaluates whether <paramref name="ent"/> should be in the active list and dispatches
+    /// to <see cref="WakeBody"/> or <see cref="SleepBody"/>.
+    /// </summary>
+    [PublicAPI]
+    public void RefreshBody(Entity<CEZPhysicsComponent> ent)
     {
         if (TerminatingOrDeleted(ent))
+        {
+            SleepBody(ent);
             return;
+        }
 
-        // Ghost movers use actions only — exclude from automatic Z-physics entirely
         if (IsAutomaticZPhysicsExcluded(ent))
         {
-            SetActiveStatus(ent, false);
+            SleepBody(ent);
             return;
         }
 
@@ -111,46 +173,70 @@ public abstract partial class CESharedZLevelsSystem
 
         if (!HasTraversalContext(xform))
         {
-            SetActiveStatus(ent, false);
+            SleepBody(ent);
             return;
         }
 
         if (xform.ParentUid != xform.MapUid && xform.ParentUid != xform.GridUid)
         {
             DebugZ(ent, "z-physics inactive: parent is neither the map nor the grid");
-            SetActiveStatus(ent, false);
+            SleepBody(ent);
             return;
         }
 
         if (xform.Anchored)
         {
             DebugZ(ent, "z-physics inactive: entity is anchored");
-            SetActiveStatus(ent, false);
+            SleepBody(ent);
             return;
         }
 
-        if (TryComp<PhysicsComponent>(ent, out var physics))
+        if (PhysicsQuery.TryComp(ent, out var physics) && physics.BodyType == BodyType.Static)
         {
-            if (physics.BodyType == BodyType.Static)
-            {
-                DebugZ(ent, "z-physics inactive: body type is static");
-                SetActiveStatus(ent, false);
-                return;
-            }
+            DebugZ(ent, "z-physics inactive: body type is static");
+            SleepBody(ent);
+            return;
         }
 
         DebugZ(ent, "z-physics active");
-        SetActiveStatus(ent, true);
+        WakeBody(ent);
     }
 
-    private void SetActiveStatus(EntityUid ent, bool active)
+    /// <summary>
+    /// Adds the entity to the active list and primes its movement cache. No-op if already active.
+    /// </summary>
+    [PublicAPI]
+    public void WakeBody(Entity<CEZPhysicsComponent> ent)
     {
         if (!_timing.IsFirstTimePredicted)
             return;
 
-        if (active)
-            EnsureComp<CEActiveZPhysicsComponent>(ent);
-        else
-            RemComp<CEActiveZPhysicsComponent>(ent);
+        if (_activeBodies.Contains(ent))
+            return;
+
+        _activeBodies.Add(ent);
+
+        CacheMovement(ent);
+
+        var ev = new CEZPhysicsActivationChangedEvent(true);
+        RaiseLocalEvent(ent, ref ev);
+    }
+
+    /// <summary>
+    /// Removes the entity from the active list. No-op if it wasn't active.
+    /// </summary>
+    [PublicAPI]
+    public void SleepBody(EntityUid uid)
+    {
+        if (!_timing.IsFirstTimePredicted)
+            return;
+
+        if (!_activeBodies.Remove(uid))
+            return;
+
+        SetZGravityInfluenced(uid, false);
+
+        var ev = new CEZPhysicsActivationChangedEvent(false);
+        RaiseLocalEvent(uid, ref ev);
     }
 }

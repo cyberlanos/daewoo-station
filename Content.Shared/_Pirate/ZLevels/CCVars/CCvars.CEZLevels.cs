@@ -45,4 +45,14 @@ public sealed partial class CCVars
 
     public static readonly CVarDef<bool>
         CEDebugStairsClient = CVarDef.Create("zlevels.ce_debug_stairs_client", false, CVar.CLIENTONLY | CVar.ARCHIVE);
+
+    /// <summary>
+    /// Internal z-physics tick rate, in Hz. The Update loop accumulates engine frametime and
+    /// advances physics in fixed-size substeps of <c>1/this</c> seconds. Defaults to 30 Hz to
+    /// match the typical engine tickrate (one substep per engine tick, no behavior change).
+    /// Bump it for smoother z-physics on hosts that run faster; capped at
+    /// <see cref="CESharedZLevelsSystem.MaxStepsPerFrame"/> substeps per frame either way.
+    /// </summary>
+    public static readonly CVarDef<float>
+        CEZPhysicsTickRate = CVarDef.Create("zlevels.ce_physics_tickrate", 30f, CVar.SERVER | CVar.REPLICATED | CVar.ARCHIVE);
 }

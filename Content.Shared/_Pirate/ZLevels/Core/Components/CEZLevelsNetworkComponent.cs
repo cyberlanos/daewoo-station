@@ -19,6 +19,25 @@ public sealed partial class CEZLevelsNetworkComponent : Component
     public Dictionary<int, EntityUid?> ZLevels = new();
 
     /// <summary>
+    /// Reverse-lookup table for <see cref="ZLevels"/>. O(1) map→depth instead of scanning values.
+    /// </summary>
+    [ViewVariables, AutoNetworkedField]
+    public Dictionary<EntityUid, int> ZLevelByEntity = new();
+
+    /// <summary>
+    /// Maps stored densely from <see cref="SortedMin"/> to <see cref="SortedMax"/>.
+    /// Gaps are represented by <see cref="EntityUid.Invalid"/>.
+    /// </summary>
+    [ViewVariables, AutoNetworkedField]
+    public List<EntityUid> SortedZLevels = new();
+
+    [ViewVariables, AutoNetworkedField]
+    public int SortedMin;
+
+    [ViewVariables, AutoNetworkedField]
+    public int SortedMax;
+
+    /// <summary>
     /// Shared components for all zLevels maps
     /// </summary>
     [DataField(serverOnly: true)]

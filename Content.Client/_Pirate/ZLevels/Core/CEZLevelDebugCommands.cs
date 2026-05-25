@@ -51,11 +51,11 @@ public sealed class CEZDebugSelfCommand : LocalizedCommands
         if (_entityManager.TryGetComponent(uid, out CEZPhysicsComponent? zPhys))
         {
             shell.WriteLine(
-                $"CEZPhysics: yes active={_entityManager.HasComponent<CEActiveZPhysicsComponent>(uid)} local={Fmt(zPhys.LocalPosition)} vel={Fmt(zPhys.Velocity)} ground={Fmt(zPhys.CurrentGroundHeight)} sticky={zPhys.CurrentStickyGround} gravity={Fmt(zPhys.GravityMultiplier)} autoStep={zPhys.AutoStep}");
+                $"CEZPhysics: yes active={zLevels.IsBodyActive(uid)} local={Fmt(zPhys.LocalPosition)} vel={Fmt(zPhys.Velocity)} ground={Fmt(zPhys.CurrentGroundHeight)} sticky={zPhys.CurrentStickyGround} gravity={Fmt(zPhys.GravityMultiplier)} autoStep={zPhys.AutoStep}");
         }
         else
         {
-            shell.WriteLine($"CEZPhysics: no active={_entityManager.HasComponent<CEActiveZPhysicsComponent>(uid)}");
+            shell.WriteLine($"CEZPhysics: no active={zLevels.IsBodyActive(uid)}");
         }
 
         if (xform.MapUid is { } mapUid &&

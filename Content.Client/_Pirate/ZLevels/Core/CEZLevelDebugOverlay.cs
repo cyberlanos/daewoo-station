@@ -46,9 +46,14 @@ public sealed class CEZLevelDebugOverlay : Overlay
         if (_font is null)
             return;
 
-        var query = _entityManager.EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var zPhys, out _, out var xform))
+        foreach (var uid in _zLevels.ActiveBodies)
         {
+            if (!_entityManager.TryGetComponent<CEZPhysicsComponent>(uid, out var zPhys) ||
+                !_entityManager.TryGetComponent<TransformComponent>(uid, out var xform))
+            {
+                continue;
+            }
+
             if (xform.ParentUid != xform.MapUid && xform.ParentUid != xform.GridUid)
                 continue;
 

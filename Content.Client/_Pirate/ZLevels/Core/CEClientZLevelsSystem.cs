@@ -43,6 +43,7 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<CEZPhysicsComponent, AfterAutoHandleStateEvent>(OnZPhysicsHandleState);
         SubscribeLocalEvent<CEZPhysicsComponent, GetEyeOffsetEvent>(OnEyeOffset);
+        SubscribeLocalEvent<CEZPhysicsComponent, CEZPhysicsActivationChangedEvent>(OnActivationChanged);
         SubscribeLocalEvent<CEZItemPhysicsComponent, ComponentStartup>(OnItemZPhysicsStartup);
         SubscribeLocalEvent<CEZItemPhysicsComponent, ComponentRemove>(OnItemZPhysicsRemove);
     }
@@ -83,9 +84,15 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, SpriteComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var zPhys, out _, out var sprite, out var xform))
+        foreach (var uid in ActiveBodies)
         {
+            if (!ZPhysQuery.TryComp(uid, out var zPhys) ||
+                !TryComp<SpriteComponent>(uid, out var sprite) ||
+                !TransformQuery.TryComp(uid, out var xform))
+            {
+                continue;
+            }
+
             var localPosition = GetVisualsLocalPosition((uid, zPhys), xform);
 
             sprite.NoRotation = localPosition != 0 || zPhys.NoRotDefault;
@@ -119,19 +126,17 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         }
     }
 
-    protected override void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
+    private void OnActivationChanged(Entity<CEZPhysicsComponent> ent, ref CEZPhysicsActivationChangedEvent args)
     {
-        base.OnActiveShutdown(ent, ref args);
-
-        if (!TryComp<CEZPhysicsComponent>(ent, out var zPhys) ||
-            !TryComp<SpriteComponent>(ent, out var sprite))
-        {
+        if (args.Active)
             return;
-        }
 
-        sprite.NoRotation = zPhys.NoRotDefault;
-        _sprite.SetOffset((ent.Owner, sprite), zPhys.SpriteOffsetDefault);
-        _sprite.SetDrawDepth((ent.Owner, sprite), zPhys.DrawDepthDefault);
+        if (!TryComp<SpriteComponent>(ent, out var sprite))
+            return;
+
+        sprite.NoRotation = ent.Comp.NoRotDefault;
+        _sprite.SetOffset((ent.Owner, sprite), ent.Comp.SpriteOffsetDefault);
+        _sprite.SetDrawDepth((ent.Owner, sprite), ent.Comp.DrawDepthDefault);
     }
 
     private void OnItemZPhysicsStartup(Entity<CEZItemPhysicsComponent> ent, ref ComponentStartup args)

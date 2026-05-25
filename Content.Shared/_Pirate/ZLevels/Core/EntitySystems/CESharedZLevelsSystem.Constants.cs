@@ -1,0 +1,27 @@
+/*
+ * This file is sublicensed under MIT License
+ * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
+ */
+
+namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
+
+public abstract partial class CESharedZLevelsSystem
+{
+    public const int MaxZLevelsBelowRendering = 6;
+
+    /// <summary>
+    /// Hard cap on how many physics substeps the z-physics loop will run inside a single engine
+    /// Update. Prevents the death spiral where a slow frame accumulates so much frametime that
+    /// the next frame substeps for a long time, slowing things further.
+    /// </summary>
+    public const int MaxStepsPerFrame = 10;
+
+    /// <summary>Downward acceleration applied per second to falling z-physics bodies.</summary>
+    internal const float ZGravityForce = 9.8f;
+
+    /// <summary>Hard cap on absolute vertical velocity.</summary>
+    internal const float ZVelocityLimit = 20.0f;
+
+    /// <summary>Minimum |velocity| required to fire <c>CEZLevelHitEvent</c> / <c>LandEvent</c> on landing.</summary>
+    internal const float ImpactVelocityLimit = 3f;
+}

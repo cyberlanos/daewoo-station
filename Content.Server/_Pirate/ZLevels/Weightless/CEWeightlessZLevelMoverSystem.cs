@@ -41,7 +41,7 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
         SubscribeLocalEvent<CEWeightlessZLevelMoverComponent, CEZLevelActionUp>(OnZLevelUp);
         SubscribeLocalEvent<CEWeightlessZLevelMoverComponent, CEZLevelActionDown>(OnZLevelDown);
         SubscribeLocalEvent<CEZPhysicsComponent, ComponentShutdown>(OnZPhysicsShutdown);
-        SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentRemove>(OnActiveZPhysicsRemove);
+        SubscribeLocalEvent<CEZPhysicsComponent, CEZPhysicsActivationChangedEvent>(OnZPhysicsActivationChanged);
     }
 
     public override void Update(float frameTime)
@@ -53,9 +53,14 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
 
         _nextUpdate = _timing.CurTime + UpdateInterval;
 
-        var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, PhysicsComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out _, out _, out var physics, out var xform))
+        foreach (var uid in _zLevels.ActiveBodies)
         {
+            if (!TryComp<PhysicsComponent>(uid, out var physics) ||
+                !TryComp<TransformComponent>(uid, out var xform))
+            {
+                continue;
+            }
+
             UpdateActions(uid, physics, xform);
         }
     }
@@ -179,7 +184,7 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
             return false;
 
         if (!HasComp<CEZPhysicsComponent>(uid) ||
-            !HasComp<CEActiveZPhysicsComponent>(uid) ||
+            !_zLevels.IsBodyActive(uid) ||
             !TryComp<PhysicsComponent>(uid, out var physics))
         {
             return false;
@@ -206,12 +211,14 @@ public sealed class CEWeightlessZLevelMoverSystem : EntitySystem
 
     private void OnZPhysicsShutdown(Entity<CEZPhysicsComponent> ent, ref ComponentShutdown args)
     {
+        _zLevels.SleepBody(ent);
         RemCompDeferred<CEWeightlessZLevelMoverComponent>(ent);
     }
 
-    private void OnActiveZPhysicsRemove(Entity<CEActiveZPhysicsComponent> ent, ref ComponentRemove args)
+    private void OnZPhysicsActivationChanged(Entity<CEZPhysicsComponent> ent, ref CEZPhysicsActivationChangedEvent args)
     {
-        RemCompDeferred<CEWeightlessZLevelMoverComponent>(ent);
+        if (!args.Active)
+            RemCompDeferred<CEWeightlessZLevelMoverComponent>(ent);
     }
 
     private void OnShutdown(Entity<CEWeightlessZLevelMoverComponent> ent, ref ComponentShutdown args)

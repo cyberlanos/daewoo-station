@@ -58,11 +58,8 @@ public sealed partial class CEZLevelsSystem
             return false;
         }
 
-        network.Comp.ZLevels.Add(depth, mapUid);
         var zlevel = EnsureComp<CEZLevelMapComponent>(mapUid);
-        zlevel.Depth = depth;
-        Dirty(network);
-        Dirty(mapUid, zlevel);
+        AttachMapToNetwork(network, (mapUid, zlevel), depth);
 
         RaiseLocalEvent(mapUid, new CEMapAddedIntoZNetworkEvent(network, depth));
 

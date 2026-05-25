@@ -23,10 +23,6 @@ namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 public abstract partial class CESharedZLevelsSystem
 {
-    public const int MaxZLevelsBelowRendering = 6;
-
-    private const float ZGravityForce = 9.8f;
-    private const float ZVelocityLimit = 20.0f;
     private const float StairUpTransferHeightThreshold = 1f;
     // Transfer up when the mover's sampled center reaches late stair 3.
     // In practice the player's center never reaches the geometric 0.3125 cutoff because the
@@ -47,11 +43,6 @@ public abstract partial class CESharedZLevelsSystem
     private const float GroundContactTolerance = 0.05f;
     private const float FlatGroundSettleVelocityThreshold = 1.0f;
     private static readonly float[] StairUpLandingSearchSamples = [0.05f, 0.15f, 0.25f, 0.35f, 0.45f];
-
-    /// <summary>
-    /// The minimum speed required to trigger LandEvent events.
-    /// </summary>
-    private const float ImpactVelocityLimit = 3f;
 
     private readonly Dictionary<EntityUid, DeferredClientMovingStairDescent> _deferredClientMovingStairDescents = new();
     private readonly HashSet<EntityUid> _serverImmediateLinkedGridDescents = new();
@@ -78,25 +69,11 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, CEGetZVelocityEvent>(OnGetVelocity);
         SubscribeLocalEvent<CEZPhysicsComponent, CEZLevelMapMoveEvent>(OnZLevelMapMove);
         SubscribeLocalEvent<CEZGravityInfluencedComponent, IsWeightlessEvent>(OnZGravityInfluenced);
-        SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentInit>(OnActiveInit);
-        SubscribeLocalEvent<CEActiveZPhysicsComponent, ComponentShutdown>(OnActiveShutdown);
 
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
         SubscribeLocalEvent<MapGridComponent, EntParentChangedMessage>(OnGridParentChanged);
         SubscribeLocalEvent<MapGridComponent, MapUidChangedEvent>(OnGridMapUidChanged);
         SubscribeLocalEvent<CEZLevelMapComponent, TileChangedEvent>(OnTileChanged);
-    }
-
-    private void OnActiveInit(Entity<CEActiveZPhysicsComponent> ent, ref ComponentInit args)
-    {
-        if (!ZPhysQuery.TryComp(ent, out var zComp))
-            return;
-        CacheMovement((ent, zComp));
-    }
-
-    protected virtual void OnActiveShutdown(Entity<CEActiveZPhysicsComponent> ent, ref ComponentShutdown args)
-    {
-        SetZGravityInfluenced(ent.Owner, false);
     }
 
     private void OnTileChanged(Entity<CEZLevelMapComponent> ent, ref TileChangedEvent args)
@@ -117,10 +94,10 @@ public abstract partial class CESharedZLevelsSystem
             var ents = _lookup.GetEntitiesIntersecting(mapCoords.MapId, aabb);
             foreach (var uid in ents)
             {
-                if (!ZPhysQuery.TryComp(uid, out var zComp))
+                if (!ZPhysQuery.HasComp(uid))
                     continue;
 
-                CacheMovement((uid, zComp));
+                DirtyMovement(uid);
             }
         }
     }
@@ -504,7 +481,7 @@ public abstract partial class CESharedZLevelsSystem
     {
         if (IsAutomaticZPhysicsExcluded(ent))
         {
-            SetActiveStatus(ent, false);
+            SleepBody(ent);
             SetZGravityInfluenced(ent, false);
             ent.Comp.DetachedCarrierGridUid = EntityUid.Invalid;
             ent.Comp.DetachedCarrierLocalPosition = Vector2.Zero;
@@ -969,7 +946,7 @@ public abstract partial class CESharedZLevelsSystem
                 if (!ZPhysQuery.TryComp(child, out var zPhys))
                     continue;
 
-                CacheMovement((child, zPhys));
+                DirtyMovement(child);
 
                 if (TryGetTraversalDepth(Transform(child), out var depth) &&
                     zPhys.CurrentZLevel != depth)
@@ -1014,12 +991,44 @@ public abstract partial class CESharedZLevelsSystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<CEZPhysicsComponent, CEActiveZPhysicsComponent, TransformComponent, PhysicsComponent>();
-        while (query.MoveNext(out var uid, out var zPhys, out _, out var xform, out var physics))
+        _accumulatedTime += TimeSpan.FromSeconds(frameTime);
+
+        var steps = 0;
+        while (_accumulatedTime >= _fixedTimestep && steps < MaxStepsPerFrame)
         {
+            UpdateZPhysics((float) _fixedTimestep.TotalSeconds);
+            _accumulatedTime -= _fixedTimestep;
+            steps++;
+        }
+
+        // If we hit the step cap there's leftover time we can't process this frame; cap the
+        // accumulator at one full step so it doesn't permanently lag behind real time.
+        if (_accumulatedTime > _fixedTimestep)
+            _accumulatedTime = _fixedTimestep;
+    }
+
+    private void UpdateZPhysics(float frameTime)
+    {
+        UpdateDirtyMovement();
+
+        // Iterate the active list in reverse so SleepBody removals during the loop don't shift
+        // indices we're about to visit. The list is kept tight by Wake/Sleep.
+        for (var i = _activeBodies.Count - 1; i >= 0; i--)
+        {
+            var uid = _activeBodies[i];
+
+            if (!ZPhysQuery.TryComp(uid, out var zPhys) ||
+                !TransformQuery.TryComp(uid, out var xform) ||
+                !PhysicsQuery.TryComp(uid, out var physics))
+            {
+                // Stale entry — components went away without RefreshBody firing.
+                SleepBody(uid);
+                continue;
+            }
+
             if (IsAutomaticZPhysicsExcluded(uid))
             {
-                SetActiveStatus(uid, false);
+                SleepBody(uid);
                 SetZGravityInfluenced(uid, false);
 
                 var dirtyVelocity = Math.Abs(zPhys.Velocity) > 0.01f;
@@ -2968,7 +2977,7 @@ public struct CEZLevelHitEvent(float impactPower)
 }
 
 /// <summary>
-/// Is called every frame to calculate the current vertical velocity of the object with CEActiveZPhysicsComponent.
+/// Is called every frame to calculate the current vertical velocity of an active z-physics body.
 /// </summary>
 public sealed class CEGetZVelocityEvent(Entity<CEZPhysicsComponent> target, float frameTime) : EntityEventArgs
 {
