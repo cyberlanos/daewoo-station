@@ -36,7 +36,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     private EntityQuery<MapGridComponent> _gridQuery;
     private bool _sharedInitialized;
 
-    protected EntityQuery<CEZPhysicsComponent> ZPhyzQuery;
+    protected EntityQuery<CEZPhysicsComponent> ZPhysQuery;
 
     public override void Initialize()
     {
@@ -50,7 +50,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         _zMapQuery = GetEntityQuery<CEZLevelMapComponent>();
         _ftlMapQuery = GetEntityQuery<FTLMapComponent>();
         _gridQuery = GetEntityQuery<MapGridComponent>();
-        ZPhyzQuery = GetEntityQuery<CEZPhysicsComponent>();
+        ZPhysQuery = GetEntityQuery<CEZPhysicsComponent>();
 
         InitializeDebug();
         InitMovement();

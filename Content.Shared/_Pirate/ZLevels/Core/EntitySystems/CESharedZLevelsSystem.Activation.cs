@@ -67,7 +67,7 @@ public abstract partial class CESharedZLevelsSystem
             "parent_change",
             $"old_parent={args.OldParent},old_parent_world={oldParentWorld},old_parent_vel={oldParentVelocity},new_parent={newParentUid},new_parent_world={newParentWorld},new_parent_vel={newParentVelocity},new_grid={xform.GridUid},new_map={xform.MapUid}");
 
-        if (ZPhyzQuery.TryComp(args.OldParent, out var oldParentZPhys))
+        if (ZPhysQuery.TryComp(args.OldParent, out var oldParentZPhys))
             SetZPosition((ent, ent), oldParentZPhys.LocalPosition);
     }
 
@@ -83,7 +83,7 @@ public abstract partial class CESharedZLevelsSystem
 
     private void RefreshZPhysicsActivation(EntityUid uid)
     {
-        if (!ZPhyzQuery.TryComp(uid, out var zPhys))
+        if (!ZPhysQuery.TryComp(uid, out var zPhys))
             return;
 
         CheckActivation((uid, zPhys));

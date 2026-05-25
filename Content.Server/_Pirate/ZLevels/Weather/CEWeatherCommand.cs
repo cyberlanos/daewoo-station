@@ -65,15 +65,13 @@ public sealed class CEWeatherCommand : LocalizedCommands
         if (args.Length == 3)
         {
             var curTime = _timing.CurTime;
-            if (int.TryParse(args[2], out var durationInt))
-            {
-                endTime = curTime + TimeSpan.FromSeconds(durationInt);
-            }
-            else
+            if (!int.TryParse(args[2], out var durationInt) || durationInt <= 0)
             {
                 shell.WriteError(Loc.GetString("cmd-weather-error-wrong-time"));
                 return;
             }
+
+            endTime = curTime + TimeSpan.FromSeconds(durationInt);
         }
 
         _entities.System<CEWeatherSystem>().SetWeather((target.Value, levelComp), weather, endTime);

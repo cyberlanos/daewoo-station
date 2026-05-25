@@ -3,6 +3,7 @@
  * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
  */
 
+using System.Linq;
 using Content.Server.Administration;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Administration;
@@ -49,6 +50,15 @@ public sealed class CESaveZNetworkCommand : LocalizedEntityCommands
         if (args.Length < 2)
         {
             shell.WriteError("Wrong arguments count.");
+            return;
+        }
+
+        // Reject names that could escape the saves dir or break path parsing.
+        var saveName = args[1];
+        if (string.IsNullOrWhiteSpace(saveName) ||
+            !saveName.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_'))
+        {
+            shell.WriteError($"Invalid save name '{saveName}'. Use alphanumerics, dashes, or underscores only.");
             return;
         }
 

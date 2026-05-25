@@ -41,7 +41,8 @@ public abstract partial class SharedShuttleSystem
         // EntityName produces "Unknown" / default placeholder for upper decks; redirect so every
         // peer in the network reports the same name on radar.
         var nameSource = ResolveLinkedGridForLabel(gridUid);
-        var entName = MetaData(nameSource).EntityName;
+        // Pirate: multiz — ResolveLinkedGridForLabel may hand back a peer-deck uid; tolerate missing metadata gracefully.
+        var entName = TryComp<MetaDataComponent>(nameSource, out var nameMeta) ? nameMeta.EntityName : string.Empty;
 
         if (self)
         {

@@ -89,7 +89,7 @@ public abstract partial class CESharedZLevelsSystem
 
     private void OnActiveInit(Entity<CEActiveZPhysicsComponent> ent, ref ComponentInit args)
     {
-        if (!ZPhyzQuery.TryComp(ent, out var zComp))
+        if (!ZPhysQuery.TryComp(ent, out var zComp))
             return;
         CacheMovement((ent, zComp));
     }
@@ -117,7 +117,7 @@ public abstract partial class CESharedZLevelsSystem
             var ents = _lookup.GetEntitiesIntersecting(mapCoords.MapId, aabb);
             foreach (var uid in ents)
             {
-                if (!ZPhyzQuery.TryComp(uid, out var zComp))
+                if (!ZPhysQuery.TryComp(uid, out var zComp))
                     continue;
 
                 CacheMovement((uid, zComp));
@@ -966,7 +966,7 @@ public abstract partial class CESharedZLevelsSystem
             {
                 stack.Push(child);
 
-                if (!ZPhyzQuery.TryComp(child, out var zPhys))
+                if (!ZPhysQuery.TryComp(child, out var zPhys))
                     continue;
 
                 CacheMovement((child, zPhys));
@@ -2340,7 +2340,7 @@ public abstract partial class CESharedZLevelsSystem
 
     private bool TryGetStairTransferDirection(EntityUid ent, int offset, out Direction direction)
     {
-        if (ZPhyzQuery.TryComp(ent, out var zComp) &&
+        if (ZPhysQuery.TryComp(ent, out var zComp) &&
             TryGetGroundSupportSample((ent, zComp), out var support, Math.Abs(offset), false) &&
             support.IsHighGround)
         {
@@ -2536,7 +2536,7 @@ public abstract partial class CESharedZLevelsSystem
         EntityUid currentGridUid;
         string resolutionSource;
 
-        if (ZPhyzQuery.TryComp(ent, out var zPhys) &&
+        if (ZPhysQuery.TryComp(ent, out var zPhys) &&
             TryGetDetachedCarrierLocalReference(zPhys, out var detachedCarrierGridUid, out var detachedCarrierLocal))
         {
             currentGridUid = detachedCarrierGridUid;
@@ -2767,7 +2767,7 @@ public abstract partial class CESharedZLevelsSystem
         var ev = new CEZLevelMapMoveEvent(offset, targetZLevel);
         RaiseLocalEvent(ent, ref ev);
 
-        if (ZPhyzQuery.TryComp(ent, out var zPhysAfterMove))
+        if (ZPhysQuery.TryComp(ent, out var zPhysAfterMove))
         {
             if (_net.IsServer || _timing.IsFirstTimePredicted)
             {
@@ -2844,7 +2844,7 @@ public abstract partial class CESharedZLevelsSystem
     [PublicAPI]
     public void NormalizeTransferredPullable(EntityUid ent, int offset)
     {
-        if (!ZPhyzQuery.TryComp(ent, out var zPhys))
+        if (!ZPhysQuery.TryComp(ent, out var zPhys))
             return;
 
         var oldVelocity = zPhys.Velocity;

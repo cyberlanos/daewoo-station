@@ -87,6 +87,7 @@ using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
 using Content.Shared.UserInterface;
 using Robust.Server.GameStates;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components; // Pirate: multiz
 using System.Runtime.InteropServices;
 
 namespace Content.Server.SurveillanceCamera;
@@ -125,6 +126,10 @@ public sealed class SurveillanceCameraMonitorSystem : EntitySystem
     {
         var targetGrid = GetEntity(args.Grid);
         if (targetGrid == null)
+            return;
+
+        // Reject stale/malformed UI payloads that don't point at an actual grid.
+        if (!HasComp<MapGridComponent>(targetGrid.Value))
             return;
 
         var xform = Transform(uid);

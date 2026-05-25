@@ -107,14 +107,18 @@ public sealed partial class CEZLevelsSpeakingSystem : EntitySystem
         var targetPos = new MapCoordinates(position, mapComp.MapId);
         var transmit = Spawn(null, targetPos);
         EnsureComp<TimedDespawnComponent>(transmit).Lifetime = TransmitterLifetime;
+        var transmitUid = transmit;
 
         //It's not the most elegant solution, but as far as I understand, the entity doesn't have time to enter
         //the client's PVS after spawning, and we already start communicating through it. A slight delay solves the problem.
         Timer.Spawn(MessageDelayMilliseconds,
             () =>
             {
+                if (!EntityManager.EntityExists(transmitUid))
+                    return;
+
                 _chat.TrySendInGameICMessage(
-                    transmit,
+                    transmitUid,
                     message,
                     InGameICChatType.Whisper,
                     false,

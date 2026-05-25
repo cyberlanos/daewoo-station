@@ -30,7 +30,7 @@ public sealed class CEZFlightSystem : CESharedZFlightSystem
 
     private void OnMapInit(Entity<CEControllableFlightComponent> ent, ref MapInitEvent args)
     {
-        if (!ZPhyzQuery.TryComp(ent, out var zPhys))
+        if (!ZPhysQuery.TryComp(ent, out var zPhys))
             return;
 
         if (!TryComp<CEZFlyerComponent>(ent.Owner, out var flyerComp))

@@ -29,14 +29,14 @@ public abstract partial class CESharedZFlightSystem : EntitySystem
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
     [Dependency] private readonly MovementSpeedModifierSystem _movementSpeed = default!;
 
-    protected EntityQuery<CEZPhysicsComponent> ZPhyzQuery;
+    protected EntityQuery<CEZPhysicsComponent> ZPhysQuery;
 
     public override void Initialize()
     {
         base.Initialize();
         InitializeControllable();
 
-        ZPhyzQuery = GetEntityQuery<CEZPhysicsComponent>();
+        ZPhysQuery = GetEntityQuery<CEZPhysicsComponent>();
 
         SubscribeLocalEvent<CEZPhysicsComponent, CEFlightStartedEvent>(OnStartFlight);
         SubscribeLocalEvent<CEZPhysicsComponent, CEFlightStoppedEvent>(OnStopFlight);

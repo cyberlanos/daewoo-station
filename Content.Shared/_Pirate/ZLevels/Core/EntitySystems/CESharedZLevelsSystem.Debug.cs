@@ -150,7 +150,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!HasTraversalContext(xform))
             return;
 
-        var zState = ZPhyzQuery.TryComp(ent, out var zPhys)
+        var zState = ZPhysQuery.TryComp(ent, out var zPhys)
             ? $" local={zPhys.LocalPosition:0.00} vel={zPhys.Velocity:0.00} ground={zPhys.CurrentGroundHeight:0.00} sticky={zPhys.CurrentStickyGround}"
             : string.Empty;
 
@@ -259,7 +259,7 @@ public abstract partial class CESharedZLevelsSystem
         var basePayload =
             $"uid={ToPrettyString(ent)},parent={xform.ParentUid},grid={xform.GridUid},map={xform.MapUid}";
 
-        if (ZPhyzQuery.TryComp(ent, out var zPhys))
+        if (ZPhysQuery.TryComp(ent, out var zPhys))
         {
             basePayload +=
                 $",local={StairCsvFloat(zPhys.LocalPosition)},vel={StairCsvFloat(zPhys.Velocity)},ground={StairCsvFloat(zPhys.CurrentGroundHeight)},sticky={StairCsvBool(zPhys.CurrentStickyGround)},current_z={zPhys.CurrentZLevel},from_below={StairCsvBool(zPhys.CurrentGroundFromBelowLevel)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},highground_below={StairCsvBool(zPhys.CurrentHighGroundBelow)},up_block_rem={StairCsvRemainingTime(zPhys.AutoUpBlockedUntil)},down_block_rem={StairCsvRemainingTime(zPhys.AutoDownBlockedUntil)},startup_block_rem={StairCsvRemainingTime(zPhys.StartupSuppressedUntil)}";

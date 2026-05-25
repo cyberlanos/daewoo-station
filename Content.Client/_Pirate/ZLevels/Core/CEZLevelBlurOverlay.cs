@@ -27,11 +27,22 @@ public sealed class CEZLevelBlurOverlay : Overlay
     public CEZLevelBlurOverlay()
     {
         IoCManager.InjectDependencies(this);
-        _blurShader = _proto.Index(_zBlurShader).InstanceUnique();
+        try
+        {
+            _blurShader = _proto.Index(_zBlurShader).InstanceUnique();
+        }
+        catch (Exception e)
+        {
+            Logger.GetSawmill("ce.zlevel.blur").Error($"Failed to load {_zBlurShader} shader; blur overlay disabled: {e}");
+            _blurShader = null;
+        }
     }
 
     protected override bool BeforeDraw(in OverlayDrawArgs args)
     {
+        if (_blurShader is null)
+            return false;
+
         if (args.Viewport.Eye is not ScalingViewport.ZEye zeye)
             return false;
 

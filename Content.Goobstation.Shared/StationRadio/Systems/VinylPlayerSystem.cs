@@ -35,33 +35,30 @@ public sealed class VinylPlayerSystem : EntitySystem
         if (comp.SoundEntity != null && !args.Powered)
             comp.SoundEntity = _audio.Stop(comp.SoundEntity);
 
-        if (!TryGetRadioCoverage(uid, out var coverage)) // Pirate: multiz
-            return;
-
-        var query = EntityQueryEnumerator<StationRadioReceiverComponent>();
-        while (query.MoveNext(out var receiver, out _))
-        {
-            if (!_zLevels.IsInCoverage(coverage, receiver)) // Pirate: multiz
-                continue; // Pirate: multiz
-
-            RaiseLocalEvent(receiver, new StationRadioMediaStoppedEvent());
-        }
+        BroadcastVinylStop(uid); // Pirate: multiz
     }
 
     private void OnDestruction(EntityUid uid, VinylPlayerComponent comp, DestructionEventArgs args)
     {
-        if (!TryGetRadioCoverage(uid, out var coverage)) // Pirate: multiz
-            return;
+        BroadcastVinylStop(uid); // Pirate: multiz
+    }
+
+    #region Pirate: multiz
+    private void BroadcastVinylStop(EntityUid uid)
+    {
+        var hasCoverage = TryGetRadioCoverage(uid, out var coverage);
 
         var query = EntityQueryEnumerator<StationRadioReceiverComponent>();
-        while (query.MoveNext(out var receiver, out var _))
+        while (query.MoveNext(out var receiver, out _))
         {
-            if (!_zLevels.IsInCoverage(coverage, receiver)) // Pirate: multiz
-                continue; // Pirate: multiz
+            // If coverage lookup failed (infra missing/destroyed) we still broadcast so any receiver currently playing this vinyl stops.
+            if (hasCoverage && !_zLevels.IsInCoverage(coverage, receiver))
+                continue;
 
             RaiseLocalEvent(receiver, new StationRadioMediaStoppedEvent());
         }
     }
+    #endregion
 
     private void OnVinylInserted(EntityUid uid, VinylPlayerComponent comp, EntInsertedIntoContainerMessage args)
     {
@@ -99,16 +96,7 @@ public sealed class VinylPlayerSystem : EntitySystem
         var ev = new VinylRemovedEvent(args.Entity);
         RaiseLocalEvent(uid, ref ev);
 
-        if (!TryGetRadioCoverage(uid, out var coverage)) // Pirate: multiz
-            return;
-
-        var query = EntityQueryEnumerator<StationRadioReceiverComponent>();
-        while (query.MoveNext(out var receiver, out var _))
-        {
-            if (!_zLevels.IsInCoverage(coverage, receiver)) // Pirate: multiz
-                continue; // Pirate: multiz
-            RaiseLocalEvent(receiver, new StationRadioMediaStoppedEvent());
-        }
+        BroadcastVinylStop(uid); // Pirate: multiz
     }
 
     private bool TryGetRadioInfrastructure(EntityUid uid, out EntityUid rig, out EntityUid server) // Pirate: multiz

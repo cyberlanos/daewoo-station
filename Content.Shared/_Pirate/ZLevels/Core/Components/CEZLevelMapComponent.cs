@@ -14,5 +14,5 @@ namespace Content.Shared._Pirate.ZLevels.Core.Components;
 public sealed partial class CEZLevelMapComponent : Component
 {
     [DataField, AutoNetworkedField]
-    public int Depth = 0;
+    public int Depth;
 }

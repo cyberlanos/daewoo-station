@@ -37,6 +37,8 @@ public sealed class FireControlNavControl : BaseShuttleControl
     private readonly RadarBlipsSystem _blips;
     private readonly SharedPhysicsSystem _physics;
 
+    private const float AdjacentZLevelAlphaMultiplier = 0.4f; // Pirate: multiz
+
     private EntityCoordinates? _coordinates;
     private EntityUid? _consoleEntity;
     private Angle? _rotation;
@@ -290,7 +292,7 @@ public sealed class FireControlNavControl : BaseShuttleControl
 
             var labelColor = _shuttles.GetIFFColor(grid, self: false, iff);
             if (_zLevelGrids.Contains(gUid)) // Pirate: multiz — dim z-adjacent grids
-                labelColor = labelColor.WithAlpha(labelColor.A * 0.4f);
+                labelColor = labelColor.WithAlpha(labelColor.A * AdjacentZLevelAlphaMultiplier);
             var coordColor = new Color(labelColor.R * 0.8f, labelColor.G * 0.8f, labelColor.B * 0.8f, 0.5f);
 
             DrawGrid(handle, curGridToView, grid, labelColor);
