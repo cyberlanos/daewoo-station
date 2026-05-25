@@ -109,7 +109,14 @@ public sealed class PirateTrapdoorSystem : EntitySystem
         // empty grids, which would also delete this trapdoor mid-Open. The aperture/passage
         // components below still let entities traverse z-levels through this tile.
         if (_map.GetAllTiles(gridUid, grid).Any(t => t.GridIndices != indices))
+        {
             _map.SetTile(gridUid, grid, indices, Tile.Empty);
+            ent.Comp.TileClearedWhileOpen = true;
+        }
+        else
+        {
+            ent.Comp.TileClearedWhileOpen = false;
+        }
 
         ent.Comp.Open = true;
         EnsureComp<CEZLevelApertureComponent>(ent.Owner);
@@ -131,7 +138,11 @@ public sealed class PirateTrapdoorSystem : EntitySystem
         if (!TryGetTilePosition(ent, out var gridUid, out var grid, out var indices))
             return false;
 
-        if (_map.TryGetTileRef(gridUid, grid, indices, out var current) && !current.Tile.IsEmpty)
+        // If Open() actually cleared the tile, a non-empty tile here means something else filled
+        // it in the meantime — that's a real obstruction. If Open() skipped the clear (single-tile
+        // grid), the retained tile is our own stored floor and must not block re-close.
+        if (ent.Comp.TileClearedWhileOpen &&
+            _map.TryGetTileRef(gridUid, grid, indices, out var current) && !current.Tile.IsEmpty)
         {
             _popup.PopupEntity(Loc.GetString("pirate-trapdoor-close-blocked"), ent.Owner);
             return false;
@@ -139,6 +150,7 @@ public sealed class PirateTrapdoorSystem : EntitySystem
 
         _map.SetTile(gridUid, grid, indices, ent.Comp.HasStoredTile ? ent.Comp.StoredTile : GetDefaultTile(ent.Comp));
 
+        ent.Comp.TileClearedWhileOpen = false;
         ent.Comp.Open = false;
         RemComp<CEZLevelApertureComponent>(ent.Owner);
         RemComp<CEZLevelAscentPassageComponent>(ent.Owner);

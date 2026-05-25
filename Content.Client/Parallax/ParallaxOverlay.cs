@@ -29,7 +29,6 @@ using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 using Content.Shared.Shuttles.Components; // Pirate: multiz
-using Robust.Client.Player; // Pirate: multiz
 using Robust.Shared.Timing; // Pirate: multiz
 
 namespace Content.Client.Parallax;
@@ -41,7 +40,6 @@ public sealed class ParallaxOverlay : Overlay
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IParallaxManager _manager = default!;
-    [Dependency] private readonly IPlayerManager _player = default!; // Pirate: multiz
     private readonly SharedMapSystem _mapSystem;
     private readonly SharedTransformSystem _xformSystem; // Pirate: multiz
     private readonly ParallaxSystem _parallax;
@@ -70,8 +68,14 @@ public sealed class ParallaxOverlay : Overlay
                 return true;
 
             // During FTL, also draw at depth 0 so hyperspace is visible through windows.
-            if (zEye.Depth == 0 && IsPlayerInFTL())
+            // Per-viewport: ask whether the map this viewport is rendering is an FTL map,
+            // rather than checking the local player's grid (camera consoles render maps
+            // unrelated to the local player).
+            if (zEye.Depth == 0 &&
+                _entManager.HasComponent<FTLMapComponent>(_mapSystem.GetMapOrInvalid(args.MapId)))
+            {
                 return true;
+            }
 
             // Suppress all other depths.
             return false;
@@ -80,21 +84,6 @@ public sealed class ParallaxOverlay : Overlay
 
         return true;
     }
-
-    #region Pirate: multiz
-    private bool IsPlayerInFTL()
-    {
-        if (_player.LocalEntity is not { } player)
-            return false;
-
-        if (!_entManager.TryGetComponent(player, out TransformComponent? xform) || xform.GridUid == null)
-            return false;
-
-        // FTLComponent.State is not networked, so just check for component presence.
-        // FTLComponent is only added during FTL and removed after cooldown.
-        return _entManager.HasComponent<FTLComponent>(xform.GridUid.Value);
-    }
-    #endregion Pirate: multiz
 
     protected override void Draw(in OverlayDrawArgs args)
     {

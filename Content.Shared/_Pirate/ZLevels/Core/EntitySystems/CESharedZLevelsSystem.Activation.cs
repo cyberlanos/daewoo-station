@@ -34,7 +34,7 @@ public abstract partial class CESharedZLevelsSystem
     /// Used to deduplicate cache work when many entities are invalidated at once (e.g. tile
     /// changes hitting an AABB full of bodies, or a grid moving its children).
     /// </summary>
-    private readonly List<EntityUid> _dirtyMovementBodies = new();
+    private readonly HashSet<EntityUid> _dirtyMovementBodies = new();
 
     [PublicAPI]
     public IReadOnlyList<EntityUid> ActiveBodies => _activeBodies;
@@ -52,18 +52,14 @@ public abstract partial class CESharedZLevelsSystem
     [PublicAPI]
     public void DirtyMovement(EntityUid uid)
     {
-        if (_dirtyMovementBodies.Contains(uid))
-            return;
-
         _dirtyMovementBodies.Add(uid);
     }
 
     /// <summary>Drains the dirty-movement queue, refreshing each body's cache once.</summary>
     protected void UpdateDirtyMovement()
     {
-        for (var i = _dirtyMovementBodies.Count - 1; i >= 0; i--)
+        foreach (var uid in _dirtyMovementBodies)
         {
-            var uid = _dirtyMovementBodies[i];
             if (ZPhysQuery.TryComp(uid, out var zPhys))
                 CacheMovement((uid, zPhys));
         }

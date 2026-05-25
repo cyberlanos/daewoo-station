@@ -76,6 +76,10 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             [0] = mainGrid.Value,
         };
 
+        // Track maps loaded by this call (excludes the pre-existing mainMap) so we can roll them
+        // back if z-network population fails.
+        var loadedMaps = new List<EntityUid>();
+
         //Loading maps below first
         var depth = ent.Comp.MapsBelow.Count * -1;
         foreach (var mapBelow in ent.Comp.MapsBelow)
@@ -95,6 +99,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
                 gridsByDepth.TryAdd(depth, grid);
             }
             dict.Add(mapEnt.Value, depth);
+            loadedMaps.Add(mapEnt.Value);
             depth++;
         }
 
@@ -117,6 +122,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
                 gridsByDepth.TryAdd(depth, grid);
             }
             dict.Add(mapEnt.Value, depth);
+            loadedMaps.Add(mapEnt.Value);
             depth++;
         }
 
@@ -124,6 +130,8 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         {
             Log.Error($"Failed to populate station z-network {ToPrettyString(stationNetwork)}; tearing it down.");
             QueueDel(stationNetwork);
+            foreach (var loaded in loadedMaps)
+                QueueDel(loaded);
             return;
         }
 

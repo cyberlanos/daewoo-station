@@ -45,10 +45,6 @@ public sealed class ShipShieldOverlay : Overlay
     protected override void Draw(in OverlayDrawArgs args)
     {
         // Per-entity xform.MapID vs args.MapId filtering below handles map scoping; don't gate on the player's map (Draw is per-viewport).
-        var playerXform = _entManager.GetComponentOrNull<TransformComponent>(_player.LocalEntity);
-        if (playerXform == null)
-            return;
-
         var handle = args.WorldHandle;
 
         handle.UseShader(_unshadedShader);

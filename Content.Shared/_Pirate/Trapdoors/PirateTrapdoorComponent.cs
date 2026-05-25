@@ -30,6 +30,14 @@ public sealed partial class PirateTrapdoorComponent : Component
     [ViewVariables]
     public Tile StoredTile;
 
+    /// <summary>
+    /// True when <c>Open()</c> actually cleared the tile. False if it skipped the clear to avoid
+    /// orphaning a single-tile grid — in that case <c>Close()</c> must not treat the retained
+    /// tile as an obstruction.
+    /// </summary>
+    [ViewVariables]
+    public bool TileClearedWhileOpen;
+
     [ViewVariables]
     public bool HasTilePosition;
 

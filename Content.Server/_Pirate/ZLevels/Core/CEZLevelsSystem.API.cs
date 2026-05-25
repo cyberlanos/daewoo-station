@@ -69,28 +69,44 @@ public sealed partial class CEZLevelsSystem
     public bool TryAddMapsIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, Dictionary<EntityUid, int> maps)
     {
         var success = true;
+        var addedMaps = new List<EntityUid>();
+
         foreach (var (ent, depth) in maps)
         {
-            if (!TryAddMapIntoZNetwork(network, ent, depth))
+            if (TryAddMapIntoZNetwork(network, ent, depth))
+                addedMaps.Add(ent);
+            else
                 success = false;
         }
 
-        try
-        {
-            LinkNetworkGrids(network);
-        }
-        catch (Exception e)
-        {
-            Log.Error($"LinkNetworkGrids crashed: {e}");
-            success = false;
-        }
-
-        // Only signal a successful network update once linking completed without errors so listeners
-        // don't observe partial state.
         if (success)
-            RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());
+        {
+            try
+            {
+                LinkNetworkGrids(network);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"LinkNetworkGrids crashed: {e}");
+                success = false;
+            }
+        }
 
-        return success;
+        if (!success)
+        {
+            // Roll back any partial registrations so callers can dispose the network without
+            // leaving orphan CEZLevelMapComponent entries pointing at a soon-to-be-deleted network.
+            foreach (var added in addedMaps)
+            {
+                if (TryComp<CEZLevelMapComponent>(added, out var zMap))
+                    DetachMapFromNetwork(network, (added, zMap));
+            }
+
+            return false;
+        }
+
+        RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());
+        return true;
     }
 }
 
