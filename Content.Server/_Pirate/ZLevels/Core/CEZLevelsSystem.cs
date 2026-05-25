@@ -48,7 +48,10 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         {
             foreach (var grid in stationData.Grids)
             {
-                mainMap = Transform(grid).MapUid;
+                if (Transform(grid).MapUid is not { } gridMap)
+                    continue;
+
+                mainMap = gridMap;
                 mainGrid = grid;
                 break;
             }

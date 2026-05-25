@@ -27,7 +27,7 @@ public sealed class CEWeatherCommand : LocalizedCommands
 
     public override void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        if (args.Length < 2)
+        if (args.Length < 2 || args.Length > 3)
         {
             shell.WriteError(Loc.GetString("cmd-weather-error-no-arguments"));
             return;
