@@ -232,10 +232,13 @@ namespace Content.Server.Shuttles.Systems
             if (!args.Anchored)
             {
                 Undock(entity);
+                // Pirate: multiz — Undock early-returns when DockedWith is already null, so its
+                // own RefreshShuttleConsoles is skipped on the not-currently-docked unanchor path.
+                // The available-docks list still changed, so refresh unconditionally.
+                _console.RefreshShuttleConsoles();
                 return;
             }
 
-            // Pirate: multiz — anchoring path only; unanchoring is covered by Undock's own refresh.
             _console.RefreshShuttleConsoles();
         }
 

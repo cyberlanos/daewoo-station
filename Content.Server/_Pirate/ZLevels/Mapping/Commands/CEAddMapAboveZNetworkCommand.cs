@@ -8,6 +8,7 @@ using Content.Server._Pirate.ZLevels.Core;
 using Content.Server.Administration;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared.Administration;
+using Robust.Server.GameObjects;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
 using Robust.Shared.EntitySerialization;
@@ -23,6 +24,7 @@ public sealed class CEAddMapAboveZNetworkCommand : LocalizedEntityCommands
     [Dependency] private readonly IEntityManager _entities = default!;
     [Dependency] private readonly IResourceManager _resourceMgr = default!;
     [Dependency] private readonly MapLoaderSystem _mapLoader = default!;
+    [Dependency] private readonly MapSystem _map = default!;
     [Dependency] private readonly CEZLevelsSystem _zLevel = default!;
     [Dependency] private readonly MetaDataSystem _meta = default!;
 
@@ -102,7 +104,7 @@ public sealed class CEAddMapAboveZNetworkCommand : LocalizedEntityCommands
         if (!_zLevel.TryAddMapsIntoZNetwork((target.Value, levelComp), dict))
         {
             shell.WriteError($"Failed to add map to z-network at depth {newDepth}.");
-            _entities.QueueDeleteEntity(mapEnt.Value);
+            _map.DeleteMap(mapComp.MapId);
             return;
         }
 

@@ -31,7 +31,12 @@ public sealed partial class CEMultizAtmosPipeAdapterNode : PipeNode
             yield break;
         }
 
+        var mapSystem = entMan.EntitySysManager.GetEntitySystem<SharedMapSystem>();
         var gridTile = grid.TileIndicesFor(xform.Coordinates);
+
+        // Convert our tile to world coords so we can reproject onto peers that may have
+        // different grid transforms within their maps.
+        var sourceTileWorld = mapSystem.GridTileToWorldPos(gridUid, grid, gridTile);
 
         foreach (var depthOffset in DepthOffsets)
         {
@@ -41,7 +46,7 @@ public sealed partial class CEMultizAtmosPipeAdapterNode : PipeNode
                 continue;
             }
 
-            var peerTile = gridTile;
+            var peerTile = mapSystem.WorldToTile(peerGridUid, peerGrid, sourceTileWorld);
             foreach (var node in NodeHelpers.GetNodesInTile(nodeQuery, peerGrid, peerTile))
             {
                 if (node is CEMultizAtmosPipeAdapterNode adapter &&

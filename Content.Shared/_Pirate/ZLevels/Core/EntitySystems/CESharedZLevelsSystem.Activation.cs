@@ -75,6 +75,20 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, EntParentChangedMessage>(OnParentChanged);
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentStartup>(OnGhostMoverStartup);
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentShutdown>(OnGhostMoverShutdown);
+        // Becoming/leaving a ghost flips IsAutomaticZPhysicsExcluded; refresh activation so the
+        // body actually sleeps/wakes instead of staying stuck in its prior state.
+        SubscribeLocalEvent<GhostComponent, ComponentStartup>(OnGhostComponentAdded);
+        SubscribeLocalEvent<GhostComponent, ComponentShutdown>(OnGhostComponentRemoved);
+    }
+
+    private void OnGhostComponentAdded(Entity<GhostComponent> ent, ref ComponentStartup args)
+    {
+        RefreshZPhysicsActivation(ent);
+    }
+
+    private void OnGhostComponentRemoved(Entity<GhostComponent> ent, ref ComponentShutdown args)
+    {
+        RefreshZPhysicsActivation(ent);
     }
 
     private void OnAnchorStateChange(Entity<CEZPhysicsComponent> ent, ref AnchorStateChangedEvent args)

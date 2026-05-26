@@ -47,9 +47,9 @@ public sealed class CESaveZNetworkCommand : LocalizedEntityCommands
 
     public override void Execute(IConsoleShell shell, string argStr, string[] args)
     {
-        if (args.Length < 2)
+        if (args.Length != 2)
         {
-            shell.WriteError("Wrong arguments count.");
+            shell.WriteError("Wrong arguments count. Usage: znetwork-save <zNetwork> <saveName>");
             return;
         }
 

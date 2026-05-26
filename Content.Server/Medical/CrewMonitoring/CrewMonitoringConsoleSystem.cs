@@ -31,6 +31,7 @@ using Content.Shared.Medical.CrewMonitoring;
 using Content.Shared.Medical.SuitSensor;
 using Content.Shared.Pinpointer;
 using Robust.Server.GameObjects;
+using Robust.Shared.Map.Components; // Pirate: multiz
 
 namespace Content.Server.Medical.CrewMonitoring;
 
@@ -88,6 +89,11 @@ public sealed class CrewMonitoringConsoleSystem : EntitySystem
 
         var xform = Transform(uid);
         if (xform.GridUid == null || !IsValidZMonitoringGrid(xform.GridUid.Value, targetGrid.Value))
+            return;
+
+        // Guard against a stale/malformed payload that resolves to a non-grid entity; mutating
+        // an arbitrary entity with NavMapComponent would corrupt unrelated state.
+        if (!HasComp<MapGridComponent>(targetGrid.Value))
             return;
 
         EnsureComp<NavMapComponent>(targetGrid.Value);

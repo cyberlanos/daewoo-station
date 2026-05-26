@@ -188,7 +188,10 @@ public sealed partial class ShuttleConsoleSystem
         var actualTargetMap = _transform.GetMapId(actualTargetCoordinates);
         var selectedMapId = _xformQuery.GetComponent(selectedShuttleUid).MapID;
         // Linked decks can legitimately click onto the root shuttle's map, so only this multiz path gets the same-map override.
-        var allowResolvedSameMap = selectedShuttleUid != actualShuttleUid && selectedMapId != actualTargetMap;
+        // Compare against the operator's original requested target map (targetMap), not the post-resolution actualTargetMap
+        // — actualTargetMap can resolve back onto the root shuttle and would erroneously enable same-map FTL when the
+        // operator was actually targeting the deck's own map.
+        var allowResolvedSameMap = selectedShuttleUid != actualShuttleUid && selectedMapId != targetMap;
 
         // Check shuttle can FTL to this target.
         if (!_shuttle.CanFTLTo(actualShuttleUid, actualTargetMap, ent))

@@ -80,11 +80,14 @@ public sealed class CEGameMapMappingZNetworkCommand : LocalizedEntityCommands
             return;
         }
 
-        // Find the first station with CEStationZLevelsComponent
+        // Find the first station with a CEStationZLevelsComponent that actually declares maps;
+        // multi-station prototypes can have an empty override on one station and the real config
+        // on another. Mirrors the filter used by GetCompletion above.
         CEStationZLevelsComponent? zNetwork = null;
         foreach (var station in mapProto.Stations.Values)
         {
-            if (station.StationComponentOverrides.TryGetComponent<CEStationZLevelsComponent>(_compFactory, out var zNet))
+            if (station.StationComponentOverrides.TryGetComponent<CEStationZLevelsComponent>(_compFactory, out var zNet) &&
+                (zNet.MapsAbove.Count > 0 || zNet.MapsBelow.Count > 0))
             {
                 zNetwork = zNet;
                 break;

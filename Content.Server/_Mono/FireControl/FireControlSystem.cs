@@ -437,7 +437,9 @@ public sealed partial class FireControlSystem : EntitySystem
 
             // Per-gun z-reach gate: skip guns whose own deck is too far from the picked layer.
             var gunDepth = GetGridDepth(_xform.GetGrid(localWeapon)) ?? 0;
-            var reach = TryComp<CEZGunLayerReachComponent>(localWeapon, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach;
+            // Clamp negative YAML-authored reach to 0 so a typo doesn't silently lock the gun out
+            // entirely (|delta| > -n is always true, the gun would never fire).
+            var reach = Math.Max(0, TryComp<CEZGunLayerReachComponent>(localWeapon, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach);
             if (Math.Abs(gunDepth - targetDepth.Value) > reach)
                 continue;
 
@@ -585,6 +587,12 @@ public sealed partial class FireControlSystem : EntitySystem
         if (!Exists(targetMapUid) || !Exists(args.FiredProjectile))
             return;
         if (!TryComp<TransformComponent>(args.FiredProjectile, out var projXform))
+            return;
+
+        // Guard against a stale entry teleporting an unrelated projectile: if the projectile
+        // spawned on the same map we'd teleport it to, the gun has since moved onto its target's
+        // layer and no teleport is needed (or wanted).
+        if (projXform.MapUid == targetMapUid)
             return;
 
         var worldPos = _xform.GetWorldPosition(projXform);

@@ -157,7 +157,9 @@ public sealed partial class FireControlSystem : EntitySystem
                 if (!Exists(controllable))
                     continue;
 
-                var reach = TryComp<CEZGunLayerReachComponent>(controllable, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach;
+                // Clamp negative YAML-authored reach so the UI never advertises a layer-locking
+                // value that the firing path would also clamp.
+                var reach = Math.Max(0, TryComp<CEZGunLayerReachComponent>(controllable, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach);
 
                 var entry = new FireControllableEntry
                 {

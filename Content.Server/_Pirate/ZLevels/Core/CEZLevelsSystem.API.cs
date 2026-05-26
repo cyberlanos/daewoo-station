@@ -61,20 +61,18 @@ public sealed partial class CEZLevelsSystem
         var zlevel = EnsureComp<CEZLevelMapComponent>(mapUid);
         AttachMapToNetwork(network, (mapUid, zlevel), depth);
 
-        RaiseLocalEvent(mapUid, new CEMapAddedIntoZNetworkEvent(network, depth));
-
         return true;
     }
 
     public bool TryAddMapsIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, Dictionary<EntityUid, int> maps)
     {
         var success = true;
-        var addedMaps = new List<EntityUid>();
+        var addedMaps = new List<(EntityUid Uid, int Depth)>();
 
         foreach (var (ent, depth) in maps)
         {
             if (TryAddMapIntoZNetwork(network, ent, depth))
-                addedMaps.Add(ent);
+                addedMaps.Add((ent, depth));
             else
                 success = false;
         }
@@ -96,13 +94,24 @@ public sealed partial class CEZLevelsSystem
         {
             // Roll back any partial registrations so callers can dispose the network without
             // leaving orphan CEZLevelMapComponent entries pointing at a soon-to-be-deleted network.
-            foreach (var added in addedMaps)
+            // Per-map CEMapAddedIntoZNetworkEvent was deliberately NOT raised yet (deferred to
+            // the success branch below), so handlers haven't mutated any of these maps and we
+            // can detach cleanly.
+            foreach (var (added, _) in addedMaps)
             {
                 if (TryComp<CEZLevelMapComponent>(added, out var zMap))
                     DetachMapFromNetwork(network, (added, zMap));
             }
 
             return false;
+        }
+
+        // Per-map "added" events are deferred until the entire batch (including LinkNetworkGrids)
+        // has committed, so any handler that mutates the map sees a fully-linked network and
+        // never runs against a partial state that will get rolled back.
+        foreach (var (added, depth) in addedMaps)
+        {
+            RaiseLocalEvent(added, new CEMapAddedIntoZNetworkEvent(network, depth));
         }
 
         RaiseLocalEvent(network, new CEZLevelNetworkUpdatedEvent());

@@ -47,14 +47,32 @@ public sealed class CEZLevelDamageSystem : EntitySystem
 
         SubscribeLocalEvent<PhysicsComponent, CEZLevelHitEvent>(OnFallDamage);
 
-        _config.OnValueChanged(SharedCCVars.CEBaseFallingDamage, i => BaseFallingDamage = i, true);
-        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherDamage, i => BaseFallingOtherDamage = i, true);
-        _config.OnValueChanged(SharedCCVars.CEBaseFallingStunTime, i => BaseFallingStunTime = i, true);
-        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherStunTime, i => BaseFallingOtherStunTime = i, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingDamage, OnBaseFallingDamageChanged, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherDamage, OnBaseFallingOtherDamageChanged, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingStunTime, OnBaseFallingStunTimeChanged, true);
+        _config.OnValueChanged(SharedCCVars.CEBaseFallingOtherStunTime, OnBaseFallingOtherStunTimeChanged, true);
 
         if (_net.IsServer)
             _config.OnValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged, true);
     }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        _config.UnsubValueChanged(SharedCCVars.CEBaseFallingDamage, OnBaseFallingDamageChanged);
+        _config.UnsubValueChanged(SharedCCVars.CEBaseFallingOtherDamage, OnBaseFallingOtherDamageChanged);
+        _config.UnsubValueChanged(SharedCCVars.CEBaseFallingStunTime, OnBaseFallingStunTimeChanged);
+        _config.UnsubValueChanged(SharedCCVars.CEBaseFallingOtherStunTime, OnBaseFallingOtherStunTimeChanged);
+
+        if (_net.IsServer)
+            _config.UnsubValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged);
+    }
+
+    private void OnBaseFallingDamageChanged(float value) => BaseFallingDamage = value;
+    private void OnBaseFallingOtherDamageChanged(float value) => BaseFallingOtherDamage = value;
+    private void OnBaseFallingStunTimeChanged(float value) => BaseFallingStunTime = value;
+    private void OnBaseFallingOtherStunTimeChanged(float value) => BaseFallingOtherStunTime = value;
 
     private void OnStairDebugChanged(bool enabled)
     {

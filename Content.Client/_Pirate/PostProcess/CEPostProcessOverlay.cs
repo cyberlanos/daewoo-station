@@ -21,16 +21,27 @@ public sealed class CEPostProcessOverlay : Overlay
 
     public override bool RequestScreenTexture => true;
     public override OverlaySpace Space => OverlaySpace.WorldSpace;
-    private readonly ShaderInstance _basePostProcessShader;
+    private readonly ShaderInstance? _basePostProcessShader;
 
     public CEPostProcessOverlay()
     {
         IoCManager.InjectDependencies(this);
-        _basePostProcessShader = _proto.Index<ShaderPrototype>("CEPostProcess").InstanceUnique();
+        try
+        {
+            _basePostProcessShader = _proto.Index<ShaderPrototype>("CEPostProcess").InstanceUnique();
+        }
+        catch (Exception e)
+        {
+            Logger.GetSawmill("ce.postprocess").Error($"Failed to load CEPostProcess shader: {e}");
+            _basePostProcessShader = null;
+        }
     }
 
     protected override bool BeforeDraw(in OverlayDrawArgs args)
     {
+        if (_basePostProcessShader is null)
+            return false;
+
         if (!_entMan.TryGetComponent(_player.LocalSession?.AttachedEntity, out EyeComponent? eyeComp))
             return false;
 
@@ -51,6 +62,9 @@ public sealed class CEPostProcessOverlay : Overlay
 
     protected override void Draw(in OverlayDrawArgs args)
     {
+        if (_basePostProcessShader is null)
+            return;
+
         if (ScreenTexture == null)
             return;
 
@@ -61,7 +75,10 @@ public sealed class CEPostProcessOverlay : Overlay
         var viewport = args.WorldBounds;
 
         _basePostProcessShader.SetParameter("SCREEN_TEXTURE", ScreenTexture);
-        _basePostProcessShader.SetParameter("LIGHT_TEXTURE", args.Viewport.LightRenderTarget.Texture);
+        // Some viewports (e.g. mini-radar) don't allocate a light render target; fall back to
+        // the screen texture so the shader sampler stays bound to a real texture.
+        var lightTexture = args.Viewport.LightRenderTarget?.Texture ?? ScreenTexture;
+        _basePostProcessShader.SetParameter("LIGHT_TEXTURE", lightTexture);
         _basePostProcessShader.SetParameter("Zoom", args.Viewport.Eye.Zoom.X);
 
         worldHandle.UseShader(_basePostProcessShader);

@@ -52,6 +52,24 @@ public abstract partial class CESharedZLevelsSystem
         _config.OnValueChanged(SharedCCVars.CEDebugStairsClient, OnStairDebugChanged);
     }
 
+    private void ShutdownDebug()
+    {
+        if (_net.IsServer)
+        {
+            _config.UnsubValueChanged(SharedCCVars.CEDebugMovement, OnMovementDebugChanged);
+            _config.UnsubValueChanged(SharedCCVars.CEDebugMovementVerbose, OnMovementVerboseDebugChanged);
+            _config.UnsubValueChanged(SharedCCVars.CEDebugStairs, OnStairDebugChanged);
+            return;
+        }
+
+        if (!_net.IsClient)
+            return;
+
+        _config.UnsubValueChanged(SharedCCVars.CEDebugMovementClient, OnMovementDebugChanged);
+        _config.UnsubValueChanged(SharedCCVars.CEDebugMovementVerboseClient, OnMovementVerboseDebugChanged);
+        _config.UnsubValueChanged(SharedCCVars.CEDebugStairsClient, OnStairDebugChanged);
+    }
+
     private void OnMovementDebugChanged(bool enabled)
     {
         if (_zDebugEnabled == enabled)

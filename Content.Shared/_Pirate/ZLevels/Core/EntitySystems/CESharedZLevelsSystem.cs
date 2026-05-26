@@ -77,6 +77,17 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         InitializeActivation();
     }
 
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        if (!_sharedInitialized)
+            return;
+
+        _config.UnsubValueChanged(SharedCCVars.CEZPhysicsTickRate, OnPhysicsTickRateChanged);
+        ShutdownDebug();
+    }
+
     private void OnPhysicsTickRateChanged(float hz)
     {
         var clamped = MathF.Max(1f, hz);

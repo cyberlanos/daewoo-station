@@ -25,11 +25,16 @@ public sealed class CEZLevelLadderSystem : EntitySystem
     private const float FallStartVelocity = -0.1f;
     private static readonly TimeSpan ClimbCooldown = TimeSpan.FromSeconds(1);
 
+    /// <summary>How often <see cref="Update"/> drains expired entries from <see cref="_nextClimb"/>.</summary>
+    private static readonly TimeSpan NextClimbSweepInterval = TimeSpan.FromSeconds(30);
+
     private static readonly SpriteSpecifier UpIcon = new SpriteSpecifier.Rsi(new ResPath("/Textures/_Pirate/Actions/misc.rsi"), "up");
     private static readonly SpriteSpecifier DownIcon = new SpriteSpecifier.Rsi(new ResPath("/Textures/_Pirate/Actions/misc.rsi"), "down");
 
     private readonly Dictionary<EntityUid, TimeSpan> _nextClimb = new();
     private readonly HashSet<EntityUid> _activeClimbs = new();
+
+    private TimeSpan _nextClimbSweep;
 
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
@@ -57,6 +62,38 @@ public sealed class CEZLevelLadderSystem : EntitySystem
     {
         _nextClimb.Remove(ev.Entity.Owner);
         _activeClimbs.Remove(ev.Entity.Owner);
+    }
+
+    public override void Update(float frameTime)
+    {
+        base.Update(frameTime);
+
+        var now = _timing.CurTime;
+        if (now < _nextClimbSweep)
+            return;
+
+        _nextClimbSweep = now + NextClimbSweepInterval;
+
+        // Cooldowns are otherwise only pruned when the same user calls IsOnCooldown or terminates,
+        // so a user who climbs a ladder once and never returns would leak their entry forever.
+        if (_nextClimb.Count == 0)
+            return;
+
+        List<EntityUid>? expired = null;
+        foreach (var (uid, expiresAt) in _nextClimb)
+        {
+            if (expiresAt > now)
+                continue;
+
+            expired ??= new List<EntityUid>();
+            expired.Add(uid);
+        }
+
+        if (expired is null)
+            return;
+
+        foreach (var uid in expired)
+            _nextClimb.Remove(uid);
     }
 
     private void OnOpenAttempt(Entity<CEZLevelLadderComponent> ent, ref ActivatableUIOpenAttemptEvent args)
