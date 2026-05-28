@@ -33,7 +33,10 @@ public sealed partial class CEZLevelsSystem
             return false;
 
         var curTick = _timing.CurTick;
-        if (_zTransitionBudgetTick != curTick)
+        // Also (re)establish the wallclock baseline when it was never set — guards the edge case
+        // where the very first call lands on the default tick value and would otherwise read a
+        // zero timestamp into GetElapsedTime, instantly exhausting the budget.
+        if (_zTransitionBudgetTick != curTick || _zTransitionBudgetStart == 0)
         {
             _zTransitionBudgetTick = curTick;
             _zTransitionsThisTick = 0;
