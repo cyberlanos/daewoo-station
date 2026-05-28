@@ -318,6 +318,21 @@ public abstract partial class CESharedZLevelsSystem
             }
             else
             {
+                // Perfect corner crossing (45° shots): the line touches both orthogonal
+                // neighbours at the shared corner. Supercover them before the diagonal step so
+                // an opening sitting in either adjacent tile isn't skipped.
+                var neighborX = currentTile + new Vector2i(stepX, 0);
+                var neighborY = currentTile + new Vector2i(0, stepY);
+                var neighborXInRange = stepX != 0 && (stepX > 0 ? neighborX.X <= endTile.X : neighborX.X >= endTile.X);
+                var neighborYInRange = stepY != 0 && (stepY > 0 ? neighborY.Y <= endTile.Y : neighborY.Y >= endTile.Y);
+
+                if ((neighborXInRange && TryUseOpeningTile(neighborX)) ||
+                    (neighborYInRange && TryUseOpeningTile(neighborY)))
+                {
+                    opening = new EntityCoordinates(openingGrid, selectedOpeningLocal);
+                    return true;
+                }
+
                 currentTile += new Vector2i(stepX, stepY);
                 tMaxX += tDeltaX;
                 tMaxY += tDeltaY;
