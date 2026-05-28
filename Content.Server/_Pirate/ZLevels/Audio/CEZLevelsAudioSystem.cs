@@ -46,7 +46,7 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
 
         _zMapQuery = GetEntityQuery<CEZLevelMapComponent>();
 
-        Subs.CVar(_config, CCVars.CEZLevelsCrossZAudio, v => _crossZAudioEnabled = v, true);
+        Subs.CVar(_config, CCVars.CEZLevelsCrossZAudio, OnCrossZAudioChanged, true);
         Subs.CVar(_config, CCVars.CEZLevelsCrossZAudioDebug, v => _debug = v, true);
 
         // Two triggers: MoveEvent catches PlayPvs(coords)-style audio (footsteps, gunshots);
@@ -55,6 +55,29 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         SubscribeLocalEvent<AudioComponent, MoveEvent>(OnAudioMove);
         SubscribeLocalEvent<AudioComponent, MapInitEvent>(OnAudioMapInit);
         SubscribeLocalEvent<AudioComponent, ComponentShutdown>(OnAudioShutdown);
+    }
+
+    private void OnCrossZAudioChanged(bool enabled)
+    {
+        _crossZAudioEnabled = enabled;
+        if (enabled)
+            return;
+
+        // Disabling mid-round: tear down live projections so looped audio (jukeboxes etc.) stops
+        // on adjacent decks immediately instead of lingering until the source dies. QueueDel is
+        // deferred, so iterating the dictionary here is safe (OnAudioShutdown runs end-of-tick).
+        foreach (var projections in _projectionsBySource.Values)
+        {
+            foreach (var projection in projections)
+            {
+                _projections.Remove(projection);
+                if (!TerminatingOrDeleted(projection))
+                    QueueDel(projection);
+            }
+        }
+
+        _projectionsBySource.Clear();
+        _processed.Clear();
     }
 
     private void OnAudioMove(Entity<AudioComponent> ent, ref MoveEvent args) => TryProject(ent, args.Component);

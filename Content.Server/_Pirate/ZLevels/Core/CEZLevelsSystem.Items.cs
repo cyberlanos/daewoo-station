@@ -257,8 +257,12 @@ public sealed partial class CEZLevelsSystem
         var enumerator = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);
         while (enumerator.MoveNext(out var anchored))
         {
+            // SupportOnlyFromAbove high-ground (e.g. ladder bases) holds climbers from the level
+            // above only — it must not pull an item resting on the same tile onto its curve.
+            // Mirrors the floor==0 skip in the mob ground-probe.
             if (anchored is not { } anchoredUid ||
                 !TryComp<CEZLevelHighGroundComponent>(anchoredUid, out var hg) ||
+                hg.SupportOnlyFromAbove ||
                 hg.HeightCurve.Count == 0)
                 continue;
 

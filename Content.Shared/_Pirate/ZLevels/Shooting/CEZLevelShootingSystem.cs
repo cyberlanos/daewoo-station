@@ -38,7 +38,6 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly IConfigurationManager _config = default!;
 
-    private bool _debug;
     private float _crossZShotRange = 4f;
     private float _crossZOpeningSourceEdgeRangeTiles = 2f;
 
@@ -56,15 +55,13 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
         SubscribeLocalEvent<GunComponent, ItemUnwieldedEvent>(OnGunUnwielded);
         SubscribeLocalEvent<PlayerShotProjectileEvent>(OnPlayerShotProjectile);
 
-        Subs.CVar(_config, SharedCCVars.CEZLevelsShootingDebug, v => _debug = v, true);
-        Subs.CVar(_config, SharedCCVars.CEZShootingRange, v => _crossZShotRange = v, true);
-        Subs.CVar(_config, SharedCCVars.CEZShootingOpeningTileRange, v => _crossZOpeningSourceEdgeRangeTiles = v, true);
+        Subs.CVar(_config, SharedCCVars.CEZShootingRange, v => _crossZShotRange = MathF.Max(0f, v), true);
+        Subs.CVar(_config, SharedCCVars.CEZShootingOpeningTileRange, v => _crossZOpeningSourceEdgeRangeTiles = MathF.Max(0f, v), true);
 
         CommandBinds.Builder
             .Bind(CEKeyFunctions.CEToggleShootDownZLevel,
                 InputCmdHandler.FromDelegate(session =>
                     {
-                        if (_debug) Log.Info($"[crossz-shoot] keybind fired, session={session?.Name ?? "null"} attached={(session?.AttachedEntity is { } a ? ToPrettyString(a) : "null")}");
                         if (session?.AttachedEntity is { } user)
                             ToggleShootDown(user);
                     },
@@ -105,15 +102,17 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
 
     private void ToggleShootDown(EntityUid user)
     {
-        if (_debug) Log.Info($"[crossz-shoot] ToggleShootDown user={ToPrettyString(user)}");
+        var enabled = IsShootDownEnabled(user);
 
-        if (!TryGetReadyGun(user, "ce-zlevel-shoot-down-no-gun", "ce-zlevel-shoot-down-requires-wield"))
+        // Only require a ready gun when turning ON. Disabling must always be allowed, otherwise a
+        // player who dropped/holstered their gun stays latched into ShootDown with no way to clear it.
+        if (!enabled &&
+            !TryGetReadyGun(user, "ce-zlevel-shoot-down-no-gun", "ce-zlevel-shoot-down-requires-wield"))
         {
-            if (_debug) Log.Info($"[crossz-shoot] ToggleShootDown bail: no ready gun");
             return;
         }
 
-        var shootDown = !IsShootDownEnabled(user);
+        var shootDown = !enabled;
         SetShootDown(user, shootDown);
 
         PopupSelf(user, shootDown ? "ce-zlevel-shoot-down-enabled" : "ce-zlevel-shoot-down-disabled");
@@ -217,16 +216,6 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
         var fromMap = _transform.ToMapCoordinates(fromCoordinates);
         var toMap = _transform.ToMapCoordinates(toCoordinates);
         var clampedTo = ClampCrossZShotTarget(fromMap.Position, toMap.Position);
-        if (_debug)
-        {
-            Log.Info($"[crossz-shoot] redirect offset={offset} from={fromMap.Position} to={toMap.Position} clampedTo={clampedTo} shooterMap={ToPrettyString(shooterMap.Value)} targetMap={ToPrettyString(targetMap.Value.Owner)}");
-
-            // Dump opening-tile status for shooter / click tiles on whichever map carries the floor.
-            var openingMapForDebug = offset < 0 ? shooterMap.Value : targetMap.Value.Owner;
-            var shooterIsOpen = _zLevels.IsOpeningAt(openingMapForDebug, fromMap.Position);
-            var clickIsOpen = _zLevels.IsOpeningAt(openingMapForDebug, clampedTo);
-            Log.Info($"[crossz-shoot]   openingMap={ToPrettyString(openingMapForDebug)} shooterTileOpen={shooterIsOpen} clickTileOpen={clickIsOpen}");
-        }
         if (!_zLevels.TryFindZShotOpening(
                 shooterMap.Value,
                 targetMap.Value.Owner,
@@ -235,10 +224,8 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
                 clampedTo,
                 out var opening,
                 preferOpeningAwayFromSource: true,
-                maxSourceDistanceFromOpeningEdgeTiles: _crossZOpeningSourceEdgeRangeTiles,
-                debug: _debug))
+                maxSourceDistanceFromOpeningEdgeTiles: _crossZOpeningSourceEdgeRangeTiles))
         {
-            if (_debug) Log.Info($"[crossz-shoot] no opening found along line within {_crossZOpeningSourceEdgeRangeTiles + 0.5f} tiles");
             PopupSelf(shooter, offset > 0
                 ? "ce-zlevel-shoot-up-blocked-floor"
                 : "ce-zlevel-shoot-down-blocked-floor");
@@ -247,7 +234,6 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
         // Opening is grid-anchored EntityCoordinates — lift to world only for the path math.
         // Re-derives world from the (possibly moving) grid's current transform.
         var openingWorld = _transform.ToMapCoordinates(opening).Position;
-        if (_debug) Log.Info($"[crossz-shoot] opening anchor={ToPrettyString(opening.EntityId)} localPos={opening.Position} world={openingWorld}");
 
         GetCrossZProjectilePath(
             fromMap.Position,

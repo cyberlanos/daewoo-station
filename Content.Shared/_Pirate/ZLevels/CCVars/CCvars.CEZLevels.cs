@@ -139,14 +139,6 @@ public sealed partial class CCVars
     public static readonly CVarDef<float>
         CEZProjectedLightMinEnergy = CVarDef.Create("zlevels.ce_projected_light_min_energy", 0.1f, CVar.CLIENTONLY | CVar.ARCHIVE);
 
-    /// <summary>
-    /// Debug-only: log every decision gate in the cross-Z shooting pipeline (keybind fires, gun
-    /// checks, opening search). Use to diagnose why a cross-Z shot fails. Replicated because the
-    /// shooting system is shared (prediction needs the same value client/server).
-    /// </summary>
-    public static readonly CVarDef<bool>
-        CEZLevelsShootingDebug = CVarDef.Create("zlevels.ce_shooting_debug", false, CVar.SERVER | CVar.REPLICATED);
-
     /// <summary>Max world distance a cross-Z shot may travel. Cross-Z is intentionally close-quarters. Default 4.</summary>
     public static readonly CVarDef<float>
         CEZShootingRange = CVarDef.Create("zlevels.ce_shooting_range", 4f, CVar.SERVER | CVar.REPLICATED);

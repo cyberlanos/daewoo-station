@@ -194,8 +194,7 @@ public abstract partial class CESharedZLevelsSystem
         Vector2 to,
         out EntityCoordinates opening,
         bool preferOpeningAwayFromSource = false,
-        float maxSourceDistanceFromOpeningEdgeTiles = float.PositiveInfinity,
-        bool debug = false)
+        float maxSourceDistanceFromOpeningEdgeTiles = float.PositiveInfinity)
     {
         opening = default;
         if (offset == 0)
@@ -215,7 +214,6 @@ public abstract partial class CESharedZLevelsSystem
         // to the map entity (no grid), which still maps to the same world XY.
         if (!_mapMan.TryFindGridAt(openingMapComp.MapId, from, out var gridUidValue, out var grid))
         {
-            if (debug) Log.Info($"[crossz-shoot/dda] no grid at from={from} on mapId={openingMapComp.MapId} → open column");
             opening = new EntityCoordinates(openingMapUid, from);
             return true;
         }
@@ -227,7 +225,6 @@ public abstract partial class CESharedZLevelsSystem
         var gridWorldMatrix = _transform.GetWorldMatrix(openingGrid);
         Matrix3x2.Invert(gridWorldMatrix, out var gridInvMatrix);
         var localFromForCmp = Vector2.Transform(from, gridInvMatrix);
-        if (debug) Log.Info($"[crossz-shoot/dda] resolved grid={ToPrettyString(openingGrid)} tileSize={grid.TileSize} localFromForCmp={localFromForCmp}");
 
         var sourceTile = preferOpeningAwayFromSource
             ? _map.WorldToTile(openingGrid, grid, from)
@@ -246,20 +243,14 @@ public abstract partial class CESharedZLevelsSystem
             var tileIsOpening = !hasTileRef || CEZLevelOpeningCache.IsOpeningTile(tileRef.Tile, TilDefMan);
 
             if (hasTileRef && !tileIsOpening)
-            {
-                if (debug) Log.Info($"[crossz-shoot/dda]   tile={tile} hasTile=true id={tileRef.Tile.TypeId} → solid, reject");
                 return false;
-            }
 
             // Local-to-grid: ToCenterCoordinates returns EntityCoordinates rooted at the grid;
             // its .Position is grid-local, which is exactly the frame we want to stay in.
             var openingCenterLocal = _map.ToCenterCoordinates(openingGrid, tile, grid).Position;
             var dist2 = Vector2.DistanceSquared(localFromForCmp, openingCenterLocal);
             if (dist2 > maxSourceDistanceSquared)
-            {
-                if (debug) Log.Info($"[crossz-shoot/dda]   tile={tile} localCenter={openingCenterLocal} dist={MathF.Sqrt(dist2):F2} > {MathF.Sqrt(maxSourceDistanceSquared):F2} → too far, reject");
                 return false;
-            }
 
             if (preferOpeningAwayFromSource &&
                 tile == sourceTile)
@@ -270,11 +261,9 @@ public abstract partial class CESharedZLevelsSystem
                     hasFallbackOpening = true;
                 }
 
-                if (debug) Log.Info($"[crossz-shoot/dda]   tile={tile} localCenter={openingCenterLocal} → shooter's own tile, set as fallback");
                 return false;
             }
 
-            if (debug) Log.Info($"[crossz-shoot/dda]   tile={tile} localCenter={openingCenterLocal} hasTile={hasTileRef} → ACCEPT");
             selectedOpeningLocal = openingCenterLocal;
             return true;
         }
@@ -284,7 +273,6 @@ public abstract partial class CESharedZLevelsSystem
         var localDelta = localTo - localFrom;
         var currentTile = new Vector2i((int) MathF.Floor(localFrom.X), (int) MathF.Floor(localFrom.Y));
         var endTile = new Vector2i((int) MathF.Floor(localTo.X), (int) MathF.Floor(localTo.Y));
-        if (debug) Log.Info($"[crossz-shoot/dda] localFrom={localFrom} localTo={localTo} startTile={currentTile} endTile={endTile} sourceTile={sourceTile} preferAway={preferOpeningAwayFromSource} maxDist={MathF.Sqrt(maxSourceDistanceSquared):F2}");
 
         var stepX = Math.Sign(localDelta.X);
         var stepY = Math.Sign(localDelta.Y);
@@ -341,12 +329,10 @@ public abstract partial class CESharedZLevelsSystem
 
         if (hasFallbackOpening)
         {
-            if (debug) Log.Info($"[crossz-shoot/dda] no line opening; using shooter's-tile fallback at local={fallbackOpeningLocal}");
             opening = new EntityCoordinates(openingGrid, fallbackOpeningLocal);
             return true;
         }
 
-        if (debug) Log.Info($"[crossz-shoot/dda] no opening found and no fallback");
         return false;
     }
 }
