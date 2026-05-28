@@ -1,4 +1,4 @@
-# We just need simple non-saveable prototype for zEye entities
+# Non-saveable probe-eye prototype. Spawned per (viewer, depth) by CEZLevelsSystem.View.
 - type: entity
   id: CEZLevelEye
   save: false
@@ -6,3 +6,4 @@
   components:
   - type: Transform
     gridTraversal: false
+  - type: Eye

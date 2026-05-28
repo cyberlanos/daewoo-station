@@ -104,8 +104,11 @@ public sealed class CrewMonitoringConsoleSystem : EntitySystem
         if (sourceGrid == targetGrid)
             return true;
 
+        // Both sides must carry the linked-grid marker AND point at a real network — two
+        // unlinked grids both holding default ZNetwork would otherwise compare equal.
         return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork.IsValid() &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
     #endregion

@@ -76,19 +76,29 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentStartup>(OnGhostMoverStartup);
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentShutdown>(OnGhostMoverShutdown);
         // Becoming/leaving a ghost flips IsAutomaticZPhysicsExcluded; refresh activation so the
-        // body actually sleeps/wakes instead of staying stuck in its prior state.
-        SubscribeLocalEvent<GhostComponent, ComponentStartup>(OnGhostComponentAdded);
-        SubscribeLocalEvent<GhostComponent, ComponentShutdown>(OnGhostComponentRemoved);
+        // body actually sleeps/wakes instead of staying stuck in its prior state. Subscribed via
+        // EntityManager.ComponentAdded/Removed rather than SubscribeLocalEvent<GhostComponent, ComponentStartup>
+        // because ComponentStartup is an exclusive ComponentEvent and GhostSystem already owns it.
+        EntityManager.ComponentAdded += OnComponentAddedForActivation;
+        EntityManager.ComponentRemoved += OnComponentRemovedForActivation;
     }
 
-    private void OnGhostComponentAdded(Entity<GhostComponent> ent, ref ComponentStartup args)
+    private void ShutdownActivation()
     {
-        RefreshZPhysicsActivation(ent);
+        EntityManager.ComponentAdded -= OnComponentAddedForActivation;
+        EntityManager.ComponentRemoved -= OnComponentRemovedForActivation;
     }
 
-    private void OnGhostComponentRemoved(Entity<GhostComponent> ent, ref ComponentShutdown args)
+    private void OnComponentAddedForActivation(AddedComponentEventArgs ev)
     {
-        RefreshZPhysicsActivation(ent);
+        if (ev.BaseArgs.Component is GhostComponent)
+            RefreshZPhysicsActivation(ev.BaseArgs.Owner);
+    }
+
+    private void OnComponentRemovedForActivation(RemovedComponentEventArgs ev)
+    {
+        if (ev.BaseArgs.Component is GhostComponent)
+            RefreshZPhysicsActivation(ev.BaseArgs.Owner);
     }
 
     private void OnAnchorStateChange(Entity<CEZPhysicsComponent> ent, ref AnchorStateChangedEvent args)
