@@ -152,8 +152,11 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (sourceGrid == targetGrid)
             return true;
 
+        // Both sides must point at a real network — two unlinked grids both holding a default
+        // ZNetwork would otherwise compare equal and pass.
         return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork.IsValid() &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
 

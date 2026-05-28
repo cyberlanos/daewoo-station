@@ -302,7 +302,7 @@ public sealed partial class CEZLevelsSystem
 
         for (var i = 1; i <= CESharedZLevelsSystem.MaxZLevelsBelowRendering && remainingProbes > 0; i++)
         {
-            if (!TryResolveViewerMap(ent, -i, out var lowerTarget))
+            if (!TryResolveViewerMap(ent, -i, out _))
                 break;
 
             if (!HasZOpeningPath(ent, globalPos, -i))
