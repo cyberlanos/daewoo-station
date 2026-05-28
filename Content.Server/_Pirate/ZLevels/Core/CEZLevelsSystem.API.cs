@@ -30,10 +30,17 @@ public sealed partial class CEZLevelsSystem
     }
 
     /// <summary>
-    /// Attempts to add the specified map to the zNetwork network at the specified depth
+    /// Attempts to add the specified map to the zNetwork network at the specified depth.
     /// </summary>
-    private bool TryAddMapIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, EntityUid mapUid, int depth)
+    /// <param name="componentWasNew">
+    /// True when this call freshly added <see cref="CEZLevelMapComponent"/> to the map; rollback
+    /// uses this to fully remove the component instead of leaving an orphaned Depth that
+    /// <see cref="TryGetTraversalDepth"/> would still read.
+    /// </param>
+    private bool TryAddMapIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, EntityUid mapUid, int depth, out bool componentWasNew)
     {
+        componentWasNew = false;
+
         if (!HasComp<MapComponent>(mapUid))
         {
             Log.Error($"Failed to add {ToPrettyString(mapUid)} to ZLevelNetwork {network}: not a map entity.");
@@ -58,6 +65,7 @@ public sealed partial class CEZLevelsSystem
             return false;
         }
 
+        componentWasNew = !HasComp<CEZLevelMapComponent>(mapUid);
         var zlevel = EnsureComp<CEZLevelMapComponent>(mapUid);
         AttachMapToNetwork(network, (mapUid, zlevel), depth);
 
@@ -67,12 +75,12 @@ public sealed partial class CEZLevelsSystem
     public bool TryAddMapsIntoZNetwork(Entity<CEZLevelsNetworkComponent> network, Dictionary<EntityUid, int> maps)
     {
         var success = true;
-        var addedMaps = new List<(EntityUid Uid, int Depth)>();
+        var addedMaps = new List<(EntityUid Uid, int Depth, bool ComponentWasNew)>();
 
         foreach (var (ent, depth) in maps)
         {
-            if (TryAddMapIntoZNetwork(network, ent, depth))
-                addedMaps.Add((ent, depth));
+            if (TryAddMapIntoZNetwork(network, ent, depth, out var componentWasNew))
+                addedMaps.Add((ent, depth, componentWasNew));
             else
                 success = false;
         }
@@ -97,10 +105,17 @@ public sealed partial class CEZLevelsSystem
             // Per-map CEMapAddedIntoZNetworkEvent was deliberately NOT raised yet (deferred to
             // the success branch below), so handlers haven't mutated any of these maps and we
             // can detach cleanly.
-            foreach (var (added, _) in addedMaps)
+            foreach (var (added, _, componentWasNew) in addedMaps)
             {
-                if (TryComp<CEZLevelMapComponent>(added, out var zMap))
-                    DetachMapFromNetwork(network, (added, zMap));
+                if (!TryComp<CEZLevelMapComponent>(added, out var zMap))
+                    continue;
+
+                DetachMapFromNetwork(network, (added, zMap));
+
+                // If we freshly created the component here, remove it entirely; leaving it would
+                // keep a stale Depth that TryGetTraversalDepth/HasTraversalContext would observe.
+                if (componentWasNew)
+                    RemComp<CEZLevelMapComponent>(added);
             }
 
             return false;
@@ -109,7 +124,7 @@ public sealed partial class CEZLevelsSystem
         // Per-map "added" events are deferred until the entire batch (including LinkNetworkGrids)
         // has committed, so any handler that mutates the map sees a fully-linked network and
         // never runs against a partial state that will get rolled back.
-        foreach (var (added, depth) in addedMaps)
+        foreach (var (added, depth, _) in addedMaps)
         {
             RaiseLocalEvent(added, new CEMapAddedIntoZNetworkEvent(network, depth));
         }

@@ -12,6 +12,7 @@ using Content.Shared.Shuttles.Components;
 using JetBrains.Annotations;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
+using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
@@ -31,6 +32,13 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+
+    /// <summary>
+    /// Per-grid bitmask cache of "opening" (empty/transparent) tiles. Reused by audio/voice/probe
+    /// systems to gate cross-Z projection without scanning tiles on every event.
+    /// </summary>
+    private readonly CEZLevelOpeningCache _openingCache = new();
+    private readonly List<Entity<MapGridComponent>> _openingGridScratch = new();
 
     private EntityQuery<MapComponent> _mapQuery;
     private EntityQuery<CEZLevelMapComponent> _zMapQuery;
@@ -71,6 +79,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         _config.OnValueChanged(SharedCCVars.CEZPhysicsTickRate, OnPhysicsTickRateChanged, true);
 
         InitializeDebug();
+        InitOpeningCache();
         InitMovement();
         InitView();
         InitOccluders();
@@ -85,6 +94,8 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
             return;
 
         _config.UnsubValueChanged(SharedCCVars.CEZPhysicsTickRate, OnPhysicsTickRateChanged);
+        ShutdownOpeningCache();
+        ShutdownActivation();
         ShutdownDebug();
     }
 
@@ -290,6 +301,46 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
             return false;
 
         outputMapUid = (target.Value, targetZLevelComp);
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves an adjacent-Z target accounting for linked-grid peer shuttles (a multi-deck shuttle
+    /// whose decks are separate grids on different maps in the network). When <paramref name="sourceGridUid"/>
+    /// carries <see cref="CEZLinkedGridComponent"/>, the target map and world XY are taken from
+    /// that grid's peer at the requested depth offset, reprojecting <paramref name="sourceWorld"/>
+    /// through the two grids' matrices so the returned XY lines up with the same tile on the peer
+    /// deck. Falls back to <see cref="TryMapOffset"/> + the source XY when not linked.
+    /// </summary>
+    [PublicAPI]
+    public bool TryResolveLinkedTarget(
+        EntityUid? sourceGridUid,
+        EntityUid sourceMap,
+        int depthOffset,
+        System.Numerics.Vector2 sourceWorld,
+        out EntityUid targetMap,
+        out System.Numerics.Vector2 targetWorld)
+    {
+        targetMap = default;
+        targetWorld = sourceWorld;
+
+        if (sourceGridUid is { } gridUid &&
+            TryComp<CEZLinkedGridComponent>(gridUid, out var linked) &&
+            linked.PeerGrids.TryGetValue(linked.Depth + depthOffset, out var peerGridUid) &&
+            TryComp<TransformComponent>(peerGridUid, out var peerXform) &&
+            peerXform.MapUid is { } peerMapUid)
+        {
+            var srcInv = _transform.GetInvWorldMatrix(gridUid);
+            var local = System.Numerics.Vector2.Transform(sourceWorld, srcInv);
+            targetWorld = System.Numerics.Vector2.Transform(local, _transform.GetWorldMatrix(peerGridUid));
+            targetMap = peerMapUid;
+            return true;
+        }
+
+        if (!TryMapOffset(sourceMap, depthOffset, out var offsetMap))
+            return false;
+
+        targetMap = offsetMap.Value.Owner;
         return true;
     }
 

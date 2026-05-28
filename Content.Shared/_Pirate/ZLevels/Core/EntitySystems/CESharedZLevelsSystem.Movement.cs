@@ -81,6 +81,10 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryComp<MapGridComponent>(args.Entity, out var grid))
             return;
 
+        // Invalidate the opening cache for the changed chunks so cross-Z audio/voice/probe gating
+        // observes the new floor topology on the next access.
+        InvalidateOpeningCache((args.Entity, grid), args.Changes);
+
         // For each changed tile compute its world AABB and query all entities intersecting it
         foreach (var change in args.Changes)
         {
@@ -562,7 +566,7 @@ public abstract partial class CESharedZLevelsSystem
         _serverImmediateLinkedGridDescents.Add(ent.Owner);
         try
         {
-            var movedDown = TryMoveDown(ent.Owner);
+            var movedDown = CanProcessZLevelTransition(ent.Owner, -1) && TryMoveDown(ent.Owner);
             DebugZStairCsv(ent,
                 "down_immediate_result",
                 $"success={StairCsvBool(movedDown)},mode={descendMode},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},support_grid_vel={supportGridVelocity}");
@@ -1275,7 +1279,7 @@ public abstract partial class CESharedZLevelsSystem
                     if (ZDebugEnabled)
                         DebugZ(uid, $"local position dropped below 0, attempting move down in mode={descendMode}");
 
-                    var movedDown = TryMoveDown(uid);
+                    var movedDown = CanProcessZLevelTransition(uid, -1) && TryMoveDown(uid);
                     DebugZStairCsv(uid,
                         "down_result",
                         $"success={StairCsvBool(movedDown)},mode={descendMode},support_offset={supportOffset},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},grid_vel={gridVelocity},support_grid_vel={supportGridVelocity}",
@@ -1372,7 +1376,7 @@ public abstract partial class CESharedZLevelsSystem
                 }
                 else //Move up
                 {
-                    var movedUp = TryMoveUp(uid, bypassPassability: true);
+                    var movedUp = CanProcessZLevelTransition(uid, +1) && TryMoveUp(uid, bypassPassability: true);
                     DebugZStairCsv(uid,
                         "up_result",
                         $"success={StairCsvBool(movedUp)},reason={(movedUp ? "ok" : "move_failed")}",
@@ -2279,6 +2283,10 @@ public abstract partial class CESharedZLevelsSystem
             while (query.MoveNext(out var uid))
             {
                 if (!_highgroundQuery.TryComp(uid, out var heightComp))
+                    continue;
+
+                // Skip high-ground that only supports from above when probing the mover's own floor.
+                if (floor == 0 && heightComp.SupportOnlyFromAbove)
                     continue;
 
                 if (!TrySampleHighGround(target, checkingGridUid, floor, tileLocal, uid.Value, heightComp, out var candidate, logProbe))

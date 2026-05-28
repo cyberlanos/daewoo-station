@@ -21,6 +21,20 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZLevelViewerComponent, CEToggleZLevelLookUpAction>(OnToggleLookUp);
     }
 
+    /// <summary>
+    /// Public helper so systems outside the <c>Access</c> list (e.g. cross-Z shooting) can
+    /// turn LookUp off without poking the component directly.
+    /// </summary>
+    public bool TryDisableLookUp(EntityUid uid)
+    {
+        if (!TryComp<CEZLevelViewerComponent>(uid, out var viewer) || !viewer.LookUp)
+            return false;
+
+        viewer.LookUp = false;
+        DirtyField(uid, viewer, nameof(CEZLevelViewerComponent.LookUp));
+        return true;
+    }
+
     protected virtual void OnViewerMove(Entity<CEZLevelViewerComponent> ent, ref MoveEvent args)
     {
         if (!ent.Comp.LookUp)

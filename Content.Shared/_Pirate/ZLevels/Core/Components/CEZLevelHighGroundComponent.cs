@@ -35,4 +35,23 @@ public sealed partial class CEZLevelHighGroundComponent : Component
     /// </summary>
     [DataField, AutoNetworkedField]
     public bool Corner = false;
+
+    /// <summary>
+    /// If true, only supports entities probing from a higher Z-level. Lets a ladder base hold a climber
+    /// above without pulling a mover on the same tile onto its curve.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool SupportOnlyFromAbove = false;
+
+    /// <summary>
+    /// If true, this high-ground can reveal the level above when a viewer stands near it (used by probe-eyes).
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool PreviewUpLevel = true;
+
+    /// <summary>
+    /// Max tile/world distance at which this high-ground reveals the level above.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public float PreviewRange = 5f;
 }

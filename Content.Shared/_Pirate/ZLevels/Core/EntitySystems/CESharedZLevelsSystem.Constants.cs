@@ -24,4 +24,10 @@ public abstract partial class CESharedZLevelsSystem
 
     /// <summary>Minimum |velocity| required to fire <c>CEZLevelHitEvent</c> / <c>LandEvent</c> on landing.</summary>
     internal const float ImpactVelocityLimit = 3f;
+
+    /// <summary>
+    /// Vertical world-units the renderer offsets adjacent Z layers by. Used by cross-Z shooting
+    /// to compensate the projectile sprite back to the source-layer barrel position.
+    /// </summary>
+    public const float ZLevelVisualOffset = 0.7f;
 }

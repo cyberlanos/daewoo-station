@@ -133,8 +133,12 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
         if (xform.GridUid == null)
             return EntityUid.Invalid;
 
+        // Selection must still be both z-network-valid AND hub-linked — the refresh paths use
+        // GetHubLinkedMonitoringGrids to decide what's actually viewable, and hub topology can
+        // change after the selection was first cached (cable severed, hub removed, etc.).
         if (_selectedMonitorGrids.TryGetValue(consoleUid, out var selectedGrid) &&
-            IsValidZMonitoringGrid(xform.GridUid.Value, selectedGrid))
+            IsValidZMonitoringGrid(xform.GridUid.Value, selectedGrid) &&
+            GetHubLinkedMonitoringGrids(xform.GridUid.Value).Contains(selectedGrid))
         {
             return selectedGrid;
         }
@@ -172,7 +176,10 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
                 foreach (var networkNode in powerNet.Nodes)
                 {
-                    var nodeXform = Transform(networkNode.Owner);
+                    // Cleanup paths (map deletion, NodeGroupsRebuilt during round flush) can leave
+                    // dangling node owners whose entity is already gone; skip those rather than crash.
+                    if (!TryComp<TransformComponent>(networkNode.Owner, out var nodeXform))
+                        continue;
                     if (nodeXform.GridUid != null)
                         grids.Add(nodeXform.GridUid.Value);
                 }
@@ -1045,8 +1052,11 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
     private void UpdateCollectionChildMetaData(EntityUid child, EntityUid master)
     {
+        // Stale ChildDevices entries can point at deleted children during round-restart node-group
+        // rebuilds; skip them rather than crash on GetNetEntity/Transform.
+        if (!Exists(child) || !TryComp<TransformComponent>(child, out var xform)) // Pirate: multiz
+            return; // Pirate: multiz
         var netEntity = GetNetEntity(child);
-        var xform = Transform(child);
         var monitoringGrids = xform.GridUid != null ? GetHubLinkedMonitoringGrids(xform.GridUid.Value) : null; // Pirate: multiz
 
         var query = AllEntityQuery<PowerMonitoringConsoleComponent, TransformComponent>();
