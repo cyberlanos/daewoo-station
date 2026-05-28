@@ -69,7 +69,9 @@ public sealed partial class CEZLevelViewerComponent : Component
             1 => StairPreviewPosition2,
             2 => StairPreviewPosition3,
             3 => StairPreviewPosition4,
-            _ => default,
+            // Index must stay in lockstep with MaxStairPreviewPositions; surface a drift instead
+            // of silently returning (0,0).
+            _ => throw new ArgumentOutOfRangeException(nameof(index), index, $"Stair preview index must be 0..{MaxStairPreviewPositions - 1}."),
         };
     }
 
@@ -81,6 +83,8 @@ public sealed partial class CEZLevelViewerComponent : Component
             case 1: StairPreviewPosition2 = value; break;
             case 2: StairPreviewPosition3 = value; break;
             case 3: StairPreviewPosition4 = value; break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"Stair preview index must be 0..{MaxStairPreviewPositions - 1}.");
         }
     }
 }

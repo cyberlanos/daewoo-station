@@ -487,6 +487,8 @@ public abstract partial class SharedGunSystem : EntitySystem
 
         if (ev.Ammo.Count <= 0)
         {
+            _zLevelShooting.EndShotOffset(); // Pirate: multiz — every return in this block skips the normal EndShotOffset below
+
             // triggers effects on the gun if it's empty
             var emptyGunShotEvent = new OnEmptyGunShotEvent(user);
             RaiseLocalEvent(gunUid, ref emptyGunShotEvent);
