@@ -3,9 +3,8 @@
  * https://github.com/space-wizards/space-station-14/blob/master/LICENSE.TXT
  */
 
-// Probe-eye PVS subsystem. Largely ported from CMU's CMUZLevelsSystem.View.cs (per-player probe
-// budget, opening-gated lower probes, stair preview, per-eye PvsScale sync, defensive metadata
-// flag handling). Preserves lanos's TryResolveViewerMap (linked-grid peer reprojection) and
+// Probe-eye PVS subsystem: per-player probe budget, opening-gated lower probes, stair preview,
+// per-eye PvsScale sync. lanos adds TryResolveViewerMap (linked-grid peer reprojection) and
 // fall popups (player + item).
 
 using System.Numerics;
@@ -47,8 +46,8 @@ public sealed partial class CEZLevelsSystem
     private TimeSpan _zLevelViewerUpdateRate = TimeSpan.FromSeconds(0.25f);
     private TimeSpan _nextZLevelViewerUpdate = TimeSpan.Zero;
 
-    // viewer -> depth -> probe eye entity. Replaces the prior set-of-eyes; explicit depth keying
-    // lets us add/remove individual probes without recreating the whole set every tick.
+    // viewer -> depth -> probe eye entity. Explicit depth keying lets us add/remove individual
+    // probes without recreating the whole set every tick.
     private readonly Dictionary<EntityUid, Dictionary<int, EntityUid>> _viewerProbeEyes = new();
     private readonly Dictionary<EntityUid, (EntityUid Viewer, int Depth)> _probeEyeIndex = new();
 
@@ -109,8 +108,8 @@ public sealed partial class CEZLevelsSystem
         QueueDeleteViewerProbeEyes(ent);
     }
 
-    // #6: Defensive guard so that nothing else strips ExtraTransformEvents and silently breaks
-    // MapUidChangedEvent delivery while the viewer is still alive.
+    // Guard so nothing else strips ExtraTransformEvents and silently breaks MapUidChangedEvent
+    // delivery while the viewer is still alive.
     private void OnViewerMetaFlagRemoveAttempt(Entity<CEZLevelViewerComponent> ent, ref MetaFlagRemoveAttemptEvent args)
     {
         if ((args.ToRemove & MetaDataFlags.ExtraTransformEvents) != 0 &&
@@ -201,8 +200,8 @@ public sealed partial class CEZLevelsSystem
         var eyeOffset = GetViewerProbeOffset(ent);
         var probeGlobalPos = globalPos + eyeOffset;
 
-        // Compute stair-preview state before deciding wanted depths so the +1 probe placement
-        // can be retargeted at the stairwell origin instead of straight overhead.
+        // Compute stair-preview state first so the +1 probe can be retargeted at the stairwell
+        // origin instead of straight overhead.
         var stairPreviewUp = CanPreviewUpperZFromStair((ent.Owner, ent.Comp), xform, map, globalPos, _stairPreviewPositions);
         SetStairPreviewUp(ent, stairPreviewUp, _stairPreviewPositions);
 
@@ -214,7 +213,7 @@ public sealed partial class CEZLevelsSystem
             _viewerProbeEyes[ent.Owner] = probes;
         }
 
-        // Remove probes for depths no longer wanted (or whose eye terminated externally).
+        // Remove probes no longer wanted, or whose eye terminated externally.
         _probeDepthsToRemove.Clear();
         foreach (var (depth, eye) in probes)
         {
@@ -231,7 +230,6 @@ public sealed partial class CEZLevelsSystem
             QueueDeleteProbeEye(eye);
         }
 
-        // Add/reposition wanted probes.
         if (!TryComp<ActorComponent>(ent, out var actor))
         {
             _wantedProbeDepths.Clear();
@@ -244,8 +242,6 @@ public sealed partial class CEZLevelsSystem
             if (!TryResolveViewerMap((ent.Owner, xform), depth, out var target))
                 continue;
 
-            // For the +1 probe with active stair preview (and LookUp off), reposition the eye at
-            // the stairwell origin so the preview viewport actually shows the stairs.
             var probePosition = GetProbeWorldPosition(ent.Comp, depth, target.WorldPosition, eyeOffset);
 
             if (probes.TryGetValue(depth, out var existingEye) && !TerminatingOrDeleted(existingEye))
@@ -318,8 +314,8 @@ public sealed partial class CEZLevelsSystem
         if (!TryResolveViewerMap(ent, 1, out var aboveTarget))
             return;
 
-        // Subscribe to the level above only if there's a hole nearby — otherwise the upper PVS
-        // stays cold until the player either steps onto a stair (preview branch above) or uses LookUp.
+        // Subscribe above only if there's a hole nearby — otherwise the upper PVS stays cold until
+        // the player steps onto a stair or uses LookUp.
         if (!HasZOpeningNear(aboveTarget.MapUid, globalPos))
             return;
 
@@ -371,9 +367,8 @@ public sealed partial class CEZLevelsSystem
     }
 
     /// <summary>
-    /// Scans for nearby high-ground (stair-like) entities whose <c>PreviewUpLevel</c> flag is set
-    /// and that are line-of-sight visible to the viewer. Collected positions become the FOV
-    /// origins for the +1 probe's stair preview.
+    /// Finds nearby high-ground (stair-like) entities with <c>PreviewUpLevel</c> set that are
+    /// LOS-visible to the viewer; their positions become FOV origins for the +1 stair-preview probe.
     /// </summary>
     private bool CanPreviewUpperZFromStair(
         Entity<CEZLevelViewerComponent> viewer,
@@ -610,8 +605,8 @@ public sealed partial class CEZLevelsSystem
                 TryComp<TransformComponent>(peerGridUid, out var peerXform) &&
                 peerXform.MapUid is { } peerMapUid)
             {
-                // Reproject the viewer's world pos via the source grid's inverse and the peer grid's matrix
-                // so an eye on the peer deck lines up with the viewer's corresponding tile.
+                // Reproject viewer world pos through source grid inverse then peer grid matrix so
+                // the eye lines up with the viewer's corresponding tile on the peer deck.
                 var srcInv = _transform.GetInvWorldMatrix(gridUid);
                 var local = Vector2.Transform(viewerWorld, srcInv);
                 var peerWorld = Vector2.Transform(local, _transform.GetWorldMatrix(peerGridUid));
@@ -636,8 +631,8 @@ public sealed partial class CEZLevelsSystem
 
     private void OnZLevelFall(Entity<CEZPhysicsComponent> ent, ref CEZLevelFallMapEvent args)
     {
-        //A dirty trick: we call PredictedPopup on the falling entity on SERVER.
-        //This means that the one who is falling does not see the popup itself, but everyone around them does. This is what we need.
+        // PredictedPopup on the falling entity from the SERVER: the faller doesn't see the popup,
+        // but everyone around them does — which is what we want.
         _popup.PopupPredictedCoordinates(Loc.GetString("ce-zlevel-falling-popup", ("name", Identity.Name(ent, EntityManager))), Transform(ent).Coordinates, ent);
     }
 

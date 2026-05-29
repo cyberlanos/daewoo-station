@@ -6,17 +6,15 @@ using Robust.Shared.Map.Events;
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 /// <summary>
-/// Public surface over <see cref="CEZLevelOpeningCache"/>. Consumers (audio, voice, probe-eyes)
-/// call <see cref="TryFindOpeningNear"/> and <see cref="HasOpeningInTileBounds"/> instead of
-/// scanning tiles manually. The cache invalidates per-chunk via
+/// Public surface over <see cref="CEZLevelOpeningCache"/>. The cache invalidates per-chunk via
 /// <see cref="InvalidateOpeningCache(Entity{MapGridComponent}, ReadOnlySpan{TileChangedEntry})"/>
-/// (called from the existing <c>OnTileChanged</c> handler) and on grid removal.
+/// and on grid removal.
 /// </summary>
 public abstract partial class CESharedZLevelsSystem
 {
     private void InitOpeningCache()
     {
-        // Grid removal: prune the cache entry so we don't pin EntityUids that will never resolve.
+        // Prune the cache entry so we don't pin EntityUids that will never resolve.
         SubscribeLocalEvent<MapGridComponent, GridRemovalEvent>(OnGridRemovalForCache);
     }
 
@@ -87,12 +85,10 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
-    /// Like <see cref="TryFindOpeningNear"/> but only counts holes that are *inside an existing
-    /// grid tile* — off-grid space (deck edge, vacuum) does NOT count as an opening. Used by
-    /// cross-Z audio so a sound source near the hull edge doesn't leak through solid floor as if
-    /// the deck-edge gap were a hole. Direct scan rather than cache-backed because the typical
-    /// audio radius (~1.5 tiles) is far smaller than the cache chunk size (8 tiles) — chunk-level
-    /// lookup would be more work, not less.
+    /// Like <see cref="TryFindOpeningNear"/> but only counts holes inside an existing grid tile —
+    /// off-grid space (deck edge, vacuum) does NOT count, so audio near the hull edge doesn't leak
+    /// through solid floor. Direct scan rather than cache-backed: the audio radius (~1.5 tiles) is
+    /// smaller than the cache chunk size (8 tiles), so chunk lookup would be more work.
     /// </summary>
     public bool TryFindRealOpeningNear(EntityUid mapUid, Vector2 position, float radius, out Vector2 openingPosition)
     {
@@ -176,10 +172,9 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
-    /// DDA-raycasts a tile-grid line from <paramref name="from"/> to <paramref name="to"/> on
-    /// the floor between <paramref name="sourceMap"/> and <paramref name="targetMap"/> (depending
-    /// on <paramref name="offset"/> sign) and returns the center of the first opening tile hit.
-    /// Used by cross-Z shooting: the projectile spawns at the chosen opening's center.
+    /// DDA-raycasts a tile-grid line from <paramref name="from"/> to <paramref name="to"/> on the
+    /// floor between the two maps (per <paramref name="offset"/> sign) and returns the center of
+    /// the first opening tile hit. Cross-Z shooting spawns the projectile there.
     /// </summary>
     /// <param name="preferOpeningAwayFromSource">If true, skip an opening centered exactly on the
     /// shooter's tile (so the shot goes through a hole the shooter is NEXT to, not standing in);
@@ -200,18 +195,15 @@ public abstract partial class CESharedZLevelsSystem
         if (offset == 0)
             return false;
 
-        // For DOWN, the floor we're piercing belongs to the source (above) map; for UP it
-        // belongs to the target (above) map. Either way, the higher of the two carries the hole.
+        // The higher of the two maps carries the hole.
         var openingMapUid = offset < 0 ? sourceMap : targetMap;
 
-        // Map entity itself may be planet-style (has MapGridComponent) or multi-grid (only a
-        // MapComponent container; grids are children). Resolve via MapId so both work.
+        // Resolve via MapId so both planet-style (MapGridComponent) and multi-grid maps work.
         if (!_mapQuery.TryComp(openingMapUid, out var openingMapComp))
             return false;
 
-        // Find the grid at the shooter's world XY on the opening map. If nothing's there, the
-        // column is unobstructed — no floor/ceiling to gate the shot. Returned coord is anchored
-        // to the map entity (no grid), which still maps to the same world XY.
+        // No grid at the shooter's XY -> column is unobstructed. Returned coord anchors to the map
+        // entity (no grid), which still maps to the same world XY.
         if (!_mapMan.TryFindGridAt(openingMapComp.MapId, from, out var gridUidValue, out var grid))
         {
             opening = new EntityCoordinates(openingMapUid, from);
@@ -219,9 +211,8 @@ public abstract partial class CESharedZLevelsSystem
         }
 
         var openingGrid = gridUidValue;
-        // All math below stays in GRID-LOCAL space so the result is grid-anchored — moving
-        // shuttles don't invalidate the returned coordinate. Invert the world matrix once to
-        // bring `from` into local space for the distance comparison.
+        // All math stays in grid-local space so the result is grid-anchored — moving shuttles
+        // don't invalidate the returned coordinate.
         var gridWorldMatrix = _transform.GetWorldMatrix(openingGrid);
         Matrix3x2.Invert(gridWorldMatrix, out var gridInvMatrix);
         var localFromForCmp = Vector2.Transform(from, gridInvMatrix);
@@ -245,8 +236,6 @@ public abstract partial class CESharedZLevelsSystem
             if (hasTileRef && !tileIsOpening)
                 return false;
 
-            // Local-to-grid: ToCenterCoordinates returns EntityCoordinates rooted at the grid;
-            // its .Position is grid-local, which is exactly the frame we want to stay in.
             var openingCenterLocal = _map.ToCenterCoordinates(openingGrid, tile, grid).Position;
             var dist2 = Vector2.DistanceSquared(localFromForCmp, openingCenterLocal);
             if (dist2 > maxSourceDistanceSquared)
@@ -306,9 +295,8 @@ public abstract partial class CESharedZLevelsSystem
             }
             else
             {
-                // Perfect corner crossing (45° shots): the line touches both orthogonal
-                // neighbours at the shared corner. Supercover them before the diagonal step so
-                // an opening sitting in either adjacent tile isn't skipped.
+                // Perfect corner crossing (45° shots): supercover both orthogonal neighbours
+                // before the diagonal step so an opening in either adjacent tile isn't skipped.
                 var neighborX = currentTile + new Vector2i(stepX, 0);
                 var neighborY = currentTile + new Vector2i(0, stepY);
                 var neighborXInRange = stepX != 0 && (stepX > 0 ? neighborX.X <= endTile.X : neighborX.X >= endTile.X);

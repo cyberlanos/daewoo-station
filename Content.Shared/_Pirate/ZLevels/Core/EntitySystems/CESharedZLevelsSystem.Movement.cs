@@ -24,17 +24,14 @@ namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 public abstract partial class CESharedZLevelsSystem
 {
     private const float StairUpTransferHeightThreshold = 1f;
-    // Transfer up when the mover's sampled center reaches late stair 3.
-    // In practice the player's center never reaches the geometric 0.3125 cutoff because the
-    // stair collision stops the body slightly earlier, so we use a center-sample threshold that
-    // matches the reachable point seen in live traces while still leaving enough separation from
-    // the downward landing sample to avoid reintroducing up/down stair loops.
-    // Keep a little tolerance here because scaled character hitboxes can stabilize around ~0.39-0.40
-    // before the stair crest fixture, while a normal body after a full up/down cycle sits around ~0.381-0.383.
+    // Transfer up when the sampled center reaches late stair 3. Stair collision stops the body
+    // before the geometric 0.3125 cutoff, so this threshold tracks the reachable point from live
+    // traces (scaled hitboxes stabilize ~0.39-0.40, normal bodies ~0.381-0.383) while staying clear
+    // of the downward landing sample to avoid up/down stair loops.
     private const float StairUpTransferSampleThreshold = 0.42f;
-    // Place the mover just inside the next tile after climbing so it will not immediately re-trigger descent.
+    // Mover lands just inside the next tile after climbing so it won't re-trigger descent.
     private const float StairUpLandingForwardNudge = 0.05f;
-    // Place the mover at the start of stair 3 after descending so it does not instantly climb back up.
+    // Mover lands at the start of stair 3 after descending so it won't instantly climb back up.
     private const float StairDownLandingSample = 0.64f;
     private const float StairDirectionMinimumSpeed = 0.01f;
     private const float StairTransferGraceSeconds = 0.2f;
@@ -81,11 +78,9 @@ public abstract partial class CESharedZLevelsSystem
         if (!TryComp<MapGridComponent>(args.Entity, out var grid))
             return;
 
-        // Invalidate the opening cache for the changed chunks so cross-Z audio/voice/probe gating
-        // observes the new floor topology on the next access.
+        // Invalidate the opening cache so cross-Z gating sees the new floor topology next access.
         InvalidateOpeningCache((args.Entity, grid), args.Changes);
 
-        // For each changed tile compute its world AABB and query all entities intersecting it
         foreach (var change in args.Changes)
         {
             var mapCoords = _map.GridTileToWorld(args.Entity, grid, change.GridIndices);
@@ -451,10 +446,9 @@ public abstract partial class CESharedZLevelsSystem
         if (IsLandingBlocked(uid, xform))
             return AutoDescendMode.None;
 
-        // When the mover has already slipped off the current deck and the cached probe says the
-        // immediate level below is a stair, prefer that snapshot over a second live lookup.
-        // On moving shuttles the live probe can miss the stair for one tick while map-parented,
-        // which incorrectly downgrades a stair descent into a free-fall drop.
+        // When already off the current deck, prefer the cached probe's "stair below" snapshot over
+        // a second live lookup: on moving shuttles the live probe can miss the stair for one tick
+        // while map-parented, downgrading a stair descent into a free-fall drop.
         if (zPhys.CurrentGroundFromBelowLevel &&
             zPhys.CurrentHighGroundBelow &&
             TryResolveGridForMapOffset(uid, xform, -1, out supportGridUid, out _))
@@ -692,8 +686,8 @@ public abstract partial class CESharedZLevelsSystem
             return false;
         }
 
-        // Once the mover has detached from the upper linked grid, the cached carrier-local
-        // coordinate lets the client predict the same peer-grid landing as the server.
+        // After detaching from the upper linked grid, the cached carrier-local coordinate lets the
+        // client predict the same peer-grid landing as the server.
         if (TryGetDetachedCarrierLocalReference(zPhys, out _, out _))
             return false;
 
@@ -975,7 +969,6 @@ public abstract partial class CESharedZLevelsSystem
         DebugZStairCsv(ent,
             "zlevel_event",
             $"offset={args.Offset},current_z={args.CurrentZLevel}");
-        // Update cached ground height when entity moves between Z-level maps
         CacheMovement(ent);
     }
 
@@ -1005,8 +998,7 @@ public abstract partial class CESharedZLevelsSystem
             steps++;
         }
 
-        // If we hit the step cap there's leftover time we can't process this frame; cap the
-        // accumulator at one full step so it doesn't permanently lag behind real time.
+        // Cap leftover accumulator at one step on a step-cap hit so it can't permanently lag behind.
         if (_accumulatedTime > _fixedTimestep)
             _accumulatedTime = _fixedTimestep;
     }
@@ -1084,9 +1076,8 @@ public abstract partial class CESharedZLevelsSystem
 
             UpdateZGravityInfluence(uid, zPhys, xform);
 
-            // Apply Z-gravity unless the entity is resting on an actual floor of the current level.
-            // Entities parented to map (no grid) are always BodyStatus.InAir in SS14 physics, so
-            // we cannot use physics.BodyStatus to detect ground rest.
+            // Apply Z-gravity unless resting on a floor of the current level. Map-parented (no grid)
+            // entities are always BodyStatus.InAir, so we can't use physics.BodyStatus for ground rest.
             var currentGroundDistance = zPhys.LocalPosition - zPhys.CurrentGroundHeight;
             var lowVelocityGroundContact = MathF.Abs(zPhys.Velocity) <= FlatGroundSettleVelocityThreshold;
             var downGraceBlocked = _timing.CurTime < zPhys.AutoDownBlockedUntil;
@@ -1136,9 +1127,9 @@ public abstract partial class CESharedZLevelsSystem
             var snappedUpToGround = false;
             var snappedDownToStickyGround = false;
 
-            // AutoStep: lift entity up if floor is higher.
-            // Skip when ground came from the level below — a stair peak poking above this level's
-            // floor plane should not trap the entity; let gravity pull it through to the lower level.
+            // AutoStep: lift entity up if floor is higher. Skip when ground came from below — a
+            // stair peak poking above this level's floor plane shouldn't trap the entity; let
+            // gravity pull it through to the lower level.
             if (zPhys.AutoStep && distanceToGround < 0 && !zPhys.CurrentGroundFromBelowLevel)
             {
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
@@ -1153,7 +1144,7 @@ public abstract partial class CESharedZLevelsSystem
                     DebugZVerbose(uid, $"autostep snapped entity to ground at local={zPhys.LocalPosition:0.00}");
             }
 
-            // Sticky ground: only pull down when slowly falling on sticky surfaces (ladders)
+            // Sticky ground (ladders): pull down only when slowly falling onto the surface.
             if (zPhys.CurrentStickyGround && distanceToGround > 0)
             {
                 zPhys.LocalPosition = zPhys.CurrentGroundHeight;
@@ -1326,7 +1317,6 @@ public abstract partial class CESharedZLevelsSystem
                     }
                     else
                     {
-                        // Level below exists but transfer failed — stop cleanly
                         DebugZStairCsv(uid,
                             "down_clamp",
                             $"reason=move_failed,mode={descendMode},grid_vel={gridVelocity},support_grid_vel={supportGridVelocity}",
@@ -1339,7 +1329,7 @@ public abstract partial class CESharedZLevelsSystem
                 }
                 else
                 {
-                    // Weightless or no floor below — clamp and float on current level
+                    // Weightless or no floor below — clamp and float on the current level.
                     DebugZStairCsv(uid,
                         "down_clamp",
                         $"reason=blocked,blocked={StairCsvBool(downBlocked)},weightless={StairCsvBool(isWeightless)},support_below={StairCsvBool(zPhys.CurrentHasSupportBelow)},support_grid={(supportGridUid == EntityUid.Invalid ? "null" : ToPrettyString(supportGridUid))},grid_vel={gridVelocity}",
@@ -1663,7 +1653,7 @@ public abstract partial class CESharedZLevelsSystem
         var resolvedByTransferHint = TryGetStairTransferDirection(ent, offset, out var forwardDir);
         TryGetTileLocalPositionForTarget(baseTargetWorldPos, targetGridUid, targetMapId, out var local, out var localGridUid, out var localGridSource);
 
-        // Only apply the forward step-off behavior for staircase/slope transitions.
+        // Forward step-off only applies to staircase/slope transitions.
         if (offset > 0)
         {
             if (zPhys.CurrentGroundHeight <= 0.01f)
@@ -2371,13 +2361,10 @@ public abstract partial class CESharedZLevelsSystem
     }
 
     /// <summary>
-    /// Computes the "ground height" relative to the entity's current Z-level.
-    /// Returns values where 0 means ground on the same level, -1 means ground one level below,
-    /// and intermediate values are possible for high ground entities (stairs).
-    /// <paramref name="fromBelowLevel"/> is true when the nearest support was found on the
-    /// Z-level below rather than on the current one (FloorOffset > 0). When true, AutoStep
-    /// and Bounce are suppressed so a stair peak that pokes above the current-level floor plane
-    /// does not trap the entity instead of letting it fall through.
+    /// Ground height relative to the entity's current Z-level: 0 = same level, -1 = one level below,
+    /// intermediate values for high-ground (stairs). <paramref name="fromBelowLevel"/> is true when
+    /// the nearest support is on the level below (FloorOffset > 0), in which case AutoStep/Bounce are
+    /// suppressed so a stair peak poking above this floor plane doesn't trap the entity.
     /// </summary>
     private float ComputeGroundHeightInternal(Entity<CEZPhysicsComponent?> target, out bool stickyGround, out bool fromBelowLevel, int maxFloors = 1)
     {
@@ -2703,9 +2690,8 @@ public abstract partial class CESharedZLevelsSystem
 
         var plannedTargetWorldPos = targetWorldPos;
 
-        // Save mover eye rotation state before the move.
-        // OnInputParentChange resets RelativeRotation on map change, causing an eye snap.
-        // We compensate for the change in relative entity to keep eye orientation seamless.
+        // Save mover eye rotation: OnInputParentChange resets RelativeRotation on map change,
+        // causing an eye snap. Compensate for the relative-entity change to keep orientation seamless.
         Angle savedRelativeRot = default;
         Angle savedTargetRelativeRot = default;
         Angle savedEyeWorldRot = worldRot;
@@ -2723,8 +2709,7 @@ public abstract partial class CESharedZLevelsSystem
             }
         }
 
-        // SetMapCoordinates doesn't preserve rotation when reparenting across maps.
-        // We save world rotation and restore it after the move.
+        // SetMapCoordinates doesn't preserve rotation when reparenting across maps; restored below.
         if (peerGridUid is { } targetPeerGridUid)
         {
             var peerGridCoordinates = new EntityCoordinates(
@@ -2761,13 +2746,12 @@ public abstract partial class CESharedZLevelsSystem
             transferMode = "map_reattach";
         }
 
-        // Force set both local rotation and world rotation to ensure consistency.
+        // Set both local and world rotation to ensure consistency.
         var parentRot = _transform.GetWorldRotation(xform.ParentUid);
         _transform.SetLocalRotation(ent, worldRot - parentRot);
 
-        // Restore mover eye rotation to preserve visual orientation across Z-level transition.
-        // Preserve the current eye world rotation directly instead of diffing parent rotations,
-        // which is more stable when linked-grid transitions trigger multiple parent changes.
+        // Restore mover eye rotation by preserving eye world rotation directly rather than diffing
+        // parent rotations — more stable when linked-grid transitions trigger multiple parent changes.
         if (hasMover && TryComp<InputMoverComponent>(ent, out var moverAfter))
         {
             var newRelative = xform.GridUid ?? xform.MapUid;

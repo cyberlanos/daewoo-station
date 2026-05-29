@@ -1,7 +1,6 @@
 // Ported from ColonialMarinesUniverse Content.Client/_CMU14/ZLevels/Lighting/CMUZLevelProjectedLightingSystem.cs.
-// Client-only fake-light projection: lights on adjacent Z layers spawn client-only PointLights
-// at floor-opening centers on the viewer's map, attenuated by depth and distance. No server or
-// shared changes — purely cosmetic.
+// Client-only fake-light projection: lights on adjacent Z layers spawn PointLights at floor-opening
+// centers on the viewer's map, attenuated by depth and distance. Purely cosmetic.
 
 using System.Numerics;
 using Content.Client._Pirate.ZLevels.Lighting;
@@ -161,8 +160,8 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
             ApplyLevelCap(maxPerLevel, currentFrame);
         }
 
-        // Pass 2: cascade — light from the layer immediately above a deeper layer also paints
-        // that deeper layer (you can see two-deep light leakage through stacked holes).
+        // Pass 2: cascade — light from the layer above a deeper layer also paints that deeper
+        // layer (two-deep leakage through stacked holes).
         for (var receivingDepth = -1; receivingDepth >= -maxDepth; receivingDepth--)
         {
             if (!_zLevels.TryMapOffset(playerZLevelMap, receivingDepth, out var receivingMap) ||
@@ -410,7 +409,7 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
             _sourceCandidates.Clear();
             foreach (var (openingCenter, sourceToOpeningDistance) in _tempOpenings)
             {
-                // Top-down occlusion: walls between the source light and the opening kill the leak.
+                // Top-down occlusion: walls between source and opening kill the leak.
                 var rayDirection = openingCenter - sourceLight.WorldPosition;
                 var rayLength = rayDirection.Length();
                 if (rayLength > 0.01f)
@@ -444,7 +443,7 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
                 if (remainingDistance <= 0f)
                     continue;
 
-                // Bright point near the opening; remaining-radius scaled outward so the leak fades naturally.
+                // Remaining-radius scaled outward so the leak fades naturally.
                 var projectedRadius = Math.Min(remainingDistance * radiusScale, maxRadius);
                 if (projectedRadius <= 0f)
                     continue;
@@ -478,8 +477,8 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
         EntityUid receivingMap,
         int depthOffset)
     {
-        // Holes are floor apertures on the higher level. When source is above receiver use the
-        // source map; when source is below use the receiver map.
+        // Holes are floor apertures on the higher level: source map when source is above, else
+        // the receiver map.
         return depthOffset > 0 ? sourceMap.Owner : receivingMap;
     }
 
@@ -523,8 +522,8 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
 
     private void AddSourceCandidates()
     {
-        // Cluster candidates by adjacency (chained openings = one strip), then either sample the
-        // strip linearly or place them individually with overlap rejection.
+        // Cluster candidates by adjacency (chained openings = one strip), then sample the strip
+        // linearly or place them individually with overlap rejection.
         RebuildOpeningCandidateBuckets();
 
         _visitedSourceCandidates.Clear();

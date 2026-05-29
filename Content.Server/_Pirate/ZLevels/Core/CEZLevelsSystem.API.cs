@@ -92,16 +92,10 @@ public sealed partial class CEZLevelsSystem
 
         if (!success)
         {
-            // Roll back any partial registrations so callers can dispose the network without
-            // leaving orphan CEZLevelMapComponent entries pointing at a soon-to-be-deleted network.
-            // Per-map CEMapAddedIntoZNetworkEvent was deliberately NOT raised yet (deferred to
-            // the success branch below), so handlers haven't mutated any of these maps and we
-            // can detach cleanly.
-            //
-            // Any component reaching this point is removable: we only EnsureComp'd it after
-            // confirming the map wasn't already in a live network (TryGetZNetwork == false), so a
-            // pre-existing component here is an orphan with no live owner. Detach clears the
-            // network indexes, then RemComp drops the component entirely — leaving it would keep a
+            // Roll back partial registrations so callers can dispose the network without orphan
+            // CEZLevelMapComponent entries. Per-map events aren't raised until the success branch,
+            // so nothing has mutated these maps yet. Each component was EnsureComp'd only after
+            // TryGetZNetwork == false, so it's safe to detach + RemComp; leaving it would keep a
             // stale Depth that TryGetTraversalDepth/HasTraversalContext would still observe.
             foreach (var (added, _) in addedMaps)
             {
@@ -115,9 +109,8 @@ public sealed partial class CEZLevelsSystem
             return false;
         }
 
-        // Per-map "added" events are deferred until the entire batch (including LinkNetworkGrids)
-        // has committed, so any handler that mutates the map sees a fully-linked network and
-        // never runs against a partial state that will get rolled back.
+        // Deferred until the whole batch (incl. LinkNetworkGrids) commits, so handlers see a
+        // fully-linked network and never run against partial state that could roll back.
         foreach (var (added, depth) in addedMaps)
         {
             RaiseLocalEvent(added, new CEMapAddedIntoZNetworkEvent(network, depth));

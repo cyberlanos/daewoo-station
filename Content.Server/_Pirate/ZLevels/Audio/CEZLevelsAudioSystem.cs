@@ -1,12 +1,11 @@
 // Ported from ColonialMarinesUniverse Content.Server/_CMU14/ZLevels/Core/CMUZLevelsSystem.Audio.cs.
-// Re-emits cross-Z audio through floor openings so listeners on adjacent maps hear sound coming
-// from the level above/below. Adapted for lanos:
+// Re-emits cross-Z audio through floor openings so listeners on adjacent maps hear sound from the
+// level above/below. lanos adaptations:
 //   * Existing-tile-only opening check (off-grid deck-edge space doesn't count as a hole).
-//   * MapInitEvent + MoveEvent both trigger projection so audio created via PlayPvs(uid)
-//     (jukebox-style parenting, no MoveEvent at spawn) gets picked up.
-//   * Uses PlayPvs (PVS-driven) instead of PlayStatic-with-filter so late-arriving listeners on
-//     the target map hear long-lived audio (jukeboxes etc.) instead of only the audience present
-//     at projection-creation moment.
+//   * MapInitEvent + MoveEvent both trigger, so PlayPvs(uid) (jukebox-style parenting, no MoveEvent
+//     at spawn) gets picked up.
+//   * PlayPvs instead of PlayStatic-with-filter so listeners arriving after projection still hear
+//     long-lived audio (jukeboxes etc.).
 //   * Tracks projections per source so looped audio's projections die with the source.
 
 using System.Numerics;
@@ -49,9 +48,8 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         Subs.CVar(_config, CCVars.CEZLevelsCrossZAudio, OnCrossZAudioChanged, true);
         Subs.CVar(_config, CCVars.CEZLevelsCrossZAudioDebug, v => _debug = v, true);
 
-        // Two triggers: MoveEvent catches PlayPvs(coords)-style audio (footsteps, gunshots);
-        // MapInitEvent catches PlayPvs(uid)-style audio (jukeboxes, instruments) where the audio
-        // is parented to an existing entity without a world-position transition.
+        // MoveEvent catches PlayPvs(coords) audio (footsteps, gunshots); MapInitEvent catches
+        // PlayPvs(uid) audio (jukeboxes) parented to an entity without a world-position transition.
         SubscribeLocalEvent<AudioComponent, MoveEvent>(OnAudioMove);
         SubscribeLocalEvent<AudioComponent, MapInitEvent>(OnAudioMapInit);
         SubscribeLocalEvent<AudioComponent, ComponentShutdown>(OnAudioShutdown);
@@ -63,9 +61,8 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         if (enabled)
             return;
 
-        // Disabling mid-round: tear down live projections so looped audio (jukeboxes etc.) stops
-        // on adjacent decks immediately instead of lingering until the source dies. QueueDel is
-        // deferred, so iterating the dictionary here is safe (OnAudioShutdown runs end-of-tick).
+        // Disabling mid-round: tear down live projections so looped audio stops on adjacent decks
+        // immediately. QueueDel is deferred, so iterating the dictionary here is safe.
         foreach (var projections in _projectionsBySource.Values)
         {
             foreach (var projection in projections)
@@ -94,8 +91,7 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         _processed.Remove(ent);
         _projections.Remove(ent);
 
-        // Kill projected copies when the source dies (e.g. jukebox turned off) so looped audio
-        // doesn't keep playing on adjacent decks forever.
+        // Kill projected copies when the source dies so looped audio doesn't outlive it.
         if (_projectionsBySource.Remove(ent, out var projections))
         {
             foreach (var projection in projections)
@@ -131,7 +127,7 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         if (!_zMapQuery.TryComp(sourceMap, out var sourceZMap))
             return;
 
-        // First fire wins; subsequent MoveEvent/MapInitEvent on the same audio entity are no-ops.
+        // First fire wins; later MoveEvent/MapInitEvent on the same audio are no-ops.
         if (!_processed.Add(ent))
             return;
 
@@ -165,11 +161,9 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         ref ResolvedSoundSpecifier? specifier,
         int step)
     {
-        // Each step crosses ONE physical barrier — the upper deck's floor (== the lower deck's
-        // ceiling, same object). One hole. For DOWN that floor belongs to the current source
-        // (the deck we're leaving); for UP it belongs to the next target (the deck we're entering).
-        // Cascade advances the "current" map as we go so a multi-deck drop stops when it hits a
-        // floor without a hole.
+        // Each step crosses one barrier (the upper deck's floor = the lower deck's ceiling). For
+        // DOWN that floor belongs to the current source; for UP it belongs to the next target. The
+        // cascade advances "current" each step so a multi-deck drop stops at the first solid floor.
 
         var currentMap = sourceMap.Owner;
         var currentPos = sourcePosition;
@@ -178,7 +172,6 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         {
             if (step < 0)
             {
-                // DOWN: the floor we cross is the current source's floor.
                 if (!_zLevels.TryFindRealOpeningNear(currentMap, currentPos, CrossZAudioOpeningRadius, out _))
                 {
                     if (_debug) Log.Info($"[crossz-audio]   depth={depth}: no real hole in floor of {ToPrettyString(currentMap)} near {currentPos}");
@@ -186,7 +179,7 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
                 }
             }
 
-            // Resolve target via linked-grid peer (always from the original source so PeerGrids
+            // Resolve target via linked-grid peer (always from the original source so the PeerGrids
             // lookup uses the correct base depth) or plain map-step.
             if (!_zLevels.TryResolveLinkedTarget(sourceGridUid, sourceMap.Owner, depth, sourcePosition,
                     out var nextMap, out var nextPos))
@@ -197,7 +190,6 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
 
             if (step > 0)
             {
-                // UP: the floor we cross is the next target's floor (= the deck above us's floor).
                 if (!_zLevels.TryFindRealOpeningNear(nextMap, nextPos, CrossZAudioOpeningRadius, out _))
                 {
                     if (_debug) Log.Info($"[crossz-audio]   depth={depth}: no real hole in floor of {ToPrettyString(nextMap)} near {nextPos}");
@@ -209,7 +201,6 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
             CreateProjection(source, specifier, nextMap, nextPos);
             if (_debug) Log.Info($"[crossz-audio]   depth={depth}: PROJECTED {source.Comp.FileName} to {ToPrettyString(nextMap)} @ {nextPos}");
 
-            // Advance for cascade — the next iteration's "current" is what we just landed on.
             currentMap = nextMap;
             currentPos = nextPos;
         }
@@ -224,10 +215,8 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         _creatingProjection = true;
         try
         {
-            // PlayPvs (not PlayStatic) so anyone whose listener eye ends up on the target map
-            // within audio range hears the projection — including players who arrive AFTER
-            // projection was created. This is what makes a jukebox audible to a player descending
-            // to the lower deck after the jukebox already started playing.
+            // PlayPvs (not PlayStatic) so listeners arriving on the target map after projection
+            // creation still hear it — e.g. a jukebox audible to a player descending later.
             var projectedAudio = _audio.PlayPvs(specifier, new EntityCoordinates(targetMap, sourcePosition), source.Comp.Params);
 
             if (projectedAudio is not { } projected)

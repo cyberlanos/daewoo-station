@@ -6,10 +6,9 @@ using DiagnosticStopwatch = System.Diagnostics.Stopwatch;
 namespace Content.Server._Pirate.ZLevels.Core;
 
 /// <summary>
-/// Ported from CMU (<c>CMUZLevelsSystem.Movement.cs</c>): per-tick count + wallclock budget for
-/// Z-level transitions. Each call site that performs a map-crossing move (TryMoveDown/TryMoveUp)
-/// asks <see cref="CanProcessZLevelTransition"/> first; once the budget is exhausted the rest
-/// of the tick defers and the engine catches up on the next tick.
+/// Per-tick count + wallclock budget for Z-level transitions. Map-crossing moves call
+/// <see cref="CanProcessZLevelTransition"/> first; once the budget is spent the rest defer to the
+/// next tick.
 /// </summary>
 public sealed partial class CEZLevelsSystem
 {
@@ -33,9 +32,8 @@ public sealed partial class CEZLevelsSystem
             return false;
 
         var curTick = _timing.CurTick;
-        // Also (re)establish the wallclock baseline when it was never set — guards the edge case
-        // where the very first call lands on the default tick value and would otherwise read a
-        // zero timestamp into GetElapsedTime, instantly exhausting the budget.
+        // Re-establish the wallclock baseline when unset, else the first call (default tick value)
+        // reads a zero timestamp into GetElapsedTime and instantly exhausts the budget.
         if (_zTransitionBudgetTick != curTick || _zTransitionBudgetStart == 0)
         {
             _zTransitionBudgetTick = curTick;

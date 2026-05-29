@@ -43,11 +43,9 @@ public abstract partial class CESharedZLevelsSystem
     public bool IsBodyActive(EntityUid uid) => _activeBodies.Contains(uid);
 
     /// <summary>
-    /// Queues a movement-cache refresh for <paramref name="uid"/> to be drained at the start of
-    /// the next physics update. Safe to call repeatedly with the same uid — duplicates are
-    /// coalesced. Use this when many bodies are invalidated at once; for synchronous callers
-    /// that need the cache up-to-date before the next read, call <see cref="CacheMovement"/>
-    /// directly.
+    /// Queues a coalesced movement-cache refresh, drained at the start of the next physics update.
+    /// Use when many bodies are invalidated at once; synchronous callers needing the cache current
+    /// before their next read should call <see cref="CacheMovement"/> directly.
     /// </summary>
     [PublicAPI]
     public void DirtyMovement(EntityUid uid)
@@ -76,9 +74,8 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentStartup>(OnGhostMoverStartup);
         SubscribeLocalEvent<CEZLevelGhostMoverComponent, ComponentShutdown>(OnGhostMoverShutdown);
         // Becoming/leaving a ghost flips IsAutomaticZPhysicsExcluded; refresh activation so the
-        // body actually sleeps/wakes instead of staying stuck in its prior state. Subscribed via
-        // EntityManager.ComponentAdded/Removed rather than SubscribeLocalEvent<GhostComponent, ComponentStartup>
-        // because ComponentStartup is an exclusive ComponentEvent and GhostSystem already owns it.
+        // body sleeps/wakes. Hooked via ComponentAdded/Removed because GhostComponent's exclusive
+        // ComponentStartup is already owned by GhostSystem.
         EntityManager.ComponentAdded += OnComponentAddedForActivation;
         EntityManager.ComponentRemoved += OnComponentRemovedForActivation;
     }

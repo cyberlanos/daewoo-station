@@ -10,9 +10,8 @@ using Robust.Shared.Timing;
 namespace Content.Shared._Pirate.ZLevels.Core;
 
 /// <summary>
-/// Per-grid bitmask cache of "opening" tiles (empty or transparent) used by audio/voice/probe-eye
-/// systems to decide whether sound or vision can cross a Z layer at a given XY. Cached per
-/// chunk (8x8 = 64 bits) and invalidated by tick on tile mutation.
+/// Per-grid bitmask cache of "opening" tiles (empty or transparent) for deciding whether sound or
+/// vision crosses a Z layer at a given XY. Cached per chunk (8x8 = 64 bits), invalidated by tick.
 /// </summary>
 public sealed class CEZLevelOpeningCache
 {
