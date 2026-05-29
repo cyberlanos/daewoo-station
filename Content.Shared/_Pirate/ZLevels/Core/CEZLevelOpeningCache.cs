@@ -22,6 +22,8 @@ public sealed class CEZLevelOpeningCache
 
     public CEZLevelOpeningCache(int chunkSize = DefaultChunkSize)
     {
+        if (chunkSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(chunkSize), chunkSize, "chunkSize must be > 0");
         _chunkSize = chunkSize;
     }
 
