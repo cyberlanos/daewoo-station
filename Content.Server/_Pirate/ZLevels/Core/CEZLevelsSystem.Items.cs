@@ -225,10 +225,25 @@ public sealed partial class CEZLevelsSystem
     /// </summary>
     private float ComputeItemGroundHeight(EntityUid uid, TransformComponent xform)
     {
-        if (xform.GridUid is not { } gridUid || !TryComp<MapGridComponent>(gridUid, out var grid))
-            return -1f;
-
         var worldPos = _transform.GetWorldPosition(uid);
+        EntityUid gridUid;
+        MapGridComponent grid;
+
+        if (xform.GridUid is { } dg && TryComp<MapGridComponent>(dg, out var dgc))
+        {
+            gridUid = dg;
+            grid = dgc;
+        }
+        else if (xform.MapUid is { } mapUid &&
+                 TryResolveGridAtWorldPositionOnMap(mapUid, worldPos, out var rg, out var rgc))
+        {
+            gridUid = rg;
+            grid = rgc;
+        }
+        else
+        {
+            return -1f;
+        }
         var tileIndices = _map.WorldToTile(gridUid, grid, worldPos);
 
         var found = false;

@@ -458,11 +458,7 @@ public abstract partial class SharedGunSystem : EntitySystem
         // the adjacent Z map, pre-shifted by the layer's render displacement so it renders on the
         // aim line and hits where clicked. On failure (no layer / no opening) refund cooldown, abort.
         if (!_zLevelShooting.TryAdjustShotCoordinates(user, fromCoordinates, toCoordinates.Value, out fromCoordinates, out var zAdjustedTo))
-        {
-            gun.NextFire = TimeSpan.FromSeconds(Math.Max(lastFire.TotalSeconds + SafetyNextFire, gun.NextFire.TotalSeconds));
-            DirtyField(gunUid, gun, nameof(GunComponent.NextFire));
             return;
-        }
         toCoordinates = zAdjustedTo;
         #endregion
 

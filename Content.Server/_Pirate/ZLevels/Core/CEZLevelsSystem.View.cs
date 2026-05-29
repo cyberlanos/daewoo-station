@@ -55,12 +55,10 @@ public sealed partial class CEZLevelsSystem
     private readonly List<int> _probeDepthsToRemove = new();
     private readonly List<Vector2> _stairPreviewPositions = new(CEZLevelViewerComponent.MaxStairPreviewPositions);
 
-    private EntityQuery<MapGridComponent> _viewGridQuery;
     private EntityQuery<CEZLevelHighGroundComponent> _viewHighGroundQuery;
 
     private void InitView()
     {
-        _viewGridQuery = GetEntityQuery<MapGridComponent>();
         _viewHighGroundQuery = GetEntityQuery<CEZLevelHighGroundComponent>();
 
         Subs.CVar(_config, CCVars.CEZMaxViewProbesPerPlayer, OnMaxViewProbesChanged, true);
@@ -316,7 +314,7 @@ public sealed partial class CEZLevelsSystem
 
         // Subscribe above only if there's a hole nearby — otherwise the upper PVS stays cold until
         // the player steps onto a stair or uses LookUp.
-        if (!HasZOpeningNear(aboveTarget.MapUid, globalPos))
+        if (!HasZOpeningNear(aboveTarget.MapUid, aboveTarget.WorldPosition))
             return;
 
         depths.Add(1);
@@ -352,18 +350,20 @@ public sealed partial class CEZLevelsSystem
 
     private bool HasZOpeningNear(EntityUid map, Vector2 globalPos)
     {
-        if (!_viewGridQuery.TryComp(map, out var grid))
-            return true;
-
         if (!TryComp<TransformComponent>(map, out var mapXform) || mapXform.MapID == MapId.Nullspace)
             return true;
 
+        // Use a spatial grid lookup rather than querying the map entity for MapGridComponent
+        // (which only works on planet-style maps).
+        if (!_mapMan.TryFindGridAt(mapXform.MapID, globalPos, out var gridUid, out var grid))
+            return true;
+
         var mapCoordinates = new MapCoordinates(globalPos, mapXform.MapID);
-        var center = _map.TileIndicesFor(map, grid, mapCoordinates);
+        var center = _map.TileIndicesFor(gridUid, grid, mapCoordinates);
         var start = center - new Vector2i(ZProbeOpeningTileRadius, ZProbeOpeningTileRadius);
         var end = center + new Vector2i(ZProbeOpeningTileRadius, ZProbeOpeningTileRadius);
 
-        return HasOpeningInTileBounds((map, grid), start, end);
+        return HasOpeningInTileBounds((gridUid, grid), start, end);
     }
 
     /// <summary>
@@ -379,14 +379,14 @@ public sealed partial class CEZLevelsSystem
     {
         previewPositions.Clear();
 
-        if (!TryResolveViewerMap((viewer.Owner, viewerXform), 1, out _) ||
-            !_viewGridQuery.TryComp(map, out var grid))
-        {
+        if (!TryResolveViewerMap((viewer.Owner, viewerXform), 1, out _))
             return false;
-        }
+
+        if (!_mapMan.TryFindGridAt(viewerXform.MapID, globalPos, out var gridUid, out var grid))
+            return false;
 
         var origin = new MapCoordinates(globalPos, viewerXform.MapID);
-        var centerTile = _map.WorldToTile(map, grid, globalPos);
+        var centerTile = _map.WorldToTile(gridUid, grid, globalPos);
         var tileRadius = Math.Max(1, (int) MathF.Ceiling(StairPreviewProbeRadius / grid.TileSize));
 
         for (var x = -tileRadius; x <= tileRadius; x++)
@@ -394,7 +394,7 @@ public sealed partial class CEZLevelsSystem
             for (var y = -tileRadius; y <= tileRadius; y++)
             {
                 var tile = centerTile + new Vector2i(x, y);
-                var query = _map.GetAnchoredEntitiesEnumerator(map, grid, tile);
+                var query = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tile);
                 while (query.MoveNext(out var uid))
                 {
                     if (uid is not { } highGroundUid ||
