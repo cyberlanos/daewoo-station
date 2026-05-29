@@ -186,11 +186,12 @@ public sealed partial class CEZLevelsSystem
                 }
             }
 
-            // Rise-through: open ceiling → move up a Z; closed → cap at 1. No fall event here —
-            // that popup is reserved for the descent path.
+            // Rise-through: open ceiling → move up a Z; closed → cap at 1. Gated on ZVelocity > 0
+            // (thrown-up only): a resting item snapped to a stair peak (1.05) would otherwise loop
+            // up through the hole above the stairs and fall back forever.
             if (zItem.LocalPosition >= 1f)
             {
-                if (!HasTileAbove(uid) && TryMoveUp(uid, bypassPassability: true))
+                if (zItem.ZVelocity > 0f && !HasTileAbove(uid) && TryMoveUp(uid, bypassPassability: true))
                 {
                     zItem.LocalPosition -= 1f;
                 }
@@ -371,6 +372,10 @@ public sealed partial class CEZLevelsSystem
 
     private static bool IsItemRestingOnMapOrGrid(TransformComponent xform)
     {
+        // Anchored devices that carry ItemComponent are fixed to the grid — never fall/rise.
+        if (xform.Anchored)
+            return false;
+
         if (xform.MapUid is { } mapUid && xform.ParentUid == mapUid)
             return true;
 
