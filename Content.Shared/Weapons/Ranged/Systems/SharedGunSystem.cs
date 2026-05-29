@@ -454,18 +454,15 @@ public abstract partial class SharedGunSystem : EntitySystem
         var fromCoordinates = Transform(user).Coordinates;
 
         #region Pirate: multiz
-        // Cross-Z shoot redirect: if the shooter has ShootDown on (Ctrl+Shift+Space toggle) or
-        // LookUp + wielded gun, rewrite shot coordinates onto the adjacent Z map through a floor
-        // opening. On failure (no adjacent layer / no opening), refund the cooldown and abort.
-        var sourceFromCoordinates = fromCoordinates;
+        // Cross-Z shoot redirect (ShootDown toggle, or LookUp + wielded gun): rewrite the shot onto
+        // the adjacent Z map, pre-shifted by the layer's render displacement so it renders on the
+        // aim line and hits where clicked. On failure (no layer / no opening) refund cooldown, abort.
         if (!_zLevelShooting.TryAdjustShotCoordinates(user, fromCoordinates, toCoordinates.Value, out fromCoordinates, out var zAdjustedTo))
         {
             gun.NextFire = TimeSpan.FromSeconds(Math.Max(lastFire.TotalSeconds + SafetyNextFire, gun.NextFire.TotalSeconds));
             DirtyField(gunUid, gun, nameof(GunComponent.NextFire));
             return;
         }
-        _zLevelShooting.TryGetProjectileVisualOffset(user, sourceFromCoordinates, fromCoordinates, out var zProjectileVisualOffset);
-        _zLevelShooting.BeginShotOffset(zProjectileVisualOffset);
         toCoordinates = zAdjustedTo;
         #endregion
 

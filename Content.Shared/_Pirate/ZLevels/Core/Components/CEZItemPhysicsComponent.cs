@@ -38,6 +38,13 @@ public sealed partial class CEZItemPhysicsComponent : Component
     [DataField]
     public bool VisualsInitialized;
 
+    /// <summary>
+    /// Client-side: true while the sprite carries a Z offset/draw-depth override, so flat items
+    /// can be left untouched yet still restored once when they settle.
+    /// </summary>
+    [DataField]
+    public bool VisualsApplied;
+
     [DataField]
     public bool NoRotDefault;
 

@@ -13,8 +13,17 @@ namespace Content.Shared._Pirate.ZLevels.Core.Components;
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(fieldDeltas: true)]
 public sealed partial class CEZLevelProjectileVisualOffsetComponent : Component
 {
+    /// <summary>
+    /// Eye-independent barrel-shift (source barrel minus the projectile's target-layer spawn), in
+    /// world space. Render-displacement compensation is added client-side from the live eye, since
+    /// lanos's eye can be rotated.
+    /// </summary>
     [DataField, AutoNetworkedField]
     public Vector2 Offset;
+
+    /// <summary>Shot Z offset (+1 up / -1 down).</summary>
+    [DataField, AutoNetworkedField]
+    public int Depth;
 
     /// <summary>Sprite offset present before we applied ours; restored on shutdown.</summary>
     public Vector2? OriginalOffset;
