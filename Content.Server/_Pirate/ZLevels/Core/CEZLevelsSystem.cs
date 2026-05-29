@@ -71,7 +71,6 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         Dictionary<EntityUid, int> dict = new();
         dict.Add(mainMap.Value, 0);
 
-        // Collect grid UIDs per depth for direct linking
         var gridsByDepth = new Dictionary<int, EntityUid>
         {
             [0] = mainGrid.Value,
@@ -81,8 +80,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         // back if z-network population fails.
         var loadedMaps = new List<EntityUid>();
 
-        //Loading maps below first. Maps are deliberately left uninitialised here — see the comment
-        //before TryAddMapsIntoZNetwork below.
+        // Maps are deliberately left uninitialised here — see the comment before TryAddMapsIntoZNetwork.
         var depth = ent.Comp.MapsBelow.Count * -1;
         foreach (var mapBelow in ent.Comp.MapsBelow)
         {
@@ -104,7 +102,6 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             depth++;
         }
 
-        //Loading maps above next
         depth = 1;
         foreach (var mapAbove in ent.Comp.MapsAbove)
         {
@@ -126,11 +123,10 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             depth++;
         }
 
-        // Register every map (including the station's main map at depth 0) into the network while
-        // they are all still uninitialised. CEZLevelMappingSystem.OnAddedIntoZNetwork preemptively
-        // initialises a map when at least one peer is already init; if the above/below maps were
-        // initialised inline above, that branch would also init the main map here and the
-        // GameTicker's `DebugTools.Assert(!_map.IsInitialized(mapId))` in LoadMaps would fire.
+        // Register every map (including the depth-0 main map) while all are still uninitialised.
+        // OnAddedIntoZNetwork preemptively inits a map if any peer is already init — initialising
+        // the above/below maps inline first would init the main map here too and trip GameTicker's
+        // `DebugTools.Assert(!_map.IsInitialized(mapId))` in LoadMaps.
         if (!TryAddMapsIntoZNetwork(stationNetwork, dict))
         {
             Log.Error($"Failed to populate station z-network {ToPrettyString(stationNetwork)}; tearing it down.");
@@ -143,9 +139,8 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         ent.Comp.ZNetworkEntity = stationNetwork;
         LinkGridsDirectly(stationNetwork, gridsByDepth);
 
-        // Now that the network is fully linked, initialise the additional maps. The main map at
-        // depth 0 is intentionally NOT initialised here — GameTicker.LoadMaps asserts it's still
-        // uninitialised and will init it itself just before spawning players.
+        // Init the additional maps now the network is linked. The depth-0 main map is intentionally
+        // left uninitialised — GameTicker.LoadMaps asserts that and inits it itself before spawning.
         foreach (var loaded in loadedMaps)
             _map.InitializeMap(loaded);
     }

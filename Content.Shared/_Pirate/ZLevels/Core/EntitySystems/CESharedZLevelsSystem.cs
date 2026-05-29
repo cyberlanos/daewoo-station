@@ -34,8 +34,8 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
 
     /// <summary>
-    /// Per-grid bitmask cache of "opening" (empty/transparent) tiles. Reused by audio/voice/probe
-    /// systems to gate cross-Z projection without scanning tiles on every event.
+    /// Per-grid cache of "opening" (empty/transparent) tiles, so cross-Z systems gate projection
+    /// without scanning tiles on every event.
     /// </summary>
     private readonly CEZLevelOpeningCache _openingCache = new();
     private readonly List<Entity<MapGridComponent>> _openingGridScratch = new();
@@ -114,10 +114,9 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     }
 
     /// <summary>
-    /// Adds a map at the given depth and updates all derived indexes
-    /// (ZLevels dict, ZLevelByEntity, SortedZLevels, neighbour MapAbove/MapBelow refs).
-    /// Caller is expected to have validated that the depth is free and the map isn't already
-    /// linked elsewhere.
+    /// Adds a map at the given depth and updates all derived indexes (ZLevels, ZLevelByEntity,
+    /// SortedZLevels, neighbour MapAbove/MapBelow). Caller must have validated the depth is free
+    /// and the map isn't already linked elsewhere.
     /// </summary>
     protected void AttachMapToNetwork(Entity<CEZLevelsNetworkComponent> network, Entity<CEZLevelMapComponent> map, int depth)
     {
@@ -155,7 +154,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
         map.Comp.Depth = depth;
         map.Comp.NetworkUid = network.Owner;
 
-        // Wire direct neighbour shortcuts and update the neighbours' opposite refs.
+        // Wire neighbour shortcuts and update their opposite refs.
         if (network.Comp.ZLevels.TryGetValue(depth + 1, out var aboveOpt) && aboveOpt is { } above &&
             _zMapQuery.TryComp(above, out var aboveComp))
         {
@@ -305,12 +304,11 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     }
 
     /// <summary>
-    /// Resolves an adjacent-Z target accounting for linked-grid peer shuttles (a multi-deck shuttle
-    /// whose decks are separate grids on different maps in the network). When <paramref name="sourceGridUid"/>
-    /// carries <see cref="CEZLinkedGridComponent"/>, the target map and world XY are taken from
-    /// that grid's peer at the requested depth offset, reprojecting <paramref name="sourceWorld"/>
-    /// through the two grids' matrices so the returned XY lines up with the same tile on the peer
-    /// deck. Falls back to <see cref="TryMapOffset"/> + the source XY when not linked.
+    /// Resolves an adjacent-Z target, accounting for linked-grid peer shuttles (multi-deck shuttle
+    /// whose decks are separate grids on different network maps). For a <see cref="CEZLinkedGridComponent"/>
+    /// grid, takes the peer at the depth offset and reprojects <paramref name="sourceWorld"/> through
+    /// the two grids' matrices so the XY lines up with the same tile on the peer deck. Otherwise
+    /// falls back to <see cref="TryMapOffset"/> + the source XY.
     /// </summary>
     [PublicAPI]
     public bool TryResolveLinkedTarget(
