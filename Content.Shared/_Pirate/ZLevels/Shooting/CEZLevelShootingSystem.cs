@@ -27,10 +27,6 @@ namespace Content.Shared._Pirate.ZLevels.Shooting;
 
 public sealed partial class CEZLevelShootingSystem : EntitySystem
 {
-    /// <summary>Nudge the projectile this far from the opening center back toward the shooter so it spawns
-    /// just inside the hole on the target layer, not deep in space.</summary>
-    private const float CrossZOpeningSourceNudge = 0.30f;
-
     [Dependency] private readonly CESharedZLevelsSystem _zLevels = default!;
     [Dependency] private readonly SharedGunSystem _gun = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
@@ -47,6 +43,7 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
     /// per projectile, cleared by <see cref="EndShotOffset"/> after.
     /// </summary>
     private Vector2 _pendingVisualOffset;
+    private int _pendingShotDepth;
 
     public override void Initialize()
     {
@@ -81,22 +78,28 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
             PopupSelf(args.User, "ce-zlevel-shoot-down-disabled-unwield");
     }
 
-    /// <summary>
-    /// Called per-projectile by SharedGunSystem.Shoot. We apply the pending visual offset (set
-    /// just before the Shoot call by the SharedGunSystem hook) to the spawned projectile.
-    /// </summary>
     private void OnPlayerShotProjectile(ref PlayerShotProjectileEvent args)
     {
-        if (_pendingVisualOffset.LengthSquared() <= 0.001f)
+        // Gate on depth, not barrelShift magnitude: a straight-up shot has zero shift but still
+        // needs the client-side render compensation.
+        if (_pendingShotDepth == 0)
             return;
 
-        ApplyProjectileVisualOffset(args.Projectile, _pendingVisualOffset);
+        ApplyProjectileVisualOffset(args.Projectile, _pendingVisualOffset, _pendingShotDepth);
     }
 
-    /// <summary>Reserve a visual offset to be applied to every projectile fired during the next Shoot call.</summary>
-    public void BeginShotOffset(Vector2 offset) => _pendingVisualOffset = offset;
+    /// <summary>Reserve the barrel-shift + shot depth applied to every projectile fired during the next Shoot call.</summary>
+    public void BeginShotOffset(Vector2 barrelShift, int depth)
+    {
+        _pendingVisualOffset = barrelShift;
+        _pendingShotDepth = depth;
+    }
 
-    public void EndShotOffset() => _pendingVisualOffset = Vector2.Zero;
+    public void EndShotOffset()
+    {
+        _pendingVisualOffset = Vector2.Zero;
+        _pendingShotDepth = 0;
+    }
 
     // --- ShootDown toggle -------------------------------------------------------------------
 
@@ -222,7 +225,7 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
                 offset,
                 fromMap.Position,
                 clampedTo,
-                out var opening,
+                out _,
                 preferOpeningAwayFromSource: true,
                 maxSourceDistanceFromOpeningEdgeTiles: _crossZOpeningSourceEdgeRangeTiles))
         {
@@ -231,18 +234,13 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
                 : "ce-zlevel-shoot-down-blocked-floor");
             return false;
         }
-        // Opening is grid-anchored EntityCoordinates — lift to world only for the path math.
-        // Re-derives world from the (possibly moving) grid's current transform.
-        var openingWorld = _transform.ToMapCoordinates(opening).Position;
-
-        GetCrossZProjectilePath(
-            fromMap.Position,
-            toMap.Position,
-            clampedTo,
-            openingWorld,
-            offset,
-            out var projectileFrom,
-            out var projectileTo);
+        // The opening is only a gate (a hole must exist); we don't route through its center.
+        // The adjacent-Z layer renders shifted by renderShift, so spawning and aiming the physics
+        // in that shifted frame (physics = aim + renderShift) makes the bullet both render on the
+        // aim line and collide where the player clicked — no cosmetic sprite offset.
+        var renderShift = GetShooterRenderShift(shooter, offset);
+        var projectileFrom = fromMap.Position + renderShift;
+        var projectileTo = clampedTo + renderShift;
 
         var targetFrom = new MapCoordinates(projectileFrom, targetMapComp.MapId);
         var targetTo = new MapCoordinates(projectileTo, targetMapComp.MapId);
@@ -253,43 +251,54 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
     }
 
     /// <summary>
-    /// Returns the cosmetic offset that should be applied to spawned projectiles' sprites so
-    /// the muzzle flash renders at the gun barrel on the source layer, not at the opening on the
-    /// target layer.
+    /// World-space render-displacement of the adjacent-Z layer, matching <c>ScalingViewport.CEZLevels</c>:
+    /// <c>gridWorldRotation.ToWorldVec() * ZLevelVisualOffset * offset</c>. Grid rotation is networked
+    /// so client and server agree (prediction); a no-grid map gives the plain vertical shift.
+    /// </summary>
+    private Vector2 GetShooterRenderShift(EntityUid shooter, int offset)
+    {
+        var gridUid = Transform(shooter).GridUid;
+        var gridRotation = gridUid is { } grid ? _transform.GetWorldRotation(grid) : Angle.Zero;
+        return gridRotation.ToWorldVec() * CESharedZLevelsSystem.ZLevelVisualOffset * offset;
+    }
+
+    /// <summary>
+    /// Outputs the eye-independent barrel-shift (projectile's target-layer spawn back to the source
+    /// barrel) and the shot depth. Render-displacement compensation is added client-side from the
+    /// live eye. Returns true for any cross-Z shot; barrelShift may be zero (firing straight up),
+    /// so callers gate on depth.
     /// </summary>
     public bool TryGetProjectileVisualOffset(
         EntityUid shooter,
         EntityCoordinates sourceFromCoordinates,
         EntityCoordinates projectileFromCoordinates,
-        out Vector2 visualOffset,
+        out Vector2 barrelShift,
+        out int depth,
         bool requireReadyGunForLookUp = true)
     {
-        visualOffset = default;
+        barrelShift = default;
 
-        var offset = GetRequestedShotOffset(shooter, requireReadyGunForLookUp);
-        if (offset == 0)
+        depth = GetRequestedShotOffset(shooter, requireReadyGunForLookUp);
+        if (depth == 0)
             return false;
 
         var sourceFromMap = _transform.ToMapCoordinates(sourceFromCoordinates);
         var projectileFromMap = _transform.ToMapCoordinates(projectileFromCoordinates);
         if (sourceFromMap.MapId == MapId.Nullspace || projectileFromMap.MapId == MapId.Nullspace)
+        {
+            depth = 0;
             return false;
+        }
 
-        // Adjacent-layer rendering: the renderer's eye for the target-Z pass is shifted by
-        // (0, ZLevelOffset * depth) so contents appear vertically displaced (upper-layer down,
-        // lower-layer up). To make the sprite land at the *source-layer* barrel B given the
-        // projectile lives at P on the target map, solve P + spriteOffset - eyeShift = B →
-        // spriteOffset = B - P + eyeShift. GetCrossZRenderOffset(+1) = (0, +0.7), (-1) = (0, -0.7).
-        // See Content.Client/_Pirate/ZLevels/Core/ScalingViewport.CEZLevels.cs:300 for the eye shift.
-        visualOffset = sourceFromMap.Position + GetCrossZRenderOffset(offset) - projectileFromMap.Position;
-        return visualOffset.LengthSquared() > 0.001f;
+        barrelShift = sourceFromMap.Position - projectileFromMap.Position;
+        return true;
     }
 
     // --- Visual-offset attachment ------------------------------------------------------------
 
-    public void ApplyProjectileVisualOffset(EntityUid projectile, Vector2 visualOffset)
+    public void ApplyProjectileVisualOffset(EntityUid projectile, Vector2 barrelShift, int depth)
     {
-        if (visualOffset.LengthSquared() <= 0.001f)
+        if (depth == 0)
             return;
 
         // During client prediction, don't dirty server-owned entities. Use a predicted-only
@@ -298,64 +307,30 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
         {
             if (!TryComp<CEZLevelPredictedProjectileVisualOffsetComponent>(projectile, out var predicted))
             {
-                predicted = new CEZLevelPredictedProjectileVisualOffsetComponent { Offset = visualOffset };
+                predicted = new CEZLevelPredictedProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
                 AddComp(projectile, predicted);
                 return;
             }
 
-            predicted.Offset = visualOffset;
+            predicted.Offset = barrelShift;
+            predicted.Depth = depth;
             return;
         }
 
         if (!TryComp<CEZLevelProjectileVisualOffsetComponent>(projectile, out var visual))
         {
-            visual = new CEZLevelProjectileVisualOffsetComponent { Offset = visualOffset };
+            visual = new CEZLevelProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
             AddComp(projectile, visual);
             Dirty(projectile, visual);
             return;
         }
 
-        visual.Offset = visualOffset;
+        visual.Offset = barrelShift;
+        visual.Depth = depth;
         Dirty(projectile, visual);
     }
 
-    // --- Math helpers (pure, from CMU verbatim) ---------------------------------------------
-
-    private static void GetCrossZProjectilePath(
-        Vector2 from,
-        Vector2 to,
-        Vector2 clampedTo,
-        Vector2 opening,
-        int offset,
-        out Vector2 projectileFrom,
-        out Vector2 projectileTo)
-    {
-        projectileFrom = NudgeOpeningTowardSource(opening, from);
-        var direction = to - from;
-        if (direction.LengthSquared() <= 0.001f)
-            direction = clampedTo - projectileFrom;
-
-        if (direction.LengthSquared() <= 0.001f)
-        {
-            projectileTo = clampedTo;
-            return;
-        }
-
-        var distance = Math.Max(1f, Vector2.Distance(projectileFrom, clampedTo));
-        projectileTo = projectileFrom + Vector2.Normalize(direction) * distance;
-    }
-
-    private static Vector2 GetCrossZRenderOffset(int offset) =>
-        new(0f, CESharedZLevelsSystem.ZLevelVisualOffset * offset);
-
-    private static Vector2 NudgeOpeningTowardSource(Vector2 opening, Vector2 source)
-    {
-        var sourceDirection = source - opening;
-        if (sourceDirection.LengthSquared() <= 0.001f)
-            return opening;
-
-        return opening + Vector2.Normalize(sourceDirection) * CrossZOpeningSourceNudge;
-    }
+    // --- Math helpers -----------------------------------------------------------------------
 
     private Vector2 ClampCrossZShotTarget(Vector2 from, Vector2 to)
     {

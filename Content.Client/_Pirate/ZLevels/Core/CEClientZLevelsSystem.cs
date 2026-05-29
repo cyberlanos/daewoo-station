@@ -116,13 +116,29 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
         var itemQuery = EntityQueryEnumerator<CEZItemPhysicsComponent, SpriteComponent>();
         while (itemQuery.MoveNext(out var uid, out var zItem, out var sprite))
         {
+            var localPosition = MathF.Max(zItem.LocalPosition, 0f);
+
+            // Flat on its layer: leave the sprite alone (restore once) so the per-frame drive
+            // doesn't fight the throw's own animation — the short-throw twitch.
+            if (localPosition <= 0f)
+            {
+                if (zItem.VisualsApplied)
+                {
+                    sprite.NoRotation = zItem.NoRotDefault;
+                    _sprite.SetOffset((uid, sprite), zItem.SpriteOffsetDefault);
+                    _sprite.SetDrawDepth((uid, sprite), zItem.DrawDepthDefault);
+                    zItem.VisualsApplied = false;
+                }
+
+                continue;
+            }
+
             EnsureItemVisualDefaults((uid, zItem), sprite);
 
-            var localPosition = MathF.Max(zItem.LocalPosition, 0f);
-            sprite.NoRotation = localPosition != 0 || zItem.NoRotDefault;
-
+            sprite.NoRotation = true;
             _sprite.SetOffset((uid, sprite), zItem.SpriteOffsetDefault + new Vector2(0, localPosition * ZLevelOffset));
-            _sprite.SetDrawDepth((uid, sprite), localPosition > 0 ? (int)Shared.DrawDepth.DrawDepth.OverMobs : zItem.DrawDepthDefault);
+            _sprite.SetDrawDepth((uid, sprite), (int)Shared.DrawDepth.DrawDepth.OverMobs);
+            zItem.VisualsApplied = true;
         }
     }
 

@@ -44,16 +44,11 @@ public sealed partial class CEZLevelsSystem
         SubscribeLocalEvent<CEZItemPhysicsComponent, EntParentChangedMessage>(OnItemZPhysicsParentChanged);
     }
 
-    // Mirrors CMU's CMUSharedZLevelsSystem.Throwing.cs:OnThrown. Two responsibilities:
-    //   1. Ensure the item carries CEZItemPhysicsComponent during the throw flight — lanos
-    //      removes the component on pickup, so without this the throw has no Z hooks.
-    //   2. If the thrower has LookUp toggled on, seed positive Z velocity (6.5 — same value as
-    //      CMU). The Update loop's gravity gate (OnGround || ZVelocity > 0) then decelerates it
-    //      naturally into a parabolic arc, and the rise-through path transitions to the Z above.
+    // Only engage Z-physics on throw when aiming across Z (LookUp). Plain throws must stay free of
+    // the component during flight, else the client's per-frame sprite drive fights the throw
+    // animation and short throws look twitchy.
     private void OnItemThrown(Entity<ItemComponent> ent, ref ThrownEvent args)
     {
-        TryAddItemZPhysics(ent.Owner);
-
         if (args.User is not { } user ||
             !TryComp<CEZLevelViewerComponent>(user, out var viewer) ||
             !viewer.LookUp)
@@ -61,24 +56,29 @@ public sealed partial class CEZLevelsSystem
             return;
         }
 
-        if (!TryComp<CEZItemPhysicsComponent>(ent.Owner, out var zItem))
-            return;
+        TryAddItemZPhysics(ent.Owner);
 
-        if (zItem.ZVelocity >= ItemThrowUpZVelocity)
+        if (!TryComp<CEZItemPhysicsComponent>(ent.Owner, out var zItem) ||
+            zItem.ZVelocity >= ItemThrowUpZVelocity)
+        {
             return;
+        }
 
         zItem.ZVelocity = ItemThrowUpZVelocity;
         Dirty(ent.Owner, zItem);
     }
 
+    // requireZGravity: only acquire the component when the item is over an opening. Adding it on
+    // solid floor and dropping it on the next settle tick churns networked state every throw,
+    // which resets the sprite mid-flight (short-throw twitch).
     private void OnItemStopThrow(Entity<ItemComponent> ent, ref StopThrowEvent args)
     {
-        TryAddItemZPhysics(ent.Owner);
+        TryAddItemZPhysics(ent.Owner, requireZGravity: true);
     }
 
     private void OnItemDropped(Entity<ItemComponent> ent, ref DroppedEvent args)
     {
-        TryAddItemZPhysics(ent.Owner);
+        TryAddItemZPhysics(ent.Owner, requireZGravity: true);
     }
 
     private void OnItemMoved(Entity<ItemComponent> ent, ref MoveEvent args)
@@ -133,15 +133,7 @@ public sealed partial class CEZLevelsSystem
         RemComp<CEZGravityInfluencedComponent>(item);
     }
 
-    // Mirrors CMU's CESharedZLevelsSystem.Update.cs ProcessZPhysics flow, scoped to items:
-    //   1. Gravity is gated on BodyStatus.OnGround. Thrown items (InAir) keep their height.
-    //   2. AutoStep snaps LocalPosition up to ground height every tick, including over walls
-    //      with CEZLevelHighGround (HeightCurve = [1.05, ...]) — this produces the "flies above"
-    //      visual as a thrown item crosses a wall.
-    //   3. LocalPosition < 0 → fall-through to lower Z, raises CEZLevelFallMapEvent which fires
-    //      the "X falls!" popup for bystanders on the layer below.
-    //   4. LocalPosition >= 1 with open ceiling → transition up one Z-level. With a closed
-    //      ceiling, cap at 1 and kill upward velocity (item rides the wall top).
+    // Per-item vertical physics tick, mirroring CMU's ProcessZPhysics.
     private void UpdateItems(float frameTime)
     {
         var query = EntityQueryEnumerator<CEZItemPhysicsComponent, ItemComponent, TransformComponent>();
@@ -160,21 +152,16 @@ public sealed partial class CEZLevelsSystem
             var groundHeight = ComputeItemGroundHeight(uid, xform);
             var hasSupport = groundHeight >= 0f;
 
-            // Mirrors CMU's gate: gravity applies when on the ground OR moving upward. The
-            // `|| ZVelocity > 0` clause is what produces the parabolic arc on a LookUp-throw —
-            // upward velocity decelerates each tick, peaks, then crosses zero. Once it crosses
-            // zero while still InAir, gravity stops; the item drifts horizontally with whatever
-            // residual descent velocity it has until the throw ends and BodyStatus flips back to
-            // OnGround, at which point gravity resumes to complete the descent.
+            // Gravity applies on the ground or while rising. The `|| ZVelocity > 0` clause is what
+            // decelerates a LookUp-throw into a parabolic arc instead of a straight launch.
             if (onGround || zItem.ZVelocity > 0f)
                 zItem.ZVelocity = MathF.Max(zItem.ZVelocity - ItemZGravityForce * frameTime, -ItemZVelocityLimit);
 
             zItem.LocalPosition += zItem.ZVelocity * frameTime;
             var distanceToGround = zItem.LocalPosition - groundHeight;
 
-            // AutoStep — snap up to ground top (wall HighGround lifts the item to ~1.05). When
-            // the floor catches a falling item we also kill the downward velocity here, otherwise
-            // every tick of gravity accumulates and the settle check below never trips.
+            // AutoStep — snap up to ground top. Killing downward velocity here lets the settle
+            // check below trip, otherwise gravity keeps accumulating against the floor.
             if (hasSupport && distanceToGround < 0f)
             {
                 zItem.LocalPosition = groundHeight;
@@ -199,11 +186,8 @@ public sealed partial class CEZLevelsSystem
                 }
             }
 
-            // Rise-through: reached the ceiling. Open above → move up; closed → cap at 1.
-            // CMU does NOT fire a fall event on rise-through — that popup is reserved for the
-            // descent path. So an item that arcs up through an open ceiling lands on the upper Z
-            // silently; it'll only produce the "falls from above" popup later if it then descends
-            // through a hole.
+            // Rise-through: open ceiling → move up a Z; closed → cap at 1. No fall event here —
+            // that popup is reserved for the descent path.
             if (zItem.LocalPosition >= 1f)
             {
                 if (!HasTileAbove(uid) && TryMoveUp(uid, bypassPassability: true))
@@ -218,9 +202,8 @@ public sealed partial class CEZLevelsSystem
                 }
             }
 
-            // Settle: on the ground at low velocity AND throw finished → clean up Z-physics.
-            // Keeping the component around while the upstream throw is still active so AutoStep
-            // can still trigger on the next tile crossed.
+            // Settle once on the ground at rest and the throw has finished. Stays active during the
+            // throw so AutoStep can still trigger on tiles crossed mid-flight.
             if (onGround &&
                 hasSupport &&
                 !HasComp<ThrownItemComponent>(uid) &&
@@ -237,12 +220,8 @@ public sealed partial class CEZLevelsSystem
     }
 
     /// <summary>
-    /// Returns the height of solid support at the item's current tile.
-    ///   <c>&gt;= 0</c> → support exists (0 for plain floor, 1.05 for walls etc).
-    ///   <c>&lt; 0</c> → no support; AutoStep can't lift, and the item will fall-through.
-    /// Lightweight mirror of CMU's <c>ComputeGroundHeightInternal</c>: scans anchored
-    /// <see cref="CEZLevelHighGroundComponent"/> entities at the item's tile, then falls back
-    /// to plain floor presence.
+    /// Height of solid support at the item's tile: <c>&gt;= 0</c> = support (0 plain floor,
+    /// 1.05 high-ground), <c>&lt; 0</c> = no support, item falls through.
     /// </summary>
     private float ComputeItemGroundHeight(EntityUid uid, TransformComponent xform)
     {
@@ -257,9 +236,8 @@ public sealed partial class CEZLevelsSystem
         var enumerator = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tileIndices);
         while (enumerator.MoveNext(out var anchored))
         {
-            // SupportOnlyFromAbove high-ground (e.g. ladder bases) holds climbers from the level
-            // above only — it must not pull an item resting on the same tile onto its curve.
-            // Mirrors the floor==0 skip in the mob ground-probe.
+            // SupportOnlyFromAbove high-ground (ladder bases) holds climbers from above only; it
+            // must not lift an item resting on the same tile.
             if (anchored is not { } anchoredUid ||
                 !TryComp<CEZLevelHighGroundComponent>(anchoredUid, out var hg) ||
                 hg.SupportOnlyFromAbove ||

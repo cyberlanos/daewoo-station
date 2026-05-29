@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Maths;
@@ -33,7 +34,7 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
 
     private void OnSyncedStartup(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
     {
-        TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
+        TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ent.Comp.Depth, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
     }
 
     private void OnSyncedShutdown(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
@@ -43,7 +44,7 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
 
     private void OnPredictedStartup(Entity<CEZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
     {
-        TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
+        TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ent.Comp.Depth, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
     }
 
     private void OnPredictedShutdown(Entity<CEZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
@@ -64,37 +65,46 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
             if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(uid))
                 continue;
 
-            ApplyProjectileVisualOffset(uid, visual.Offset, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);
+            ApplyProjectileVisualOffset(uid, visual.Offset, visual.Depth, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);
         }
 
         var predictedQuery = EntityQueryEnumerator<CEZLevelPredictedProjectileVisualOffsetComponent, SpriteComponent, TransformComponent>();
         while (predictedQuery.MoveNext(out var uid, out var visual, out var sprite, out var xform))
         {
-            ApplyProjectileVisualOffset(uid, visual.Offset, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);
+            ApplyProjectileVisualOffset(uid, visual.Offset, visual.Depth, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);
         }
     }
 
     private bool TryApplyProjectileVisualOffset(
         EntityUid uid,
-        Vector2 visualOffset,
+        Vector2 barrelShift,
+        int depth,
         ref Vector2? originalOffset,
         ref Vector2 appliedOffset)
     {
         if (!TryComp<SpriteComponent>(uid, out var sprite) || !TryComp(uid, out TransformComponent? xform))
             return false;
 
-        ApplyProjectileVisualOffset(uid, visualOffset, ref originalOffset, ref appliedOffset, sprite, xform);
+        ApplyProjectileVisualOffset(uid, barrelShift, depth, ref originalOffset, ref appliedOffset, sprite, xform);
         return true;
     }
 
     private void ApplyProjectileVisualOffset(
         EntityUid uid,
-        Vector2 visualOffset,
+        Vector2 barrelShift,
+        int depth,
         ref Vector2? originalOffset,
         ref Vector2 appliedOffset,
         SpriteComponent sprite,
         TransformComponent xform)
     {
+        // Add the render-displacement built from the live eye (the Z render pass shifts its eye by
+        // renderDir * ZLevelVisualOffset * depth). Live eye is the point of the split: lanos's eye
+        // can be rotated, so this isn't axis-aligned and a baked constant would land off-line.
+        Angle negEyeRotation = _eye.CurrentEye.Rotation * -1;
+        var renderDir = negEyeRotation.ToWorldVec();
+        var worldOffset = barrelShift + renderDir * CESharedZLevelsSystem.ZLevelVisualOffset * depth;
+
         // No-rotation sprites stay screen-aligned; rotated sprites need the offset in their own
         // local frame so it doesn't flip with the projectile.
         Angle renderRotation;
@@ -103,7 +113,7 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
         else
             renderRotation = _transformSystem.GetWorldRotation(xform);
 
-        var localVisualOffset = (-renderRotation).RotateVec(visualOffset);
+        var localVisualOffset = (-renderRotation).RotateVec(worldOffset);
 
         // Capture the pristine sprite offset once so we can undo our shift on shutdown.
         originalOffset ??= sprite.Offset - appliedOffset;
