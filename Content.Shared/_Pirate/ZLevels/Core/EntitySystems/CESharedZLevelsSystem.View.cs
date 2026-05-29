@@ -14,7 +14,7 @@ namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 public abstract partial class CESharedZLevelsSystem
 {
     [Dependency] protected readonly ITileDefinitionManager TilDefMan = default!;
-    [Dependency] private readonly IMapManager _mapMan = default!;
+    [Dependency] protected readonly IMapManager _mapMan = default!;
     private void InitView()
     {
         SubscribeLocalEvent<CEZLevelViewerComponent, MoveEvent>(OnViewerMove);
@@ -32,6 +32,16 @@ public abstract partial class CESharedZLevelsSystem
 
         viewer.LookUp = false;
         DirtyField(uid, viewer, nameof(CEZLevelViewerComponent.LookUp));
+        return true;
+    }
+
+    public bool TryDisableShootDown(EntityUid uid)
+    {
+        if (!TryComp<CEZLevelShooterComponent>(uid, out var shooter) || !shooter.ShootDown)
+            return false;
+
+        shooter.ShootDown = false;
+        DirtyField(uid, shooter, nameof(CEZLevelShooterComponent.ShootDown));
         return true;
     }
 
@@ -62,6 +72,11 @@ public abstract partial class CESharedZLevelsSystem
 
         ent.Comp.LookUp = !ent.Comp.LookUp;
         DirtyField(ent, ent.Comp, nameof(CEZLevelViewerComponent.LookUp));
+
+        // LookUp and ShootDown are mutually exclusive — mirror what SetShootDown does in the
+        // opposite direction.
+        if (ent.Comp.LookUp)
+            TryDisableShootDown(ent.Owner);
     }
 
     public bool HasOpaqueAbove(EntityUid ent, Entity<CEZLevelMapComponent?>? currentMapUid = null)
