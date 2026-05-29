@@ -34,11 +34,15 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
 
     private void OnSyncedStartup(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
     {
+        if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
+            return;
         TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ent.Comp.Depth, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
     }
 
     private void OnSyncedShutdown(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
     {
+        if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
+            return;
         RestoreProjectileVisualOffset(ent.Owner, ent.Comp.OriginalOffset);
     }
 

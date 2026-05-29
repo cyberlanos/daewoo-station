@@ -77,7 +77,19 @@ public sealed class CEZLevelsAudioSystem : EntitySystem
         _processed.Clear();
     }
 
-    private void OnAudioMove(Entity<AudioComponent> ent, ref MoveEvent args) => TryProject(ent, args.Component);
+    private void OnAudioMove(Entity<AudioComponent> ent, ref MoveEvent args)
+    {
+        if (_processed.Remove(ent) && _projectionsBySource.Remove(ent, out var stale))
+        {
+            foreach (var p in stale)
+            {
+                _projections.Remove(p);
+                if (!TerminatingOrDeleted(p))
+                    QueueDel(p);
+            }
+        }
+        TryProject(ent, args.Component);
+    }
 
     private void OnAudioMapInit(Entity<AudioComponent> ent, ref MapInitEvent args)
     {
