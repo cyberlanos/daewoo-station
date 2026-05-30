@@ -35,6 +35,13 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         SubscribeLocalEvent<FTLStartedEvent>(OnFTLStarted);
         SubscribeLocalEvent<ShuttleComponent, MapInitEvent>(OnShuttleMapInit);
         SubscribeLocalEvent<ShuttleComponent, EntityTerminatingEvent>(OnShuttleTerminating);
+        SubscribeLocalEvent<CEZShuttleRoofSourceComponent, TileChangedEvent>(OnSourceTileChanged);
+    }
+
+    private void OnSourceTileChanged(Entity<CEZShuttleRoofSourceComponent> ent, ref TileChangedEvent args)
+    {
+        if (Exists(ent.Comp.Shuttle))
+            EnsureRoof(ent.Comp.Shuttle);
     }
 
     private void OnFTLCompleted(ref FTLCompletedEvent args)
@@ -110,12 +117,35 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
         SyncRoofTransform(topGrid, roofGrid);
         CopyTiles(topGrid, roofGrid);
+
+        // Track the source deck so its later tile changes (build/deconstruct/damage) resync the
+        // roof; keep the marker on the current top deck only.
+        ClearSourceMarkers(shuttleUid, topGrid);
+        EnsureComp<CEZShuttleRoofSourceComponent>(topGrid).Shuttle = shuttleUid;
     }
 
     public void RemoveRoof(EntityUid shuttleUid)
     {
         if (TryFindExistingRoof(shuttleUid, out var roof))
             RemoveRoofGrid(roof);
+
+        ClearSourceMarkers(shuttleUid, EntityUid.Invalid);
+    }
+
+    // Drops the tile-change marker from every deck except keepGrid.
+    private void ClearSourceMarkers(EntityUid shuttleUid, EntityUid keepGrid)
+    {
+        if (shuttleUid != keepGrid)
+            RemComp<CEZShuttleRoofSourceComponent>(shuttleUid);
+
+        if (!TryComp<CEZLinkedGridComponent>(shuttleUid, out var linked))
+            return;
+
+        foreach (var (_, peer) in linked.PeerGrids)
+        {
+            if (peer != keepGrid)
+                RemComp<CEZShuttleRoofSourceComponent>(peer);
+        }
     }
 
     private bool TryFindTopShuttleGrid(EntityUid shuttleUid, out EntityUid topGrid, out int topDepth)

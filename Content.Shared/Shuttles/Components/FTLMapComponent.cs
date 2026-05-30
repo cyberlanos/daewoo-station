@@ -18,6 +18,7 @@ public sealed partial class FTLMapComponent : Component
     /// Depth 0 is the primary FTL map used by ordinary shuttles.
     /// Runtime-assigned by EnsureFTLMap; not YAML-configurable. // Pirate: multiz
     /// </summary>
+    [AutoNetworkedField] // Pirate: multiz
     public int Depth; // Pirate: multiz
 
     /// <summary>

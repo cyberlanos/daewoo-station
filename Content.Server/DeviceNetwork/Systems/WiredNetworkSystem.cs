@@ -53,6 +53,7 @@ namespace Content.Server.DeviceNetwork.Systems
 
             return TryComp<CEZLinkedGridComponent>(senderGrid.Value, out var senderLinked)
                    && TryComp<CEZLinkedGridComponent>(receiverGrid.Value, out var receiverLinked)
+                   && senderLinked.ZNetwork.IsValid()
                    && senderLinked.ZNetwork == receiverLinked.ZNetwork;
         }
         #endregion

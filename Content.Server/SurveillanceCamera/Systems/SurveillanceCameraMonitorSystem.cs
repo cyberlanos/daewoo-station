@@ -146,6 +146,7 @@ public sealed class SurveillanceCameraMonitorSystem : EntitySystem
 
         return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork.IsValid() &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
     #endregion

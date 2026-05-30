@@ -43,12 +43,9 @@ public sealed partial class FireControlSystem : EntitySystem
 
     #region Pirate: multiz
     /// <summary>
-    /// Maps a gun to the map its projectiles should be teleported to after spawn. Set by
-    /// <see cref="FireWeapons"/> when the operator picks a different z-layer than the gun
-    /// itself sits on; cleared when the gun's next fire is same-layer (or when the gun's
-    /// fire-controllable component is removed). The entry persists across separate
-    /// AttemptShoot calls so that burst-fire, automatic and otherwise gun-driven follow-up
-    /// shots all land on the layer the operator picked, not just the very first projectile.
+    /// Gun -> map its projectiles teleport to. Held only across a single cross-layer
+    /// <see cref="FireWeapons"/> call (which fires the whole volley synchronously), so a later
+    /// non-console shot from the same gun can't be redirected to a stale target map.
     /// </summary>
     private readonly Dictionary<EntityUid, EntityUid> _crossLayerTargetMap = new();
     #endregion Pirate: multiz
@@ -474,17 +471,18 @@ public sealed partial class FireControlSystem : EntitySystem
             if (!CanFireInDirection(localWeapon, weaponMapPos.Position, direction, targetMap.Position, gunMapId))
                 continue;
 
-            // Cross-layer fire: record the desired target map and let
-            // OnCrossLayerProjectileShot teleport every projectile spawned by this gun. The
-            // entry persists past AttemptShoot so burst/automatic continuation shots also get
-            // teleported. Same-layer fire clears any stale entry so we don't accidentally
-            // teleport a projectile fired on the gun's own deck.
-            if (gunMapId != targetMap.MapId)
+            // Redirect this shot's projectiles to the target layer; entry dropped right after the
+            // (synchronous) shot so it can't leak into a later non-console shot. See the field doc.
+            var crossLayerFire = gunMapId != targetMap.MapId;
+            if (crossLayerFire)
                 _crossLayerTargetMap[localWeapon] = targetMapUid;
             else
                 _crossLayerTargetMap.Remove(localWeapon);
 
             _gun.AttemptShoot(localWeapon, localWeapon, gun, translatedTargetCoords);
+
+            if (crossLayerFire)
+                _crossLayerTargetMap.Remove(localWeapon);
         }
         #endregion Pirate: multiz
     }

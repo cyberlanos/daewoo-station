@@ -45,21 +45,21 @@ public sealed partial class CEZLevelsSystem
         SubscribeLocalEvent<CEZItemPhysicsComponent, GotEquippedEvent>(OnItemGotEquipped);
         SubscribeLocalEvent<CEZItemPhysicsComponent, EntGotInsertedIntoContainerMessage>(OnItemInsertedIntoContainer);
         SubscribeLocalEvent<CEZItemPhysicsComponent, EntParentChangedMessage>(OnItemZPhysicsParentChanged);
-        SubscribeLocalEvent<TileChangedEvent>(OnGridTileChanged);
+        // TileChangedEvent is subscribed once on the shared base; we hook in via OnTileChangedServer.
     }
 
     // A settled item sheds its Z-physics component, so nothing re-engages it when the floor tile
     // beneath is later removed (deletion fires no MoveEvent) — it would hover over the new hole.
     // Re-arm physics for items on any tile that just became empty so they fall.
-    private void OnGridTileChanged(ref TileChangedEvent args)
+    protected override void OnTileChangedServer(Entity<MapGridComponent> grid, ReadOnlySpan<TileChangedEntry> changes)
     {
-        foreach (var change in args.Changes)
+        foreach (var change in changes)
         {
             if (change.OldTile.IsEmpty || !change.NewTile.IsEmpty)
                 continue;
 
             _tileItemLookup.Clear();
-            _lookup.GetLocalEntitiesIntersecting(args.Entity.Owner, change.GridIndices, _tileItemLookup, -0.05f, LookupFlags.Uncontained);
+            _lookup.GetLocalEntitiesIntersecting(grid.Owner, change.GridIndices, _tileItemLookup, -0.05f, LookupFlags.Uncontained);
             foreach (var uid in _tileItemLookup)
             {
                 if (HasComp<ItemComponent>(uid) && !HasComp<CEZItemPhysicsComponent>(uid))

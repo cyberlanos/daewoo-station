@@ -304,7 +304,10 @@ public sealed partial class ShuttleSystem
                 continue;
 
             var audio = _audio.PlayPvs(sound, peerUid);
-            _audio.SetGridAudio(audio);
+
+            // Peers are always z-linked decks; map audio for the same reason as SetFtlCueAudio.
+            if (audio != null)
+                _audio.SetMapAudio(audio);
 
             if (streamSink != null &&
                 audio?.Entity is { } audioUid)
@@ -312,6 +315,20 @@ public sealed partial class ShuttleSystem
                 streamSink.Add(audioUid);
             }
         }
+    }
+
+    // Grid audio is client-positioned via GetGridPosition and detaches with its grid; on a multiz
+    // shuttle the decks scatter to separate FTL maps, so it spams "Can't resolve PhysicsComponent".
+    // Map audio (global, undetachable, no GetGridPosition) avoids that — use it for z-linked shuttles.
+    private void SetFtlCueAudio(EntityUid shuttleUid, Entity<AudioComponent>? audio)
+    {
+        if (audio == null)
+            return;
+
+        if (HasComp<CEZLinkedGridComponent>(shuttleUid))
+            _audio.SetMapAudio(audio);
+        else
+            _audio.SetGridAudio(audio);
     }
 
     // Peer travel loops are tracked separately because only the root grid owns the actual FTL component lifetime.
@@ -575,7 +592,7 @@ public sealed partial class ShuttleSystem
         component = AddComp<FTLComponent>(uid);
         component.State = FTLState.Starting;
         var audio = _audio.PlayPvs(_startupSound, uid);
-        _audio.SetGridAudio(audio);
+        SetFtlCueAudio(uid, audio); // Pirate: multiz
         component.StartupStream = audio?.Entity;
         #region Pirate: multiz
         // Mirror the startup cue immediately so passengers on peer decks hear the jump begin before the grids are moved into hyperspace.
@@ -657,8 +674,15 @@ public sealed partial class ShuttleSystem
                     continue;
                 }
 
+                // Same pre-move side effects as the root deck: knock down unbuckled riders and
+                // leave NoFTL entities on the departure map using this peer's own old transform.
+                var peerOldMapUid = peerXform.MapUid;
+                var peerOldMatrix = _transform.GetWorldMatrix(peerXform);
+                DoTheDinosaur(peerXform);
+
                 var peerFtlMap = EnsureFTLMap(peerDepth);
                 _transform.SetCoordinates(peerUid, peerXform, new EntityCoordinates(peerFtlMap, ftlStart.Position), rotation: Angle.Zero);
+                LeaveNoFTLBehind((peerUid, peerXform), peerOldMatrix, peerOldMapUid);
 
                 if (_physicsQuery.TryGetComponent(peerUid, out var peerBody))
                 {
@@ -686,7 +710,7 @@ public sealed partial class ShuttleSystem
         // Audio
         var wowdio = _audio.PlayPvs(comp.TravelSound, uid);
         comp.TravelStream = wowdio?.Entity;
-        _audio.SetGridAudio(wowdio);
+        SetFtlCueAudio(uid, wowdio); // Pirate: multiz
         #region Pirate: multiz
         // Start a matching travel loop on every linked deck so FTL ambience follows the whole multiz structure instead of only the root grid.
         comp.ZPeerTravelStreams ??= new List<EntityUid>();
@@ -798,6 +822,9 @@ public sealed partial class ShuttleSystem
                     continue;
                 }
 
+                // Same arrival knockdown as the root deck for unbuckled riders on this peer.
+                DoTheDinosaur(gridXform);
+
                 _transform.SetCoordinates(gridUid, gridXform,
                     new EntityCoordinates(targetMapUid, arrivalPos),
                     rotation: arrivalRot);
@@ -846,7 +873,7 @@ public sealed partial class ShuttleSystem
         StopPeerFTLTravelAudio(comp);
         #endregion Pirate: multiz
         var audio = _audio.PlayPvs(_arrivalSound, uid);
-        _audio.SetGridAudio(audio);
+        SetFtlCueAudio(uid, audio); // Pirate: multiz
         #region Pirate: multiz
         // Arrival audio is mirrored too, otherwise riders on non-root decks would experience a silent exit from hyperspace.
         PlayFTLSoundForPeers(uid, _arrivalSound);

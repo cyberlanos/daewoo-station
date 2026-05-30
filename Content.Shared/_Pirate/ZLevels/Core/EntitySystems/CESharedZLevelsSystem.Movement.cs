@@ -70,22 +70,30 @@ public abstract partial class CESharedZLevelsSystem
         SubscribeLocalEvent<CEZPhysicsComponent, MoveEvent>(OnMoveEvent);
         SubscribeLocalEvent<MapGridComponent, EntParentChangedMessage>(OnGridParentChanged);
         SubscribeLocalEvent<MapGridComponent, MapUidChangedEvent>(OnGridMapUidChanged);
-        SubscribeLocalEvent<CEZLevelMapComponent, TileChangedEvent>(OnTileChanged);
+        // Broadcast, not directed on MapGridComponent: only one directed subscriber is allowed
+        // engine-wide and another system already holds it.
+        SubscribeLocalEvent<TileChangedEvent>(OnTileChanged);
     }
 
-    private void OnTileChanged(Entity<CEZLevelMapComponent> ent, ref TileChangedEvent args)
+    private void OnTileChanged(ref TileChangedEvent args)
     {
-        if (!TryComp<MapGridComponent>(args.Entity, out var grid))
+        var grid = args.Entity;
+
+        // Server-only hook, routed through this single sub (the server system inherits this shared
+        // one, and two broadcast subs on one instance is illegal).
+        OnTileChangedServer(grid, args.Changes);
+
+        if (Transform(grid).MapUid is not { } mapUid || !HasComp<CEZLevelMapComponent>(mapUid))
             return;
 
-        // Invalidate the opening cache so cross-Z gating sees the new floor topology next access.
-        InvalidateOpeningCache((args.Entity, grid), args.Changes);
+        // Invalidate the opening cache so cross-Z gating sees the new floor topology.
+        InvalidateOpeningCache(grid, args.Changes);
 
         foreach (var change in args.Changes)
         {
-            var mapCoords = _map.GridTileToWorld(args.Entity, grid, change.GridIndices);
+            var mapCoords = _map.GridTileToWorld(grid.Owner, grid.Comp, change.GridIndices);
 
-            var half = grid.TileSizeHalfVector;
+            var half = grid.Comp.TileSizeHalfVector;
             var min = mapCoords.Position - half;
             var max = mapCoords.Position + half;
             var aabb = new Box2(min, max);
@@ -99,6 +107,14 @@ public abstract partial class CESharedZLevelsSystem
                 DirtyMovement(uid);
             }
         }
+    }
+
+    /// <summary>
+    /// Server override point for tile changes (e.g. re-arming loose-item Z-physics). Runs for every
+    /// changed grid, before the Z-network gate. Default is no-op.
+    /// </summary>
+    protected virtual void OnTileChangedServer(Entity<MapGridComponent> grid, ReadOnlySpan<TileChangedEntry> changes)
+    {
     }
 
     private void CacheMovement(Entity<CEZPhysicsComponent> ent)
@@ -2809,7 +2825,8 @@ public abstract partial class CESharedZLevelsSystem
     [PublicAPI]
     public bool TryMoveUp(EntityUid ent, bool bypassPassability = false)
     {
-        if (!bypassPassability && IsLandingBlocked(ent, Transform(ent)))
+        // Upward moves are gated on the level above, not below.
+        if (!bypassPassability && IsAscentBlocked(ent, Transform(ent)))
             return false;
 
         return TryMove(ent, 1);

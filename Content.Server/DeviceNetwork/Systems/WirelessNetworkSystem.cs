@@ -81,6 +81,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Numerics; // Pirate: multiz
 using Content.Server.DeviceNetwork.Components;
 using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.DeviceNetwork.Events;
@@ -111,34 +112,44 @@ namespace Content.Server.DeviceNetwork.Systems
             if (!TryComp<WirelessNetworkComponent>(args.Sender, out var sendingComponent))
                 return;
 
-            // Pirate: multiz — only apply the Euclidean range check when both ends share a MapID; cross-map z-linked packets bypass the range gate since world-space distance is meaningless across maps.
-            if (!CanReachAcrossMapOrZStack(args.SenderTransform, xform)) // Pirate: multiz
+            // same map: ordinary world-space range check
+            if (args.SenderTransform.MapID == xform.MapID)
             {
-                args.Cancel();
+                if ((ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
+                    args.Cancel();
                 return;
             }
 
-            if (args.SenderTransform.MapID == xform.MapID // Pirate: multiz
-                && (ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
+            // Pirate: multiz — cross-map only reaches across a shared z-stack, and the range gate
+            // applies to the grid-local (footprint) distance between the stacked decks.
+            #region Pirate: multiz
+            if (!TryGetZStackDistance(args.SenderTransform, ownPosition, xform, out var stackedDistance)
+                || stackedDistance > sendingComponent.Range)
             {
                 args.Cancel();
             }
+            #endregion
         }
         #region Pirate: multiz
-        private bool CanReachAcrossMapOrZStack(TransformComponent senderXform, TransformComponent receiverXform)
+        private bool TryGetZStackDistance(TransformComponent senderXform, Vector2 senderWorldPos, TransformComponent receiverXform, out float distance)
         {
-            if (receiverXform.MapID == senderXform.MapID)
-                return true;
+            distance = 0f;
 
-            var senderGrid = senderXform.GridUid;
-            var receiverGrid = receiverXform.GridUid;
-
-            if (senderGrid == null || receiverGrid == null)
+            if (senderXform.GridUid is not { } senderGrid || receiverXform.GridUid is not { } receiverGrid)
                 return false;
 
-            return TryComp<CEZLinkedGridComponent>(senderGrid.Value, out var senderLinked)
-                   && TryComp<CEZLinkedGridComponent>(receiverGrid.Value, out var receiverLinked)
-                   && senderLinked.ZNetwork == receiverLinked.ZNetwork;
+            if (!TryComp<CEZLinkedGridComponent>(senderGrid, out var senderLinked)
+                || !TryComp<CEZLinkedGridComponent>(receiverGrid, out var receiverLinked)
+                || !senderLinked.ZNetwork.IsValid()
+                || senderLinked.ZNetwork != receiverLinked.ZNetwork)
+                return false;
+
+            // Stacked decks share an XY footprint; compare grid-local positions so the horizontal
+            // distance stays meaningful even though the decks live on separate maps.
+            var senderLocal = Vector2.Transform(senderWorldPos, _transformSystem.GetInvWorldMatrix(senderGrid));
+            var receiverLocal = Vector2.Transform(_transformSystem.GetWorldPosition(receiverXform), _transformSystem.GetInvWorldMatrix(receiverGrid));
+            distance = (senderLocal - receiverLocal).Length();
+            return true;
         }
         #endregion
     }

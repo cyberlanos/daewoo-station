@@ -131,6 +131,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
 
         return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork.IsValid() &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
 

@@ -122,6 +122,7 @@ public sealed class AtmosAlertsComputerSystem : SharedAtmosAlertsComputerSystem
 
         return TryComp<CEZLinkedGridComponent>(sourceGrid, out var sourceLinked) &&
                TryComp<CEZLinkedGridComponent>(targetGrid, out var targetLinked) &&
+               sourceLinked.ZNetwork.IsValid() &&
                sourceLinked.ZNetwork == targetLinked.ZNetwork;
     }
     #endregion

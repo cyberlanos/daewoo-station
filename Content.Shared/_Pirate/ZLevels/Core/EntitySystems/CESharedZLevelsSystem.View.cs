@@ -81,22 +81,25 @@ public abstract partial class CESharedZLevelsSystem
 
     public bool HasOpaqueAbove(EntityUid ent, Entity<CEZLevelMapComponent?>? currentMapUid = null)
     {
-        currentMapUid ??= Transform(ent).MapUid;
+        var xform = Transform(ent);
+        currentMapUid ??= xform.MapUid;
 
         if (currentMapUid is null)
             return false;
 
-        if (!TryMapUp(currentMapUid.Value, out var mapAboveUid))
-            return false;
-
-        // TryMapUp returns the *map* entity, not a grid. Resolve the grid at the entity's world
-        // position on the above map so we can sample the actual tile above.
         var worldPos = _transform.GetWorldPosition(ent);
-        var aboveMapId = Transform(mapAboveUid.Value.Owner).MapID;
-        if (!_mapMan.TryFindGridAt(aboveMapId, worldPos, out var aboveGridUid, out var aboveGrid))
+
+        // Peer-path resolve (FTL-safe): hyperspace decks sit on FTL maps without CEZLevelMapComponent,
+        // so a plain TryMapUp finds nothing and wrongly reports no ceiling. Also reprojects the sample
+        // point onto the peer deck. Falls back to the map-level z-network for non-linked entities.
+        if (!TryResolveLinkedTarget(xform.GridUid, currentMapUid.Value.Owner, 1, worldPos, out var aboveMapUid, out var aboveWorld))
             return false;
 
-        if (!_map.TryGetTileRef(aboveGridUid, aboveGrid, worldPos, out var tileRef))
+        var aboveMapId = Transform(aboveMapUid).MapID;
+        if (!_mapMan.TryFindGridAt(aboveMapId, aboveWorld, out var aboveGridUid, out var aboveGrid))
+            return false;
+
+        if (!_map.TryGetTileRef(aboveGridUid, aboveGrid, aboveWorld, out var tileRef))
             return false;
 
         var tileDef = (ContentTileDefinition)TilDefMan[tileRef.Tile.TypeId];
