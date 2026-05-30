@@ -5,6 +5,7 @@
 
 using System.Numerics;
 using Content.Client.Damage.Systems;
+using Content.Shared._DV.Carrying;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 using Content.Shared.Camera;
@@ -139,6 +140,21 @@ public sealed partial class CEClientZLevelsSystem : CESharedZLevelsSystem
             _sprite.SetOffset((uid, sprite), zItem.SpriteOffsetDefault + new Vector2(0, localPosition * ZLevelOffset));
             _sprite.SetDrawDepth((uid, sprite), (int)Shared.DrawDepth.DrawDepth.OverMobs);
             zItem.VisualsApplied = true;
+        }
+
+        var carriedQuery = EntityQueryEnumerator<BeingCarriedComponent, SpriteComponent, CEZPhysicsComponent>();
+        while (carriedQuery.MoveNext(out var uid, out var carried, out var sprite, out var zPhys))
+        {
+            if (!ZPhysQuery.TryComp(carried.Carrier, out var carrierZ) ||
+                !TransformQuery.TryComp(carried.Carrier, out var carrierXform))
+            {
+                continue;
+            }
+
+            var localPosition = GetVisualsLocalPosition((carried.Carrier, carrierZ), carrierXform);
+
+            _sprite.SetOffset((uid, sprite), zPhys.SpriteOffsetDefault + new Vector2(0, localPosition * ZLevelOffset));
+            _sprite.SetDrawDepth((uid, sprite), localPosition > 0 ? (int)Shared.DrawDepth.DrawDepth.OverMobs : zPhys.DrawDepthDefault);
         }
     }
 
