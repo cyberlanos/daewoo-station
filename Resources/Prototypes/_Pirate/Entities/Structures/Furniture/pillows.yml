@@ -4,7 +4,7 @@
   parent: BaseItem
   id: PillowBaseWrapped
   name: wrapped pillow
-  description: The SyndComm Emergency Deployment Comfort Unit, to be deployed in case of comfort crisis. Use plastic sheets to wrap the pillow and keep it clean until needed.
+  description: The Emergency Deployment Comfort Unit, to be deployed in case of comfort crisis. Use plastic sheets to wrap the pillow and keep it clean until needed.
   components:
   - type: Sprite
     sprite: /Textures/_pirate/Structures/Furniture/pillows.rsi
@@ -24,7 +24,7 @@
   parent: SeatBase
   id: PillowBaseUnwrapped
   name: pillow
-  description: The SyndComm Emergency Deployment Comfort Unit, optimized for maximum fluffiness in conditions of zero-gravity.
+  description: The Emergency Deployment Comfort Unit, optimized for maximum fluffiness in conditions of zero-gravity.
   components:
   - type: Sprite
     sprite: /Textures/_pirate/Structures/Furniture/pillows.rsi
