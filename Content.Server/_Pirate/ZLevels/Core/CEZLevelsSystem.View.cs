@@ -328,20 +328,24 @@ public sealed partial class CEZLevelsSystem
         for (var depth = 0; depth != targetDepth; depth += step)
         {
             EntityUid checkingMap;
+            Vector2 checkingPos;
             if (depth == 0)
             {
                 if (ent.Comp.MapUid is not { } currentMap)
                     return false;
                 checkingMap = currentMap;
+                checkingPos = globalPos;
             }
             else
             {
                 if (!TryResolveViewerMap(ent, depth, out var stepTarget))
                     return false;
                 checkingMap = stepTarget.MapUid;
+                // Use the per-depth reprojected position — globalPos has the wrong XY on linked decks.
+                checkingPos = stepTarget.WorldPosition;
             }
 
-            if (!HasZOpeningNear(checkingMap, globalPos))
+            if (!HasZOpeningNear(checkingMap, checkingPos))
                 return false;
         }
 

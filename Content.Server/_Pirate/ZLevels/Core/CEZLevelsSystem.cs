@@ -87,6 +87,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             if (!_mapLoader.TryLoadMap(mapBelow, out var mapEnt, out var mapGrids)) // Pirate: multiz
             {
                 Log.Error($"Failed to load map for Station zNetwork at depth {depth}!");
+                depth++; // advance regardless so surviving maps keep their intended Z index
                 continue;
             }
 
@@ -108,6 +109,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
             if (!_mapLoader.TryLoadMap(mapAbove, out var mapEnt, out var mapGrids)) // Pirate: multiz
             {
                 Log.Error($"Failed to load map for Station zNetwork at depth {depth}!");
+                depth++; // advance regardless so surviving maps keep their intended Z index
                 continue;
             }
 

@@ -456,10 +456,21 @@ public abstract partial class SharedGunSystem : EntitySystem
         #region Pirate: multiz
         // Cross-Z shoot redirect (ShootDown toggle, or LookUp + wielded gun): rewrite the shot onto
         // the adjacent Z map, pre-shifted by the layer's render displacement so it renders on the
-        // aim line and hits where clicked. On failure (no layer / no opening) refund cooldown, abort.
+        // aim line and hits where clicked. On failure (no layer / no opening) abort.
+        var sourceFromCoordinates = fromCoordinates;
         if (!_zLevelShooting.TryAdjustShotCoordinates(user, fromCoordinates, toCoordinates.Value, out fromCoordinates, out var zAdjustedTo))
+        {
+            // Same safety throttle a cancelled attempt uses, so a latched ShootDown/LookUp with no
+            // valid target doesn't burn the trigger at full fire rate (popup/sound spam).
+            gun.NextFire = TimeSpan.FromSeconds(Math.Max(lastFire.TotalSeconds + SafetyNextFire, gun.NextFire.TotalSeconds));
             return;
+        }
         toCoordinates = zAdjustedTo;
+
+        // Prime the per-projectile visual offset (barrel-shift + depth) so cross-Z projectiles
+        // render back on the aim line; the EndShotOffset() calls below clear it.
+        if (_zLevelShooting.TryGetProjectileVisualOffset(user, sourceFromCoordinates, fromCoordinates, out var barrelShift, out var shotDepth))
+            _zLevelShooting.BeginShotOffset(barrelShift, shotDepth);
         #endregion
 
         // Remove ammo

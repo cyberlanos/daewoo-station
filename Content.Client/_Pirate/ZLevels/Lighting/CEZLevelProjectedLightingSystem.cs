@@ -123,7 +123,10 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
 
         Entity<CEZLevelMapComponent?> playerZLevelMap = (playerMapUid, playerZMap);
 
-        // Pass 1: light on adjacent layer projects onto player's map.
+        // Pass 1: lights on adjacent layers project onto the player's map. Accumulate every source
+        // layer into one candidate set so the cap is enforced on the receiving (player) level as a
+        // whole, not once per source layer.
+        _candidates.Clear();
         for (var depthOffset = -maxDepth; depthOffset <= 1; depthOffset++)
         {
             if (depthOffset == 0)
@@ -137,7 +140,6 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
                 continue;
             }
 
-            _candidates.Clear();
             if (!_sourceLightBuckets.TryGetValue(adjacentMapComp.MapId, out var sourceLights) ||
                 sourceLights.Count == 0)
             {
@@ -156,9 +158,9 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
                 radiusScale,
                 maxRadius,
                 minEnergy);
-
-            ApplyLevelCap(maxPerLevel, currentFrame);
         }
+
+        ApplyLevelCap(maxPerLevel, currentFrame);
 
         // Pass 2: cascade — light from the layer above a deeper layer also paints that deeper
         // layer (two-deep leakage through stacked holes).
