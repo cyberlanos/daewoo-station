@@ -1,0 +1,169 @@
+# SS13-style multiz elevator. All parts link by matching elevatorId.
+# Mapping:
+#  - Place the controller at the lower-left of the cab footprint on the cab's home (lowest) deck.
+#  - On the home deck footprint, place your cab platform objects (CEElevatorPlatform, a vanilla Catwalk,
+#    or any anchored floor structure) — these ARE the cab and ride up/down with it.
+#  - On every other served deck, leave the footprint as empty tiles (this is how served decks are
+#    discovered). At roundstart the whole shaft is floored with the "elevator shaft" tile, so the
+#    platform objects ride on top of it; when they leave a deck, that shaft floor is what remains.
+#  - Panels/doors/call buttons/indicators go on each floor and share the same elevatorId.
+# Sprites + music ported from tgstation (liftdoor.dmi, lift_indicator.dmi, wallmounts.dmi, robocop-short.ogg).
+
+- type: entity
+  parent: MarkerBase
+  id: CEElevatorController
+  name: elevator controller
+  description: Coordinates an elevator cab. A mapping marker placed inside the shaft.
+  components:
+  # MarkerBase gives the Marker component: visible/selectable in the editor, hidden in-round
+  # (same as SpawnPointLateJoin). Just sits in the cab footprint.
+  - type: Sprite
+    sprite: Markers/cross.rsi
+    state: red
+    drawdepth: Overdoors
+  - type: CEElevatorController
+    elevatorId: elevator
+    width: 1
+    height: 1
+    perDeckTravelSeconds: 3.0  # matches SS13 public elevator (3s per floor)
+    violentLanding: false
+    crushDamage:
+      types:
+        Blunt: 200
+
+- type: entity
+  parent: BaseWallmount
+  id: CEElevatorPanel
+  name: elevator control panel
+  description: Calls an elevator cab to the chosen floor.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Structures/ZLevels/Elevator/elevator_panel.rsi
+    state: elevpanel0
+  - type: CEElevatorPanel
+    elevatorId: elevator
+  - type: ActivatableUI
+    key: enum.CEElevatorUiKey.Key
+  - type: UserInterface
+    interfaces:
+      enum.CEElevatorUiKey.Key:
+        type: CEElevatorBoundUserInterface
+
+- type: entity
+  parent: BaseWallmount
+  id: CEElevatorCallButton
+  name: elevator call button
+  description: Summons the elevator to this floor.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Structures/ZLevels/Elevator/elevator_button.rsi
+    state: tram
+  - type: CEElevatorCallButton
+    elevatorId: elevator
+
+- type: entity
+  parent: BaseWallmount
+  id: CEElevatorIndicator
+  name: elevator floor indicator
+  description: Shows the elevator's current floor and direction.
+  components:
+  - type: Sprite
+    sprite: _Pirate/Structures/ZLevels/Elevator/lift_indicator.rsi
+    layers:
+    # Housing layer — always shown.
+    - state: lift_indo-base
+      map: ["enum.CEElevatorVisualLayers.Base"]
+    # Arrow overlay — hidden while idle, shows the up/down animation while travelling.
+    - state: lift_indo-up
+      map: ["enum.CEElevatorVisualLayers.Arrow"]
+      visible: false
+  - type: CEElevatorIndicator
+    elevatorId: elevator
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.CEElevatorIndicatorVisuals.Direction:
+        enum.CEElevatorVisualLayers.Arrow:
+          Idle: { visible: false }
+          Up: { state: lift_indo-up, visible: true }
+          Down: { state: lift_indo-down, visible: true }
+
+# Ported from SS13 /obj/machinery/door/poddoor/lift: a glass (see-through, non-opaque) shaft door
+# driven entirely by the elevator system. Built on the generic shutter base, not the SS14 blast door.
+- type: entity
+  id: CEElevatorShaftDoor
+  parent: BaseShutter
+  name: elevator door
+  suffix: Elevator
+  description: Keeps idiots like you from walking into an open elevator shaft.
+  components:
+  - type: CEElevatorDoor
+    elevatorId: elevator
+  - type: Sprite
+    sprite: _Pirate/Structures/ZLevels/Elevator/elevator_door.rsi
+    drawdepth: BlastDoors
+    layers:
+    - state: closed
+      map: ["enum.DoorVisualLayers.Base"]
+
+# The cab floor: a walkable metal-grate platform (SS13 "linear transport module"). One is spawned per
+# footprint tile and rides with the cab between decks; the shaft floor tile underneath stays put.
+- type: entity
+  id: CEElevatorPlatform
+  name: elevator platform
+  description: The floor of an elevator cab.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: Transform
+    anchored: true
+  - type: Sprite
+    sprite: Structures/catwalk.rsi
+    drawdepth: FloorTiles
+  - type: Icon
+    sprite: Structures/catwalk.rsi
+    state: catwalk_preview
+  - type: IconSmooth
+    key: ce_elevator_platform
+    base: catwalk_
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepCatwalk
+      params:
+        volume: 8
+  # Indestructible: the cab floor isn't player-removable.
+  - type: Tag
+    tags:
+    - Catwalk
+
+# Invisible looping music speaker spawned in the cab and moved to whatever deck the cab is on, so the
+# muzak covers the cab footprint and plays on the elevator's current floor.
+- type: entity
+  id: CEElevatorMusicSpeaker
+  name: elevator music
+  description: You can't see this — it's mounted in the elevator cab.
+  components:
+  - type: Transform
+  # Starts disabled; the elevator system enables only the speaker on the cab's current floor.
+  - type: AmbientSound
+    volume: -5
+    range: 4
+    enabled: false
+    sound:
+      path: /Audio/_Pirate/Elevator/elevator_music.ogg
+
+# Holographic telegraph (ported from tgstation) shown on each destination tile while the cab descends.
+- type: entity
+  id: CEElevatorTravelWarning
+  name: elevator hazard
+  description: Stand clear.
+  components:
+  - type: Transform
+    anchored: true
+  - type: TimedDespawn
+    lifetime: 2
+  - type: Sprite
+    drawdepth: Effects
+    noRot: true
+    sprite: _Pirate/Structures/ZLevels/Elevator/elevator_warning.rsi
+    state: target_box
