@@ -53,6 +53,9 @@ public sealed partial class CEZLevelsSystem
     // Re-arm physics for items on any tile that just became empty so they fall.
     protected override void OnTileChangedServer(Entity<MapGridComponent> grid, ReadOnlySpan<TileChangedEntry> changes)
     {
+        if (TerminatingOrDeleted(grid.Owner))
+            return;
+
         foreach (var change in changes)
         {
             if (change.OldTile.IsEmpty || !change.NewTile.IsEmpty)

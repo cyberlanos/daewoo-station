@@ -115,7 +115,6 @@
   # Goobstation edit end
   - type: Item
     size: Small
-  - type: CEZItemPhysics # Pirate: multiz
   - type: Animateable
   - type: Clickable
   - type: InteractionOutline
