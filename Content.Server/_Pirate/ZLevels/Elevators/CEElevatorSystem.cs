@@ -98,9 +98,19 @@ public sealed partial class CEElevatorSystem : EntitySystem
         comp.AnchorGrid = gridUid;
         comp.OriginTile = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
 
-        // Resolved only so discovery can recognise an already-floored shaft. The elevator does NOT
-        // place or remove shaft tiles — the mapper controls them (so a mapped-empty shaft stays empty).
+        // Capture the home-deck floor pattern as the cab, then leave the shaft floor everywhere the
+        // cab is not currently present.
+        comp.ResolvedCabFloorTiles.Clear();
+        Tile? cabOverride = comp.CabFloorTile == null ? null : new Tile(_tileDef[comp.CabFloorTile].TileId);
         comp.ResolvedShaftFloorTile = new Tile(_tileDef[comp.ShaftFloorTile].TileId);
+        foreach (var tile in FootprintTiles(comp))
+        {
+            if (!_map.TryGetTileRef(gridUid, grid, tile, out var tileRef))
+                continue;
+
+            var offset = tile - comp.OriginTile;
+            comp.ResolvedCabFloorTiles[offset] = cabOverride ?? (tileRef.Tile.IsEmpty ? comp.ResolvedShaftFloorTile : tileRef.Tile);
+        }
 
         comp.CurrentDepth = linked.Depth;
         comp.TargetDepth = linked.Depth;
@@ -108,6 +118,14 @@ public sealed partial class CEElevatorSystem : EntitySystem
         DiscoverServedDepths(ent, linked.Depth);
 
         comp.Initialized = true;
+
+        foreach (var depth in comp.ServedDepths)
+        {
+            if (!TryGetDeckGrid(comp, depth, out var deckGrid, out var deckGridComp))
+                continue;
+
+            SetFootprintTiles(comp, deckGrid, deckGridComp, depth == comp.CurrentDepth);
+        }
 
         // One stationary music speaker per served deck; only the cab's current-floor speaker is enabled.
         // The muzak stays on the cab's floor with no teleporting (which caused glitchy overlapping audio).
@@ -187,6 +205,19 @@ public sealed partial class CEElevatorSystem : EntitySystem
         for (var i = 0; i < comp.Width; i++)
         for (var j = 0; j < comp.Height; j++)
             yield return comp.OriginTile + new Vector2i(i, j);
+    }
+
+    private void SetFootprintTiles(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, bool cabPresent)
+    {
+        foreach (var tile in FootprintTiles(comp))
+        {
+            var offset = tile - comp.OriginTile;
+            var newTile = cabPresent && comp.ResolvedCabFloorTiles.TryGetValue(offset, out var cabTile)
+                ? cabTile
+                : comp.ResolvedShaftFloorTile;
+
+            _map.SetTile(gridUid, grid, tile, newTile);
+        }
     }
 
     /// <summary>Local coordinates at the centre of the cab footprint on a given deck grid (for sound).</summary>
@@ -321,9 +352,12 @@ public sealed partial class CEElevatorSystem : EntitySystem
         // 2) Crush whatever is sitting in the destination footprint.
         CrushDestination(comp, toGridUid, toGrid);
 
-        // 3) Carry the cab one deck: the platform objects placed on the footprint AND the riders. The
-        //    permanent shaft floor underneath never changes — only these objects move. Anchored ones
-        //    (the platforms, plus any furniture built on the cab) are unanchored, moved, re-anchored.
+        // 3) Move the cab tile pattern, leaving shaft floor behind.
+        SetFootprintTiles(comp, fromGridUid, fromGrid, false);
+        SetFootprintTiles(comp, toGridUid, toGrid, true);
+
+        // 4) Carry everything riding the cab. Anchored furniture/machines built on the cab are
+        //    unanchored, moved, and re-anchored on the arrival deck.
         foreach (var rider in riders)
         {
             if (!_xformQuery.TryComp(rider, out var rxform))
@@ -445,6 +479,28 @@ public sealed partial class CEElevatorSystem : EntitySystem
         {
             if (!_map.TryGetTileRef(gridUid, grid, tile, out var tileRef))
                 continue;
+
+            var anchored = _map.GetAnchoredEntitiesEnumerator(gridUid, grid, tile);
+            while (anchored.MoveNext(out var anchoredUid))
+            {
+                if (anchoredUid is not { } anchoredEnt)
+                    continue;
+                if (!seen.Add(anchoredEnt))
+                    continue;
+                if (HasComp<MapGridComponent>(anchoredEnt) ||
+                    HasComp<CEElevatorControllerComponent>(anchoredEnt) ||
+                    HasComp<WallMountComponent>(anchoredEnt) ||
+                    comp.MusicSpeakers.ContainsValue(anchoredEnt))
+                    continue;
+                if (!_xformQuery.TryComp(anchoredEnt, out _))
+                    continue;
+
+                var anchoredTile = _map.WorldToTile(gridUid, grid, _transform.GetWorldPosition(anchoredEnt));
+                if (!footprint.Contains(anchoredTile))
+                    continue;
+
+                result.Add(anchoredEnt);
+            }
 
             foreach (var uid in _lookup.GetEntitiesInTile(tileRef, LookupFlags.Dynamic | LookupFlags.Static))
             {
