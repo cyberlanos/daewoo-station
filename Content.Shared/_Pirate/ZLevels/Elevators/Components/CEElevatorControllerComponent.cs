@@ -10,9 +10,9 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// not this entity. All other elevator parts (panel, doors, call buttons, indicators) link to it by
 /// matching <see cref="ElevatorId"/>.
 ///
-/// Mapping contract: the cab's start deck has a solid floor across the footprint; every other served
-/// deck has an open shaft (empty tiles) across the footprint. Served decks are discovered by walking
-/// the z-network up/down while the footprint stays an open shaft.
+/// Mapping contract: the cab's start deck has the desired cab floor tiles across the footprint.
+/// Every other served deck has an empty or shaft-floor footprint. Served decks are discovered by
+/// walking the z-network up/down while the footprint stays an open shaft.
 /// </summary>
 [RegisterComponent]
 public sealed partial class CEElevatorControllerComponent : Component
@@ -31,10 +31,7 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public int Height = 1;
 
-    /// <summary>
-    /// Tile laid down as the cab floor when the cab arrives on a deck. If null, the tile under the
-    /// controller at init is captured and reused.
-    /// </summary>
+    /// <summary>Optional override tile for every cab footprint tile. If null, home-deck tiles are captured.</summary>
     [DataField]
     public string? CabFloorTile;
 
@@ -57,20 +54,9 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public bool WarnsOnDownMovement = true;
 
-    /// <summary>The looping elevator-music speaker spawned in the cab and moved with it.</summary>
+    /// <summary>The looping elevator-music speaker spawned per served deck.</summary>
     [DataField]
     public EntProtoId MusicSpeakerProto = "CEElevatorMusicSpeaker";
-
-    /// <summary>
-    /// The cab floor object spawned on each footprint tile and moved with the cab (the "linear
-    /// transport module" / metal grate). The shaft floor tile underneath stays put; this object moves.
-    /// </summary>
-    [DataField]
-    public EntProtoId CabPlatformProto = "CEElevatorPlatform";
-
-    /// <summary>Runtime: the spawned cab-floor platform objects that ride with the cab.</summary>
-    [ViewVariables]
-    public List<EntityUid> CabPlatforms = new();
 
     /// <summary>Telegraph spawned on each destination tile while the cab descends onto it.</summary>
     [DataField]
@@ -105,9 +91,9 @@ public sealed partial class CEElevatorControllerComponent : Component
     [ViewVariables]
     public Vector2i OriginTile;
 
-    /// <summary>Cab floor tile resolved at init (from <see cref="CabFloorTile"/> or captured).</summary>
+    /// <summary>Cab floor tiles captured at init, keyed by footprint offset from <see cref="OriginTile"/>.</summary>
     [ViewVariables]
-    public Tile ResolvedCabFloorTile;
+    public Dictionary<Vector2i, Tile> ResolvedCabFloorTiles = new();
 
     /// <summary>Shaft floor tile resolved at init (from <see cref="ShaftFloorTile"/>).</summary>
     [ViewVariables]

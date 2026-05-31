@@ -1,11 +1,11 @@
 # SS13-style multiz elevator. All parts link by matching elevatorId.
 # Mapping:
 #  - Place the controller at the lower-left of the cab footprint on the cab's home (lowest) deck.
-#  - On the home deck footprint, place your cab platform objects (CEElevatorPlatform, a vanilla Catwalk,
-#    or any anchored floor structure) — these ARE the cab and ride up/down with it.
-#  - On every other served deck, leave the footprint as empty tiles (this is how served decks are
-#    discovered). At roundstart the whole shaft is floored with the "elevator shaft" tile, so the
-#    platform objects ride on top of it; when they leave a deck, that shaft floor is what remains.
+#  - On the home deck footprint, paint the cab floor tiles you want (for example
+#    CEElevatorSolidMetalGrate, CEElevatorPlatformTile, CEElevatorLinearTransportModule, or Lattice).
+#    The elevator captures that whole tile pattern and moves it between decks.
+#  - On every other served deck, leave the footprint empty or paint FloorElevatorShaft. At init and
+#    after the cab leaves a deck, the footprint is set to FloorElevatorShaft.
 #  - Panels/doors/call buttons/indicators go on each floor and share the same elevatorId.
 # Sprites + music ported from tgstation (liftdoor.dmi, lift_indicator.dmi, wallmounts.dmi, robocop-short.ogg).
 
@@ -106,8 +106,8 @@
     - state: closed
       map: ["enum.DoorVisualLayers.Base"]
 
-# The cab floor: a walkable metal-grate platform (SS13 "linear transport module"). One is spawned per
-# footprint tile and rides with the cab between decks; the shaft floor tile underneath stays put.
+# Legacy object version of the cab floor. Tile-based elevator cabs should use the tile prototypes in
+# Resources/Prototypes/_Pirate/Turf/elevator.yml instead.
 - type: entity
   id: CEElevatorPlatform
   name: elevator platform

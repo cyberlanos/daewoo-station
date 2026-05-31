@@ -1,0 +1,29 @@
+- type: tile
+  id: CEElevatorSolidMetalGrate
+  parent: FloorSteel
+  name: solid metal grate
+  sprite: /Textures/_RMC14/Structures/catwalk.rsi/solidgrate5.png
+  variants: 1
+  placementVariants: [1.0]
+  footstepSounds:
+    collection: FootstepCatwalk
+
+- type: tile
+  id: CEElevatorPlatformTile
+  parent: FloorSteel
+  name: elevator platform
+  sprite: /Textures/Tiles/lattice.png
+  variants: 1
+  placementVariants: [1.0]
+  footstepSounds:
+    collection: FootstepCatwalk
+
+- type: tile
+  id: CEElevatorLinearTransportModule
+  parent: FloorSteel
+  name: linear transport module
+  sprite: /Textures/_RMC14/Structures/catwalk.rsi/catwalk.png
+  variants: 1
+  placementVariants: [1.0]
+  footstepSounds:
+    collection: FootstepCatwalk
