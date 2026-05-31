@@ -1,0 +1,143 @@
+using Content.Shared.Damage;
+using Robust.Shared.Map;
+using Robust.Shared.Prototypes;
+
+namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
+
+/// <summary>
+/// The brain of an elevator. Placed (anchored, invisible) on the cab's starting deck at the
+/// lower-left corner of the cab footprint. Stationary — the cab floor tiles and the riders move,
+/// not this entity. All other elevator parts (panel, doors, call buttons, indicators) link to it by
+/// matching <see cref="ElevatorId"/>.
+///
+/// Mapping contract: the cab's start deck has a solid floor across the footprint; every other served
+/// deck has an open shaft (empty tiles) across the footprint. Served decks are discovered by walking
+/// the z-network up/down while the footprint stays an open shaft.
+/// </summary>
+[RegisterComponent]
+public sealed partial class CEElevatorControllerComponent : Component
+{
+    /// <summary>
+    /// Shared id string linking this controller to its panels, doors, call buttons and indicators.
+    /// </summary>
+    [DataField(required: true)]
+    public string ElevatorId = string.Empty;
+
+    /// <summary>Footprint width in tiles (extends +X from the controller tile).</summary>
+    [DataField]
+    public int Width = 1;
+
+    /// <summary>Footprint height in tiles (extends +Y from the controller tile).</summary>
+    [DataField]
+    public int Height = 1;
+
+    /// <summary>
+    /// Tile laid down as the cab floor when the cab arrives on a deck. If null, the tile under the
+    /// controller at init is captured and reused.
+    /// </summary>
+    [DataField]
+    public string? CabFloorTile;
+
+    /// <summary>
+    /// Tile left behind on a deck the cab is NOT on. A real floor (gravity + atmosphere) so the shaft
+    /// is never an empty vacuum void — SS14 gravity/atmos is tile-based, unlike SS13 openspace.
+    /// </summary>
+    [DataField]
+    public string ShaftFloorTile = "FloorElevatorShaft";
+
+    /// <summary>Seconds spent travelling per deck (one z-step).</summary>
+    [DataField]
+    public float PerDeckTravelSeconds = 1.0f;
+
+    /// <summary>If true, mobs crushed by the arriving cab are gibbed; otherwise they take heavy damage.</summary>
+    [DataField]
+    public bool ViolentLanding;
+
+    /// <summary>If true, descending shows a travel-warning telegraph on the destination footprint.</summary>
+    [DataField]
+    public bool WarnsOnDownMovement = true;
+
+    /// <summary>The looping elevator-music speaker spawned in the cab and moved with it.</summary>
+    [DataField]
+    public EntProtoId MusicSpeakerProto = "CEElevatorMusicSpeaker";
+
+    /// <summary>
+    /// The cab floor object spawned on each footprint tile and moved with the cab (the "linear
+    /// transport module" / metal grate). The shaft floor tile underneath stays put; this object moves.
+    /// </summary>
+    [DataField]
+    public EntProtoId CabPlatformProto = "CEElevatorPlatform";
+
+    /// <summary>Runtime: the spawned cab-floor platform objects that ride with the cab.</summary>
+    [ViewVariables]
+    public List<EntityUid> CabPlatforms = new();
+
+    /// <summary>Telegraph spawned on each destination tile while the cab descends onto it.</summary>
+    [DataField]
+    public EntProtoId TravelWarningProto = "CEElevatorTravelWarning";
+
+    /// <summary>Runtime: one stationary music speaker per served deck (depth → speaker). Only the
+    /// cab's current-floor speaker is enabled, so the muzak plays on that floor without teleporting.</summary>
+    [ViewVariables]
+    public Dictionary<int, EntityUid> MusicSpeakers = new();
+
+    /// <summary>Damage applied to anything crushed in the destination shaft (when not gibbing).</summary>
+    [DataField]
+    public DamageSpecifier CrushDamage = new();
+
+    /// <summary>Sound played per deck-step while travelling.</summary>
+    [DataField]
+    public Robust.Shared.Audio.SoundSpecifier? TravelSound =
+        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg");
+
+    /// <summary>Sound played when the cab arrives and doors open.</summary>
+    [DataField]
+    public Robust.Shared.Audio.SoundSpecifier? ArriveSound =
+        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
+
+    // ---- runtime state ----
+
+    /// <summary>Grid the controller is anchored to (the cab's start deck). Cached at init.</summary>
+    [ViewVariables]
+    public EntityUid AnchorGrid = EntityUid.Invalid;
+
+    /// <summary>Lower-left footprint tile (local to <see cref="AnchorGrid"/>). Same local indices on every deck.</summary>
+    [ViewVariables]
+    public Vector2i OriginTile;
+
+    /// <summary>Cab floor tile resolved at init (from <see cref="CabFloorTile"/> or captured).</summary>
+    [ViewVariables]
+    public Tile ResolvedCabFloorTile;
+
+    /// <summary>Shaft floor tile resolved at init (from <see cref="ShaftFloorTile"/>).</summary>
+    [ViewVariables]
+    public Tile ResolvedShaftFloorTile;
+
+    /// <summary>Depth (z-network) the cab is currently on.</summary>
+    [ViewVariables]
+    public int CurrentDepth;
+
+    /// <summary>Depth the cab is travelling toward (equals <see cref="CurrentDepth"/> when idle).</summary>
+    [ViewVariables]
+    public int TargetDepth;
+
+    /// <summary>True while the cab is in transit; controls are locked.</summary>
+    [ViewVariables]
+    public bool Moving;
+
+    /// <summary>When the next single-deck step should occur (while <see cref="Moving"/>).</summary>
+    [ViewVariables]
+    public TimeSpan NextStepTime;
+
+    /// <summary>Served deck depths, ascending. Discovered at init.</summary>
+    [ViewVariables]
+    public List<int> ServedDepths = new();
+
+    /// <summary>True once the controller has resolved its footprint/served decks.</summary>
+    [ViewVariables]
+    public bool Initialized;
+
+    /// <summary>Optional per-depth display names ("2" -&gt; "Cargo"). Falls back to "Floor N".</summary>
+    [DataField]
+    public Dictionary<int, string> FloorNames = new();
+}
