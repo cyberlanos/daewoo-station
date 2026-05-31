@@ -79,6 +79,9 @@ public abstract partial class CESharedZLevelsSystem
     {
         var grid = args.Entity;
 
+        if (TerminatingOrDeleted(grid.Owner))
+            return;
+
         // Server-only hook, routed through this single sub (the server system inherits this shared
         // one, and two broadcast subs on one instance is illegal).
         OnTileChangedServer(grid, args.Changes);
