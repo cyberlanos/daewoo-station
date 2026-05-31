@@ -41,7 +41,6 @@ public sealed class ParallaxOverlay : Overlay
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IParallaxManager _manager = default!;
     private readonly SharedMapSystem _mapSystem;
-    private readonly SharedTransformSystem _xformSystem; // Pirate: multiz
     private readonly ParallaxSystem _parallax;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
@@ -51,7 +50,6 @@ public sealed class ParallaxOverlay : Overlay
         ZIndex = ParallaxSystem.ParallaxZIndex;
         IoCManager.InjectDependencies(this);
         _mapSystem = _entManager.System<SharedMapSystem>();
-        _xformSystem = _entManager.System<SharedTransformSystem>(); // Pirate: multiz
         _parallax = _entManager.System<ParallaxSystem>();
     }
 
