@@ -50,6 +50,9 @@ public sealed partial class ScalingViewport
 
     // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
     private Overlay? _cachedPlacementOverlay; // Pirate: multiz
+    // Parallax draws a full-screen background per pass; keep it only on the deepest pass so an upper
+    // deck's parallax (e.g. an FTL hyperspace map's FastSpace) can't occlude the decks beneath it.
+    private Overlay? _cachedParallaxOverlay;
 
     /// <summary>
     /// We are looking for at least one empty tile on the screen.
@@ -272,6 +275,8 @@ public sealed partial class ScalingViewport
         // It must not render during secondary (non-depth-0) passes to avoid duplicate placement previews. Pirate: multiz
         _cachedPlacementOverlay ??= _overlayManager.AllOverlays // Pirate: multiz
             .FirstOrDefault(o => o.GetType().FullName == "Robust.Client.Placement.PlacementManager+PlacementOverlay"); // Pirate: multiz
+        _cachedParallaxOverlay ??= _overlayManager.AllOverlays
+            .FirstOrDefault(o => o is Content.Client.Parallax.ParallaxOverlay);
 
         for (var depth = lowestDepth; depth <= lookUp; depth++)
         {
@@ -324,10 +329,19 @@ public sealed partial class ScalingViewport
             if (hidePlacement)
                 _overlayManager.RemoveOverlay(_cachedPlacementOverlay!);
 
+            // Keep parallax only on the deepest pass; otherwise a higher deck's full-screen parallax
+            // (FTL maps each carry FastSpace) paints over the below decks already composited beneath it.
+            var hideParallax = depth != lowestDepth && _cachedParallaxOverlay != null;
+            if (hideParallax)
+                _overlayManager.RemoveOverlay(_cachedParallaxOverlay!);
+
             viewport.Render();
 
             if (_zApertureCaptureThisFrame && depth < lookUp)
                 CaptureZLevelApertureTexture(screenHandle, viewport, depth);
+
+            if (hideParallax)
+                _overlayManager.AddOverlay(_cachedParallaxOverlay!);
 
             if (hidePlacement)
                 _overlayManager.AddOverlay(_cachedPlacementOverlay!);
