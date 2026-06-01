@@ -2,10 +2,14 @@
 # Mapping:
 #  - Place the controller at the lower-left of the cab footprint on the cab's home (lowest) deck.
 #  - On the home deck footprint, paint the cab floor tiles you want (for example
-#    CEElevatorSolidMetalGrate, CEElevatorPlatformTile, CEElevatorLinearTransportModule, or Lattice).
-#    The elevator captures that whole tile pattern and moves it between decks.
-#  - On every other served deck, leave the footprint empty or paint FloorElevatorShaft. At init and
-#    after the cab leaves a deck, the footprint is set to FloorElevatorShaft.
+#    CEElevatorSolidMetalGrate, CEElevatorPlatformTile, CEElevatorLinearTransportModule, or Lattice),
+#    and place any platform objects/furniture on top. The elevator captures that tile pattern and
+#    carries the tiles AND the objects/riders between decks.
+#  - Leave every other served deck's footprint EMPTY (open shaft) — that's how upper decks are
+#    discovered and what the crew falls through. The elevator NEVER writes tiles at init/round-start
+#    (your mapped layout is left exactly as authored); it only swaps tiles while travelling: it lays
+#    the cab pattern on the deck it arrives at, and on the deck it leaves it restores FloorElevatorShaft
+#    ONLY for the basement (bottom of the shaft) — every deck above reopens to empty space.
 #  - Panels/doors/call buttons/indicators go on each floor and share the same elevatorId.
 # Sprites + music ported from tgstation (liftdoor.dmi, lift_indicator.dmi, wallmounts.dmi, robocop-short.ogg).
 
