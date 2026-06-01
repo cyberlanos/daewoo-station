@@ -11,12 +11,14 @@ using Content.Shared.Body.Components;
 using Content.Shared.Damage;
 using Content.Shared.Examine;
 using Content.Shared.Maps;
+using Content.Shared.Tag;
 using Content.Shared.Wall;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Spawners;
 using Robust.Shared.Timing;
 
@@ -39,9 +41,14 @@ public sealed partial class CEElevatorSystem : EntitySystem
     [Dependency] private readonly BodySystem _body = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly TagSystem _tag = default!;
 
     /// <summary>Played at a control when a call/move request is refused (SS13 buzz-two).</summary>
     private static readonly SoundSpecifier DenySound = new SoundPathSpecifier("/Audio/Machines/buzz-two.ogg");
+
+    /// <summary>Wall lights carry this tag but (unlike panels/APCs/intercoms) have no
+    /// <see cref="WallMountComponent"/>, so it is needed to recognise them as wall-attached.</summary>
+    private static readonly ProtoId<TagPrototype> WallLightTag = "WallLight";
 
     private EntityQuery<MapGridComponent> _gridQuery;
     private EntityQuery<TransformComponent> _xformQuery;
@@ -62,19 +69,19 @@ public sealed partial class CEElevatorSystem : EntitySystem
 
     private void OnControllerMapInit(Entity<CEElevatorControllerComponent> ent, ref MapInitEvent args)
     {
-        // Best-effort: succeeds only once the z-network has linked this deck's grid. Otherwise the
-        // lazy retry in Update() handles it (grids are linked shortly after map load).
+        // Skip while paused (e.g. mapping): initializing would bake shaft tiles / speakers into a save.
+        // Best-effort otherwise: succeeds only once the z-network has linked this deck's grid; the lazy
+        // retry in Update() handles it (grids are linked shortly after map load).
+        if (Paused(ent))
+            return;
         TryInitialize(ent);
     }
 
     private void OnControllerShutdown(Entity<CEElevatorControllerComponent> ent, ref ComponentShutdown args)
     {
-        foreach (var speaker in ent.Comp.MusicSpeakers.Values)
-        {
-            if (!TerminatingOrDeleted(speaker))
-                QueueDel(speaker);
-        }
-        ent.Comp.MusicSpeakers.Clear();
+        if (!TerminatingOrDeleted(ent.Comp.MusicSpeaker))
+            QueueDel(ent.Comp.MusicSpeaker);
+        ent.Comp.MusicSpeaker = EntityUid.Invalid;
     }
 
     /// <summary>
@@ -98,8 +105,10 @@ public sealed partial class CEElevatorSystem : EntitySystem
         comp.AnchorGrid = gridUid;
         comp.OriginTile = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
 
-        // Capture the home-deck floor pattern as the cab, then leave the shaft floor everywhere the
-        // cab is not currently present.
+        // Capture the home-deck floor pattern as the cab (read-only). This is the tile pattern that
+        // travels with the cab; every deck the cab is NOT on stays an open shaft (empty tiles) you can
+        // fall into. We deliberately do NOT write any tiles at init — the mapper's layout is left
+        // exactly as authored, so a shaft mapped open stays open until the cab actually travels.
         comp.ResolvedCabFloorTiles.Clear();
         Tile? cabOverride = comp.CabFloorTile == null ? null : new Tile(_tileDef[comp.CabFloorTile].TileId);
         comp.ResolvedShaftFloorTile = new Tile(_tileDef[comp.ShaftFloorTile].TileId);
@@ -119,24 +128,14 @@ public sealed partial class CEElevatorSystem : EntitySystem
 
         comp.Initialized = true;
 
-        foreach (var depth in comp.ServedDepths)
+        // A single looping music speaker that rides with the cab (see StepCab). Ambient sound is
+        // client-side and per-map, so keeping one speaker on the cab's current deck is exactly what
+        // riders hear — no per-deck speakers, no enable/disable juggling across maps.
+        if (TryGetDeckGrid(comp, comp.CurrentDepth, out var startGrid, out var startGridComp))
         {
-            if (!TryGetDeckGrid(comp, depth, out var deckGrid, out var deckGridComp))
-                continue;
-
-            SetFootprintTiles(comp, deckGrid, deckGridComp, depth == comp.CurrentDepth);
-        }
-
-        // One stationary music speaker per served deck; only the cab's current-floor speaker is enabled.
-        // The muzak stays on the cab's floor with no teleporting (which caused glitchy overlapping audio).
-        foreach (var depth in comp.ServedDepths)
-        {
-            if (!TryGetDeckGrid(comp, depth, out var deckGrid, out var deckGridComp))
-                continue;
-            var speaker = Spawn(comp.MusicSpeakerProto, FootprintCenter(comp, deckGrid, deckGridComp));
-            _ambient.SetRange(speaker, MathF.Max(comp.Width, comp.Height));
-            _ambient.SetAmbience(speaker, depth == comp.CurrentDepth);
-            comp.MusicSpeakers[depth] = speaker;
+            comp.MusicSpeaker = Spawn(comp.MusicSpeakerProto, FootprintCenter(comp, startGrid, startGridComp));
+            _ambient.SetRange(comp.MusicSpeaker, MathF.Max(4f, MathF.Max(comp.Width, comp.Height)));
+            _ambient.SetAmbience(comp.MusicSpeaker, true);
         }
 
         // Cab starts present on its deck: open that floor's door, shut the rest, set indicators.
@@ -207,14 +206,25 @@ public sealed partial class CEElevatorSystem : EntitySystem
             yield return comp.OriginTile + new Vector2i(i, j);
     }
 
-    private void SetFootprintTiles(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, bool cabPresent)
+    /// <summary>Lowest served deck — the bottom of the shaft. Keeps a solid floor; every deck above it
+    /// is left as open shaft when the cab is gone.</summary>
+    private int BasementDepth(CEElevatorControllerComponent comp)
+        => comp.ServedDepths.Count > 0 ? comp.ServedDepths[0] : comp.CurrentDepth;
+
+    /// <summary>
+    /// Lays the cab's captured floor pattern on the deck the cab now occupies, or clears it when the cab
+    /// leaves. Only the basement (bottom of the shaft) keeps a solid floor (the default shaft tile) when
+    /// vacated; every deck above is reopened to empty space, so the crew can fall down the shaft.
+    /// </summary>
+    private void SetFootprintTiles(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, int depth, bool cabPresent)
     {
+        var vacatedTile = depth == BasementDepth(comp) ? comp.ResolvedShaftFloorTile : Tile.Empty;
         foreach (var tile in FootprintTiles(comp))
         {
             var offset = tile - comp.OriginTile;
             var newTile = cabPresent && comp.ResolvedCabFloorTiles.TryGetValue(offset, out var cabTile)
                 ? cabTile
-                : comp.ResolvedShaftFloorTile;
+                : vacatedTile;
 
             _map.SetTile(gridUid, grid, tile, newTile);
         }
@@ -305,6 +315,14 @@ public sealed partial class CEElevatorSystem : EntitySystem
         var query = AllEntityQuery<CEElevatorControllerComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
+            // Never simulate on a paused map. Maps opened for mapping (znetwork-mapping) are loaded
+            // uninitialized and paused, so MapInit never fires there — but Update runs globally. If
+            // we initialized here, the lazy setup would write shaft-floor tiles and spawn music
+            // speakers that then get baked into the saved map. Stay completely inert until the map
+            // is actually running (i.e. a live round).
+            if (Paused(uid))
+                continue;
+
             if (!comp.Initialized && !TryInitialize((uid, comp)))
                 continue;
 
@@ -326,7 +344,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         }
     }
 
-    /// <summary>Moves the cab one deck toward its target: crush, lay floor, carry riders, reopen the origin shaft.</summary>
+    /// <summary>Moves the cab one deck toward its target: crush, lay floor, carry riders, restore the origin shaft floor.</summary>
     private void StepCab(Entity<CEElevatorControllerComponent> ent)
     {
         var comp = ent.Comp;
@@ -352,12 +370,21 @@ public sealed partial class CEElevatorSystem : EntitySystem
         // 2) Crush whatever is sitting in the destination footprint.
         CrushDestination(comp, toGridUid, toGrid);
 
-        // 3) Move the cab tile pattern, leaving shaft floor behind.
-        SetFootprintTiles(comp, fromGridUid, fromGrid, false);
-        SetFootprintTiles(comp, toGridUid, toGrid, true);
+        // 3) Lay the cab floor on the destination deck FIRST, so arriving anchored parts have a tile to
+        //    re-anchor onto.
+        SetFootprintTiles(comp, toGridUid, toGrid, toDepth, true);
 
-        // 4) Carry everything riding the cab. Anchored furniture/machines built on the cab are
-        //    unanchored, moved, and re-anchored on the arrival deck.
+        // 4) Carry everything riding the cab onto the destination deck. We reparent each rider directly
+        //    to the deck grid the controller resolved (toGridUid), preserving its grid-LOCAL position so
+        //    it lands exactly over the same footprint tile the cab floor was just written to. This is
+        //    deterministic regardless of which deck the rider is currently on — unlike TryMove, which
+        //    re-resolves the target from the rider's own grid and can apply a stair-exit landing nudge,
+        //    causing anchored platform parts to drift off the footprint and stop being carried on later
+        //    legs. Anchored furniture/machines are unanchored, moved, then re-anchored on arrival.
+        //    IMPORTANT: this runs BEFORE the origin deck is cleared (step 5). Clearing an upper deck's
+        //    footprint to empty space unanchors anything still standing on it; doing it first would flip
+        //    each rider's Anchored flag to false here, so it would arrive un-anchored and — since the
+        //    platform object has no physics — become impossible to gather on the next leg.
         foreach (var rider in riders)
         {
             if (!_xformQuery.TryComp(rider, out var rxform))
@@ -367,19 +394,22 @@ public sealed partial class CEElevatorSystem : EntitySystem
             if (wasAnchored)
                 _transform.Unanchor(rider, rxform);
 
-            _zLevels.TryMove(rider, dir);
+            var localPos = Vector2.Transform(_transform.GetWorldPosition(rider), _transform.GetInvWorldMatrix(fromGridUid));
+            _zLevels.TeleportToZLevelCoordinates(rider, new EntityCoordinates(toGridUid, localPos), toDepth, dir);
 
             if (wasAnchored && _xformQuery.TryComp(rider, out var movedXform))
                 _transform.AnchorEntity(rider, movedXform);
         }
 
+        // 5) Now that the riders have left, vacate the origin deck: the basement keeps its solid shaft
+        //    floor, upper decks reopen to empty shaft.
+        SetFootprintTiles(comp, fromGridUid, fromGrid, fromDepth, false);
+
         comp.CurrentDepth = toDepth;
 
-        // Move the music to the cab's new floor: enable the arrival deck's speaker, mute the old one.
-        if (comp.MusicSpeakers.TryGetValue(fromDepth, out var oldSpeaker) && !TerminatingOrDeleted(oldSpeaker))
-            _ambient.SetAmbience(oldSpeaker, false);
-        if (comp.MusicSpeakers.TryGetValue(toDepth, out var newSpeaker) && !TerminatingOrDeleted(newSpeaker))
-            _ambient.SetAmbience(newSpeaker, true);
+        // Carry the music speaker onto the cab's new deck so the muzak follows the cab.
+        if (!TerminatingOrDeleted(comp.MusicSpeaker))
+            _zLevels.TeleportToZLevelCoordinates(comp.MusicSpeaker, FootprintCenter(comp, toGridUid, toGrid), toDepth, dir);
 
         UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), dir > 0 ? CEElevatorDirection.Up : CEElevatorDirection.Down);
     }
@@ -487,12 +517,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
                     continue;
                 if (!seen.Add(anchoredEnt))
                     continue;
-                if (HasComp<MapGridComponent>(anchoredEnt) ||
-                    HasComp<CEElevatorControllerComponent>(anchoredEnt) ||
-                    HasComp<WallMountComponent>(anchoredEnt) ||
-                    comp.MusicSpeakers.ContainsValue(anchoredEnt))
-                    continue;
-                if (!_xformQuery.TryComp(anchoredEnt, out _))
+                if (!CanRideCab(anchoredEnt, comp))
                     continue;
 
                 var anchoredTile = _map.WorldToTile(gridUid, grid, _transform.GetWorldPosition(anchoredEnt));
@@ -506,14 +531,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
             {
                 if (!seen.Add(uid))
                     continue;
-                // Skip grids, our own parts, and anything attached to a wall (lights, APCs, intercoms,
-                // the elevator's own panels/buttons/indicators) — those belong to the deck, not the cab.
-                if (HasComp<MapGridComponent>(uid) ||
-                    HasComp<CEElevatorControllerComponent>(uid) ||
-                    HasComp<WallMountComponent>(uid) ||
-                    comp.MusicSpeakers.ContainsValue(uid))
-                    continue;
-                if (!_xformQuery.TryComp(uid, out _))
+                if (!CanRideCab(uid, comp))
                     continue;
 
                 // The tile lookup catches entities that merely overlap a footprint tile; restrict to
@@ -527,6 +545,28 @@ public sealed partial class CEElevatorSystem : EntitySystem
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// False for things that belong to the deck rather than the cab and so must NOT be carried:
+    /// grids, the elevator's own controller/speakers, and anything attached to a wall. Wall-attached
+    /// fixtures are detected by <see cref="WallMountComponent"/> (panels, call buttons, indicators,
+    /// APCs, intercoms, etc.) or the <c>WallLight</c> tag (light fixtures, which lack that component).
+    /// Everything else standing on the footprint — mobs, loose items, anchored furniture/machines —
+    /// rides the cab, matching SS13's transport_contents.
+    /// </summary>
+    private bool CanRideCab(EntityUid uid, CEElevatorControllerComponent comp)
+    {
+        if (!_xformQuery.HasComponent(uid))
+            return false;
+        if (HasComp<MapGridComponent>(uid) ||
+            HasComp<CEElevatorControllerComponent>(uid) ||
+            HasComp<WallMountComponent>(uid) ||
+            _tag.HasTag(uid, WallLightTag) ||
+            uid == comp.MusicSpeaker)
+            return false;
+
+        return true;
     }
 
     private static CEElevatorDirection CEElevatorDirectionFor(CEElevatorControllerComponent comp)

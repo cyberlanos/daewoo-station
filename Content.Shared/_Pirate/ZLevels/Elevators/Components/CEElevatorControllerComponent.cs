@@ -54,7 +54,7 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public bool WarnsOnDownMovement = true;
 
-    /// <summary>The looping elevator-music speaker spawned per served deck.</summary>
+    /// <summary>The looping elevator-music speaker that rides with the cab.</summary>
     [DataField]
     public EntProtoId MusicSpeakerProto = "CEElevatorMusicSpeaker";
 
@@ -62,10 +62,11 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public EntProtoId TravelWarningProto = "CEElevatorTravelWarning";
 
-    /// <summary>Runtime: one stationary music speaker per served deck (depth → speaker). Only the
-    /// cab's current-floor speaker is enabled, so the muzak plays on that floor without teleporting.</summary>
+    /// <summary>Runtime: the single looping music speaker. It is carried with the cab (one per
+    /// elevator) so the muzak is always heard on the deck the cab currently occupies. Ambient sound is
+    /// client-side and per-map, so a speaker on the cab's deck is exactly what riders hear.</summary>
     [ViewVariables]
-    public Dictionary<int, EntityUid> MusicSpeakers = new();
+    public EntityUid MusicSpeaker = EntityUid.Invalid;
 
     /// <summary>Damage applied to anything crushed in the destination shaft (when not gibbing).</summary>
     [DataField]
