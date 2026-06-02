@@ -104,7 +104,7 @@ public sealed partial class CEElevatorSystem
             {
                 var name = comp.FloorNames.TryGetValue(depth, out var custom)
                     ? custom
-                    : $"Floor {DisplayFloor(comp, depth)}";
+                    : Loc.GetString("ce-elevator-floor-label", ("floor", DisplayFloor(comp, depth)));
                 floors.Add(new CEElevatorFloor(depth, name));
             }
         }
