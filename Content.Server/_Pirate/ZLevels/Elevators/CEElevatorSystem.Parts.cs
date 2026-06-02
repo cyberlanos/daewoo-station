@@ -65,6 +65,7 @@ public sealed partial class CEElevatorSystem
             if (indicator.ElevatorId != elevatorId)
                 continue;
 
+            // The client visualizer turns Floor into the digit sprite, and Direction into the arrow.
             _appearance.SetData(uid, CEElevatorIndicatorVisuals.Floor, floorNumber);
             _appearance.SetData(uid, CEElevatorIndicatorVisuals.Direction, direction);
         }

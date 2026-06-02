@@ -29,5 +29,8 @@ public enum CEElevatorVisualLayers : byte
     Base,
 
     /// <summary>The up/down arrow overlay — only visible while travelling.</summary>
-    Arrow
+    Arrow,
+
+    /// <summary>The floor-number digit overlay.</summary>
+    Digit
 }

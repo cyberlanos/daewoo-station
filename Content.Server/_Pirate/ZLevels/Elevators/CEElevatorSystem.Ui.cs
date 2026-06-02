@@ -27,7 +27,11 @@ public sealed partial class CEElevatorSystem
     private void OnPanelMove(EntityUid uid, CEElevatorPanelComponent comp, CEElevatorMoveMessage args)
     {
         if (!IsPanelOperational(uid))
+        {
+            // Re-sync the client so its UI reflects the unpowered/out-of-service state.
+            PushPanelState((uid, comp));
             return;
+        }
 
         HandleCall(comp.ElevatorId, args.TargetDepth, uid);
         PushPanelState((uid, comp));

@@ -16,6 +16,14 @@ public sealed class CEElevatorBoundUserInterface : BoundUserInterface
     {
         base.Open();
 
+        // The BUI instance is reused across open/close, so tear down any leftover window first
+        // (detaching OnClose so disposing it doesn't re-enter Close).
+        if (_window != null)
+        {
+            _window.OnClose -= Close;
+            _window.Dispose();
+        }
+
         _window = new CEElevatorWindow();
         _window.OnClose += Close;
         _window.OnFloorSelected += depth => SendMessage(new CEElevatorMoveMessage(depth));

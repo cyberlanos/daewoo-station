@@ -102,6 +102,19 @@ public sealed partial class CEElevatorSystem : EntitySystem
         if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
             return false;
 
+        // Guard against misconfigured geometry/timing: a non-positive footprint caches no tiles and
+        // makes shaft discovery walk every deck vacuously, and a non-positive travel time schedules
+        // zero-length legs. Clamp + warn rather than fail (failing would just retry and re-log each tick).
+        if (comp.Width <= 0 || comp.Height <= 0 || comp.PerDeckTravelSeconds <= 0f)
+        {
+            Log.Warning($"Elevator '{comp.ElevatorId}' has invalid geometry/timing " +
+                        $"(width={comp.Width}, height={comp.Height}, perDeckTravelSeconds={comp.PerDeckTravelSeconds}); clamping to minimums.");
+            comp.Width = Math.Max(1, comp.Width);
+            comp.Height = Math.Max(1, comp.Height);
+            if (comp.PerDeckTravelSeconds <= 0f)
+                comp.PerDeckTravelSeconds = 1f;
+        }
+
         comp.AnchorGrid = gridUid;
         comp.OriginTile = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
 

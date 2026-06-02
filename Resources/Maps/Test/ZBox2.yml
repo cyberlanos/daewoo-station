@@ -4,7 +4,7 @@ meta:
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/02/2026 08:35:27
+  time: 06/02/2026 18:10:35
   entityCount: 51
 maps:
 - 3
@@ -102,17 +102,6 @@ entities:
     - type: Transform
       pos: 15.5,-5.5
       parent: 2
-- proto: AlwaysPoweredWallLight
-  entities:
-  - uid: 51
-    components:
-    - type: Transform
-      anchored: False
-      rot: -1.5707963267948966 rad
-      pos: 14.5,-0.5
-      parent: 3
-    - type: Physics
-      bodyType: Dynamic
 - proto: CableApcExtension
   entities:
   - uid: 38
@@ -242,6 +231,17 @@ entities:
     - type: Transform
       pos: 14.5,-3.5
       parent: 2
+- proto: SmallLight
+  entities:
+  - uid: 51
+    components:
+    - type: Transform
+      anchored: False
+      rot: -1.5707963267948966 rad
+      pos: 14.5,-0.5
+      parent: 3
+    - type: Physics
+      bodyType: Dynamic
 - proto: WallSolid
   entities:
   - uid: 1
