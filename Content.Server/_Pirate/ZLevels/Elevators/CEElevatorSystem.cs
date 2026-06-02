@@ -527,7 +527,10 @@ public sealed partial class CEElevatorSystem : EntitySystem
                 result.Add(anchoredEnt);
             }
 
-            foreach (var uid in _lookup.GetEntitiesInTile(tileRef, LookupFlags.Dynamic | LookupFlags.Static))
+            // Sundries catches loose dropped items (flashlights, tools, etc.) — they have non-colliding
+            // physics and live in the sundries tree, not the dynamic/static body trees, so without this
+            // flag they would be left behind when the cab moves.
+            foreach (var uid in _lookup.GetEntitiesInTile(tileRef, LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries))
             {
                 if (!seen.Add(uid))
                     continue;

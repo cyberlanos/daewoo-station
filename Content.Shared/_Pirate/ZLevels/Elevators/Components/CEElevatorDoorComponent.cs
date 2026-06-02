@@ -1,9 +1,11 @@
 namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 
 /// <summary>
-/// Marks a (vanilla <c>Door</c>) door as an elevator shaft door. The elevator system closes every
-/// shaft door of its id before travelling and opens the one on the cab's arrival floor.
-/// A closed shaft door is a dense barrier preventing entry into the open shaft.
+/// Add this to ANY door (anything with a vanilla <c>Door</c> component — airlock, shutter, blast door,
+/// …) to make it an elevator door for the elevator with the matching <see cref="ElevatorId"/>. The
+/// elevator system drives it automatically: it closes every linked door when the cab starts moving and
+/// keeps them shut while in transit, then opens only the door on the cab's floor once the cab arrives
+/// (and closes it again when the cab next departs). The door needs no other special setup.
 /// </summary>
 [RegisterComponent]
 public sealed partial class CEElevatorDoorComponent : Component

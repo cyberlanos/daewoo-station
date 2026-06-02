@@ -72,10 +72,13 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public DamageSpecifier CrushDamage = new();
 
-    /// <summary>Sound played per deck-step while travelling.</summary>
+    /// <summary>Sound played per deck-step while travelling. ~6 dB quieter than default (≈ half volume).</summary>
     [DataField]
     public Robust.Shared.Audio.SoundSpecifier? TravelSound =
-        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg");
+        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg")
+        {
+            Params = Robust.Shared.Audio.AudioParams.Default.WithVolume(-6f),
+        };
 
     /// <summary>Sound played when the cab arrives and doors open.</summary>
     [DataField]
