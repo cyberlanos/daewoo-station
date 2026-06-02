@@ -10,7 +10,10 @@
 #    (your mapped layout is left exactly as authored); it only swaps tiles while travelling: it lays
 #    the cab pattern on the deck it arrives at, and on the deck it leaves it restores FloorElevatorShaft
 #    ONLY for the basement (bottom of the shaft) — every deck above reopens to empty space.
-#  - Panels/doors/call buttons/indicators go on each floor and share the same elevatorId.
+#  - Panels/call buttons/indicators go on each floor and share the same elevatorId.
+#  - For doors, add the CEElevatorDoor component (with the same elevatorId) to any door you place on a
+#    floor; the elevator opens it on arrival and shuts all linked doors while moving. No special door
+#    entity is needed.
 # Sprites + music ported from tgstation (liftdoor.dmi, lift_indicator.dmi, wallmounts.dmi, robocop-short.ogg).
 
 - type: entity
@@ -92,23 +95,10 @@
           Up: { state: lift_indo-up, visible: true }
           Down: { state: lift_indo-down, visible: true }
 
-# Ported from SS13 /obj/machinery/door/poddoor/lift: a glass (see-through, non-opaque) shaft door
-# driven entirely by the elevator system. Built on the generic shutter base, not the SS14 blast door.
-- type: entity
-  id: CEElevatorShaftDoor
-  parent: BaseShutter
-  name: elevator door
-  suffix: Elevator
-  description: Keeps idiots like you from walking into an open elevator shaft.
-  components:
-  - type: CEElevatorDoor
-    elevatorId: elevator
-  - type: Sprite
-    sprite: _Pirate/Structures/ZLevels/Elevator/elevator_door.rsi
-    drawdepth: BlastDoors
-    layers:
-    - state: closed
-      map: ["enum.DoorVisualLayers.Base"]
+# No dedicated elevator-door entity. To make ANY door an elevator door, add the CEElevatorDoor
+# component to it (with the matching elevatorId). The elevator system then drives it: closes every
+# linked door when the cab starts moving, and opens only the door on the cab's floor once it arrives.
+# Example: a vanilla airlock with `- type: CEElevatorDoor` + `elevatorId: elevator`.
 
 # Legacy object version of the cab floor. Tile-based elevator cabs should use the tile prototypes in
 # Resources/Prototypes/_Pirate/Turf/elevator.yml instead.
