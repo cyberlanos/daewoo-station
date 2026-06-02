@@ -1,20 +1,14 @@
 # SS13-style multiz elevator. All parts link by matching elevatorId.
 # Mapping:
-#  - Place the controller at the lower-left of the cab footprint on the cab's home (lowest) deck.
-#  - On the home deck footprint, paint the cab floor tiles you want (for example
-#    CEElevatorSolidMetalGrate, CEElevatorPlatformTile, CEElevatorLinearTransportModule, or Lattice),
-#    and place any platform objects/furniture on top. The elevator captures that tile pattern and
-#    carries the tiles AND the objects/riders between decks.
-#  - Leave every other served deck's footprint EMPTY (open shaft) — that's how upper decks are
-#    discovered and what the crew falls through. The elevator NEVER writes tiles at init/round-start
-#    (your mapped layout is left exactly as authored); it only swaps tiles while travelling: it lays
-#    the cab pattern on the deck it arrives at, and on the deck it leaves it restores FloorElevatorShaft
-#    ONLY for the basement (bottom of the shaft) — every deck above reopens to empty space.
-#  - Panels/call buttons/indicators go on each floor and share the same elevatorId.
-#  - For doors, add the CEElevatorDoor component (with the same elevatorId) to any door you place on a
-#    floor; the elevator opens it on arrival and shuts all linked doors while moving. No special door
-#    entity is needed.
-# Sprites + music ported from tgstation (liftdoor.dmi, lift_indicator.dmi, wallmounts.dmi, robocop-short.ogg).
+#  - Place the controller at the lower-left of the cab footprint on the home (lowest) deck.
+#  - Paint the cab floor tiles on that footprint and put platform objects on top; the elevator carries
+#    both tiles and objects between decks.
+#  - Leave every other served deck's footprint EMPTY (open shaft) — that's how decks are discovered. No
+#    tiles are written at init; while travelling it lays the cab pattern on arrival and, on leaving,
+#    restores FloorElevatorShaft only on the basement (decks above reopen to empty space).
+#  - Panels/call buttons/indicators share the same elevatorId; add CEElevatorDoor (same elevatorId) to
+#    any door to make it open on arrival and shut while moving.
+# Sprites + music ported from tgstation.
 
 - type: entity
   parent: MarkerBase
@@ -22,8 +16,7 @@
   name: elevator controller
   description: Coordinates an elevator cab. A mapping marker placed inside the shaft.
   components:
-  # MarkerBase gives the Marker component: visible/selectable in the editor, hidden in-round
-  # (same as SpawnPointLateJoin). Just sits in the cab footprint.
+  # MarkerBase: visible in the editor, hidden in-round.
   - type: Sprite
     sprite: Markers/cross.rsi
     state: red
@@ -32,7 +25,7 @@
     elevatorId: elevator
     width: 1
     height: 1
-    perDeckTravelSeconds: 3.0  # matches SS13 public elevator (3s per floor)
+    perDeckTravelSeconds: 3.0  # 3s per floor (SS13 public elevator)
     violentLanding: false
     crushDamage:
       types:
@@ -77,14 +70,13 @@
   - type: Sprite
     sprite: _Pirate/Structures/ZLevels/Elevator/lift_indicator.rsi
     layers:
-    # Housing layer — always shown.
+    # Housing.
     - state: lift_indo-base
       map: ["enum.CEElevatorVisualLayers.Base"]
-    # Floor-number digit overlay (TinyUnicode digits rendered into the RSI, COLOR_DISPLAY_BLUE).
-    # The client visualizer sets its state from the elevator's current floor.
+    # Floor-number digit; the client visualizer sets its state.
     - state: lift_indo-num1
       map: ["enum.CEElevatorVisualLayers.Digit"]
-    # Arrow overlay — hidden while idle, shows the up/down animation while travelling.
+    # Arrow overlay; shown only while travelling.
     - state: lift_indo-up
       map: ["enum.CEElevatorVisualLayers.Arrow"]
       visible: false
@@ -99,13 +91,10 @@
           Up: { state: lift_indo-up, visible: true }
           Down: { state: lift_indo-down, visible: true }
 
-# No dedicated elevator-door entity. To make ANY door an elevator door, add the CEElevatorDoor
-# component to it (with the matching elevatorId). The elevator system then drives it: closes every
-# linked door when the cab starts moving, and opens only the door on the cab's floor once it arrives.
-# Example: a vanilla airlock with `- type: CEElevatorDoor` + `elevatorId: elevator`.
+# No dedicated door entity: add CEElevatorDoor (matching elevatorId) to any door — e.g. a vanilla
+# airlock with `- type: CEElevatorDoor`.
 
-# Legacy object version of the cab floor. Tile-based elevator cabs should use the tile prototypes in
-# Resources/Prototypes/_Pirate/Turf/elevator.yml instead.
+# Legacy object cab floor; prefer the tile prototypes in _Pirate/Turf/elevator.yml.
 - type: entity
   id: CEElevatorPlatform
   name: elevator platform
@@ -129,20 +118,18 @@
       collection: FootstepCatwalk
       params:
         volume: 8
-  # Indestructible: the cab floor isn't player-removable.
   - type: Tag
     tags:
     - Catwalk
 
-# Invisible looping music speaker spawned in the cab and moved to whatever deck the cab is on, so the
-# muzak covers the cab footprint and plays on the elevator's current floor.
+# Invisible looping speaker spawned in the cab and carried to its current deck.
 - type: entity
   id: CEElevatorMusicSpeaker
   name: elevator music
   description: You can't see this — it's mounted in the elevator cab.
   components:
   - type: Transform
-  # Starts disabled; the elevator system enables only the speaker on the cab's current floor.
+  # Starts disabled; the elevator enables it at init.
   - type: AmbientSound
     volume: -5
     range: 4
@@ -150,7 +137,7 @@
     sound:
       path: /Audio/_Pirate/Elevator/elevator_music.ogg
 
-# Holographic telegraph (ported from tgstation) shown on each destination tile while the cab descends.
+# Telegraph shown on each destination tile while the cab descends.
 - type: entity
   id: CEElevatorTravelWarning
   name: elevator hazard

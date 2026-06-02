@@ -25,8 +25,7 @@ using Robust.Shared.Timing;
 namespace Content.Server._Pirate.ZLevels.Elevators;
 
 /// <summary>
-/// Drives SS13-style elevators on the multiz z-network: a cab whose floor tiles + riders travel
-/// between decks, leaving an open shaft behind. See <see cref="CEElevatorControllerComponent"/>.
+/// A cab whose floor tiles and riders travel between z-network decks, leaving an open shaft behind.
 /// </summary>
 public sealed partial class CEElevatorSystem : EntitySystem
 {
@@ -43,11 +42,10 @@ public sealed partial class CEElevatorSystem : EntitySystem
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly TagSystem _tag = default!;
 
-    /// <summary>Played at a control when a call/move request is refused (SS13 buzz-two).</summary>
+    /// <summary>Played when a call/move request is refused.</summary>
     private static readonly SoundSpecifier DenySound = new SoundPathSpecifier("/Audio/Machines/buzz-two.ogg");
 
-    /// <summary>Wall lights carry this tag but (unlike panels/APCs/intercoms) have no
-    /// <see cref="WallMountComponent"/>, so it is needed to recognise them as wall-attached.</summary>
+    /// <summary>Wall lights carry this tag but lack <see cref="WallMountComponent"/>.</summary>
     private static readonly ProtoId<TagPrototype> WallLightTag = "WallLight";
 
     private EntityQuery<MapGridComponent> _gridQuery;
@@ -69,9 +67,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
 
     private void OnControllerMapInit(Entity<CEElevatorControllerComponent> ent, ref MapInitEvent args)
     {
-        // Skip while paused (e.g. mapping): initializing would bake shaft tiles / speakers into a save.
-        // Best-effort otherwise: succeeds only once the z-network has linked this deck's grid; the lazy
-        // retry in Update() handles it (grids are linked shortly after map load).
+        // Skip while paused (mapping) — would bake shaft tiles/speakers into the save. Update() retries
+        // once the z-network links this deck's grid.
         if (Paused(ent))
             return;
         TryInitialize(ent);
@@ -85,8 +82,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>
-    /// Caches footprint, cab floor tile and served decks. Requires the controller's deck grid to be
-    /// part of a z-network (<see cref="CEZLinkedGridComponent"/>) so depths resolve correctly.
+    /// Caches footprint, cab floor tile and served decks. Requires the deck grid to be linked into a
+    /// z-network (<see cref="CEZLinkedGridComponent"/>); returns false until then.
     /// </summary>
     private bool TryInitialize(Entity<CEElevatorControllerComponent> ent)
     {
@@ -98,13 +95,11 @@ public sealed partial class CEElevatorSystem : EntitySystem
         if (xform.GridUid is not { } gridUid || !_gridQuery.TryComp(gridUid, out var grid))
             return false;
 
-        // Depth + peer decks come from the z-network linkage, which may be applied after map-init.
+        // Linkage may be applied after map-init.
         if (!TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
             return false;
 
-        // Guard against misconfigured geometry/timing: a non-positive footprint caches no tiles and
-        // makes shaft discovery walk every deck vacuously, and a non-positive travel time schedules
-        // zero-length legs. Clamp + warn rather than fail (failing would just retry and re-log each tick).
+        // Clamp misconfigured geometry/timing rather than fail (failing would retry and re-log each tick).
         if (comp.Width <= 0 || comp.Height <= 0 || comp.PerDeckTravelSeconds <= 0f)
         {
             Log.Warning($"Elevator '{comp.ElevatorId}' has invalid geometry/timing " +
@@ -118,10 +113,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
         comp.AnchorGrid = gridUid;
         comp.OriginTile = _map.TileIndicesFor(gridUid, grid, xform.Coordinates);
 
-        // Capture the home-deck floor pattern as the cab (read-only). This is the tile pattern that
-        // travels with the cab; every deck the cab is NOT on stays an open shaft (empty tiles) you can
-        // fall into. We deliberately do NOT write any tiles at init — the mapper's layout is left
-        // exactly as authored, so a shaft mapped open stays open until the cab actually travels.
+        // Capture the home-deck floor as the cab pattern (read-only). No tiles are written at init, so
+        // the mapper's layout is left as authored until the cab actually travels.
         comp.ResolvedCabFloorTiles.Clear();
         Tile? cabOverride = comp.CabFloorTile == null ? null : new Tile(_tileDef[comp.CabFloorTile].TileId);
         comp.ResolvedShaftFloorTile = new Tile(_tileDef[comp.ShaftFloorTile].TileId);
@@ -141,9 +134,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
 
         comp.Initialized = true;
 
-        // A single looping music speaker that rides with the cab (see StepCab). Ambient sound is
-        // client-side and per-map, so keeping one speaker on the cab's current deck is exactly what
-        // riders hear — no per-deck speakers, no enable/disable juggling across maps.
+        // One looping speaker that rides with the cab (see StepCab); ambient sound is per-map, so this
+        // is what riders hear without per-deck speakers.
         if (TryGetDeckGrid(comp, comp.CurrentDepth, out var startGrid, out var startGridComp))
         {
             comp.MusicSpeaker = Spawn(comp.MusicSpeakerProto, FootprintCenter(comp, startGrid, startGridComp));
@@ -151,7 +143,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
             _ambient.SetAmbience(comp.MusicSpeaker, true);
         }
 
-        // Cab starts present on its deck: open that floor's door, shut the rest, set indicators.
+        // Cab starts on its deck: open that floor's door, shut the rest.
         OpenDoorOnDeck(comp.ElevatorId, comp.CurrentDepth);
         UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), CEElevatorDirection.Idle);
         return true;
@@ -172,8 +164,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>
-    /// True if a grid exists at <paramref name="depth"/> and every footprint tile is "shaft": either
-    /// empty (open shaft) or already the shaft floor tile. Lets the mapper build the shaft either way.
+    /// True if a grid exists at <paramref name="depth"/> and every footprint tile is empty or the shaft
+    /// floor tile (the mapper may build the shaft either way).
     /// </summary>
     private bool ShaftOpenAtDepth(CEElevatorControllerComponent comp, int depth)
     {
@@ -219,15 +211,13 @@ public sealed partial class CEElevatorSystem : EntitySystem
             yield return comp.OriginTile + new Vector2i(i, j);
     }
 
-    /// <summary>Lowest served deck — the bottom of the shaft. Keeps a solid floor; every deck above it
-    /// is left as open shaft when the cab is gone.</summary>
+    /// <summary>Lowest served deck. It keeps a solid floor when vacated; decks above reopen to shaft.</summary>
     private int BasementDepth(CEElevatorControllerComponent comp)
         => comp.ServedDepths.Count > 0 ? comp.ServedDepths[0] : comp.CurrentDepth;
 
     /// <summary>
-    /// Lays the cab's captured floor pattern on the deck the cab now occupies, or clears it when the cab
-    /// leaves. Only the basement (bottom of the shaft) keeps a solid floor (the default shaft tile) when
-    /// vacated; every deck above is reopened to empty space, so the crew can fall down the shaft.
+    /// Lays the cab floor pattern on the deck it now occupies, or clears it when vacated. Only the
+    /// basement keeps a solid floor; decks above reopen to empty space so the crew falls down the shaft.
     /// </summary>
     private void SetFootprintTiles(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, int depth, bool cabPresent)
     {
@@ -280,7 +270,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
             SpawnTravelWarnings(comp, comp.CurrentDepth + dir);
     }
 
-    /// <summary>Public entry: send the cab of an elevator id to a served depth.</summary>
+    /// <summary>Send the cab to a served depth.</summary>
     public bool RequestMove(string elevatorId, int targetDepth)
     {
         if (!TryGetController(elevatorId, out var ent))
@@ -296,7 +286,6 @@ public sealed partial class CEElevatorSystem : EntitySystem
         comp.Moving = true;
         comp.NextStepTime = _timing.CurTime + TimeSpan.FromSeconds(comp.PerDeckTravelSeconds);
 
-        // Lock the shaft: every floor's door shuts before we move.
         CloseAllDoors(comp.ElevatorId);
         UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), CEElevatorDirectionFor(comp));
         UpdatePanelUis(comp.ElevatorId);
@@ -328,11 +317,8 @@ public sealed partial class CEElevatorSystem : EntitySystem
         var query = AllEntityQuery<CEElevatorControllerComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
-            // Never simulate on a paused map. Maps opened for mapping (znetwork-mapping) are loaded
-            // uninitialized and paused, so MapInit never fires there — but Update runs globally. If
-            // we initialized here, the lazy setup would write shaft-floor tiles and spawn music
-            // speakers that then get baked into the saved map. Stay completely inert until the map
-            // is actually running (i.e. a live round).
+            // Stay inert on paused maps. Update runs globally, but mapping maps load paused and
+            // uninitialized; initializing here would bake shaft tiles/speakers into the save.
             if (Paused(uid))
                 continue;
 
@@ -376,28 +362,20 @@ public sealed partial class CEElevatorSystem : EntitySystem
             return;
         }
 
-        // 1) Gather everything riding the cab (current deck) before anything changes — like SS13's
-        //    transport_contents, this includes anchored structures/machines built on the platform.
+        // 1) Gather riders (anchored structures included) before anything changes.
         var riders = GatherFootprintEntities(comp, fromGridUid, fromGrid);
 
         // 2) Crush whatever is sitting in the destination footprint.
         CrushDestination(comp, toGridUid, toGrid);
 
-        // 3) Lay the cab floor on the destination deck FIRST, so arriving anchored parts have a tile to
-        //    re-anchor onto.
+        // 3) Lay the destination floor first, so arriving anchored parts have a tile to re-anchor onto.
         SetFootprintTiles(comp, toGridUid, toGrid, toDepth, true);
 
-        // 4) Carry everything riding the cab onto the destination deck. We reparent each rider directly
-        //    to the deck grid the controller resolved (toGridUid), preserving its grid-LOCAL position so
-        //    it lands exactly over the same footprint tile the cab floor was just written to. This is
-        //    deterministic regardless of which deck the rider is currently on — unlike TryMove, which
-        //    re-resolves the target from the rider's own grid and can apply a stair-exit landing nudge,
-        //    causing anchored platform parts to drift off the footprint and stop being carried on later
-        //    legs. Anchored furniture/machines are unanchored, moved, then re-anchored on arrival.
-        //    IMPORTANT: this runs BEFORE the origin deck is cleared (step 5). Clearing an upper deck's
-        //    footprint to empty space unanchors anything still standing on it; doing it first would flip
-        //    each rider's Anchored flag to false here, so it would arrive un-anchored and — since the
-        //    platform object has no physics — become impossible to gather on the next leg.
+        // 4) Carry riders onto the destination deck, preserving grid-local position so each lands over
+        //    the same footprint tile. We reparent directly (not via TryMove, whose stair-exit nudge would
+        //    drift anchored parts off the footprint). Anchored parts are unanchored, moved, re-anchored.
+        //    Must run BEFORE step 5: clearing an upper deck unanchors riders still on it, and a physics-less
+        //    platform that arrives unanchored can't be gathered on the next leg.
         foreach (var rider in riders)
         {
             if (!_xformQuery.TryComp(rider, out var rxform))
@@ -414,13 +392,12 @@ public sealed partial class CEElevatorSystem : EntitySystem
                 _transform.AnchorEntity(rider, movedXform);
         }
 
-        // 5) Now that the riders have left, vacate the origin deck: the basement keeps its solid shaft
-        //    floor, upper decks reopen to empty shaft.
+        // 5) Riders have left: vacate the origin deck (basement keeps its floor, upper decks reopen).
         SetFootprintTiles(comp, fromGridUid, fromGrid, fromDepth, false);
 
         comp.CurrentDepth = toDepth;
 
-        // Carry the music speaker onto the cab's new deck so the muzak follows the cab.
+        // Carry the speaker so the music follows the cab.
         if (!TerminatingOrDeleted(comp.MusicSpeaker))
             _zLevels.TeleportToZLevelCoordinates(comp.MusicSpeaker, FootprintCenter(comp, toGridUid, toGrid), toDepth, dir);
 
@@ -508,10 +485,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         }
     }
 
-    /// <summary>
-    /// Entities standing on the cab footprint on the given deck (mobs, items and anchored structures
-    /// alike — like SS13's transport_contents). The controller, the music speaker and grids are excluded.
-    /// </summary>
+    /// <summary>Mobs, items and anchored structures standing on the cab footprint (see <see cref="CanRideCab"/>).</summary>
     private List<EntityUid> GatherFootprintEntities(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
     {
         var footprint = new HashSet<Vector2i>(FootprintTiles(comp));
@@ -540,9 +514,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
                 result.Add(anchoredEnt);
             }
 
-            // Sundries catches loose dropped items (flashlights, tools, etc.) — they have non-colliding
-            // physics and live in the sundries tree, not the dynamic/static body trees, so without this
-            // flag they would be left behind when the cab moves.
+            // Sundries is needed for loose dropped items (non-colliding, not in the dynamic/static trees).
             foreach (var uid in _lookup.GetEntitiesInTile(tileRef, LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries))
             {
                 if (!seen.Add(uid))
@@ -550,8 +522,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
                 if (!CanRideCab(uid, comp))
                     continue;
 
-                // The tile lookup catches entities that merely overlap a footprint tile; restrict to
-                // those actually standing on the footprint so the cab moves exactly its own square.
+                // Restrict to entities whose tile is on the footprint (the lookup also returns overlaps).
                 var entTile = _map.WorldToTile(gridUid, grid, _transform.GetWorldPosition(uid));
                 if (!footprint.Contains(entTile))
                     continue;
@@ -564,12 +535,9 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>
-    /// False for things that belong to the deck rather than the cab and so must NOT be carried:
-    /// grids, the elevator's own controller/speakers, and anything attached to a wall. Wall-attached
-    /// fixtures are detected by <see cref="WallMountComponent"/> (panels, call buttons, indicators,
-    /// APCs, intercoms, etc.) or the <c>WallLight</c> tag (light fixtures, which lack that component).
-    /// Everything else standing on the footprint — mobs, loose items, anchored furniture/machines —
-    /// rides the cab, matching SS13's transport_contents.
+    /// False for things that belong to the deck, not the cab: grids, the controller, the speaker, and
+    /// wall-attached fixtures (<see cref="WallMountComponent"/> or the <c>WallLight</c> tag). Everything
+    /// else on the footprint rides the cab.
     /// </summary>
     private bool CanRideCab(EntityUid uid, CEElevatorControllerComponent comp)
     {

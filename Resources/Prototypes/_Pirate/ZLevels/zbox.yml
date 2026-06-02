@@ -1,4 +1,3 @@
-# Resources/Prototypes/_Pirate/ZLevels/test_maps.yml
 - type: zMap
   id: ZBox
   maps:

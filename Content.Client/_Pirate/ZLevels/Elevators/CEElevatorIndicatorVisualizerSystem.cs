@@ -6,10 +6,9 @@ using Robust.Client.GameObjects;
 namespace Content.Client._Pirate.ZLevels.Elevators;
 
 /// <summary>
-/// Draws the elevator's current floor number on its indicator by swapping the digit sprite layer
-/// (lift_indo-num0..9) from the <see cref="CEElevatorIndicatorVisuals.Floor"/> appearance value the
-/// server sets. SS13's lift_indicator showed the number via maptext; SS14 maptext doesn't scale with
-/// the world, so we use pre-rendered digit sprites that live in the display window instead.
+/// Draws the cab's floor number by swapping the digit sprite layer (lift_indo-num0..9) from the
+/// <see cref="CEElevatorIndicatorVisuals.Floor"/> appearance value. Pre-rendered sprites are used
+/// instead of maptext (SS13's approach), since SS14 maptext doesn't scale with the world.
 /// </summary>
 public sealed class CEElevatorIndicatorVisualizerSystem : VisualizerSystem<CEElevatorIndicatorComponent>
 {
@@ -23,8 +22,7 @@ public sealed class CEElevatorIndicatorVisualizerSystem : VisualizerSystem<CEEle
         if (!AppearanceSystem.TryGetData<int>(uid, CEElevatorIndicatorVisuals.Floor, out var floor, args.Component))
             return;
 
-        // Single-digit readout (floors 1-9 cover virtually every elevator). Higher floors show the
-        // ones digit rather than nothing.
+        // Single-digit readout; floors above 9 show the ones digit.
         var digit = Math.Abs(floor) % 10;
         _sprite.LayerSetRsiState((uid, args.Sprite), CEElevatorVisualLayers.Digit, $"lift_indo-num{digit}");
     }
