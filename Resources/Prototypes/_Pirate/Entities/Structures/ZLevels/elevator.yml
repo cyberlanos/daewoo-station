@@ -80,6 +80,10 @@
     # Housing layer — always shown.
     - state: lift_indo-base
       map: ["enum.CEElevatorVisualLayers.Base"]
+    # Floor-number digit overlay (TinyUnicode digits rendered into the RSI, COLOR_DISPLAY_BLUE).
+    # The client visualizer sets its state from the elevator's current floor.
+    - state: lift_indo-num1
+      map: ["enum.CEElevatorVisualLayers.Digit"]
     # Arrow overlay — hidden while idle, shows the up/down animation while travelling.
     - state: lift_indo-up
       map: ["enum.CEElevatorVisualLayers.Arrow"]

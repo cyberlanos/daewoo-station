@@ -4,7 +4,7 @@ meta:
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/02/2026 08:35:27
+  time: 06/02/2026 18:10:35
   entityCount: 147
 maps:
 - 3
@@ -160,14 +160,6 @@ entities:
     - type: Transform
       rot: 1.5707963267948966 rad
       pos: 9.5,-2.5
-      parent: 2
-- proto: AlwaysPoweredWallLight
-  entities:
-  - uid: 134
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 14.5,-0.5
       parent: 2
 - proto: AtmosFixAirMarker
   entities:
@@ -691,6 +683,14 @@ entities:
     - type: Transform
       rot: -1.5707963267948966 rad
       pos: 10.5,-1.5
+      parent: 2
+- proto: SmallLight
+  entities:
+  - uid: 134
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: 14.5,-0.5
       parent: 2
 - proto: SpawnPointLatejoin
   entities:

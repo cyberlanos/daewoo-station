@@ -66,6 +66,46 @@
         {
             "name": "lift_indo-e",
             "directions": 1
+        },
+        {
+            "name": "lift_indo-num0",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num1",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num2",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num3",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num4",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num5",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num6",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num7",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num8",
+            "directions": 1
+        },
+        {
+            "name": "lift_indo-num9",
+            "directions": 1
         }
     ]
 }
