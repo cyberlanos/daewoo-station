@@ -13,6 +13,7 @@ using Content.Shared.CCVar;
 using Content.Shared.Maps;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Client.Placement; // Pirate: multiz
 using Robust.Client.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
@@ -29,6 +30,7 @@ public sealed partial class ScalingViewport
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly ITileDefinitionManager _tile = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!; // Pirate: multiz
+    [Dependency] private readonly IPlacementManager _placement = default!; // Pirate: multiz
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     private CEClientZLevelsSystem? _zLevels;
@@ -324,8 +326,12 @@ public sealed partial class ScalingViewport
             viewport.ClearColor = depth == lowestDepth ? Color.Black : null;
 
             #region Pirate: multiz
-            // Hide placement overlay on non-primary passes to prevent duplicate previews.
-            var hidePlacement = depth != 0 && _cachedPlacementOverlay != null;
+            // Hide placement overlay on non-primary passes (prevents duplicate previews), and also on the
+            // primary pass during a z-level move when the cursor's cached grid is still on a different map
+            // than the eye: the engine's snap-placement overlay calls MapToGrid with no map guard and would
+            // throw an ArgumentException every frame of the transition.
+            var hidePlacement = _cachedPlacementOverlay != null
+                && (depth != 0 || PlacementOverlayWouldDesync(renderedMapUid));
             if (hidePlacement)
                 _overlayManager.RemoveOverlay(_cachedPlacementOverlay!);
 
@@ -350,6 +356,21 @@ public sealed partial class ScalingViewport
 
         Eye = _fallbackEye;
         viewport.Eye = Eye;
+    }
+
+    // Pirate: multiz
+    // True when an active snap-placement preview's cursor coordinates resolve to a different map than the
+    // one we're about to render with the primary eye. This happens for the frames of a z-level move, where
+    // the placement mode's MouseCoords were aligned against the previous deck's eye. The engine's
+    // SnapgridCenter.Render then does MapToGrid(gridUnderCursor, eyeScreenCoords) with mismatched maps and
+    // throws; we hide the overlay for those frames instead (the green preview just blinks).
+    private bool PlacementOverlayWouldDesync(EntityUid renderedMapUid)
+    {
+        if (!_placement.IsActive || _placement.CurrentMode is not { } mode)
+            return false;
+        if (_xformQuery is not { } query || !query.TryComp(mode.MouseCoords.EntityId, out var coordsXform))
+            return false;
+        return coordsXform.MapUid != renderedMapUid;
     }
 
     private bool HasZLevelApertures(EntityUid mapUid)
