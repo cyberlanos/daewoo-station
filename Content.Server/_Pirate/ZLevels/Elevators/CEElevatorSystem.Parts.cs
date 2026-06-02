@@ -49,9 +49,11 @@ public sealed partial class CEElevatorSystem
         var comp = controller.Value.Comp;
         var floor = DisplayFloor(comp, comp.CurrentDepth);
         var status = !comp.Moving
-            ? "idle"
-            : comp.TargetDepth > comp.CurrentDepth ? "going up" : "going down";
-        args.PushText($"The elevator is at floor {floor} ({status}).");
+            ? Loc.GetString("ce-elevator-status-idle")
+            : comp.TargetDepth > comp.CurrentDepth
+                ? Loc.GetString("ce-elevator-status-going-up")
+                : Loc.GetString("ce-elevator-status-going-down");
+        args.PushText(Loc.GetString("ce-elevator-indicator-examine", ("floor", floor), ("status", status)));
     }
 
     /// <summary>Pushes floor + direction to every indicator of this elevator.</summary>

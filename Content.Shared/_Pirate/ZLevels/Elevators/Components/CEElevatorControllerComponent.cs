@@ -1,4 +1,5 @@
 using Content.Shared.Damage;
+using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 
@@ -74,16 +75,16 @@ public sealed partial class CEElevatorControllerComponent : Component
 
     /// <summary>Sound played per deck-step while travelling. ~6 dB quieter than default (≈ half volume).</summary>
     [DataField]
-    public Robust.Shared.Audio.SoundSpecifier? TravelSound =
-        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg")
+    public SoundSpecifier? TravelSound =
+        new SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg")
         {
-            Params = Robust.Shared.Audio.AudioParams.Default.WithVolume(-6f),
+            Params = AudioParams.Default.WithVolume(-6f),
         };
 
     /// <summary>Sound played when the cab arrives and doors open.</summary>
     [DataField]
-    public Robust.Shared.Audio.SoundSpecifier? ArriveSound =
-        new Robust.Shared.Audio.SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
+    public SoundSpecifier? ArriveSound =
+        new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
 
     // ---- runtime state ----
 
