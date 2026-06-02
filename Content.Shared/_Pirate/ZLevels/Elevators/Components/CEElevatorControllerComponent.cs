@@ -6,21 +6,17 @@ using Robust.Shared.Prototypes;
 namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 
 /// <summary>
-/// The brain of an elevator. Placed (anchored, invisible) on the cab's starting deck at the
-/// lower-left corner of the cab footprint. Stationary — the cab floor tiles and the riders move,
-/// not this entity. All other elevator parts (panel, doors, call buttons, indicators) link to it by
-/// matching <see cref="ElevatorId"/>.
+/// The brain of an elevator: anchored at the lower-left of the cab footprint on the cab's start deck.
+/// It stays put — the cab floor tiles and riders move. Other parts (panel, doors, call buttons,
+/// indicators) link to it by matching <see cref="ElevatorId"/>.
 ///
-/// Mapping contract: the cab's start deck has the desired cab floor tiles across the footprint.
-/// Every other served deck has an empty or shaft-floor footprint. Served decks are discovered by
-/// walking the z-network up/down while the footprint stays an open shaft.
+/// Mapping contract: the start deck holds the cab floor tiles; every other served deck has an empty or
+/// shaft-floor footprint. Served decks are discovered by walking the z-network while the footprint stays open.
 /// </summary>
 [RegisterComponent]
 public sealed partial class CEElevatorControllerComponent : Component
 {
-    /// <summary>
-    /// Shared id string linking this controller to its panels, doors, call buttons and indicators.
-    /// </summary>
+    /// <summary>Shared id linking this controller to its panels, doors, call buttons and indicators.</summary>
     [DataField(required: true)]
     public string ElevatorId = string.Empty;
 
@@ -36,10 +32,7 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public string? CabFloorTile;
 
-    /// <summary>
-    /// Tile left behind on a deck the cab is NOT on. A real floor (gravity + atmosphere) so the shaft
-    /// is never an empty vacuum void — SS14 gravity/atmos is tile-based, unlike SS13 openspace.
-    /// </summary>
+    /// <summary>Tile left on the basement when the cab is gone. A real floor (gravity + atmosphere are tile-based).</summary>
     [DataField]
     public string ShaftFloorTile = "FloorElevatorShaft";
 
@@ -63,9 +56,7 @@ public sealed partial class CEElevatorControllerComponent : Component
     [DataField]
     public EntProtoId TravelWarningProto = "CEElevatorTravelWarning";
 
-    /// <summary>Runtime: the single looping music speaker. It is carried with the cab (one per
-    /// elevator) so the muzak is always heard on the deck the cab currently occupies. Ambient sound is
-    /// client-side and per-map, so a speaker on the cab's deck is exactly what riders hear.</summary>
+    /// <summary>Runtime: the single looping speaker, carried with the cab.</summary>
     [ViewVariables]
     public EntityUid MusicSpeaker = EntityUid.Invalid;
 
@@ -86,7 +77,7 @@ public sealed partial class CEElevatorControllerComponent : Component
     public SoundSpecifier? ArriveSound =
         new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
 
-    // ---- runtime state ----
+    // Runtime state.
 
     /// <summary>Grid the controller is anchored to (the cab's start deck). Cached at init.</summary>
     [ViewVariables]

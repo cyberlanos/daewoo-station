@@ -56,8 +56,8 @@ public sealed partial class CEElevatorSystem
     }
 
     /// <summary>
-    /// Routes a call request. If the cab is already idle on this floor, just open the doors with a
-    /// ping (SS13 "elevator is here"). Otherwise dispatch it; a refused request buzzes.
+    /// Routes a call: if the cab is idle on this floor, open the doors with a ping; otherwise dispatch
+    /// the move. A refused request buzzes.
     /// </summary>
     private void HandleCall(string elevatorId, int depth, EntityUid source)
     {
