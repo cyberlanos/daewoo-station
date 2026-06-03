@@ -9,6 +9,7 @@ using Content.Shared._Pirate.ZLevels.Elevators.Components;
 using Content.Shared.Audio;
 using Content.Shared.Body.Components;
 using Content.Shared.Damage;
+using Content.Shared.Doors;
 using Content.Shared.Examine;
 using Content.Shared.Maps;
 using Content.Shared.Tag;
@@ -61,6 +62,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         SubscribeLocalEvent<CEElevatorControllerComponent, MapInitEvent>(OnControllerMapInit);
         SubscribeLocalEvent<CEElevatorControllerComponent, ComponentShutdown>(OnControllerShutdown);
         SubscribeLocalEvent<CEElevatorIndicatorComponent, ExaminedEvent>(OnIndicatorExamine);
+        SubscribeLocalEvent<CEElevatorDoorComponent, BeforeDoorAutoCloseEvent>(OnDoorAutoClose);
 
         InitializeUi();
     }

@@ -1,6 +1,7 @@
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Elevators;
 using Content.Shared._Pirate.ZLevels.Elevators.Components;
+using Content.Shared.Doors;
 using Content.Shared.Doors.Components;
 using Content.Shared.Doors.Systems;
 using Content.Shared.Examine;
@@ -23,6 +24,11 @@ public sealed partial class CEElevatorSystem
                 continue;
             _doors.TryClose(uid, doorComp);
         }
+    }
+
+    private void OnDoorAutoClose(EntityUid uid, CEElevatorDoorComponent comp, BeforeDoorAutoCloseEvent args)
+    {
+        args.Cancel();
     }
 
     /// <summary>Opens the shaft door on the cab's arrival deck; keeps the rest shut.</summary>
