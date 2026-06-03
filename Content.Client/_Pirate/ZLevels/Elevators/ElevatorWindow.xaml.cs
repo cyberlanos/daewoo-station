@@ -8,38 +8,38 @@ using Robust.Shared.Localization;
 namespace Content.Client._Pirate.ZLevels.Elevators;
 
 [GenerateTypedNameReferences]
-public sealed partial class CEElevatorWindow : DefaultWindow
+public sealed partial class ElevatorWindow : DefaultWindow
 {
     public Action<int>? OnFloorSelected;
 
-    public CEElevatorWindow()
+    public ElevatorWindow()
     {
         RobustXamlLoader.Load(this);
     }
 
     public void UpdateState(BoundUserInterfaceState state)
     {
-        if (state is not CEElevatorBuiState cast)
+        if (state is not ElevatorBuiState cast)
             return;
 
         FloorList.RemoveAllChildren();
 
         if (!cast.Operational)
         {
-            StatusLabel.Text = Loc.GetString("ce-elevator-panel-out-of-service");
+            StatusLabel.Text = Loc.GetString("elevator-panel-out-of-service");
             return;
         }
 
         StatusLabel.Text = cast.Moving
-            ? Loc.GetString("ce-elevator-panel-travelling")
-            : Loc.GetString("ce-elevator-panel-select-floor");
+            ? Loc.GetString("elevator-panel-travelling")
+            : Loc.GetString("elevator-panel-select-floor");
 
         foreach (var floor in cast.Floors)
         {
             var isCurrent = floor.Depth == cast.CurrentDepth;
             var button = new Button
             {
-                Text = isCurrent ? Loc.GetString("ce-elevator-panel-floor-here", ("name", floor.Name)) : floor.Name,
+                Text = isCurrent ? Loc.GetString("elevator-panel-floor-here", ("name", floor.Name)) : floor.Name,
                 Disabled = cast.Moving || isCurrent,
                 Margin = new Robust.Shared.Maths.Thickness(0, 0, 0, 2),
                 HorizontalExpand = true,

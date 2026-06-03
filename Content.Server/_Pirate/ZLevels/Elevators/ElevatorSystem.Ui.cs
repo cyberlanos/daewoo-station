@@ -8,23 +8,23 @@ using Robust.Server.GameObjects;
 namespace Content.Server._Pirate.ZLevels.Elevators;
 
 // Control panel UI + per-floor call buttons.
-public sealed partial class CEElevatorSystem
+public sealed partial class ElevatorSystem
 {
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
 
     private void InitializeUi()
     {
-        SubscribeLocalEvent<CEElevatorPanelComponent, BoundUIOpenedEvent>(OnPanelUiOpened);
-        SubscribeLocalEvent<CEElevatorPanelComponent, CEElevatorMoveMessage>(OnPanelMove);
-        SubscribeLocalEvent<CEElevatorCallButtonComponent, ActivateInWorldEvent>(OnCallButtonActivate);
+        SubscribeLocalEvent<ElevatorPanelComponent, BoundUIOpenedEvent>(OnPanelUiOpened);
+        SubscribeLocalEvent<ElevatorPanelComponent, ElevatorMoveMessage>(OnPanelMove);
+        SubscribeLocalEvent<ElevatorCallButtonComponent, ActivateInWorldEvent>(OnCallButtonActivate);
     }
 
-    private void OnPanelUiOpened(EntityUid uid, CEElevatorPanelComponent comp, BoundUIOpenedEvent args)
+    private void OnPanelUiOpened(EntityUid uid, ElevatorPanelComponent comp, BoundUIOpenedEvent args)
     {
         PushPanelState((uid, comp));
     }
 
-    private void OnPanelMove(EntityUid uid, CEElevatorPanelComponent comp, CEElevatorMoveMessage args)
+    private void OnPanelMove(EntityUid uid, ElevatorPanelComponent comp, ElevatorMoveMessage args)
     {
         if (!IsPanelOperational(uid))
         {
@@ -37,7 +37,7 @@ public sealed partial class CEElevatorSystem
         PushPanelState((uid, comp));
     }
 
-    private void OnCallButtonActivate(Entity<CEElevatorCallButtonComponent> ent, ref ActivateInWorldEvent args)
+    private void OnCallButtonActivate(Entity<ElevatorCallButtonComponent> ent, ref ActivateInWorldEvent args)
     {
         if (args.Handled || !args.Complex)
             return;
@@ -82,7 +82,7 @@ public sealed partial class CEElevatorSystem
     /// <summary>Re-pushes UI state to every open panel of an elevator (on move start / finish).</summary>
     private void UpdatePanelUis(string elevatorId)
     {
-        var query = AllEntityQuery<CEElevatorPanelComponent>();
+        var query = AllEntityQuery<ElevatorPanelComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
             if (comp.ElevatorId == elevatorId)
@@ -90,9 +90,9 @@ public sealed partial class CEElevatorSystem
         }
     }
 
-    private void PushPanelState(Entity<CEElevatorPanelComponent> ent)
+    private void PushPanelState(Entity<ElevatorPanelComponent> ent)
     {
-        var floors = new List<CEElevatorFloor>();
+        var floors = new List<ElevatorFloor>();
         var currentDepth = 0;
         var moving = false;
         var operational = IsPanelOperational(ent.Owner);
@@ -108,8 +108,8 @@ public sealed partial class CEElevatorSystem
             {
                 var name = comp.FloorNames.TryGetValue(depth, out var custom)
                     ? custom
-                    : Loc.GetString("ce-elevator-floor-label", ("floor", DisplayFloor(comp, depth)));
-                floors.Add(new CEElevatorFloor(depth, name));
+                    : Loc.GetString("elevator-floor-label", ("floor", DisplayFloor(comp, depth)));
+                floors.Add(new ElevatorFloor(depth, name));
             }
         }
         else
@@ -117,7 +117,7 @@ public sealed partial class CEElevatorSystem
             operational = false;
         }
 
-        _ui.SetUiState(ent.Owner, CEElevatorUiKey.Key, new CEElevatorBuiState(floors, currentDepth, moving, operational));
+        _ui.SetUiState(ent.Owner, ElevatorUiKey.Key, new ElevatorBuiState(floors, currentDepth, moving, operational));
     }
 
     private bool IsPanelOperational(EntityUid uid)

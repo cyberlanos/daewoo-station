@@ -14,7 +14,7 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// shaft-floor footprint. Served decks are discovered by walking the z-network while the footprint stays open.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEElevatorControllerComponent : Component
+public sealed partial class ElevatorControllerComponent : Component
 {
     /// <summary>Shared id linking this controller to its panels, doors, call buttons and indicators.</summary>
     [DataField(required: true)]
@@ -50,11 +50,11 @@ public sealed partial class CEElevatorControllerComponent : Component
 
     /// <summary>The looping elevator-music speaker that rides with the cab.</summary>
     [DataField]
-    public EntProtoId MusicSpeakerProto = "CEElevatorMusicSpeaker";
+    public EntProtoId MusicSpeakerProto = "ElevatorMusicSpeaker";
 
     /// <summary>Telegraph spawned on each destination tile while the cab descends onto it.</summary>
     [DataField]
-    public EntProtoId TravelWarningProto = "CEElevatorTravelWarning";
+    public EntProtoId TravelWarningProto = "ElevatorTravelWarning";
 
     /// <summary>Runtime: the single looping speaker, carried with the cab.</summary>
     [ViewVariables]

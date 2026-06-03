@@ -5,7 +5,7 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// driven through appearance data by the elevator system. Links by <see cref="ElevatorId"/>.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEElevatorIndicatorComponent : Component
+public sealed partial class ElevatorIndicatorComponent : Component
 {
     /// <summary>Id of the elevator this indicator tracks.</summary>
     [DataField(required: true)]

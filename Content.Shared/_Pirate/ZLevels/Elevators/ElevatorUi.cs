@@ -3,19 +3,19 @@ using Robust.Shared.Serialization;
 namespace Content.Shared._Pirate.ZLevels.Elevators;
 
 [Serializable, NetSerializable]
-public enum CEElevatorUiKey : byte
+public enum ElevatorUiKey : byte
 {
     Key
 }
 
 /// <summary>One selectable floor in the elevator panel UI.</summary>
 [Serializable, NetSerializable]
-public struct CEElevatorFloor
+public struct ElevatorFloor
 {
     public int Depth;
     public string Name;
 
-    public CEElevatorFloor(int depth, string name)
+    public ElevatorFloor(int depth, string name)
     {
         Depth = depth;
         Name = name;
@@ -23,10 +23,10 @@ public struct CEElevatorFloor
 }
 
 [Serializable, NetSerializable]
-public sealed class CEElevatorBuiState : BoundUserInterfaceState
+public sealed class ElevatorBuiState : BoundUserInterfaceState
 {
     /// <summary>Served floors, ordered top-to-bottom for display.</summary>
-    public List<CEElevatorFloor> Floors;
+    public List<ElevatorFloor> Floors;
 
     /// <summary>Depth the cab is currently on.</summary>
     public int CurrentDepth;
@@ -37,7 +37,7 @@ public sealed class CEElevatorBuiState : BoundUserInterfaceState
     /// <summary>False if the panel has no linked controller / is unpowered.</summary>
     public bool Operational;
 
-    public CEElevatorBuiState(List<CEElevatorFloor> floors, int currentDepth, bool moving, bool operational)
+    public ElevatorBuiState(List<ElevatorFloor> floors, int currentDepth, bool moving, bool operational)
     {
         Floors = floors;
         CurrentDepth = currentDepth;
@@ -48,11 +48,11 @@ public sealed class CEElevatorBuiState : BoundUserInterfaceState
 
 /// <summary>Client → server: send the cab to the chosen floor.</summary>
 [Serializable, NetSerializable]
-public sealed class CEElevatorMoveMessage : BoundUserInterfaceMessage
+public sealed class ElevatorMoveMessage : BoundUserInterfaceMessage
 {
     public int TargetDepth;
 
-    public CEElevatorMoveMessage(int targetDepth)
+    public ElevatorMoveMessage(int targetDepth)
     {
         TargetDepth = targetDepth;
     }

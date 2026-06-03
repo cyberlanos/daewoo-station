@@ -139,25 +139,25 @@ entities:
     - type: Transform
       pos: 14.5,-5.5
       parent: 2
-- proto: CEElevatorCallButton
+- proto: ElevatorCallButton
   entities:
   - uid: 49
     components:
     - type: Transform
       pos: 14.5,-3.5
       parent: 2
-    - type: CEElevatorCallButton
+    - type: ElevatorCallButton
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
-- proto: CEElevatorIndicator
+- proto: ElevatorIndicator
   entities:
   - uid: 48
     components:
     - type: Transform
       pos: 13.5,2.5
       parent: 2
-    - type: CEElevatorIndicator
+    - type: ElevatorIndicator
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
@@ -166,18 +166,18 @@ entities:
     - type: Transform
       pos: 14.5,-3.5
       parent: 2
-    - type: CEElevatorIndicator
+    - type: ElevatorIndicator
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
-- proto: CEElevatorPanel
+- proto: ElevatorPanel
   entities:
   - uid: 47
     components:
     - type: Transform
       pos: 12.5,2.5
       parent: 2
-    - type: CEElevatorPanel
+    - type: ElevatorPanel
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
@@ -387,7 +387,7 @@ entities:
       rot: 3.141592653589793 rad
       pos: 12.5,-3.5
       parent: 2
-    - type: CEElevatorDoor
+    - type: ElevatorDoor
       elevatorId: elevator-1
   - uid: 36
     components:
@@ -395,6 +395,6 @@ entities:
       rot: 3.141592653589793 rad
       pos: 13.5,-3.5
       parent: 2
-    - type: CEElevatorDoor
+    - type: ElevatorDoor
       elevatorId: elevator-1
 ...

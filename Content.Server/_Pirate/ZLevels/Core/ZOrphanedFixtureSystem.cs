@@ -16,7 +16,7 @@ namespace Content.Server._Pirate.ZLevels.Core;
 /// they sit over and anchor (or pin Static over a hole). Only <see cref="FixtureWhitelist"/> entities are
 /// touched.
 /// </summary>
-public sealed class CEZOrphanedFixtureSystem : EntitySystem
+public sealed class ZOrphanedFixtureSystem : EntitySystem
 {
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly SharedMapSystem _map = default!;

@@ -5,7 +5,7 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// The button's floor depth is resolved at runtime from the deck it sits on.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEElevatorCallButtonComponent : Component
+public sealed partial class ElevatorCallButtonComponent : Component
 {
     /// <summary>Id of the elevator this button calls.</summary>
     [DataField(required: true)]

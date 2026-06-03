@@ -1,12 +1,12 @@
-ce-elevator-status-idle = idle
-ce-elevator-status-going-up = going up
-ce-elevator-status-going-down = going down
-ce-elevator-indicator-examine = The elevator is at floor {$floor} ({$status}).
+elevator-status-idle = idle
+elevator-status-going-up = going up
+elevator-status-going-down = going down
+elevator-indicator-examine = The elevator is at floor {$floor} ({$status}).
 
-ce-elevator-floor-label = Floor {$floor}
+elevator-floor-label = Floor {$floor}
 
 # Control panel window.
-ce-elevator-panel-out-of-service = Out of service
-ce-elevator-panel-travelling = Travelling...
-ce-elevator-panel-select-floor = Select a floor
-ce-elevator-panel-floor-here = {$name}  (here)
+elevator-panel-out-of-service = Out of service
+elevator-panel-travelling = Travelling...
+elevator-panel-select-floor = Select a floor
+elevator-panel-floor-here = {$name}  (here)

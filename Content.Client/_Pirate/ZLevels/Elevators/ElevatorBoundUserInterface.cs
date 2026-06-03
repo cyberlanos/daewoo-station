@@ -4,11 +4,11 @@ using JetBrains.Annotations;
 namespace Content.Client._Pirate.ZLevels.Elevators;
 
 [UsedImplicitly]
-public sealed class CEElevatorBoundUserInterface : BoundUserInterface
+public sealed class ElevatorBoundUserInterface : BoundUserInterface
 {
-    private CEElevatorWindow? _window;
+    private ElevatorWindow? _window;
 
-    public CEElevatorBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public ElevatorBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
     {
     }
 
@@ -24,9 +24,9 @@ public sealed class CEElevatorBoundUserInterface : BoundUserInterface
             _window.Dispose();
         }
 
-        _window = new CEElevatorWindow();
+        _window = new ElevatorWindow();
         _window.OnClose += Close;
-        _window.OnFloorSelected += depth => SendMessage(new CEElevatorMoveMessage(depth));
+        _window.OnFloorSelected += depth => SendMessage(new ElevatorMoveMessage(depth));
 
         if (State != null)
             UpdateState(State);

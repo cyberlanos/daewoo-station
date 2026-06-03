@@ -28,7 +28,7 @@ namespace Content.Server._Pirate.ZLevels.Elevators;
 /// <summary>
 /// A cab whose floor tiles and riders travel between z-network decks, leaving an open shaft behind.
 /// </summary>
-public sealed partial class CEElevatorSystem : EntitySystem
+public sealed partial class ElevatorSystem : EntitySystem
 {
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly ITileDefinitionManager _tileDef = default!;
@@ -59,15 +59,15 @@ public sealed partial class CEElevatorSystem : EntitySystem
         _gridQuery = GetEntityQuery<MapGridComponent>();
         _xformQuery = GetEntityQuery<TransformComponent>();
 
-        SubscribeLocalEvent<CEElevatorControllerComponent, MapInitEvent>(OnControllerMapInit);
-        SubscribeLocalEvent<CEElevatorControllerComponent, ComponentShutdown>(OnControllerShutdown);
-        SubscribeLocalEvent<CEElevatorIndicatorComponent, ExaminedEvent>(OnIndicatorExamine);
-        SubscribeLocalEvent<CEElevatorDoorComponent, BeforeDoorAutoCloseEvent>(OnDoorAutoClose);
+        SubscribeLocalEvent<ElevatorControllerComponent, MapInitEvent>(OnControllerMapInit);
+        SubscribeLocalEvent<ElevatorControllerComponent, ComponentShutdown>(OnControllerShutdown);
+        SubscribeLocalEvent<ElevatorIndicatorComponent, ExaminedEvent>(OnIndicatorExamine);
+        SubscribeLocalEvent<ElevatorDoorComponent, BeforeDoorAutoCloseEvent>(OnDoorAutoClose);
 
         InitializeUi();
     }
 
-    private void OnControllerMapInit(Entity<CEElevatorControllerComponent> ent, ref MapInitEvent args)
+    private void OnControllerMapInit(Entity<ElevatorControllerComponent> ent, ref MapInitEvent args)
     {
         // Skip while paused (mapping) — would bake shaft tiles/speakers into the save. Update() retries
         // once the z-network links this deck's grid.
@@ -76,7 +76,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         TryInitialize(ent);
     }
 
-    private void OnControllerShutdown(Entity<CEElevatorControllerComponent> ent, ref ComponentShutdown args)
+    private void OnControllerShutdown(Entity<ElevatorControllerComponent> ent, ref ComponentShutdown args)
     {
         if (!TerminatingOrDeleted(ent.Comp.MusicSpeaker))
             QueueDel(ent.Comp.MusicSpeaker);
@@ -87,7 +87,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     /// Caches footprint, cab floor tile and served decks. Requires the deck grid to be linked into a
     /// z-network (<see cref="CEZLinkedGridComponent"/>); returns false until then.
     /// </summary>
-    private bool TryInitialize(Entity<CEElevatorControllerComponent> ent)
+    private bool TryInitialize(Entity<ElevatorControllerComponent> ent)
     {
         var comp = ent.Comp;
         if (comp.Initialized)
@@ -147,12 +147,12 @@ public sealed partial class CEElevatorSystem : EntitySystem
 
         // Cab starts on its deck: open that floor's door, shut the rest.
         OpenDoorOnDeck(comp.ElevatorId, comp.CurrentDepth);
-        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), CEElevatorDirection.Idle);
+        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), ElevatorDirection.Idle);
         return true;
     }
 
     /// <summary>Walks the z-network up and down from the start deck while the footprint is an open shaft.</summary>
-    private void DiscoverServedDepths(Entity<CEElevatorControllerComponent> ent, int startDepth)
+    private void DiscoverServedDepths(Entity<ElevatorControllerComponent> ent, int startDepth)
     {
         var comp = ent.Comp;
         var served = new HashSet<int> { startDepth };
@@ -169,7 +169,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     /// True if a grid exists at <paramref name="depth"/> and every footprint tile is empty or the shaft
     /// floor tile (the mapper may build the shaft either way).
     /// </summary>
-    private bool ShaftOpenAtDepth(CEElevatorControllerComponent comp, int depth)
+    private bool ShaftOpenAtDepth(ElevatorControllerComponent comp, int depth)
     {
         if (!TryGetDeckGrid(comp, depth, out var gridUid, out var grid))
             return false;
@@ -186,7 +186,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Resolves the grid for a deck depth via the controller's linked-grid peer map.</summary>
-    private bool TryGetDeckGrid(CEElevatorControllerComponent comp, int depth, out EntityUid gridUid, out MapGridComponent grid)
+    private bool TryGetDeckGrid(ElevatorControllerComponent comp, int depth, out EntityUid gridUid, out MapGridComponent grid)
     {
         gridUid = EntityUid.Invalid;
         grid = default!;
@@ -206,7 +206,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         return true;
     }
 
-    private IEnumerable<Vector2i> FootprintTiles(CEElevatorControllerComponent comp)
+    private IEnumerable<Vector2i> FootprintTiles(ElevatorControllerComponent comp)
     {
         for (var i = 0; i < comp.Width; i++)
         for (var j = 0; j < comp.Height; j++)
@@ -214,14 +214,14 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Lowest served deck. It keeps a solid floor when vacated; decks above reopen to shaft.</summary>
-    private int BasementDepth(CEElevatorControllerComponent comp)
+    private int BasementDepth(ElevatorControllerComponent comp)
         => comp.ServedDepths.Count > 0 ? comp.ServedDepths[0] : comp.CurrentDepth;
 
     /// <summary>
     /// Lays the cab floor pattern on the deck it now occupies, or clears it when vacated. Only the
     /// basement keeps a solid floor; decks above reopen to empty space so the crew falls down the shaft.
     /// </summary>
-    private void SetFootprintTiles(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, int depth, bool cabPresent)
+    private void SetFootprintTiles(ElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid, int depth, bool cabPresent)
     {
         var vacatedTile = depth == BasementDepth(comp) ? comp.ResolvedShaftFloorTile : Tile.Empty;
         foreach (var tile in FootprintTiles(comp))
@@ -236,7 +236,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Local coordinates at the centre of the cab footprint on a given deck grid (for sound).</summary>
-    private EntityCoordinates FootprintCenter(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
+    private EntityCoordinates FootprintCenter(ElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
     {
         var center = comp.OriginTile + new Vector2i(comp.Width / 2, comp.Height / 2);
         return TileCenter(gridUid, grid, center);
@@ -249,7 +249,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Spawns the descent telegraph on every footprint tile of the given deck.</summary>
-    private void SpawnTravelWarnings(CEElevatorControllerComponent comp, int depth)
+    private void SpawnTravelWarnings(ElevatorControllerComponent comp, int depth)
     {
         if (!TryGetDeckGrid(comp, depth, out var gridUid, out var grid))
             return;
@@ -263,7 +263,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>If the cab's next step is downward, telegraph the destination floor (SS13 lift_travel).</summary>
-    private void MaybeWarnNextDescent(CEElevatorControllerComponent comp)
+    private void MaybeWarnNextDescent(ElevatorControllerComponent comp)
     {
         if (!comp.WarnsOnDownMovement)
             return;
@@ -289,16 +289,16 @@ public sealed partial class CEElevatorSystem : EntitySystem
         comp.NextStepTime = _timing.CurTime + TimeSpan.FromSeconds(comp.PerDeckTravelSeconds);
 
         CloseAllDoors(comp.ElevatorId);
-        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), CEElevatorDirectionFor(comp));
+        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), ElevatorDirectionFor(comp));
         UpdatePanelUis(comp.ElevatorId);
         MaybeWarnNextDescent(comp);
         PlayLegStartSound(comp);
         return true;
     }
 
-    private bool TryGetController(string elevatorId, [NotNullWhen(true)] out Entity<CEElevatorControllerComponent>? ent)
+    private bool TryGetController(string elevatorId, [NotNullWhen(true)] out Entity<ElevatorControllerComponent>? ent)
     {
-        var query = AllEntityQuery<CEElevatorControllerComponent>();
+        var query = AllEntityQuery<ElevatorControllerComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
             if (comp.ElevatorId != elevatorId)
@@ -316,7 +316,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
         base.Update(frameTime);
 
         var now = _timing.CurTime;
-        var query = AllEntityQuery<CEElevatorControllerComponent>();
+        var query = AllEntityQuery<ElevatorControllerComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
             // Stay inert on paused maps. Update runs globally, but mapping maps load paused and
@@ -346,7 +346,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Moves the cab one deck toward its target: crush, lay floor, carry riders, restore the origin shaft floor.</summary>
-    private void StepCab(Entity<CEElevatorControllerComponent> ent)
+    private void StepCab(Entity<ElevatorControllerComponent> ent)
     {
         var comp = ent.Comp;
         var dir = Math.Sign(comp.TargetDepth - comp.CurrentDepth); // +1 up, -1 down
@@ -403,10 +403,10 @@ public sealed partial class CEElevatorSystem : EntitySystem
         if (!TerminatingOrDeleted(comp.MusicSpeaker))
             _zLevels.TeleportToZLevelCoordinates(comp.MusicSpeaker, FootprintCenter(comp, toGridUid, toGrid), toDepth, dir);
 
-        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), dir > 0 ? CEElevatorDirection.Up : CEElevatorDirection.Down);
+        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), dir > 0 ? ElevatorDirection.Up : ElevatorDirection.Down);
     }
 
-    private void FinishMove(Entity<CEElevatorControllerComponent> ent)
+    private void FinishMove(Entity<ElevatorControllerComponent> ent)
     {
         var comp = ent.Comp;
         comp.Moving = false;
@@ -414,12 +414,12 @@ public sealed partial class CEElevatorSystem : EntitySystem
         OpenDoorOnDeck(comp.ElevatorId, comp.CurrentDepth);
         PlayArrivalPing(comp, comp.CurrentDepth);
 
-        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), CEElevatorDirection.Idle);
+        UpdateIndicators(comp.ElevatorId, DisplayFloor(comp, comp.CurrentDepth), ElevatorDirection.Idle);
         UpdatePanelUis(comp.ElevatorId);
     }
 
     /// <summary>Lift sound when a leg starts — on the cab's level and the levels directly above/below it.</summary>
-    private void PlayLegStartSound(CEElevatorControllerComponent comp)
+    private void PlayLegStartSound(ElevatorControllerComponent comp)
     {
         if (comp.TravelSound == null)
             return;
@@ -432,7 +432,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Arrival ping, played from a linked control (call button / panel) on that floor.</summary>
-    private void PlayArrivalPing(CEElevatorControllerComponent comp, int depth)
+    private void PlayArrivalPing(ElevatorControllerComponent comp, int depth)
     {
         if (comp.ArriveSound == null)
             return;
@@ -446,7 +446,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     /// <summary>Finds a call button (preferred) or panel of this elevator on the given deck.</summary>
     private bool TryGetControlOnDeck(string elevatorId, int depth, out EntityUid control)
     {
-        var buttons = AllEntityQuery<CEElevatorCallButtonComponent>();
+        var buttons = AllEntityQuery<ElevatorCallButtonComponent>();
         while (buttons.MoveNext(out var uid, out var button))
         {
             if (button.ElevatorId == elevatorId && TryGetEntityDeckDepth(uid, out var d) && d == depth)
@@ -456,7 +456,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
             }
         }
 
-        var panels = AllEntityQuery<CEElevatorPanelComponent>();
+        var panels = AllEntityQuery<ElevatorPanelComponent>();
         while (panels.MoveNext(out var uid, out var panel))
         {
             if (panel.ElevatorId == elevatorId && TryGetEntityDeckDepth(uid, out var d) && d == depth)
@@ -471,7 +471,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Crushes living mobs / damages structures standing in the destination shaft footprint.</summary>
-    private void CrushDestination(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
+    private void CrushDestination(ElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
     {
         var victims = GatherFootprintEntities(comp, gridUid, grid);
         foreach (var victim in victims)
@@ -488,7 +488,7 @@ public sealed partial class CEElevatorSystem : EntitySystem
     }
 
     /// <summary>Mobs, items and anchored structures standing on the cab footprint (see <see cref="CanRideCab"/>).</summary>
-    private List<EntityUid> GatherFootprintEntities(CEElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
+    private List<EntityUid> GatherFootprintEntities(ElevatorControllerComponent comp, EntityUid gridUid, MapGridComponent grid)
     {
         var footprint = new HashSet<Vector2i>(FootprintTiles(comp));
         var result = new List<EntityUid>();
@@ -541,12 +541,12 @@ public sealed partial class CEElevatorSystem : EntitySystem
     /// wall-attached fixtures (<see cref="WallMountComponent"/> or the <c>WallLight</c> tag). Everything
     /// else on the footprint rides the cab.
     /// </summary>
-    private bool CanRideCab(EntityUid uid, CEElevatorControllerComponent comp)
+    private bool CanRideCab(EntityUid uid, ElevatorControllerComponent comp)
     {
         if (!_xformQuery.HasComponent(uid))
             return false;
         if (HasComp<MapGridComponent>(uid) ||
-            HasComp<CEElevatorControllerComponent>(uid) ||
+            HasComp<ElevatorControllerComponent>(uid) ||
             HasComp<WallMountComponent>(uid) ||
             _tag.HasTag(uid, WallLightTag) ||
             uid == comp.MusicSpeaker)
@@ -555,10 +555,10 @@ public sealed partial class CEElevatorSystem : EntitySystem
         return true;
     }
 
-    private static CEElevatorDirection CEElevatorDirectionFor(CEElevatorControllerComponent comp)
+    private static ElevatorDirection ElevatorDirectionFor(ElevatorControllerComponent comp)
     {
         if (!comp.Moving || comp.TargetDepth == comp.CurrentDepth)
-            return CEElevatorDirection.Idle;
-        return comp.TargetDepth > comp.CurrentDepth ? CEElevatorDirection.Up : CEElevatorDirection.Down;
+            return ElevatorDirection.Idle;
+        return comp.TargetDepth > comp.CurrentDepth ? ElevatorDirection.Up : ElevatorDirection.Down;
     }
 }

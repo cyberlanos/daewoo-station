@@ -5,7 +5,7 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// Linked doors close while the cab is in transit; only the door on the cab's floor opens on arrival.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEElevatorDoorComponent : Component
+public sealed partial class ElevatorDoorComponent : Component
 {
     /// <summary>Id of the elevator this door belongs to.</summary>
     [DataField(required: true)]

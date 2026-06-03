@@ -1,5 +1,5 @@
 - type: tile
-  id: CEElevatorSolidMetalGrate
+  id: ElevatorSolidMetalGrate
   parent: FloorSteel
   name: solid metal grate
   sprite: /Textures/_RMC14/Structures/catwalk.rsi/solidgrate5.png
@@ -9,7 +9,7 @@
     collection: FootstepCatwalk
 
 - type: tile
-  id: CEElevatorPlatformTile
+  id: ElevatorPlatformTile
   parent: FloorSteel
   name: elevator platform
   sprite: /Textures/Tiles/lattice.png
@@ -19,7 +19,7 @@
     collection: FootstepCatwalk
 
 - type: tile
-  id: CEElevatorLinearTransportModule
+  id: ElevatorLinearTransportModule
   parent: FloorSteel
   name: linear transport module
   sprite: /Textures/_RMC14/Structures/catwalk.rsi/catwalk.png

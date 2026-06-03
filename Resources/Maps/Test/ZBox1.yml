@@ -343,25 +343,25 @@ entities:
     - type: Transform
       pos: -1.5,1.5
       parent: 2
-- proto: CEElevatorCallButton
+- proto: ElevatorCallButton
   entities:
   - uid: 133
     components:
     - type: Transform
       pos: 9.5,1.5
       parent: 2
-    - type: CEElevatorCallButton
+    - type: ElevatorCallButton
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
-- proto: CEElevatorIndicator
+- proto: ElevatorIndicator
   entities:
   - uid: 135
     components:
     - type: Transform
       pos: 9.5,1.5
       parent: 2
-    - type: CEElevatorIndicator
+    - type: ElevatorIndicator
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
@@ -370,11 +370,11 @@ entities:
     - type: Transform
       pos: 13.5,2.5
       parent: 2
-    - type: CEElevatorIndicator
+    - type: ElevatorIndicator
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
-- proto: CEElevatorMusicSpeaker
+- proto: ElevatorMusicSpeaker
   entities:
   - uid: 158
     components:
@@ -383,14 +383,14 @@ entities:
       parent: 3
     - type: AmbientSound
       range: 5
-- proto: CEElevatorPanel
+- proto: ElevatorPanel
   entities:
   - uid: 77
     components:
     - type: Transform
       pos: 12.5,2.5
       parent: 2
-    - type: CEElevatorPanel
+    - type: ElevatorPanel
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
@@ -1039,6 +1039,6 @@ entities:
       rot: 1.5707963267948966 rad
       pos: 10.5,-0.5
       parent: 2
-    - type: CEElevatorDoor
+    - type: ElevatorDoor
       elevatorId: elevator-1
 ...

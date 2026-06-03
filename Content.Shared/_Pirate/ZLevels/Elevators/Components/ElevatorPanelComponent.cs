@@ -5,7 +5,7 @@ namespace Content.Shared._Pirate.ZLevels.Elevators.Components;
 /// Resolves its controller at runtime by matching <see cref="ElevatorId"/>.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEElevatorPanelComponent : Component
+public sealed partial class ElevatorPanelComponent : Component
 {
     /// <summary>Id of the elevator this panel controls.</summary>
     [DataField(required: true)]
