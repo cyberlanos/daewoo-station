@@ -146,10 +146,10 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         { // Pirate: multiz
             NavMap.MapUid = xform.GridUid;
             _zLevelRootGrid = xform.GridUid; // Pirate: multiz
-            NavMap.CEZLevelSelectorEnabled = true; // Pirate: multiz
-            NavMap.CEZFilterTrackedBlipsToDisplayedMap = true; // Pirate: multiz
-            NavMap.CESetZLevelSelectorRoot(xform.GridUid); // Pirate: multiz
-            NavMap.CEZLevelSelectedAction += OnZLevelSelected; // Pirate: multiz
+            NavMap.ZLevelSelectorEnabled = true; // Pirate: multiz
+            NavMap.ZFilterTrackedBlipsToDisplayedMap = true; // Pirate: multiz
+            NavMap.SetZLevelSelectorRoot(xform.GridUid); // Pirate: multiz
+            NavMap.ZLevelSelectedAction += OnZLevelSelected; // Pirate: multiz
         } // Pirate: multiz
 
         else
@@ -431,7 +431,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
                     else
                     {
                         _trackedEntity = sensor.SuitSensorUid;
-                        CESelectZLevelForCoordinates(coordinates.Value); // Pirate: multiz
+                        SelectZLevelForCoordinates(coordinates.Value); // Pirate: multiz
                         NavMap.CenterToCoordinates(coordinates.Value);
                     }
 
@@ -462,7 +462,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
     {
         SendZLevelSelectedMessageAction?.Invoke(_entManager.GetNetEntity(gridUid), depth);
     }
-    private void CESelectZLevelForCoordinates(EntityCoordinates coordinates)
+    private void SelectZLevelForCoordinates(EntityCoordinates coordinates)
     {
         if (_zLevelRootGrid is not { } rootGrid ||
             !_entManager.TryGetComponent<CEZLinkedGridComponent>(rootGrid, out var rootLinked))
@@ -472,7 +472,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         if (mapCoordinates.MapId == MapId.Nullspace)
             return;
 
-        if (!CETryGetLinkedGridForMap(mapCoordinates.MapId, rootGrid, rootLinked, out var targetGrid, out var depth))
+        if (!TryGetLinkedGridForMap(mapCoordinates.MapId, rootGrid, rootLinked, out var targetGrid, out var depth))
             return;
 
         if (NavMap.MapUid == targetGrid)
@@ -483,7 +483,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         SendZLevelSelectedMessageAction?.Invoke(_entManager.GetNetEntity(targetGrid), depth);
     }
 
-    private bool CETryGetLinkedGridForMap(
+    private bool TryGetLinkedGridForMap(
         MapId mapId,
         EntityUid rootGrid,
         CEZLinkedGridComponent rootLinked,
@@ -493,7 +493,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         targetGrid = null;
         depth = 0;
 
-        if (CETryMatchGridMap(rootGrid, mapId))
+        if (TryMatchGridMap(rootGrid, mapId))
         {
             targetGrid = rootGrid;
             depth = rootLinked.Depth;
@@ -502,7 +502,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
 
         foreach (var (peerDepth, peerGrid) in rootLinked.PeerGrids)
         {
-            if (!CETryMatchGridMap(peerGrid, mapId))
+            if (!TryMatchGridMap(peerGrid, mapId))
                 continue;
 
             targetGrid = peerGrid;
@@ -513,7 +513,7 @@ public sealed partial class CrewMonitoringWindow : FancyWindow
         return false;
     }
 
-    private bool CETryMatchGridMap(EntityUid gridUid, MapId mapId)
+    private bool TryMatchGridMap(EntityUid gridUid, MapId mapId)
     {
         return _entManager.TryGetComponent<TransformComponent>(gridUid, out var xform) &&
                xform.MapID == mapId;

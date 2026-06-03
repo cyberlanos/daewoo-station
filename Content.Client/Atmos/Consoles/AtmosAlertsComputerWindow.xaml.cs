@@ -84,10 +84,10 @@ public sealed partial class AtmosAlertsComputerWindow : FancyWindow
         if (_entManager.TryGetComponent<TransformComponent>(owner, out var xform))
         {
             NavMap.MapUid = xform.GridUid;
-            NavMap.CEZLevelSelectorEnabled = true; // Pirate: multiz
-            NavMap.CEZFilterTrackedBlipsToDisplayedMap = true; // Pirate: multiz
-            NavMap.CESetZLevelSelectorRoot(xform.GridUid); // Pirate: multiz
-            NavMap.CEZLevelSelectedAction += OnZLevelSelected; // Pirate: multiz
+            NavMap.ZLevelSelectorEnabled = true; // Pirate: multiz
+            NavMap.ZFilterTrackedBlipsToDisplayedMap = true; // Pirate: multiz
+            NavMap.SetZLevelSelectorRoot(xform.GridUid); // Pirate: multiz
+            NavMap.ZLevelSelectedAction += OnZLevelSelected; // Pirate: multiz
 
             // Assign station name      
             if (_entManager.TryGetComponent<MetaDataComponent>(xform.GridUid, out var stationMetaData))

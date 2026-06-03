@@ -68,10 +68,10 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             consoleCoords = xform.Coordinates;
             NavMap.MapUid = xform.GridUid;
             #region Pirate: multiz
-            NavMap.CEZLevelSelectorEnabled = true;
-            NavMap.CEZFilterTrackedBlipsToDisplayedMap = true;
-            NavMap.CESetZLevelSelectorRoot(xform.GridUid);
-            NavMap.CEZLevelSelectedAction += OnZLevelSelected;
+            NavMap.ZLevelSelectorEnabled = true;
+            NavMap.ZFilterTrackedBlipsToDisplayedMap = true;
+            NavMap.SetZLevelSelectorRoot(xform.GridUid);
+            NavMap.ZLevelSelectedAction += OnZLevelSelected;
             #endregion
 
             // Assign station name
