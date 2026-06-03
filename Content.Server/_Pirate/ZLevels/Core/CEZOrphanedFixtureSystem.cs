@@ -1,6 +1,5 @@
 using System.Numerics;
-using Content.Shared.Item;
-using Content.Shared.Mobs.Components;
+using Content.Shared.Whitelist;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
@@ -10,14 +9,12 @@ using Robust.Shared.Physics.Systems;
 namespace Content.Server._Pirate.ZLevels.Core;
 
 /// <summary>
-/// Re-homes "orphaned" fixtures onto the deck grid they belong to.
+/// Re-homes wall fixtures mapped over an empty tile onto the deck grid below them.
 ///
-/// A fixture (wall light, sign, wallmount, machine, …) mapped over an EMPTY tile has no tile to snap to,
-/// so the engine parents it to the MAP, unanchored and dynamic. It looks fine in the paused mapping view
-/// but drifts/falls and is lost in a live round.
-///
-/// At map-init we re-parent any such map-parented entity onto the grid it sits over and pin it Static so
-/// it stays put over the opening. Mobs and items are skipped — they have their own z-falling.
+/// With no tile to snap to, the engine leaves them map-parented, unanchored and dynamic — fine in the
+/// paused mapping view, but they drift/fall in a live round. At map-init we re-parent them onto the grid
+/// they sit over and anchor (or pin Static over a hole). Only <see cref="FixtureWhitelist"/> entities are
+/// touched.
 /// </summary>
 public sealed class CEZOrphanedFixtureSystem : EntitySystem
 {
@@ -25,6 +22,14 @@ public sealed class CEZOrphanedFixtureSystem : EntitySystem
     [Dependency] private readonly SharedMapSystem _map = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+    [Dependency] private readonly EntityWhitelistSystem _whitelist = default!;
+
+    // WallMount covers wallmounts/signs/machines; lights only carry the WallLight tag.
+    private static readonly EntityWhitelist FixtureWhitelist = new()
+    {
+        Components = ["WallMount"],
+        Tags = ["WallLight"],
+    };
 
     public override void Initialize()
     {
@@ -34,20 +39,16 @@ public sealed class CEZOrphanedFixtureSystem : EntitySystem
 
     private void OnMapInit(EntityUid uid, TransformComponent xform, ref MapInitEvent args)
     {
-        // Only entities parented directly to a map (no grid) are orphans.
+        // Only map-parented (gridless) fixtures are orphans.
         if (xform.GridUid != null || xform.MapUid is not { } mapUid || xform.ParentUid != mapUid)
             return;
 
-        // Skip maps/grids, and mobs/items (those should fall through the hole).
-        if (HasComp<MapComponent>(uid) ||
-            HasComp<MapGridComponent>(uid) ||
-            HasComp<MobStateComponent>(uid) ||
-            HasComp<ItemComponent>(uid))
+        if (!_whitelist.IsValid(FixtureWhitelist, uid))
             return;
 
         var worldPos = _transform.GetWorldPosition(xform);
 
-        // Approximate match so a point over a hole still resolves to the surrounding deck grid.
+        // Slightly fat AABB so a point over a hole still resolves to the surrounding deck grid.
         var aabb = new Box2(worldPos - new Vector2(0.15f, 0.15f), worldPos + new Vector2(0.15f, 0.15f));
         var grids = new List<Entity<MapGridComponent>>();
         _mapManager.FindGridsIntersecting(xform.MapID, aabb, ref grids, approx: true, includeMap: false);
@@ -56,15 +57,17 @@ public sealed class CEZOrphanedFixtureSystem : EntitySystem
 
         var deck = grids[0];
 
-        // Disable grid traversal first, or SharedGridTraversalSystem reparents the entity back to the map
-        // (TryFindGridAt treats the empty hole tile as "no grid"). Off, it stays bound to the deck grid.
+        // Re-parenting onto a terminating grid just errors out in the transform system.
+        if (TerminatingOrDeleted(deck.Owner))
+            return;
+
+        // Without this SharedGridTraversalSystem snaps it back to the map (the hole tile reads as "no grid").
         xform.GridTraversal = false;
 
-        // Re-parent onto the deck grid, preserving world position.
         var localPos = Vector2.Transform(worldPos, _transform.GetInvWorldMatrix(deck.Owner));
         _transform.SetCoordinates(uid, new EntityCoordinates(deck.Owner, localPos));
 
-        // Over a solid tile: anchor normally. Over a hole: pin Static (neither drifts nor z-falls).
+        // Solid tile: anchor. Hole: pin Static so it neither drifts nor z-falls.
         var tile = _map.TileIndicesFor(deck.Owner, deck.Comp, Transform(uid).Coordinates);
         if (_map.TryGetTileRef(deck.Owner, deck.Comp, tile, out var tileRef) && !tileRef.Tile.IsEmpty)
         {
