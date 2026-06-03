@@ -2901,7 +2901,7 @@
   parent: ClothingShoesLoadoutCivilianBase
   id: ClothingShoesBootsJackFake
   name: jackboots
-  description: Civilian-grade replica of Nanotrasen Security combat boots. Looks the part but lacks the performanceвЂ”ideal for the heated situations.
+  description: Civilian-grade replica of Nanotrasen Security combat boots. Looks the part but lacks the performance - ideal for the heated situations.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots.rsi
