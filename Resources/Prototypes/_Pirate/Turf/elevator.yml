@@ -2,7 +2,7 @@
   id: ElevatorSolidMetalGrate
   parent: FloorSteel
   name: solid metal grate
-  sprite: /Textures/_RMC14/Structures/catwalk.rsi/solidgrate5.png
+  sprite: /Textures/_Pirate/Tiles/Elevator/solidgrate5.png
   variants: 1
   placementVariants: [1.0]
   footstepSounds:
@@ -22,7 +22,7 @@
   id: ElevatorLinearTransportModule
   parent: FloorSteel
   name: linear transport module
-  sprite: /Textures/_RMC14/Structures/catwalk.rsi/catwalk.png
+  sprite: /Textures/_Pirate/Tiles/Elevator/catwalk.png
   variants: 1
   placementVariants: [1.0]
   footstepSounds:
