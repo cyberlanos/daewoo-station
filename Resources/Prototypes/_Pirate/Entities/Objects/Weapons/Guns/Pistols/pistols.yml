@@ -52,7 +52,7 @@
         whitelist:
           tags:
             - CartridgeMagnum
-  - type: UpgradeableWeapon
+  - type: ItemUpgradeable
   - type: ContainerContainer
     containers:
       flashlight: !type:ContainerSlot
@@ -91,7 +91,7 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/_Pirate/Weapons/Guns/Gunshots/pistol.ogg
-  - type: UpgradeableWeapon
+  - type: ItemUpgradeable
   - type: ItemSlots
     slots:
       flashlight:
