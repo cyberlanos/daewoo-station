@@ -68,7 +68,7 @@
         whitelist:
           tags:
             - CartridgePistol
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ContainerContainer # DOWNSTREAM-TPirates: gun flashlights
     containers:
       flashlight: !type:ContainerSlot
@@ -136,7 +136,7 @@
     - oni-cannot-shoot-guns-2
     - oni-cannot-shoot-guns-3
   - type: AmmoCounter
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ItemSlots # DOWNSTREAM-TPirates: gun flashlights
     slots:
       flashlight:

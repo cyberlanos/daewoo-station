@@ -344,7 +344,7 @@
       right:
       - state: mode-inhand-right
         shader: unshaded
-  - type: UpgradeableWeapon
+  - type: ItemUpgradeable
   - type: ItemSlots
     slots:
       flashlight:
