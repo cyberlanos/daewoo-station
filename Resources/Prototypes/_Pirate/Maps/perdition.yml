@@ -59,7 +59,7 @@
             SecurityOfficer: [ 2, 3 ]
             SecurityCadet: [ 1, 1 ]
             Lawyer: [ 0, 0 ]
-            Brigmedic: [ 0, 0 ]
+            Brigmedic: [ 1, 1 ]
           #logistics
             SalvageSpecialist: [ 3, 3 ]
             CargoTechnician: [ 2, 3 ]
