@@ -112,3 +112,5 @@ changeling-stasis-defib = Удар струму пронизує нас. Наш 
 changeling-regenerate = Наше тіло миттєво позбувається будь-яких ран і зламаних кісток.
 changeling-regenerate-limbs = Наше тіло видає гучний тріск, коли відсутні кінцівки, рани та зламані кістки миттєво відновлюються!
 changeling-chameleon-fire = Наша прозорість зникає, коли вогонь охоплює нас!
+changeling-darkadapt-active = Ми готуємося пристосуватися до темряви.
+changeling-darkadapt-inactive = Ми припиняємо готуватися до темряви.
