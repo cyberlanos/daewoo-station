@@ -281,6 +281,7 @@
     - map: ["enum.HumanoidVisualLayers.Face"] #Goob 120 - why did we have face on dummy but not basespecies
     - map: [ "gloves" ]
     - map: [ "shoes" ]
+    - map: [ "jumpsuitOverShoes" ] # Pirate: loadout - bookmark for floor-length garments to draw over feet/shoes
     - map: [ "ears" ]
     - map: [ "eyes" ]
     - map: [ "id" ]
@@ -637,6 +638,7 @@
     - map: [ "enum.HumanoidVisualLayers.Face" ] # Goob 3370
     - map: [ "gloves" ]
     - map: [ "shoes" ]
+    - map: [ "jumpsuitOverShoes" ] # Pirate: loadout - bookmark for floor-length garments to draw over feet/shoes
     - map: [ "ears" ]
     - map: [ "eyes" ]
     - map: [ "id" ]
