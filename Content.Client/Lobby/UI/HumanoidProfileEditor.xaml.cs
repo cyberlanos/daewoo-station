@@ -229,6 +229,7 @@ namespace Content.Client.Lobby.UI
         private LoadoutWindow? _loadoutWindow;
         private bool _showUnavailableLoadouts; // Pirate: loadout
         private readonly Dictionary<(ProtoId<LoadoutGroupPrototype> Group, ProtoId<LoadoutPrototype> Loadout), List<LoadoutIconButton>> _loadoutIconButtons = new(); // Pirate: loadout
+        private readonly Dictionary<int, BoxContainer> _loadoutSidebarSlots = new(); // Pirate: loadout
 
         private bool _exporting;
         private bool _imaging;
@@ -307,6 +308,8 @@ namespace Content.Client.Lobby.UI
             _requirements = requirements;
             _controller = UserInterfaceManager.GetUIController<LobbyUIController>();
             _sprite = _entManager.System<SpriteSystem>();
+
+            LoadoutSlotTabs.OnTabChanged += MoveLoadoutSidebarToTab; // Pirate: loadout
 
             _maxNameLength = _cfgManager.GetCVar(CCVars.MaxNameLength);
             _allowFlavorText = _cfgManager.GetCVar(CCVars.FlavorText);
@@ -1011,6 +1014,8 @@ namespace Content.Client.Lobby.UI
         {
             _loadoutWindow?.Dispose();
             #region Pirate: loadout
+            LoadoutSidebarScroll.Orphan();
+            _loadoutSidebarSlots.Clear();
             LoadoutSlotTabs.DisposeAllChildren();
             SelectedLoadoutsList.DisposeAllChildren();
             _loadoutIconButtons.Clear();
@@ -1389,9 +1394,9 @@ namespace Content.Client.Lobby.UI
 
             var showUnavailable = new CheckBox
             {
-                Text = Loc.GetString("humanoid-profile-editor-show-unavailable"), // Pirate: loadout
+                Text = Loc.GetString("humanoid-profile-editor-show-unavailable"),
                 Pressed = _showUnavailableLoadouts,
-                Margin = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 6, 0, 8),
             };
 
             showUnavailable.OnToggled += args =>
@@ -1449,6 +1454,7 @@ namespace Content.Client.Lobby.UI
             var categories = CreateLoadoutCategoryNames();
 
             var result = new Dictionary<string, BoxContainer>();
+            _loadoutSidebarSlots.Clear();
 
             foreach (var category in categories)
             {
@@ -1464,18 +1470,50 @@ namespace Content.Client.Lobby.UI
                     HScrollEnabled = false,
                     HorizontalExpand = true,
                     VerticalExpand = true,
+                    SizeFlagsStretchRatio = 4,
                     Children =
                     {
                         body,
                     },
                 };
 
-                LoadoutSlotTabs.AddChild(scroll);
+                var sidebarSlot = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Vertical,
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                    SizeFlagsStretchRatio = 1,
+                };
+
+                var row = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                    Children =
+                    {
+                        scroll,
+                        sidebarSlot,
+                    },
+                };
+
+                LoadoutSlotTabs.AddChild(row);
                 LoadoutSlotTabs.SetTabTitle(LoadoutSlotTabs.ChildCount - 1, GetLoadoutCategoryTitle(category));
+                _loadoutSidebarSlots[LoadoutSlotTabs.ChildCount - 1] = sidebarSlot;
                 result[category] = body;
             }
 
+            MoveLoadoutSidebarToTab(LoadoutSlotTabs.CurrentTab);
             return result;
+        }
+
+        private void MoveLoadoutSidebarToTab(int tab)
+        {
+            if (!_loadoutSidebarSlots.TryGetValue(tab, out var slot) || LoadoutSidebarScroll.Parent == slot)
+                return;
+
+            LoadoutSidebarScroll.Orphan();
+            slot.AddChild(LoadoutSidebarScroll);
         }
 
         private string GetLoadoutCategoryTitle(string category)
