@@ -2174,6 +2174,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2198,6 +2206,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2437,6 +2453,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2449,6 +2473,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2461,6 +2493,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2497,6 +2537,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2509,6 +2557,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2569,6 +2625,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2593,6 +2657,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2605,6 +2677,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2677,6 +2757,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2689,6 +2777,14 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  - type: HideClothingLayerClothing
+    hiddenSlots:
+    - shoes
 
 
 - type: entity
@@ -2725,6 +2821,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot
@@ -2744,6 +2841,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot
