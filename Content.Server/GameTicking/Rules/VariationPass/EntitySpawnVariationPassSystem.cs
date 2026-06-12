@@ -21,7 +21,7 @@ public sealed class EntitySpawnVariationPassSystem : VariationPassSystem<EntityS
 
         for (var i = 0; i < trashTiles; i++)
         {
-            if (!TryFindRandomTileOnStation(args.Station, out _, out _, out var coords))
+            if (!TryFindRandomTileOnStationAllFloors(args.Station, out _, out _, out var coords)) // Pirate: multiz
                 continue;
 
             var ents = EntitySpawnCollection.GetSpawns(ent.Comp.Entities, Random);

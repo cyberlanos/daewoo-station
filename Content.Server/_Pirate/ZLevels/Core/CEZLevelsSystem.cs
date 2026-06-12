@@ -4,6 +4,7 @@
  */
 
 using Content.Server._Pirate.ZLevels.Core.Components;
+using Content.Server.GameTicking.Rules;
 using Content.Shared.Station.Components;
 using Content.Server.Station.Events;
 using Content.Server.Station.Systems;
@@ -34,7 +35,10 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         InitItems(); // Pirate: multiz
         InitTransitionBudget();
 
-        SubscribeLocalEvent<CEStationZLevelsComponent, StationPostInitEvent>(OnStationPostInit);
+        // Run before the round-start variation rule so the floor grids are attached + linked
+        // by the time it spreads trash/decals/puddles across the station.
+        SubscribeLocalEvent<CEStationZLevelsComponent, StationPostInitEvent>(OnStationPostInit,
+            before: new[] { typeof(RoundstartStationVariationRuleSystem) });
     }
 
     private void OnStationPostInit(Entity<CEStationZLevelsComponent> ent, ref StationPostInitEvent args)
