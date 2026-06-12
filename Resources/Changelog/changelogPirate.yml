@@ -1437,3 +1437,13 @@ Entries:
       message: прибрав TCAF розгрузку з лоадауту
   id: 125
   time: '2026-05-22T15:25:26.0000000+00:00'
+- author: AgentMaper
+  changes:
+    - type: Add
+      message: Додана нова мапа - Piramide Station (автор - The_Question)
+    - type: Add
+      message: Доданий бригмедик на Perdition Island
+    - type: Fix
+      message: Виправлені проблеми Perdition Island
+  id: 126
+  time: '2026-06-12T06:08:49.0000000+00:00'
