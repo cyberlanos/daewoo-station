@@ -165,11 +165,10 @@
       - Narcolepsy
       - Muted
       - WheelchairBound # Pirate end
-    - !type:SpeciesRequirement # Pirate edit
-      inverted: true
-      species:
-      #- Felinid
-      - Hydrakin
+    #- !type:SpeciesRequirement # Pirate remove requireme
+    #  inverted: true
+    #  species:
+    #  - Felinid
       #any MRP using our code might eventually want to use it
     # - !type:SaturationRequirement # MisandryBox - no neon hair on captain
     #   hairColorSaturation: 0.30

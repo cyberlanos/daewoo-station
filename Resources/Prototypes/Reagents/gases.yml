@@ -51,12 +51,6 @@
         conditions:
         - !type:OrganType
           type: Human
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:Oxygenate
         conditions:
         - !type:OrganType
@@ -252,22 +246,11 @@
             Poison: 1.5
     Gas:
       effects:
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:HealthChange
         conditions:
         - !type:OrganType # Goobstation - Yowie
           type: Yowie
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         - !type:OrganType # EE - Plasmeme
           type: Plasmaman
           shouldHave: false
@@ -291,18 +274,6 @@
             min: 1.5
         clear: True
         time: 5
-      # Pirate port start: Mono - Hydrakin
-      - !type:HealthChange # Mono
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-        - !type:ReagentThreshold
-          reagent: Plasma
-          min: 0.01
-        damage:
-          types:
-            Heat: -0.5
-      # Pirate port end: Mono - Hydrakin
       - !type:Oxygenate
         factor: 4
         conditions:
@@ -382,12 +353,6 @@
             Radiation: 1.5
     Gas:
       effects:
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:HealthChange
         conditions:
         - !type:OrganType # Shitmed - Cybernetic Organs
@@ -417,19 +382,6 @@
           types:
             Radiation:
               0.5
-      # Pirate port start: Mono - Hydrakin
-      - !type:HealthChange
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-        - !type:ReagentThreshold
-          reagent: Tritium
-          min: 0.01
-        damage:
-          types:
-            Heat: -0.5
-            Poison: -0.5
-      # Pirate port end: Mono - Hydrakin
 
 - type: reagent
   id: CarbonDioxide
@@ -445,12 +397,6 @@
         conditions:
         - !type:OrganType
           type: Plant
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:HealthChange
         conditions:
         - !type:OrganType
@@ -459,11 +405,6 @@
         - !type:OrganType
           type: Vox
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         - !type:OrganType # Shitmed - Cybernetic Organs
           type: Cybernetic
           shouldHave: false
@@ -547,12 +488,6 @@
         conditions:
         - !type:OrganType
           type: Vox
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:Oxygenate
         conditions:
         - !type:OrganType
@@ -602,21 +537,6 @@
             Poison: 2
     Gas:
       effects:
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      - !type:MovespeedModifier
-        walkSpeedModifier: 1.15
-        sprintSpeedModifier: 1.15
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-        - !type:ReagentThreshold
-          reagent: NitrousOxide
-          min: 0.05
-      # Pirate port end: Mono - Hydrakin
       - !type:Emote
         conditions:
         - !type:ReagentThreshold
@@ -658,11 +578,6 @@
         - !type:OrganType
           type: Slime
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         - !type:OrganType # Shitmed - Cybernetic Organs
           type: Cybernetic
           shouldHave: false
@@ -685,11 +600,6 @@
         - !type:OrganType
           type: Slime
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         - !type:OrganType # Shitmed - Cybernetic Organs
           type: Cybernetic
           shouldHave: false
@@ -713,11 +623,6 @@
         - !type:OrganType
           type: Slime
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         ignoreResistances: true
         damage:
           types:
@@ -767,12 +672,6 @@
           min: 1
     Gas:
       effects:
-      # Pirate port start: Mono - Hydrakin
-      - !type:Oxygenate
-        conditions:
-        - !type:OrganType
-          type: Hydrakin
-      # Pirate port end: Mono - Hydrakin
       - !type:HealthChange
         conditions:
         - !type:OrganType # Goobstation - Yowie
@@ -790,11 +689,6 @@
         - !type:OrganType # Goobstation - Yowie
           type: Yowie
           shouldHave: false
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin 
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         - !type:OrganType # Shitmed - Cybernetic Organs
           type: Cybernetic
           shouldHave: false
@@ -823,11 +717,6 @@
         - !type:ReagentThreshold
           reagent: Frezon
           min: 1
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         effectProto: StatusEffectSeeingRainbow
         type: Add
         time: 500
@@ -838,11 +727,6 @@
         - !type:ReagentThreshold
           reagent: Frezon
           min: 1
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
       - !type:PopupMessage
         type: Local
         messages: [ "frezon-lungs-cold" ]
@@ -851,11 +735,6 @@
         - !type:ReagentThreshold
           reagent: Frezon
           min: 0.5
-        # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-        # Pirate port end: Mono - Hydrakin
       - !type:PopupMessage
         type: Local
         visualType: Medium
@@ -865,18 +744,3 @@
         - !type:ReagentThreshold
           reagent: Frezon
           min: 1
-      # Pirate port start: Mono - Hydrakin
-        - !type:OrganType
-          type: Hydrakin
-          shouldHave: false
-      - !type:AdjustTemperature
-        conditions:
-        - !type:ReagentThreshold
-          reagent: Frezon
-          min: 0.045
-        - !type:Temperature
-          min: 215.15
-        - !type:OrganType
-          type: Hydrakin
-        amount: -10000
-      # Pirate port end: Mono - Hydrakin
