@@ -1,0 +1,1 @@
+hydrakin-cool-off-emote = {THE($name)} починає випромінювати тепло.

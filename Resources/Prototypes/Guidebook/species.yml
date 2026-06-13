@@ -47,7 +47,7 @@
     - Plasmaman
     - Feroxi
     - Shadowkin
-    - Hydrakin # Pirate port: Mono - Hydrakin
+    - Hydrakin # Monolith/Obelisk
     - Goblin
 
 - type: guideEntry
@@ -145,3 +145,8 @@
   id: Goblin
   name: species-name-goblin
   text: "/ServerInfo/_Pirate/Guidebook/Mobs/Goblin.xml"
+
+- type: guideEntry
+  id: Hydrakin
+  name: species-name-hydrakin
+  text: "/ServerInfo/Guidebook/Mobs/Hydrakin.xml"

@@ -9,17 +9,6 @@
     Shock: 1.6
 
 - type: damageModifierSet
-  id: Hydrakin
-  coefficients:
-    Heat: 1.25
-    Cold: 0.0
-    Radiation: 1.0
-    Shock: 1.0
-    Blunt: 0.9
-    Slash: 1.15
-    Piercing: 0.9
-
-- type: damageModifierSet
   id: Goblin
   coefficients:
     Blunt: 1.25

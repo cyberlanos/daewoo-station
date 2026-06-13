@@ -162,11 +162,10 @@
       - Narcolepsy
       - Muted
       - WheelchairBound # Pirate end
-    - !type:SpeciesRequirement # Pirate edit
-      inverted: true
-      species:
-      #- Felinid
-      - Hydrakin
+    #- !type:SpeciesRequirement Pirate remove requirement
+    #  inverted: true
+    #  species:
+    #  - Felinid
     # Pirate contractor start
     - !type:CharacterEmployerRequirement
       employers:
