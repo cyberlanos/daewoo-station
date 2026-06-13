@@ -229,6 +229,7 @@ namespace Content.Client.Lobby.UI
         private LoadoutWindow? _loadoutWindow;
         private bool _showUnavailableLoadouts; // Pirate: loadout
         private readonly Dictionary<(ProtoId<LoadoutGroupPrototype> Group, ProtoId<LoadoutPrototype> Loadout), List<LoadoutIconButton>> _loadoutIconButtons = new(); // Pirate: loadout
+        private readonly Dictionary<int, BoxContainer> _loadoutSidebarSlots = new(); // Pirate: loadout
 
         private bool _exporting;
         private bool _imaging;
@@ -307,6 +308,8 @@ namespace Content.Client.Lobby.UI
             _requirements = requirements;
             _controller = UserInterfaceManager.GetUIController<LobbyUIController>();
             _sprite = _entManager.System<SpriteSystem>();
+
+            LoadoutSlotTabs.OnTabChanged += MoveLoadoutSidebarToTab; // Pirate: loadout
 
             _maxNameLength = _cfgManager.GetCVar(CCVars.MaxNameLength);
             _allowFlavorText = _cfgManager.GetCVar(CCVars.FlavorText);
@@ -1011,6 +1014,8 @@ namespace Content.Client.Lobby.UI
         {
             _loadoutWindow?.Dispose();
             #region Pirate: loadout
+            LoadoutSidebarScroll.Orphan();
+            _loadoutSidebarSlots.Clear();
             LoadoutSlotTabs.DisposeAllChildren();
             SelectedLoadoutsList.DisposeAllChildren();
             _loadoutIconButtons.Clear();
@@ -1107,7 +1112,7 @@ namespace Content.Client.Lobby.UI
                         var enabled = roleLoadout.IsValid(Profile, _playerManager.LocalSession, loadoutId, collection, out var reason);
                         var selectedLoadout = selected?.FirstOrDefault(loadout => loadout.Prototype == loadoutId); // Pirate: loadout
                         var selectedInGroup = active && selectedLoadout != null; // Pirate: loadout
-                        choice.Locations.Add(new CombinedLoadoutLocation(roleId, groupId, active, enabled, selectedInGroup, generic, reason, selectedLoadout?.CustomColorTint)); // Pirate: loadout
+                        choice.Locations.Add(new CombinedLoadoutLocation(roleId, groupId, active, enabled, selectedInGroup, generic, reason, selectedLoadout?.CustomColorTint, selectedLoadout?.CustomName, selectedLoadout?.CustomDescription)); // Pirate: loadout
                         choice.Selected |= selectedInGroup;
                     }
                 }
@@ -1212,7 +1217,7 @@ namespace Content.Client.Lobby.UI
                 };
 
                 icon.OnPressed += args => SetCombinedLoadout(choice, args.Button.Pressed, section.Group);
-                icon.OnCustomizePressed += () => OpenLoadoutColorPicker(choice, section.Group, loadoutSystem.GetName(choice.Prototype)); // Pirate: loadout
+                icon.OnCustomizePressed += (defName, defDesc) => OpenLoadoutCustomize(choice, section.Group, loadoutSystem.GetName(choice.Prototype), defName, defDesc); // Pirate: loadout
                 iconRows.AddChild(icon);
                 RegisterLoadoutIconButton(section.Group, choice.Prototype.ID, icon);
             }
@@ -1315,17 +1320,59 @@ namespace Content.Client.Lobby.UI
             ReloadPreview();
         }
 
-        private void OpenLoadoutColorPicker(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string loadoutName)
+        #region Pirate: loadout
+        private void OpenLoadoutCustomize(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string loadoutTitle, string defaultName, string defaultDescription)
         {
-            var initialColor = Color.FromHex(choice.CustomColorForGroup(group), Color.White);
-            var window = new LoadoutColorPickerWindow(loadoutName, initialColor);
-            window.OnColorSubmitted += color => SetCombinedLoadoutColor(choice, group, color.ToHex());
+            var currentName = choice.CustomNameForGroup(group) ?? defaultName;
+            var currentDescription = choice.CustomDescriptionForGroup(group) ?? defaultDescription;
+
+            // Only offer the color picker for items that support tinting.
+            Color? color = choice.Prototype.CustomColorTint
+                ? Color.FromHex(choice.CustomColorForGroup(group), Color.White)
+                : null;
+
+            var window = new LoadoutCustomizeWindow(loadoutTitle, currentName, currentDescription, color);
+            window.OnSubmitted += (name, description, pickedColor) =>
+                SetCombinedLoadoutCustomization(choice, group, name, description, pickedColor, defaultName, defaultDescription);
+
+            if (color != null)
+            {
+                var savedColor = color.Value;
+                // Live preview while dragging; revert to the saved color if the dialog is closed without applying.
+                window.OnColorPreview += previewColor => PreviewLoadoutColor(choice, group, previewColor);
+                window.OnReverted += () => PreviewLoadoutColor(choice, group, savedColor);
+            }
+
             window.OpenCentered();
         }
 
-        private void SetCombinedLoadoutColor(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string customColorTint)
+        // Re-tints the loadout's icon and its equipped item on the character preview in place, without
+        // touching the profile. Used for immediate color feedback; the value is only persisted on apply.
+        private void PreviewLoadoutColor(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, Color color)
         {
-            if (Profile == null || _playerManager.LocalSession == null || !choice.Prototype.CustomColorTint)
+            if (_loadoutIconButtons.TryGetValue((group, choice.Prototype.ID), out var buttons))
+            {
+                var hex = color.ToHex();
+                foreach (var button in buttons)
+                    button.SetCustomColor(hex);
+            }
+
+            // Only tint the character when this loadout is actually equipped on the preview.
+            if (!choice.IsSelectedInGroup(group) || !_entManager.EntityExists(PreviewDummy))
+                return;
+
+            var inventory = _entManager.System<Content.Shared.Inventory.InventorySystem>();
+            var tint = _entManager.System<Content.Client._Pirate.Loadouts.LoadoutTintSystem>();
+            foreach (var slot in choice.Prototype.Equipment.Keys)
+            {
+                if (inventory.TryGetSlotEntity(PreviewDummy, slot, out var equipped))
+                    tint.SetTint(equipped.Value, color);
+            }
+        }
+
+        private void SetCombinedLoadoutCustomization(CombinedLoadoutChoice choice, ProtoId<LoadoutGroupPrototype> group, string name, string description, Color? color, string defaultName, string defaultDescription)
+        {
+            if (Profile == null || _playerManager.LocalSession == null)
                 return;
 
             var collection = IoCManager.Instance;
@@ -1335,6 +1382,11 @@ namespace Content.Client.Lobby.UI
             var location = choice.Locations.FirstOrDefault(location => location.Active && location.Group == group && location.Enabled);
             if (!location.Active)
                 return;
+
+            // Store null when a value matches the item's default so it falls back gracefully.
+            var customName = NormalizeCustomText(name, defaultName);
+            var customDescription = NormalizeCustomText(description, defaultDescription);
+            var customColorTint = choice.Prototype.CustomColorTint && color.HasValue ? color.Value.ToHex() : null;
 
             var roleLoadout = Profile.Loadouts.TryGetValue(location.Role, out var existing)
                 ? existing.Clone()
@@ -1350,11 +1402,13 @@ namespace Content.Client.Lobby.UI
             if (selected == null)
             {
                 RemoveConflictingLoadouts(roleLoadout, choice.Prototype);
-                roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager, customColorTint);
+                roleLoadout.AddLoadout(location.Group, choice.Prototype.ID, _prototypeManager, customColorTint, customName, customDescription);
             }
             else
             {
                 selected.CustomColorTint = customColorTint;
+                selected.CustomName = customName;
+                selected.CustomDescription = customDescription;
             }
 
             Profile = Profile.WithLoadout(roleLoadout);
@@ -1362,6 +1416,13 @@ namespace Content.Client.Lobby.UI
             RefreshLoadouts();
             ReloadPreview();
         }
+
+        private static string? NormalizeCustomText(string value, string defaultValue)
+        {
+            var trimmed = value.Trim();
+            return string.IsNullOrEmpty(trimmed) || trimmed == defaultValue.Trim() ? null : trimmed;
+        }
+        #endregion
 
         private void RemoveConflictingLoadouts(RoleLoadout roleLoadout, LoadoutPrototype selectedPrototype)
         {
@@ -1389,9 +1450,9 @@ namespace Content.Client.Lobby.UI
 
             var showUnavailable = new CheckBox
             {
-                Text = Loc.GetString("humanoid-profile-editor-show-unavailable"), // Pirate: loadout
+                Text = Loc.GetString("humanoid-profile-editor-show-unavailable"),
                 Pressed = _showUnavailableLoadouts,
-                Margin = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 6, 0, 8),
             };
 
             showUnavailable.OnToggled += args =>
@@ -1404,7 +1465,7 @@ namespace Content.Client.Lobby.UI
 
             foreach (var choice in choices.Values
                 .Where(choice => choice.Selected)
-                .OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
+                .OrderBy(choice => choice.CustomName ?? loadoutSystem.GetName(choice.Prototype))) // Pirate: loadout
             {
                 var remove = new ContainerButton
                 {
@@ -1434,7 +1495,7 @@ namespace Content.Client.Lobby.UI
                         remove,
                         new Label
                         {
-                            Text = loadoutSystem.GetName(choice.Prototype),
+                            Text = choice.CustomName ?? loadoutSystem.GetName(choice.Prototype), // Pirate: loadout
                             ClipText = true,
                             HorizontalExpand = true,
                             Margin = new Thickness(5, 0, 0, 0),
@@ -1449,6 +1510,7 @@ namespace Content.Client.Lobby.UI
             var categories = CreateLoadoutCategoryNames();
 
             var result = new Dictionary<string, BoxContainer>();
+            _loadoutSidebarSlots.Clear();
 
             foreach (var category in categories)
             {
@@ -1464,18 +1526,50 @@ namespace Content.Client.Lobby.UI
                     HScrollEnabled = false,
                     HorizontalExpand = true,
                     VerticalExpand = true,
+                    SizeFlagsStretchRatio = 4,
                     Children =
                     {
                         body,
                     },
                 };
 
-                LoadoutSlotTabs.AddChild(scroll);
+                var sidebarSlot = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Vertical,
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                    SizeFlagsStretchRatio = 1,
+                };
+
+                var row = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    VerticalExpand = true,
+                    Children =
+                    {
+                        scroll,
+                        sidebarSlot,
+                    },
+                };
+
+                LoadoutSlotTabs.AddChild(row);
                 LoadoutSlotTabs.SetTabTitle(LoadoutSlotTabs.ChildCount - 1, GetLoadoutCategoryTitle(category));
+                _loadoutSidebarSlots[LoadoutSlotTabs.ChildCount - 1] = sidebarSlot;
                 result[category] = body;
             }
 
+            MoveLoadoutSidebarToTab(LoadoutSlotTabs.CurrentTab);
             return result;
+        }
+
+        private void MoveLoadoutSidebarToTab(int tab)
+        {
+            if (!_loadoutSidebarSlots.TryGetValue(tab, out var slot) || LoadoutSidebarScroll.Parent == slot)
+                return;
+
+            LoadoutSidebarScroll.Orphan();
+            slot.AddChild(LoadoutSidebarScroll);
         }
 
         private string GetLoadoutCategoryTitle(string category)
@@ -1573,6 +1667,24 @@ namespace Content.Client.Lobby.UI
             {
                 return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.CustomColorTint != null).CustomColorTint;
             }
+
+            #region Pirate: loadout
+            /// <summary>
+            /// The custom name from any active location, if one was set. Used for the selected-loadouts list
+            /// which has no specific group context.
+            /// </summary>
+            public string? CustomName => Locations.FirstOrDefault(location => location.Active && location.CustomName != null).CustomName;
+
+            public string? CustomNameForGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.CustomName != null).CustomName;
+            }
+
+            public string? CustomDescriptionForGroup(ProtoId<LoadoutGroupPrototype> group)
+            {
+                return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.CustomDescription != null).CustomDescription;
+            }
+            #endregion
         }
 
         private enum CombinedLoadoutKind
@@ -1589,7 +1701,9 @@ namespace Content.Client.Lobby.UI
             bool Selected,
             bool IsGeneric,
             FormattedMessage? Reason,
-            string? CustomColorTint)
+            string? CustomColorTint,
+            string? CustomName, // Pirate: loadout
+            string? CustomDescription) // Pirate: loadout
         {
             public CombinedLoadoutKind Kind => IsGeneric
                 ? CombinedLoadoutKind.Generic

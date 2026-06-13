@@ -2174,6 +2174,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2198,6 +2199,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2246,6 +2248,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2257,6 +2260,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2269,6 +2273,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2281,6 +2286,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2293,6 +2299,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2305,6 +2312,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2317,6 +2325,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2377,6 +2386,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2401,6 +2411,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2437,6 +2448,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2449,6 +2461,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2461,6 +2474,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2473,6 +2487,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2485,6 +2500,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2497,6 +2513,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2509,6 +2526,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2533,6 +2551,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2569,6 +2588,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2593,6 +2613,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2605,6 +2626,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2629,6 +2651,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2677,6 +2700,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2689,6 +2713,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2725,6 +2750,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot
@@ -2744,6 +2770,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot

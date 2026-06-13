@@ -17,7 +17,10 @@ public sealed class LoadoutIconButton : Button
 {
     [Dependency] private readonly IEntityManager _entManager = default!;
 
-    public event Action? OnCustomizePressed;
+    public event Action<string, string>? OnCustomizePressed;
+
+    private string _defaultName = string.Empty;
+    private string _defaultDescription = string.Empty;
 
     private static readonly StyleBoxFlat NormalStyle = CreateStyle("#2a2a35", "#32323e");
     private static readonly StyleBoxFlat HoverStyle = CreateStyle("#2a3a4a", "#32323e");
@@ -67,6 +70,9 @@ public sealed class LoadoutIconButton : Button
         if (string.IsNullOrWhiteSpace(displayName))
             displayName = loadout.ID;
 
+        _defaultName = displayName;
+        _defaultDescription = description;
+
         TooltipSupplier = _ =>
         {
             var tooltip = new Tooltip();
@@ -81,8 +87,7 @@ public sealed class LoadoutIconButton : Button
             return tooltip;
         };
 
-        if (loadout.CustomColorTint)
-            AddCustomizeButton();
+        AddCustomizeButton();
     }
 
     private EntProtoId? ResolveDisplayEntity(LoadoutPrototype loadout)
@@ -116,17 +121,18 @@ public sealed class LoadoutIconButton : Button
 
     private void AddCustomizeButton()
     {
-        var customize = new ContainerButton
+        // Single gear button in the top-left corner; opens the combined customize dialog.
+        var button = new ContainerButton
         {
             StyleBoxOverride = new StyleBoxEmpty(),
             MinSize = new Vector2(24, 24),
             SetSize = new Vector2(24, 24),
             HorizontalAlignment = HAlignment.Left,
             VerticalAlignment = VAlignment.Top,
-            ToolTip = Loc.GetString("loadout-customize-color-tooltip"),
+            ToolTip = Loc.GetString("loadout-customize-tooltip"),
         };
 
-        customize.AddChild(new TextureRect
+        button.AddChild(new TextureRect
         {
             TexturePath = "/Textures/Interface/Nano/gear.svg.192dpi.png",
             SetSize = new Vector2(16, 16),
@@ -135,8 +141,8 @@ public sealed class LoadoutIconButton : Button
             Stretch = TextureRect.StretchMode.KeepAspectCentered,
         });
 
-        customize.OnPressed += _ => OnCustomizePressed?.Invoke();
-        AddChild(customize);
+        button.OnPressed += _ => OnCustomizePressed?.Invoke(_defaultName, _defaultDescription);
+        AddChild(button);
     }
 
     protected override void DrawModeChanged()

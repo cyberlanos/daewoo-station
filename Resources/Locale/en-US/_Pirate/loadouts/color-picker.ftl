@@ -1,3 +1,9 @@
 loadout-color-picker-apply = Apply
 loadout-customize-color-tooltip = Customize color
+loadout-customize-name-tooltip = Customize name and description
+loadout-customize-tooltip = Customize
+loadout-name-desc-apply = Apply
+loadout-name-desc-name-label = Name
+loadout-name-desc-description-label = Description
+loadout-name-desc-color-label = Color
 humanoid-profile-editor-show-unavailable = Show unavailable

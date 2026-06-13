@@ -1319,6 +1319,16 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("character varying(16)")
                         .HasColumnName("custom_color_tint");
 
+                    #region Pirate: loadout
+                    b.Property<string>("CustomDescription")
+                        .HasColumnType("text")
+                        .HasColumnName("custom_description");
+
+                    b.Property<string>("CustomName")
+                        .HasColumnType("text")
+                        .HasColumnName("custom_name");
+                    #endregion
+
                     b.Property<int>("ProfileLoadoutGroupId")
                         .HasColumnType("integer")
                         .HasColumnName("profile_loadout_group_id");

@@ -66,7 +66,7 @@ public sealed class HideLayerClothingSystem : EntitySystem
         // the clothing is (or was)equipped in a matching slot.
         foreach (var (layer, validSlots) in clothing.Comp1.Layers)
         {
-            if (!hideable.Contains(layer))
+            if (!clothing.Comp1.Force && !hideable.Contains(layer)) // Pirate: loadout
                 continue;
 
             // Only update this layer if we are currently equipped to the relevant slot.
@@ -82,7 +82,7 @@ public sealed class HideLayerClothingSystem : EntitySystem
         {
             foreach (var layer in slots)
             {
-                if (hideable.Contains(layer))
+                if (clothing.Comp1.Force || hideable.Contains(layer)) // Pirate: loadout
                     _humanoid.SetLayerVisibility(user!, layer, !hideLayers, inSlot, ref dirty);
             }
         }
