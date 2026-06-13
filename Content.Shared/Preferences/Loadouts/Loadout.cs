@@ -31,6 +31,18 @@ public sealed partial class Loadout : IEquatable<Loadout>
     public string? CustomColorTint;
 
     /// <summary>
+    /// Optional custom display name overriding the item's default. Null means use the default.
+    /// </summary>
+    [DataField]
+    public string? CustomName;
+
+    /// <summary>
+    /// Optional custom description overriding the item's default. Null means use the default.
+    /// </summary>
+    [DataField]
+    public string? CustomDescription;
+
+    /// <summary>
     /// Checks whether the custom tint is empty or a persisted parser-valid hex color string.
     /// </summary>
     public bool IsValidColorTint()
@@ -45,6 +57,8 @@ public sealed partial class Loadout : IEquatable<Loadout>
         {
             Prototype = Prototype,
             CustomColorTint = CustomColorTint,
+            CustomName = CustomName,
+            CustomDescription = CustomDescription,
         };
     }
     #endregion
@@ -53,7 +67,10 @@ public sealed partial class Loadout : IEquatable<Loadout>
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Prototype.Equals(other.Prototype) && CustomColorTint == other.CustomColorTint; // Pirate: loadout
+        return Prototype.Equals(other.Prototype)
+               && CustomColorTint == other.CustomColorTint
+               && CustomName == other.CustomName
+               && CustomDescription == other.CustomDescription; // Pirate: loadout
     }
 
     public override bool Equals(object? obj)
@@ -63,6 +80,6 @@ public sealed partial class Loadout : IEquatable<Loadout>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Prototype, CustomColorTint); // Pirate: loadout
+        return HashCode.Combine(Prototype, CustomColorTint, CustomName, CustomDescription); // Pirate: loadout
     }
 }
