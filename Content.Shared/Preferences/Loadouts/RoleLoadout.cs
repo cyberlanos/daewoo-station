@@ -231,7 +231,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
 
                 #region Pirate: loadout
                 loadout.CustomName = SanitizeCustomText(loadout.CustomName, configManager.GetCVar(CCVars.MaxNameLength));
-                loadout.CustomDescription = SanitizeCustomText(loadout.CustomDescription, configManager.GetCVar(CCVars.MaxFlavorTextLength));
+                loadout.CustomDescription = SanitizeCustomText(loadout.CustomDescription, MaxLoadoutDescriptionLength);
                 #endregion
 
                 Apply(loadoutProto);
@@ -279,6 +279,11 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
     }
 
     #region Pirate: loadout
+    /// <summary>
+    /// Maximum length for a loadout item's custom description.
+    /// </summary>
+    private const int MaxLoadoutDescriptionLength = 256;
+
     /// <summary>
     /// Trims a player-supplied custom name/description and clamps it to <paramref name="maxLength"/>.
     /// Returns null when the result is empty so the item falls back to its default.

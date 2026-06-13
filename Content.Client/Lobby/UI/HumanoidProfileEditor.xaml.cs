@@ -1465,7 +1465,7 @@ namespace Content.Client.Lobby.UI
 
             foreach (var choice in choices.Values
                 .Where(choice => choice.Selected)
-                .OrderBy(choice => loadoutSystem.GetName(choice.Prototype)))
+                .OrderBy(choice => choice.CustomName ?? loadoutSystem.GetName(choice.Prototype))) // Pirate: loadout
             {
                 var remove = new ContainerButton
                 {
@@ -1495,7 +1495,7 @@ namespace Content.Client.Lobby.UI
                         remove,
                         new Label
                         {
-                            Text = loadoutSystem.GetName(choice.Prototype),
+                            Text = choice.CustomName ?? loadoutSystem.GetName(choice.Prototype), // Pirate: loadout
                             ClipText = true,
                             HorizontalExpand = true,
                             Margin = new Thickness(5, 0, 0, 0),
@@ -1669,6 +1669,12 @@ namespace Content.Client.Lobby.UI
             }
 
             #region Pirate: loadout
+            /// <summary>
+            /// The custom name from any active location, if one was set. Used for the selected-loadouts list
+            /// which has no specific group context.
+            /// </summary>
+            public string? CustomName => Locations.FirstOrDefault(location => location.Active && location.CustomName != null).CustomName;
+
             public string? CustomNameForGroup(ProtoId<LoadoutGroupPrototype> group)
             {
                 return Locations.FirstOrDefault(location => location.Active && location.Group == group && location.CustomName != null).CustomName;
