@@ -22863,10 +22863,9 @@ Entries:
 - author: Nightharlaw
   changes:
     - type: Add
-      message: New specie - Hydrakin.
+      message: Нова раса - гідракіни.
     - type: Add
       message: >-
-        New reagent - Peranol. Intended to be used by hydrakins for cooling
-        down.
+        Новий реагент - перанол. Призначений для гідракінів, щоб охолоджуватися.
   id: 2699
   time: '2026-06-12T18:45:47.0000000+00:00'
