@@ -12,6 +12,7 @@ using Content.Shared.Damage;
 using Content.Shared.Damage.Components;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DoAfter;
+using Content.Shared.Examine;
 using Content.Shared.Flash;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Humanoid;
@@ -51,7 +52,7 @@ public sealed class DantalionSystem : EntitySystem
     [Dependency] private readonly StatusEffectsSystem _statusEffects = default!;
     [Dependency] private readonly SharedStunSystem _stun = default!;
     [Dependency] private readonly SharedStaminaSystem _stamina = default!;
-    [Dependency] private readonly Shared.Examine.ExamineSystemShared _examine = default!;
+    [Dependency] private readonly ExamineSystemShared _examine = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly SharedFlashSystem _flash = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;

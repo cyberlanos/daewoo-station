@@ -1,5 +1,5 @@
 using Content.Pirate.Server.Vampire.Components;
-using Content.Shared.Damage.Systems;
+using Content.Shared.Damage;
 using Content.Shared.Flash;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;

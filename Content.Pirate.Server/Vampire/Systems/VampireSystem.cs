@@ -1,6 +1,7 @@
 using Content.Server.Actions;
 using Content.Server.Atmos.EntitySystems;
 using Content.Server.Body.Systems;
+using Content.Pirate.Server.Objectives.Components;
 using Content.Server.Objectives.Components;
 using Content.Server.Objectives.Systems;
 using Content.Goobstation.Shared.Religion;

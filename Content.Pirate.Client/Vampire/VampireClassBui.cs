@@ -42,7 +42,9 @@ public sealed class VampireClassBui(EntityUid owner, Enum uiKey) : BoundUserInte
     {
         if (disposing)
         {
-            _menu?.OnClose -= OnMenuClosed;
+            if (_menu != null)
+                _menu.OnClose -= OnMenuClosed;
+
             _menu = null;
         }
 
@@ -58,7 +60,7 @@ public sealed class VampireClassBui(EntityUid owner, Enum uiKey) : BoundUserInte
         {
             buttons.Add(new RadialMenuActionOption<string>(HandleClassChoice, proto.ID)
             {
-                IconSpecifier = RadialMenuIconSpecifier.With(proto.Icon),
+                Sprite = proto.Icon,
                 ToolTip = Loc.GetString(proto.Tooltip)
             });
         }

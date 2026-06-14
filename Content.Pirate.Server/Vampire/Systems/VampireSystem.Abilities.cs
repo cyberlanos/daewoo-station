@@ -34,9 +34,10 @@ using Content.Shared.Popups;
 using Content.Shared.Bed.Sleep;
 using Content.Shared.Eye.Blinding.Systems;
 using Content.Shared.Eye.Blinding.Components;
-using Content.Shared._FarHorizons.Silicons.IPC.Components;
+using Content.Shared._EinsteinEngines.Silicon.Components;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.CombatMode.Pacification;
+using Content.Shared.Flash.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Mindshield.Components;
 using Content.Goobstation.Shared.Overlays;
@@ -59,7 +60,6 @@ public sealed partial class VampireSystem : EntitySystem
     private static readonly SoundSpecifier _biteSound = new SoundPathSpecifier("/Audio/Effects/bite.ogg");
     private static readonly SoundSpecifier _devourSound = new SoundPathSpecifier("/Audio/Effects/demon_consume.ogg");
     private readonly Dictionary<EntityUid, List<EntityUid>> _playerShadowSnares = new();
-    [Dependency] private readonly FlashImmunitySystem _flashImmunity = default!;
 
     private void InitializeAbilities()
     {
@@ -539,7 +539,7 @@ public sealed partial class VampireSystem : EntitySystem
         }
 
 
-        if (HasComp<IPCBatteryComponent>(target) //IPCs don't have blood
+        if (HasComp<SiliconComponent>(target) // IPCs/silicons don't have blood
             || (!TryComp<MobStateComponent>(target, out var mobState) //Is the entity a mob at all?
             || (mobState.CurrentState == Shared.Mobs.MobState.Dead && comp.DeadEfficiency == 0f)  //Dead things aren't a good source of blood if configured to not allow drinking from the dead at all
             ))
@@ -739,7 +739,7 @@ public sealed partial class VampireSystem : EntitySystem
             return;
         }
 
-        if (_flashImmunity.HasFlashImmunityVisionBlockers(target))
+        if (HasFlashImmunityVisionBlockers(target))
         {
             _popup.PopupEntity(Loc.GetString("vampire-sleep-protected"), uid, uid, PopupType.MediumCaution);
             return;
@@ -780,9 +780,31 @@ public sealed partial class VampireSystem : EntitySystem
         return true;
     }
 
+    private bool HasFlashImmunityVisionBlockers(EntityUid uid)
+    {
+        if (TryComp<FlashImmunityComponent>(uid, out var flashImmunity) && flashImmunity.Enabled)
+            return true;
+
+        if (!TryComp<InventoryComponent>(uid, out var inventory))
+            return false;
+
+        var slots = _inventory.GetSlotEnumerator((uid, inventory), SlotFlags.WITHOUT_POCKET);
+        while (slots.MoveNext(out var slot))
+        {
+            if (slot.ContainedEntity is { } worn
+                && TryComp<FlashImmunityComponent>(worn, out var wornFlashImmunity)
+                && wornFlashImmunity.Enabled)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
-	///     Triggered once sleep do after is completed, check one more time to see if the target has somehow gained immunity during the do after and if not consume the blood cost and apply the sleep.
-	/// </summary>
+    /// Triggered once sleep do after is completed, check one more time to see if the target has somehow gained immunity during the do after and if not consume the blood cost and apply the sleep.
+    /// </summary>
     private void OnSleepDoAfter(EntityUid uid, VampireComponent comp, ref VampireSleepDoAfterEvent args)
     {
         if (args.Handled || args.Cancelled || args.Target == null)
@@ -790,7 +812,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         var target = args.Target.Value;
 
-        if (_flashImmunity.HasFlashImmunityVisionBlockers(target))
+        if (HasFlashImmunityVisionBlockers(target))
         {
             _popup.PopupEntity(Loc.GetString("vampire-sleep-protected"), uid, uid, PopupType.MediumCaution);
             return;
@@ -840,7 +862,7 @@ public sealed partial class VampireSystem : EntitySystem
             //reset effectScale for next possible target
             effectScale = 1.0f;
 
-            if (_flashImmunity.HasFlashImmunityVisionBlockers(target))
+            if (HasFlashImmunityVisionBlockers(target))
             {
                 if (comp.TotalBlood < comp.MidPowerThreshold)
                     effectScale = args.FlashImmunityEffectScaleWeak; //below mid

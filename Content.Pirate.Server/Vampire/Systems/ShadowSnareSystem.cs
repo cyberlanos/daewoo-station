@@ -1,5 +1,5 @@
 using Content.Pirate.Shared.Vampire.Components;
-using Content.Shared.Damage.Systems;
+using Content.Shared.Damage;
 using Content.Shared.Ensnaring;
 using Content.Shared.Ensnaring.Components;
 using Content.Shared.Flash;

@@ -81,7 +81,7 @@ public sealed class GargantuaSystem : EntitySystem
         SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRelayedEvent<BeforeStaminaDamageEvent>>(OnBloodSwellStaminaDamage);
 
         SubscribeLocalEvent<GargantuaComponent, VampireBloodDrankEvent>(OnBloodDrank);
-        SubscribeLocalEvent<GargantuaComponent, UserPriedDoorEvent>(OnDoorPried);
+        SubscribeLocalEvent<BeforePryEvent>(OnDoorPried);
         // Status effects are raised on the status effect entity, so hook globally.
         SubscribeLocalEvent<StatusEffectComponent, StatusEffectAppliedEvent>(OnStatusEffectApplied);
     }
@@ -260,8 +260,12 @@ public sealed class GargantuaSystem : EntitySystem
 
     #region Overwhelming Force
 
-    private void OnDoorPried(EntityUid uid, GargantuaComponent component, ref UserPriedDoorEvent args)
+    private void OnDoorPried(ref BeforePryEvent args)
     {
+        var uid = args.User;
+
+        if (args.Cancelled || !TryComp<GargantuaComponent>(uid, out var component))
+            return;
 
         if (!component.OverwhelmingForceActive)
             return;
