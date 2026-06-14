@@ -1,3 +1,4 @@
+using System.Linq;
 using Content.Pirate.Shared.TerrorSpider.Evolving;
 using Content.Pirate.Shared.TerrorSpider.Evolving.Conditions;
 using Content.Shared._Pirate.Weapons.Melee.Events;
@@ -90,7 +91,7 @@ public abstract class SharedEvolvingSystem : EntitySystem
     }
 
     private void OnMindRemoved(Entity<EvolvingComponent> ent, ref MindRemovedMessage args) =>
-        TryRemoveObjectives(args.Mind.Owner, args.Mind.Comp, ent.Comp, delete: false, force: true);
+        TryRemoveObjectives(args.Mind.Owner, args.Mind.Comp, ent.Comp, delete: false);
 
     private bool TryUpdateEvolveState(EntityUid uid, EvolvingComponent component, EvolveType? objType = null)
     {
@@ -165,8 +166,7 @@ public abstract class SharedEvolvingSystem : EntitySystem
         if (!_mindSystem.TryGetMind(uid, out var mindId, out var mind) || !CanEvolve(uid, component))
             return false;
 
-        foreach (var obj in component.Objectives)
-            _mindSystem.TryRemoveObjective(mindId, mind, obj, force: true);
+        TryRemoveObjectives(mindId, mind, component);
 
         var ent = EntityManager.PredictedSpawnAtPosition(component.EvolveTo, Transform(uid).Coordinates);
         _mindSystem.TransferTo(mindId, ent, mind: mind);
@@ -174,16 +174,29 @@ public abstract class SharedEvolvingSystem : EntitySystem
         return true;
     }
 
-    private bool TryRemoveObjectives(EntityUid mindId, MindComponent mind, EvolvingComponent component, bool delete = true, bool force = false)
+    private bool TryRemoveObjectives(EntityUid mindId, MindComponent mind, EvolvingComponent component, bool delete = true)
     {
         var removedAny = false;
         foreach (var obj in component.Objectives)
         {
-            if (_mindSystem.TryRemoveObjective(mindId, mind, obj, delete: delete, force: force))
+            if (TryRemoveObjective(mindId, mind, obj, delete))
                 removedAny = true;
         }
 
         return removedAny;
+    }
+
+    private bool TryRemoveObjective(EntityUid mindId, MindComponent mind, EntityUid objective, bool delete)
+    {
+        var index = mind.Objectives.IndexOf(objective);
+        if (index < 0)
+            return false;
+
+        if (delete)
+            return _mindSystem.TryRemoveObjective(mindId, mind, index);
+
+        mind.Objectives.RemoveAt(index);
+        return true;
     }
 
     private void OnEvolve(Entity<EvolvingComponent> ent, ref EvolveEvent args) => TryEvolve(ent.Owner, ent.Comp);
