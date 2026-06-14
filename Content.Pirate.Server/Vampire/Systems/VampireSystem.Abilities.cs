@@ -10,6 +10,7 @@ using Content.Shared.Damage.Components;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Damage.Systems;
 using Content.Shared.DoAfter;
+using Content.Shared.Doors.Components;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Humanoid;
 using Content.Shared.IdentityManagement;
@@ -38,6 +39,7 @@ using Content.Shared._EinsteinEngines.Silicon.Components;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.CombatMode.Pacification;
 using Content.Shared.Flash.Components;
+using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Mindshield.Components;
 using Content.Goobstation.Shared.Overlays;
@@ -411,7 +413,7 @@ public sealed partial class VampireSystem : EntitySystem
                 return true;
 
             // Check for door components that typically block movement
-            if (HasComp<Shared.Doors.Components.DoorComponent>(ent))
+            if (HasComp<DoorComponent>(ent))
                 return true;
         }
         return false;
@@ -452,7 +454,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (IsProtectedByFaith(target) && comp.FullPower != true)
         {
-            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, PopupType.MediumCaution);
             return;
         }
 
@@ -483,7 +485,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (IsProtectedByFaith(target) && comp.FullPower != true)
         {
-            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, PopupType.MediumCaution);
             return;
         }
 
@@ -533,7 +535,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (drunkFromTarget >= comp.MaxBloodPerTarget)
         {
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-maxed", ("amount", comp.MaxBloodPerTarget)), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-maxed", ("amount", comp.MaxBloodPerTarget)), uid, uid, PopupType.MediumCaution);
             comp.IsDrinking = false;
             return;
         }
@@ -541,10 +543,10 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (HasComp<SiliconComponent>(target) // IPCs/silicons don't have blood
             || (!TryComp<MobStateComponent>(target, out var mobState) //Is the entity a mob at all?
-            || (mobState.CurrentState == Shared.Mobs.MobState.Dead && comp.DeadEfficiency == 0f)  //Dead things aren't a good source of blood if configured to not allow drinking from the dead at all
+            || (mobState.CurrentState == MobState.Dead && comp.DeadEfficiency == 0f)  //Dead things aren't a good source of blood if configured to not allow drinking from the dead at all
             ))
         {
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-not-viable"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-not-viable"), uid, uid, PopupType.MediumCaution);
             comp.IsDrinking = false;
             return;
         }
@@ -557,7 +559,7 @@ public sealed partial class VampireSystem : EntitySystem
         else
             sipInefficiency = comp.NonHumanoidEfficiency;
 
-        if (mobState.CurrentState == Shared.Mobs.MobState.Dead)
+        if (mobState.CurrentState == MobState.Dead)
             sipInefficiency *= comp.DeadEfficiency; // Dead things aren't as good source of blood
         if (TryComp<PerishableComponent>(target, out var rot)) //Is the target rotting?
         {
@@ -586,7 +588,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (sipInefficiency <= 0f) //If we have set the efficiency to 0, then no point continuing
         {
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-rot"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-rot"), uid, uid, PopupType.MediumCaution);
             comp.IsDrinking = false;
             return;
         }
@@ -598,16 +600,16 @@ public sealed partial class VampireSystem : EntitySystem
         if (!TryComp<BloodstreamComponent>(target, out var blood)) //Does the target have a blood stream?
         {
             comp.IsDrinking = false; //Blood level reduction failed
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, PopupType.MediumCaution);
             return;
         }
 
         //attempt to drain the target's blood level
-        var targetBloodLevel = _blood.GetBloodLevel(target) * blood.BloodReferenceSolution.MaxVolume.Value / 100; //get target's current blood volume in u
+        var targetBloodLevel = _blood.GetBloodLevelPercentage((target, blood)) * blood.BloodMaxVolume.Float(); //get target's current blood volume in u
         if (targetBloodLevel <= 0.0f) //Check the target has blood to drink at all
         {
             comp.IsDrinking = false; //Blood level reduction failed
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, PopupType.MediumCaution);
             return;
         }
         else if (targetBloodLevel <= actualSipAmount * sipInefficiency) //Check if we are attempting to drain too much blood and reduce the amount drank if so
@@ -664,7 +666,7 @@ public sealed partial class VampireSystem : EntitySystem
         else
         {
             comp.IsDrinking = false; //Blood level reduction failed
-            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, PopupType.MediumCaution);
             return;
         }
 
@@ -735,7 +737,7 @@ public sealed partial class VampireSystem : EntitySystem
 
         if (IsProtectedByFaith(target) && comp.FullPower != true)
         {
-            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, Shared.Popups.PopupType.MediumCaution);
+            _popup.PopupEntity(Loc.GetString("vampire-target-protected-by-faith"), uid, uid, PopupType.MediumCaution);
             return;
         }
 
@@ -977,10 +979,8 @@ public sealed partial class VampireSystem : EntitySystem
         {
             stamina.StaminaDamage = 0f;
             _stamina.ExitStamCrit(uid, stamina);
-            _stamina.AdjustStatus((uid, stamina));
             RemComp<ActiveStaminaComponent>(uid);
             _statusEffects.TryRemoveStatusEffect(uid, SharedStaminaSystem.StaminaLow);
-            _stamina.UpdateStaminaVisuals((uid, stamina));
             Dirty(uid, stamina);
         }
 

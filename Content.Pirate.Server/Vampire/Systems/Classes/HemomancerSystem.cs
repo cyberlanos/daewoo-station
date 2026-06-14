@@ -21,6 +21,7 @@ using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Humanoid;
 using Content.Shared.Interaction.Components;
 using Content.Shared.Maps;
+using Content.Shared.Mobs;
 using Content.Shared.Mind.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Movement.Systems;
@@ -674,7 +675,7 @@ public sealed class HemomancerSystem : EntitySystem
             return false;
 
         if (TryComp<MobStateComponent>(uid, out var mobState) &&
-            mobState.CurrentState == Shared.Mobs.MobState.Dead)
+            mobState.CurrentState == MobState.Dead)
         {
             DeactivateBloodBringersRite(uid, hemomancer);
             return false;
@@ -706,7 +707,7 @@ public sealed class HemomancerSystem : EntitySystem
             if (_container.IsEntityOrParentInContainer(entity))
                 continue;
 
-            if (TryComp<MobStateComponent>(entity, out var state) && state.CurrentState == Shared.Mobs.MobState.Dead)
+            if (TryComp<MobStateComponent>(entity, out var state) && state.CurrentState == MobState.Dead)
                 continue;
 
             if (!HasComp<HumanoidAppearanceComponent>(entity) || !HasComp<BloodstreamComponent>(entity))

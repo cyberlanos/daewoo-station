@@ -320,7 +320,7 @@ public sealed class DantalionSystem : EntitySystem
         {
             //Remove objectives
             if (_mind.TryFindObjective((mindId, mind), comp.ObeyObjectiveId, out var Objective) && Objective != null)
-                _mind.TryRemoveObjective(mindId, mind, Objective.Value);
+                _mind.TryRemoveObjective(mindId, mind, mind.Objectives.IndexOf(Objective.Value));
             //Remove role
             _role.MindRemoveRole<VampireThrallComponent>(mindId);
         }
@@ -371,7 +371,7 @@ public sealed class DantalionSystem : EntitySystem
         if (!HasComp<HumanoidAppearanceComponent>(target))
             return false;
 
-        if (!TryComp<MobStateComponent>(target, out var mobState) || mobState.CurrentState == Shared.Mobs.MobState.Dead)
+        if (!TryComp<MobStateComponent>(target, out var mobState) || mobState.CurrentState == MobState.Dead)
             return false;
 
         if (HasComp<VampireComponent>(target) || HasComp<VampireThrallComponent>(target))
@@ -657,10 +657,8 @@ public sealed class DantalionSystem : EntitySystem
             {
                 stamina.StaminaDamage = 0f;
                 _stamina.ExitStamCrit(thrall, stamina);
-                _stamina.AdjustStatus((thrall, stamina));
                 RemComp<ActiveStaminaComponent>(thrall);
                 _statusEffects.TryRemoveStatusEffect(thrall, SharedStaminaSystem.StaminaLow);
-                _stamina.UpdateStaminaVisuals((thrall, stamina));
                 Dirty(thrall, stamina);
             }
 

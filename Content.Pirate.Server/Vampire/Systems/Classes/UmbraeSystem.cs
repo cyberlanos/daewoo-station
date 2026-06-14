@@ -1,7 +1,9 @@
 using System.Numerics;
 using Content.Server.Actions;
 using Content.Goobstation.Common.Religion;
+using Content.Server.Light.Components;
 using Content.Server.Light.EntitySystems;
+using Content.Server.Temperature.Components;
 using Content.Server.Temperature.Systems;
 using Content.Pirate.Shared.Vampire;
 using Content.Pirate.Shared.Vampire.Components;
@@ -335,7 +337,7 @@ public sealed class UmbraeSystem : EntitySystem
 
     private bool ValidateEternalDarknessConditions(EntityUid uid, VampireComponent comp, UmbraeComponent umbrae)
     {
-        if (TryComp<MobStateComponent>(uid, out var mob) && mob.CurrentState == Shared.Mobs.MobState.Dead)
+        if (TryComp<MobStateComponent>(uid, out var mob) && mob.CurrentState == MobState.Dead)
         {
             DeactivateEternalDarkness(uid, comp, umbrae);
             return false;
@@ -584,7 +586,7 @@ public sealed class UmbraeSystem : EntitySystem
             var target = active.Target;
             if (!Exists(target)
                 || !HasComp<DamageableComponent>(target)
-                || (TryComp<MobStateComponent>(target, out var mob) && mob.CurrentState == Shared.Mobs.MobState.Dead))
+                || (TryComp<MobStateComponent>(target, out var mob) && mob.CurrentState == MobState.Dead))
             {
                 active.NextTick = now + active.TickInterval;
                 continue;

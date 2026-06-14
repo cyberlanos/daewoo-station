@@ -3,6 +3,7 @@ using Content.Goobstation.Common.Religion;
 using Content.Pirate.Server.GameTicking.Rules.Components;
 using Content.Server.Mind;
 using Content.Server.Objectives;
+using Content.Server.Roles;
 using Content.Shared.Roles;
 using Content.Shared.Roles.Components;
 using Content.Pirate.Shared.Vampire.Components;
