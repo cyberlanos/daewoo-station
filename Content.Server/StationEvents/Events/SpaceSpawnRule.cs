@@ -44,6 +44,10 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         }
 
         #region Pirate: multiz
+        // Use the main station grid (BecomesStation), not the largest grid which can be a docked
+        // ATS/shuttle. Preselect ONE random floor's spawn point and reuse it: AntagSelectLocationEvent
+        // is raised twice (ghost-role preview, then actual spawn), so offering all floors would make
+        // the preview and the real spawn land on different decks.
         if (!TryComp<StationDataComponent>(station, out var stationData)
             || GetStationMainGrid(stationData) is not { } mainGrid)
         {
@@ -52,15 +56,15 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
             return;
         }
 
-        comp.FloorCoords.Clear();
-        foreach (var floor in _zFloors.GetFloorGrids(mainGrid.Owner))
+        var floorGrid = _zFloors.GetRandomFloorGrid(mainGrid.Owner);
+        if (!TryComp<MapGridComponent>(floorGrid, out var floorGridComp))
         {
-            if (TryComp<MapGridComponent>(floor, out var floorGrid))
-                comp.FloorCoords.Add(GetSpaceLocationAround(floor, floorGrid, comp.SpawnDistance));
+            ForceEndSelf(uid, gameRule);
+            return;
         }
 
-        comp.Coords = comp.FloorCoords.Count > 0 ? comp.FloorCoords[0] : null;
-        Sawmill.Info($"Picked {comp.FloorCoords.Count} location(s) for {ToPrettyString(uid):rule}");
+        comp.Coords = GetSpaceLocationAround(floorGrid, floorGridComp, comp.SpawnDistance);
+        Sawmill.Info($"Picked location {comp.Coords} for {ToPrettyString(uid):rule}");
         #endregion
     }
 
@@ -80,15 +84,6 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
 
     private void OnSelectLocation(Entity<SpaceSpawnRuleComponent> ent, ref AntagSelectLocationEvent args)
     {
-        #region Pirate: multiz
-        if (ent.Comp.FloorCoords.Count > 0)
-        {
-            foreach (var floorCoords in ent.Comp.FloorCoords)
-                args.Coordinates.Add(floorCoords);
-            return;
-        }
-        #endregion
-
         if (ent.Comp.Coords is {} coords)
             args.Coordinates.Add(coords);
     }

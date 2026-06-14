@@ -28,9 +28,4 @@ public sealed partial class SpaceSpawnRuleComponent : Component
     /// </summary>
     [DataField]
     public MapCoordinates? Coords;
-
-    #region Pirate: multiz
-    [DataField]
-    public List<MapCoordinates> FloorCoords = new();
-    #endregion
 }
