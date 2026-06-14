@@ -21,7 +21,7 @@
   damage:
     types:
       Caustic: 8
-  collisionMask: BulletImpassable
+  collisionMask: 64 # BulletImpassable
   travelFlash:
     sprite: Objects/Weapons/Guns/Projectiles/xeno_toxic.rsi
     state: xeno_toxic
