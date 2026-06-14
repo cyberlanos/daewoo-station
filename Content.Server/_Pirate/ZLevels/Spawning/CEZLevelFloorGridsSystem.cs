@@ -1,4 +1,7 @@
+using Content.Server.Station.Components;
+using Content.Server.Station.Systems;
 using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared.Station.Components;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Random;
 
@@ -12,6 +15,31 @@ namespace Content.Server._Pirate.ZLevels.Spawning;
 public sealed class CEZLevelFloorGridsSystem : EntitySystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly StationSystem _station = default!;
+
+    /// <summary>
+    /// Returns every z-level floor grid of <paramref name="station"/> — its main grid (the one with
+    /// <see cref="BecomesStationComponent"/>, falling back to the largest) plus its z-peers. Docked
+    /// shuttles and trade stations are excluded. Empty if the entity is not a station.
+    /// </summary>
+    public List<EntityUid> GetStationFloorGrids(EntityUid station)
+    {
+        if (!TryComp<StationDataComponent>(station, out var data))
+            return new List<EntityUid>();
+
+        EntityUid? main = null;
+        foreach (var grid in data.Grids)
+        {
+            if (HasComp<BecomesStationComponent>(grid))
+            {
+                main = grid;
+                break;
+            }
+        }
+
+        main ??= _station.GetLargestGrid((station, data));
+        return main is { } mainGrid ? GetFloorGrids(mainGrid) : new List<EntityUid>();
+    }
 
     /// <summary>
     /// Returns <paramref name="mainGrid"/> plus every z-level peer floor grid linked to it.
