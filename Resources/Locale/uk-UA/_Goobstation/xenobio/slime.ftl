@@ -15,3 +15,6 @@ slime-interaction-tame = Схоже, тепер ви йому подобаєте
 slime-interaction-tame-fail = Схоже, воно вами не цікавиться.
 
 slime-latch-fail-already-latched = Ви не можете вчепитися в {$ent}, у нього вже вчепився хтось інший!
+slime-eat-corpse-success = {THE($eater)} намагається відірвати щось від {THE($target)}!
+slime-eat-corpse-fail-not-eatable = {THE($target)} не здається їстівним.
+slime-eat-corpse-fail-not-dead = {THE($target)} має бути мертвим!

@@ -229,6 +229,11 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
                 if (!loadoutProto.CustomColorTint || string.IsNullOrEmpty(loadout.CustomColorTint) || !loadout.IsValidColorTint()) // Pirate: loadout
                     loadout.CustomColorTint = null; // Pirate: loadout
 
+                #region Pirate: loadout
+                loadout.CustomName = SanitizeCustomText(loadout.CustomName, configManager.GetCVar(CCVars.MaxNameLength));
+                loadout.CustomDescription = SanitizeCustomText(loadout.CustomDescription, MaxLoadoutDescriptionLength);
+                #endregion
+
                 Apply(loadoutProto);
             }
 
@@ -274,6 +279,27 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
     }
 
     #region Pirate: loadout
+    /// <summary>
+    /// Maximum length for a loadout item's custom description.
+    /// </summary>
+    private const int MaxLoadoutDescriptionLength = 256;
+
+    /// <summary>
+    /// Trims a player-supplied custom name/description and clamps it to <paramref name="maxLength"/>.
+    /// Returns null when the result is empty so the item falls back to its default.
+    /// </summary>
+    private static string? SanitizeCustomText(string? text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        var trimmed = text.Trim();
+        if (trimmed.Length > maxLength)
+            trimmed = trimmed[..maxLength];
+
+        return trimmed.Length == 0 ? null : trimmed;
+    }
+
     private bool PirateHasLoadoutForGroupSlot(
         ProtoId<LoadoutGroupPrototype> currentGroup,
         LoadoutGroupPrototype currentGroupProto,
@@ -418,7 +444,7 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
     /// <summary>
     /// Applies the specified loadout to this group.
     /// </summary>
-    public bool AddLoadout(ProtoId<LoadoutGroupPrototype> selectedGroup, ProtoId<LoadoutPrototype> selectedLoadout, IPrototypeManager protoManager, string? customColorTint = null) // Pirate: loadout
+    public bool AddLoadout(ProtoId<LoadoutGroupPrototype> selectedGroup, ProtoId<LoadoutPrototype> selectedLoadout, IPrototypeManager protoManager, string? customColorTint = null, string? customName = null, string? customDescription = null) // Pirate: loadout
     {
         var groupLoadouts = SelectedLoadouts[selectedGroup];
 
@@ -450,6 +476,8 @@ public sealed partial class RoleLoadout : IEquatable<RoleLoadout>
         {
             Prototype = selectedLoadout,
             CustomColorTint = customColorTint, // Pirate: loadout
+            CustomName = customName, // Pirate: loadout
+            CustomDescription = customDescription, // Pirate: loadout
         });
 
         return true;

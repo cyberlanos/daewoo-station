@@ -47,6 +47,23 @@
   abstract: true
 
 - type: entity
+  parent: ClothingHeadEyeBaseFlippable
+  id: ClothingEyesEyepatchFake
+  name: eyepatch
+  description: Yarr.
+  suffix: fake
+  components:
+  - type: Sprite
+    sprite: Clothing/Eyes/Misc/eyepatch.rsi
+  - type: Clothing
+    sprite: Clothing/Eyes/Misc/eyepatch.rsi
+
+- type: entity
+  parent: [ClothingEyesEyepatchFake, ClothingHeadEyeBaseFlipped]
+  id: ClothingEyesEyepatchFakeFlipped
+  suffix: fake, flipped
+
+- type: entity
   parent: ClothingEyesEyepatch
   id: ClothingEyesEyepatchColor
   name: eyepatch
@@ -63,6 +80,23 @@
 - type: entity
   parent: [ClothingEyesEyepatchColor, ClothingHeadEyeBaseFlipped]
   id: ClothingEyesEyepatchColorFlipped
+
+- type: entity
+  parent: ClothingHeadEyeBaseFlippable
+  id: ClothingEyesEyepatchColorFake
+  name: eyepatch
+  description: Yarr.
+  suffix: colorable, fake
+  components:
+  - type: Sprite
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/eyepatch_color.rsi
+  - type: Clothing
+    sprite: _Pirate/Loadouts/EEGeneric/Clothing/Eyes/Misc/eyepatch_color.rsi
+
+- type: entity
+  parent: [ClothingEyesEyepatchColorFake, ClothingHeadEyeBaseFlipped]
+  id: ClothingEyesEyepatchColorFakeFlipped
+  suffix: colorable, fake, flipped
 
 
 - type: entity
@@ -224,7 +258,7 @@
 
 
 - type: entity
-  parent: ClothingHandsGlovesSyntheticBase
+  parent: ClothingHandsButcherable
   id: ClothingHandsGlovesEvening
   name: evening gloves
   description: Gloves that reach past the elbow. Serving elegance and serving looks!
@@ -236,17 +270,15 @@
 
 
 - type: entity
-  parent: ClothingHandsGlovesSyntheticBase
-  id: ClothingHandsTacticalMaidGlovesLoadout
+  parent: ClothingHandsButcherable
+  id: ClothingHandsTacticalMaidGlovesCivilian
   name: tactical maid gloves
-  description: Tactical maid gloves, every self-respecting maid should be able to discreetly eliminate the stains the passengers leave.
+  description: Tactical maid gloves, every self-respecting maid should be able to discreetly eliminate her goals.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/tacticalmaidgloves.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Hands/Gloves/tacticalmaidgloves.rsi
-  - type: Fiber
-    fiberColor: fibers-black
 
 - type: entity
   parent: ClothingHandsGlovesEnviroglovesBase
@@ -402,6 +434,9 @@
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Belt/TCAF_webbing.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/Belt/TCAF_webbing.rsi
+  - type: Storage
+    grid:
+    - 0,0,3,1
 
 - type: entity
   parent: [ClothingBackpackSatchel, BaseFoldable]
@@ -772,7 +807,7 @@
 
 
 - type: entity
-  parent: ClothingHandsGlovesCombat
+  parent: ClothingHandsButcherable
   id: ClothingHandsGlovesCombatTCAF
   name: TCAF combat gloves
   description: A pair of tactical gloves of an ancient Solarian design, which see common use in the Biesel Republic's armed forces.
@@ -1091,7 +1126,18 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  abstract: true
+  parent: ClothingOuterStorageBase
+  id: ClothingOuterLoadoutWinterCoat
+  components:
+  - type: TemperatureProtection
+    heatingCoefficient: 1.1
+    coolingCoefficient: 0.1
+  - type: Item
+    size: Normal
+
+- type: entity
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterCorporateJacket
   name: Nanotrasen Corporate Jacket
   description: A cozy jacket with the Nanotrasen logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -1103,7 +1149,7 @@
     
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterDenimJacket
   name: Denim jacket
   description: A jean jacket with a warm inner lining.
@@ -1127,11 +1173,6 @@
   - type: TemperatureProtection
     heatingCoefficient: 0.1
     coolingCoefficient: 0.1
-  - type: Armor
-    modifiers:
-      coefficients:
-        Slash: 0.9
-        Heat: 0.75
 
 
 - type: entity
@@ -1156,11 +1197,6 @@
   - type: TemperatureProtection
     heatingCoefficient: 0.1
     coolingCoefficient: 0.1
-  - type: Armor
-    modifiers:
-      coefficients:
-        Slash: 0.9
-        Heat: 0.75
 
 
 - type: entity
@@ -1516,7 +1552,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterWinterCoatLong
   name: long winter coat
   description: Even your legs will be warm with this stylish coat.
@@ -1528,7 +1564,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterWinterCoatPlaid
   name: plaid winter coat
   description: It might be made out of actual wool.
@@ -2138,6 +2174,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/evening_gown.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2162,6 +2199,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/tea_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2210,6 +2248,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2221,6 +2260,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/black_tango_alt.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2233,6 +2273,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamblue.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2245,6 +2286,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamgreen.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2257,6 +2299,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsampurple.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2269,6 +2312,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamred.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2281,6 +2325,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/cheongsamwhite.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2341,6 +2386,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/flamenco.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2365,6 +2411,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/dress_orange.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2401,6 +2448,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/fluffy.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2413,6 +2461,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/formalred.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2425,6 +2474,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/gothic.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2437,6 +2487,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/kimono_color.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2449,6 +2500,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/lacy_gown.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2461,6 +2513,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2473,6 +2526,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/long_flared_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2497,6 +2551,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/qipao_slim.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2533,6 +2588,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/puffydress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2557,6 +2613,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_green.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2569,6 +2626,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/sari_red.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2593,6 +2651,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/spider.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2641,6 +2700,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_black_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2653,6 +2713,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Uniforms/Jumpskirt/victorian_red_dress.rsi
+  - type: ClothingLayerRemap
 
 
 - type: entity
@@ -2689,6 +2750,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot
@@ -2708,6 +2770,7 @@
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Misc/long_high_heels.rsi
   - type: HideLayerClothing
+    force: true
     slots:
     - LFoot
     - RFoot
@@ -2766,6 +2829,90 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Sandals/flipflops_alt.rsi
 
 - type: entity
+  abstract: true
+  parent: [Clothing, ClothingSlotBase]
+  id: ClothingShoesLoadoutCivilianBase
+  components:
+  - type: Clothing
+    slots:
+    - FEET
+    equipSound:
+      collection: GenericEquip
+      params:
+        volume: -5
+    equipDelay: 0.5
+    unequipDelay: 0.3
+  - type: Sprite
+    state: icon
+  - type: Item
+    size: Normal
+  - type: Food
+    requiresSpecialDigestion: true
+  - type: SolutionContainerManager
+    solutions:
+      food:
+        maxVol: 10
+        reagents:
+        - ReagentId: Fiber
+          Quantity: 10
+  - type: Tag
+    tags:
+    - ClothMade
+    - Recyclable
+    - WhitelistChameleon
+  - type: ProtectedFromStepTriggers
+  - type: Butcherable
+    butcheringType: Knife
+    spawned:
+    - id: MaterialCloth1
+      amount: 1
+  - type: PhysicalComposition
+    materialComposition:
+      Cloth: 50
+  - type: ItemSlots
+    slots:
+      item:
+        name: clothing-boots-sidearm
+        whitelist:
+          tags:
+          - Knife
+          - Sidearm
+
+- type: entity
+  parent: ClothingShoesLoadoutCivilianBase
+  id: ClothingShoesBootsCowboyFancyLoadout
+  name: fancy cowboy boots
+  description: They got spurs that jingle and/or jangle.
+  components:
+  - type: Sprite
+    sprite: Clothing/Shoes/Boots/cowboybootsfancy.rsi
+  - type: Clothing
+    sprite: Clothing/Shoes/Boots/cowboybootsfancy.rsi
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepSpurs
+      params:
+        variation: 0.09
+        volume: -6
+
+- type: entity
+  parent: ClothingShoesLoadoutCivilianBase
+  id: ClothingShoesBootsCowboyWhiteLoadout
+  name: white cowboy boots
+  description: They got spurs that jingle and/or jangle.
+  components:
+  - type: Sprite
+    sprite: Clothing/Shoes/Boots/cowboybootswhite.rsi
+  - type: Clothing
+    sprite: Clothing/Shoes/Boots/cowboybootswhite.rsi
+  - type: FootstepModifier
+    footstepSoundCollection:
+      collection: FootstepSpurs
+      params:
+        variation: 0.09
+        volume: -6
+
+- type: entity
   parent: ClothingShoesBaseButcherable
   id: ClothingShoesBootsWorkColor
   name: workboots
@@ -2778,10 +2925,10 @@
 
 
 - type: entity
-  parent: ClothingShoesMilitaryBase
+  parent: ClothingShoesLoadoutCivilianBase
   id: ClothingShoesBootsJackFake
   name: jackboots
-  description: Civilian-grade replica of Nanotrasen Security combat boots. Looks the part but lacks the performanceвЂ”ideal for the heated situations.
+  description: Civilian-grade replica of Nanotrasen Security combat boots. Looks the part but lacks the performance - ideal for the heated situations.
   components:
   - type: Sprite
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots.rsi
@@ -2790,7 +2937,7 @@
 
 
 - type: entity
-  parent: ClothingShoesMilitaryBase
+  parent: ClothingShoesLoadoutCivilianBase
   id: ClothingShoesBootsJackColor
   name: fashion jackboots
   description: Civilian-grade replica of Nanotrasen Security combat boots, impractical but fashionable.
@@ -2799,8 +2946,6 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots_color.rsi
   - type: Clothing
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/jackboots_color.rsi
-  - type: ClothingModifyStunTime # Goobstation
-    modifier: 0.8
 
 
 - type: entity
@@ -2863,7 +3008,7 @@
     sprite: _Pirate/Loadouts/EEGeneric/Clothing/Shoes/Boots/thighboots.rsi
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterCsCorporateJacket
   name: Cybersun Corporate Jacket
   description: A cozy jacket with the Cybersun logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2875,7 +3020,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterEeCorporateJacket
   name: Einstein Engines Corporate Jacket
   description: A cozy jacket with the Einstein Engines logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2887,7 +3032,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterHiCorporateJacket
   name: Hephaestus Industries Corporate Jacket
   description: A cozy jacket with the Hephaestus Industries logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2899,7 +3044,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterHmCorporateJacket
   name: Hawkmoon Acquisitions Corporate Jacket
   description: A cozy jacket with the Hawkmoon Acquisitions logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2911,7 +3056,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterIdCorporateJacket
   name: Interdyne Corporate Jacket
   description: A cozy jacket with the Interdyne logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2923,7 +3068,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterBcCorporateJacket
   name: Bishop Cybernetics Corporate Jacket
   description: A cozy jacket with the Bishop Cybernetics logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2935,7 +3080,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterDdCorporateJacket
   name: Discount Dan's Corporate Jacket
   description: A cozy jacket with the Discount Dan's logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2947,7 +3092,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterFaCorporateJacket
   name: Five Points Armory Corporate Jacket
   description: A cozy jacket with the Five Points Armory logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2959,7 +3104,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterGeCorporateJacket
   name: Gilthari Exports Corporate Jacket
   description: A cozy jacket with the Gilthari Exports logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2971,7 +3116,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterZhCorporateJacket
   name: Zeng-Hu Pharmaceuticals Corporate Jacket
   description: A cozy jacket with the Zeng-Hu Pharmaceuticals logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2983,7 +3128,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterIiCorporateJacket
   name: Idris Incorporated Corporate Jacket
   description: A cozy jacket with the Idris Incorporated logo printed on the back. Merchandise rewarded to stations with a safety factor of uhh... seven.
@@ -2995,7 +3140,7 @@
 
 
 - type: entity
-  parent: ClothingOuterWinterCoat
+  parent: ClothingOuterLoadoutWinterCoat
   id: ClothingOuterOeCorporateJacket
   name: Orion Express Corporate Jacket
 
@@ -3793,16 +3938,24 @@
       sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/OuterClothing/TCAF_jacket.rsi
     - type: Clothing
       sprite: _Pirate/Loadouts/EEGeneric/_EE/Clothing/BieselRepublic/OuterClothing/TCAF_jacket.rsi
-    - type: Armor
-      modifiers:
-        coefficients:
-          Blunt: 0.95
-          Slash: 0.95
-          Piercing: 0.95
-          Heat: 0.85
     - type: TemperatureProtection
       heatingCoefficient: 0.1
       coolingCoefficient: 0.1
+
+- type: entity
+  parent: [ClothingOuterStorageBase, AllowSuitStorageClothing]
+  id: ClothingOuterCoatDetectiveLoadoutCivilian
+  name: detective trenchcoat
+  description: An 18th-century multi-purpose trenchcoat. Someone who wears this means serious business.
+  components:
+  - type: Sprite
+    sprite: Clothing/OuterClothing/Coats/detective.rsi
+  - type: Clothing
+    sprite: Clothing/OuterClothing/Coats/detective.rsi
+  - type: StorageFill
+    contents:
+    - id: SmokingPipeFilledTobacco
+    - id: FlippoLighter
 
 - type: entity
   parent: ClothingNeckBase

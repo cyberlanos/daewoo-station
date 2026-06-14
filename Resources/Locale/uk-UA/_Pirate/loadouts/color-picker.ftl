@@ -1,3 +1,9 @@
 loadout-color-picker-apply = Застосувати
 loadout-customize-color-tooltip = Налаштувати колір
+loadout-customize-name-tooltip = Налаштувати назву та опис
+loadout-customize-tooltip = Налаштувати
+loadout-name-desc-apply = Застосувати
+loadout-name-desc-name-label = Назва
+loadout-name-desc-description-label = Опис
+loadout-name-desc-color-label = Колір
 humanoid-profile-editor-show-unavailable = Показати недоступні

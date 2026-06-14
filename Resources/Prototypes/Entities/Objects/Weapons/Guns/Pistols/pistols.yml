@@ -240,7 +240,7 @@
         whitelist:
           tags:
             - CartridgePistol
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ContainerContainer # DOWNSTREAM-TPirates: gun flashlights
     containers:
       flashlight: !type:ContainerSlot
@@ -287,7 +287,7 @@
         whitelist:
           components:
           - GunUpgradeFlashlight
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ProjectileBatteryAmmoProvider
     proto: BulletPistol
     fireCost: 100
@@ -354,7 +354,7 @@
         whitelist:
           tags:
             - CartridgeCaselessRifle
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ContainerContainer # DOWNSTREAM-TPirates: gun flashlights
     containers:
       flashlight: !type:ContainerSlot
@@ -386,7 +386,7 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/mk58.ogg
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ItemSlots # DOWNSTREAM-TPirates: gun flashlights
     slots:
       flashlight:
@@ -476,7 +476,7 @@
         whitelist:
           tags:
             - CartridgeMagnum
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ContainerContainer # DOWNSTREAM-TPirates: gun flashlights
     containers:
       flashlight: !type:ContainerSlot

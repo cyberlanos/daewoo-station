@@ -113,7 +113,6 @@
     species:
     - SlimePerson
     - Vox
-    - Hydrakin # Pirate edit
 
 - type: loadoutEffectGroup
   id: OxygenBreather

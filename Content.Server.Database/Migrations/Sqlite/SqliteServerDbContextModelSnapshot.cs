@@ -1254,6 +1254,16 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasColumnName("custom_color_tint");
 
+                    #region Pirate: loadout
+                    b.Property<string>("CustomDescription")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("custom_description");
+
+                    b.Property<string>("CustomName")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("custom_name");
+                    #endregion
+
                     b.Property<int>("ProfileLoadoutGroupId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("profile_loadout_group_id");

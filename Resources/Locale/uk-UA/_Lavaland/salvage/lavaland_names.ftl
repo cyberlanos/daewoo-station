@@ -37,3 +37,4 @@ lavaland-ruin-generator = Кладовище генераторів
 lavaland-ruin-mug = Фабрика кухлів
 lavaland-ruin-temple = Храм Нар'Сі
 lavaland-ruin-flock-large = Дивні скляні руїни
+lavaland-ruin-reclaimer = НТ-утилізатор

@@ -387,6 +387,8 @@ namespace Content.Server.Database
                         {
                             Prototype = profLoadout.LoadoutName,
                             CustomColorTint = profLoadout.CustomColorTint, // Pirate: loadout
+                            CustomName = profLoadout.CustomName, // Pirate: loadout
+                            CustomDescription = profLoadout.CustomDescription, // Pirate: loadout
                         });
                     }
                 }
@@ -504,6 +506,8 @@ namespace Content.Server.Database
                         {
                             LoadoutName = loadout.Prototype,
                             CustomColorTint = loadout.CustomColorTint, // Pirate: loadout
+                            CustomName = loadout.CustomName, // Pirate: loadout
+                            CustomDescription = loadout.CustomDescription, // Pirate: loadout
                         });
                     }
 

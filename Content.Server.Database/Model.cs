@@ -827,6 +827,16 @@ namespace Content.Server.Database
         /// </remarks>
         [MaxLength(16)]
         public string? CustomColorTint { get; set; }
+
+        /// <summary>
+        /// Optional custom display name overriding the item's default.
+        /// </summary>
+        public string? CustomName { get; set; }
+
+        /// <summary>
+        /// Optional custom description overriding the item's default.
+        /// </summary>
+        public string? CustomDescription { get; set; }
         #endregion
 
         /*
