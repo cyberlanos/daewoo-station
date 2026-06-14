@@ -605,7 +605,14 @@ public sealed partial class VampireSystem : EntitySystem
         }
 
         //attempt to drain the target's blood level
-        var targetBloodLevel = _blood.GetBloodLevelPercentage((target, blood)) * blood.BloodMaxVolume.Float(); //get target's current blood volume in u
+        if (!_solution.ResolveSolution(target, blood.BloodSolutionName, ref blood.BloodSolution, out var targetBloodSolution))
+        {
+            comp.IsDrinking = false; //Blood level reduction failed
+            _popup.PopupEntity(Loc.GetString("vampire-drink-target-empty"), uid, uid, PopupType.MediumCaution);
+            return;
+        }
+
+        var targetBloodLevel = targetBloodSolution.Volume.Float(); //get target's current blood volume in u
         if (targetBloodLevel <= 0.0f) //Check the target has blood to drink at all
         {
             comp.IsDrinking = false; //Blood level reduction failed
