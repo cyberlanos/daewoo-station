@@ -10,7 +10,9 @@
 using Content.Server.Antag;
 using Content.Server.Station.Components;
 using Content.Server.StationEvents.Components;
+using Content.Server._Pirate.ZLevels.Spawning; // Pirate: multiz
 using Content.Shared.GameTicking.Components;
+using Content.Shared.Station.Components; // Pirate: multiz
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 
@@ -22,6 +24,7 @@ namespace Content.Server.StationEvents.Events;
 public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
 {
     [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly CEZLevelFloorGridsSystem _zFloors = default!; // Pirate: multiz
 
     public override void Initialize()
     {
@@ -40,31 +43,52 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
             return;
         }
 
-        // find a station grid
-        var gridUid = StationSystem.GetLargestGrid(station.Value);
-        if (gridUid == null || !TryComp<MapGridComponent>(gridUid, out var grid))
+        // Pirate: multiz - use the main station grid (BecomesStation), not the largest grid which
+        // can be a docked ATS/shuttle.
+        if (!TryComp<StationDataComponent>(station, out var stationData)
+            || GetStationMainGrid(stationData) is not { } mainGrid)
         {
-            Sawmill.Warning("Chosen station has no grids, cannot pick location for {ToPrettyString(uid):rule}");
+            Sawmill.Warning($"Chosen station has no main grid, cannot pick location for {ToPrettyString(uid):rule}");
             ForceEndSelf(uid, gameRule);
             return;
         }
 
-        // figure out its AABB size and use that as a guide to how far the spawner should be
+        // Pirate: multiz - pick a space location around every z-level floor grid so antags
+        // distribute across decks instead of all arriving at the main floor.
+        comp.FloorCoords.Clear();
+        foreach (var floor in _zFloors.GetFloorGrids(mainGrid.Owner))
+        {
+            if (TryComp<MapGridComponent>(floor, out var floorGrid))
+                comp.FloorCoords.Add(GetSpaceLocationAround(floor, floorGrid, comp.SpawnDistance));
+        }
+
+        comp.Coords = comp.FloorCoords.Count > 0 ? comp.FloorCoords[0] : null;
+        Sawmill.Info($"Picked {comp.FloorCoords.Count} location(s) for {ToPrettyString(uid):rule}");
+    }
+
+    // Pirate: multiz - compute a spawn location out in space, SpawnDistance beyond the grid's AABB radius
+    private MapCoordinates GetSpaceLocationAround(EntityUid gridUid, MapGridComponent grid, float spawnDistance)
+    {
         var size = grid.LocalAABB.Size.Length() / 2;
-        var distance = size + comp.SpawnDistance;
+        var distance = size + spawnDistance;
         var angle = RobustRandom.NextAngle();
-        // position relative to station center
         var location = angle.ToVec() * distance;
 
-        // create the spawner!
-        var xform = Transform(gridUid.Value);
+        var xform = Transform(gridUid);
         var position = _transform.GetWorldPosition(xform) + location;
-        comp.Coords = new MapCoordinates(position, xform.MapID);
-        Sawmill.Info($"Picked location {comp.Coords} for {ToPrettyString(uid):rule}");
+        return new MapCoordinates(position, xform.MapID);
     }
 
     private void OnSelectLocation(Entity<SpaceSpawnRuleComponent> ent, ref AntagSelectLocationEvent args)
     {
+        // Pirate: multiz - offer a location on every floor; AntagSelection picks one per antag
+        if (ent.Comp.FloorCoords.Count > 0)
+        {
+            foreach (var floorCoords in ent.Comp.FloorCoords)
+                args.Coordinates.Add(floorCoords);
+            return;
+        }
+
         if (ent.Comp.Coords is {} coords)
             args.Coordinates.Add(coords);
     }

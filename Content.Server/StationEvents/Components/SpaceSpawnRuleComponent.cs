@@ -28,4 +28,9 @@ public sealed partial class SpaceSpawnRuleComponent : Component
     /// </summary>
     [DataField]
     public MapCoordinates? Coords;
+
+    // Pirate: multiz - one spawn location around each z-level floor grid, so space antags
+    // distribute across decks instead of all arriving at the main floor.
+    [DataField]
+    public List<MapCoordinates> FloorCoords = new();
 }
