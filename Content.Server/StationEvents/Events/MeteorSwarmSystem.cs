@@ -58,14 +58,13 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
             return;
 
         var station = RobustRandom.Pick(_station.GetStations());
-        // Pirate: multiz - main station grid (BecomesStation), not largest grid (could be a docked ATS/shuttle)
+        #region Pirate: multiz
         if (!TryComp<StationDataComponent>(station, out var stationData)
             || GetStationMainGrid(stationData) is not { } mainGridEnt)
             return;
 
         var mainGrid = mainGridEnt.Owner;
 
-        // Pirate: multiz - gather every z-level floor grid so the wave can be spread across decks
         var targets = new List<EntityUid>();
         foreach (var grid in _zFloors.GetFloorGrids(mainGrid))
         {
@@ -80,6 +79,7 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
         var meteorsToSpawn = component.MeteorsPerWave.Next(RobustRandom);
         for (var i = 0; i < meteorsToSpawn; i++)
             SpawnMeteor(uid, component, RobustRandom.Pick(targets));
+        #endregion
 
         component.WaveCounter--;
         if (component.WaveCounter <= 0)
@@ -88,7 +88,7 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
         }
     }
 
-    // Pirate: multiz - spawn a single meteor aimed at the given floor grid's map
+    #region Pirate: multiz
     private void SpawnMeteor(EntityUid uid, MeteorSwarmComponent component, EntityUid grid)
     {
         var mapId = Transform(grid).MapID;
@@ -119,4 +119,5 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
         var physics = Comp<PhysicsComponent>(meteor);
         _physics.ApplyLinearImpulse(meteor, -offset.Normalized() * component.MeteorVelocity * physics.Mass, body: physics);
     }
+    #endregion
 }

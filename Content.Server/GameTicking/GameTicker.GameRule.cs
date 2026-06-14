@@ -153,11 +153,12 @@ public sealed partial class GameTicker
         if (MetaData(ruleEntity).EntityPrototype?.ID is not { } id) // you really fucked up
             return false;
 
-        // Pirate: skip the randomized start delay when the testing cvar is set, firing rules immediately
+        #region Pirate: multiz
         if (_cfg.GetCVar(PirateVars.EventsSkipDelay))
             RemComp<DelayedStartRuleComponent>(ruleEntity);
+        #endregion
         // If we already have it, then we just skip the delay as it has already happened.
-        else if (!RemComp<DelayedStartRuleComponent>(ruleEntity) && ruleData.Delay != null)
+        else if (!RemComp<DelayedStartRuleComponent>(ruleEntity) && ruleData.Delay != null) // Pirate: multiz
         {
             var delayTime = TimeSpan.FromSeconds(ruleData.Delay.Value.Next(_robustRandom));
 

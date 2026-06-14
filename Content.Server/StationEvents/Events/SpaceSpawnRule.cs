@@ -43,8 +43,7 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
             return;
         }
 
-        // Pirate: multiz - use the main station grid (BecomesStation), not the largest grid which
-        // can be a docked ATS/shuttle.
+        #region Pirate: multiz
         if (!TryComp<StationDataComponent>(station, out var stationData)
             || GetStationMainGrid(stationData) is not { } mainGrid)
         {
@@ -53,8 +52,6 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
             return;
         }
 
-        // Pirate: multiz - pick a space location around every z-level floor grid so antags
-        // distribute across decks instead of all arriving at the main floor.
         comp.FloorCoords.Clear();
         foreach (var floor in _zFloors.GetFloorGrids(mainGrid.Owner))
         {
@@ -64,9 +61,10 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
 
         comp.Coords = comp.FloorCoords.Count > 0 ? comp.FloorCoords[0] : null;
         Sawmill.Info($"Picked {comp.FloorCoords.Count} location(s) for {ToPrettyString(uid):rule}");
+        #endregion
     }
 
-    // Pirate: multiz - compute a spawn location out in space, SpawnDistance beyond the grid's AABB radius
+    #region Pirate: multiz
     private MapCoordinates GetSpaceLocationAround(EntityUid gridUid, MapGridComponent grid, float spawnDistance)
     {
         var size = grid.LocalAABB.Size.Length() / 2;
@@ -78,16 +76,18 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         var position = _transform.GetWorldPosition(xform) + location;
         return new MapCoordinates(position, xform.MapID);
     }
+    #endregion
 
     private void OnSelectLocation(Entity<SpaceSpawnRuleComponent> ent, ref AntagSelectLocationEvent args)
     {
-        // Pirate: multiz - offer a location on every floor; AntagSelection picks one per antag
+        #region Pirate: multiz
         if (ent.Comp.FloorCoords.Count > 0)
         {
             foreach (var floorCoords in ent.Comp.FloorCoords)
                 args.Coordinates.Add(floorCoords);
             return;
         }
+        #endregion
 
         if (ent.Comp.Coords is {} coords)
             args.Coordinates.Add(coords);
