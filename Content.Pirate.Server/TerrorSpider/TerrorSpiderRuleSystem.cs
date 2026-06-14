@@ -12,6 +12,7 @@ using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Robust.Server.Player;
 using Robust.Shared.Audio;
+using Robust.Shared.Player;
 using Robust.Shared.Timing;
 
 namespace Content.Pirate.Server.TerrorSpider;
