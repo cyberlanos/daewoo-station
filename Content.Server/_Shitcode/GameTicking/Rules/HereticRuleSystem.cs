@@ -68,11 +68,10 @@ public sealed class HereticRuleSystem : GameRuleSystem<HereticRuleComponent>
         if (!TryGetRandomStation(out var station))
             return;
 
-        // Pirate: multiz - TryFindRandomTileOnStation now spreads across all z-level floor grids
-        var stationData = Comp<StationDataComponent>(station.Value);
+        var stationData = Comp<StationDataComponent>(station.Value); // Pirate: multiz
         for (var i = 0; i < ent.Comp.RealityShiftPerHeretic.Next(_rand); i++)
         {
-            if (TryFindRandomTileOnStation((station.Value, stationData), out _, out _, out var coords))
+            if (TryFindRandomTileOnStation((station.Value, stationData), out _, out _, out var coords)) // Pirate: multiz
                 Spawn(ent.Comp.RealityShift, coords);
         }
     }

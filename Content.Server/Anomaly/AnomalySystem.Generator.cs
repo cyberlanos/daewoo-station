@@ -209,12 +209,12 @@ public sealed partial class AnomalySystem
     {
         var xform = Transform(uid);
 
-        // Pirate: multiz - anchor on the generator's own deck (then spread across that station's
-        // floors), instead of GetLargestGrid which can return a docked ATS/shuttle grid.
+        #region Pirate: multiz
         if (xform.GridUid is not { } grid)
             return;
 
         grid = _zFloors.GetRandomFloorGrid(grid);
+        #endregion
         SpawnOnRandomGridLocation(grid, component.SpawnerPrototype);
         RemComp<GeneratingAnomalyGeneratorComponent>(uid);
         Appearance.SetData(uid, AnomalyGeneratorVisuals.Generating, false);

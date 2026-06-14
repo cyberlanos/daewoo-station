@@ -119,13 +119,14 @@ public abstract partial class GameRuleSystem<T> where T: IComponent
         if (GetStationMainGrid(station.Comp) is not { } grid)
             return false;
 
-        // Pirate: multiz - spread across all z-level floor grids (weighted by area), not just the main grid
+        #region Pirate: multiz
         var chosen = _zFloors.GetRandomFloorGrid(grid.Owner);
         if (!TryComp<MapGridComponent>(chosen, out var chosenComp))
             return false;
 
         targetGrid = chosen;
         return TryFindTileOnGrid((chosen, chosenComp), out tile, out targetCoords);
+        #endregion
     }
 
     protected Entity<MapGridComponent>? GetStationMainGrid(StationDataComponent station)

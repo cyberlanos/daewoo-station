@@ -46,17 +46,18 @@ public sealed class AnomalySpawnRule : StationEventSystem<AnomalySpawnRuleCompon
         if (!TryComp<StationDataComponent>(chosenStation, out var stationData))
             return;
 
-        // Pirate: multiz - use the main station grid (the one with BecomesStation), not the largest
-        // grid, which can be a docked ATS/shuttle. Matches how other events pick via GetStationMainGrid.
+        #region Pirate: multiz
         if (GetStationMainGrid(stationData) is not { } mainGrid)
             return;
+        #endregion
 
         var amountToSpawn = 1;
         for (var i = 0; i < amountToSpawn; i++)
         {
-            // Pirate: multiz - spread across the station's z-level floor grids
+            #region Pirate: multiz
             var spawnGrid = _zFloors.GetRandomFloorGrid(mainGrid.Owner);
             _anomaly.SpawnOnRandomGridLocation(spawnGrid, component.AnomalySpawnerPrototype);
+            #endregion
         }
     }
 }
