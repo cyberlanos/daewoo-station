@@ -30,7 +30,7 @@ public sealed class PuddleMessVariationPassSystem : VariationPassSystem<PuddleMe
 
         for (var i = 0; i < puddleTiles; i++)
         {
-            if (!TryFindRandomTileOnStationAllFloors(args.Station, out _, out _, out var coords)) // Pirate: multiz
+            if (!TryFindRandomTileOnStation(args.Station, out _, out _, out var coords))
                 continue;
 
             var sol = proto.Pick(Random);
