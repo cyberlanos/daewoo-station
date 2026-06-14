@@ -1,7 +1,7 @@
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Pirate.Shared.Vampire.Components.Classes;
 using Content.Shared.Actions;
-using Content.Shared.Damage.Components;
+using Content.Shared.Damage;
 using Content.Shared.Humanoid;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
