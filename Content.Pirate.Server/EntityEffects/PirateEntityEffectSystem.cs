@@ -1,4 +1,3 @@
-using Content.Pirate.Shared.Vampire;
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Pirate.Server.Alchemy.Components;
 using Content.Pirate.Shared.Alchemy.EntityEffects;
@@ -170,7 +169,6 @@ public sealed class PirateEntityEffectSystem : EntitySystem
         SubscribeLocalEvent<ExecuteEntityEffectEvent<ChemRemovePsionic>>(OnExecuteChemRemovePsionic);
         SubscribeLocalEvent<ExecuteEntityEffectEvent<ChemRerollPsionic>>(OnExecuteChemRerollPsionic);
         SubscribeLocalEvent<ExecuteEntityEffectEvent<ChemRestorePsionicReroll>>(OnExecuteChemRestorePsionicReroll);
-        SubscribeLocalEvent<ExecuteEntityEffectEvent<CureVampire>>(OnExecuteCureVampire);
         SubscribeLocalEvent<ExecuteEntityEffectEvent<CleanseWitchEffects>>(OnExecuteCleanseWitchEffects);
         SubscribeLocalEvent<ExecuteEntityEffectEvent<PirateAcidCorrode>>(OnExecuteAcidCorrode);
         SubscribeLocalEvent<ExecuteEntityEffectEvent<PhilosopherStoneEffect>>(OnExecutePhilosopherStone);
@@ -218,18 +216,6 @@ public sealed class PirateEntityEffectSystem : EntitySystem
 
         psionicComp.CanReroll = true;
         Dirty(args.Args.TargetEntity, psionicComp);
-    }
-
-    private void OnExecuteCureVampire(ref ExecuteEntityEffectEvent<CureVampire> args)
-    {
-        if (args.Args is not EntityEffectReagentArgs)
-            return;
-
-        // Only full vampires are affected.
-        if (!HasComp<VampireComponent>(args.Args.TargetEntity))
-            return;
-
-        EnsureComp<VampireCureComponent>(args.Args.TargetEntity);
     }
 
     private void OnExecuteCleanseWitchEffects(ref ExecuteEntityEffectEvent<CleanseWitchEffects> args)
@@ -549,4 +535,3 @@ public sealed class PirateEntityEffectSystem : EntitySystem
 
     private readonly record struct PhilosopherStoneStackTransmutation(string OutputPrototype, int InputRatio, int OutputMultiplier = 1);
 }
-

@@ -67,8 +67,6 @@
   components:
   - type: Vampirism
     succDelay: 3
-  - type: WeakToHoly
-    alwaysTakeHoly: true
 #endregion
 
 #region Hearing

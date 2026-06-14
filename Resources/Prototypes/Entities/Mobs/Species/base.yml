@@ -459,8 +459,10 @@
         requireInputValidation: false
       enum.RadarConsoleUiKey.Key: #goob - contractor
         type: RadarConsoleBoundUserInterface
-      enum.VampireMutationUiKey.Key:
-        type: VampireMutationBoundUserInterface #Pirate
+      enum.VampireClassUiKey.Key:
+        type: VampireClassBui # Pirate
+      enum.VampireLocateUiKey.Key:
+        type: VampireLocateBui # Pirate
       enum.SetPsionicsVerbMenu.Key: # Pirate-PsionicsMenu
         type: PsionicsMenuBoundUserInterface
   - type: Puller
