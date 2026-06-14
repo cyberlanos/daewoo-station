@@ -40,7 +40,7 @@ public sealed class AntagBetterRandomSpawnSystem : GameRuleSystem<AntagBetterRan
 
         if (TryFindSafeRandomLocation(comp, out var coords))
             comp.Coords = coords;
-        else if (TryFindRandomTileAllFloors(out _, out _, out _, out var fallbackCoords)) // Pirate: multiz
+        else if (TryFindRandomTile(out _, out _, out _, out var fallbackCoords))
             comp.Coords = fallbackCoords;
     }
 
@@ -54,7 +54,7 @@ public sealed class AntagBetterRandomSpawnSystem : GameRuleSystem<AntagBetterRan
 
         if (TryFindSafeRandomLocation(ent.Comp, out var coords))
             args.Coordinates.Add(_transform.ToMapCoordinates(coords));
-        else if (TryFindRandomTileAllFloors(out _, out _, out _, out var fallbackCoords)) // Pirate: multiz
+        else if (TryFindRandomTile(out _, out _, out _, out var fallbackCoords))
             args.Coordinates.Add(_transform.ToMapCoordinates(fallbackCoords));
     }
 
@@ -67,7 +67,7 @@ public sealed class AntagBetterRandomSpawnSystem : GameRuleSystem<AntagBetterRan
 
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
-            if (!TryFindRandomTileAllFloors(out var tile, out _, out var targetGrid, out var tileCoords)) // Pirate: multiz
+            if (!TryFindRandomTile(out var tile, out _, out var targetGrid, out var tileCoords))
                 continue;
 
             var gridXform = Transform(targetGrid);

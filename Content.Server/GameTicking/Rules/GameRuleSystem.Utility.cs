@@ -119,85 +119,14 @@ public abstract partial class GameRuleSystem<T> where T: IComponent
         if (GetStationMainGrid(station.Comp) is not { } grid)
             return false;
 
-        targetGrid = grid.Owner;
-        return TryFindTileOnGrid(grid, out tile, out targetCoords);
-    }
-
-    #region Pirate: multiz
-    /// <summary>
-    ///     Z-level aware variant of <see cref="TryFindRandomTile"/>: picks a random eligible station,
-    ///     then a tile spread across all of its z-level floor grids.
-    /// </summary>
-    protected bool TryFindRandomTileAllFloors(out Vector2i tile,
-        [NotNullWhen(true)] out EntityUid? targetStation,
-        out EntityUid targetGrid,
-        out EntityCoordinates targetCoords)
-    {
-        tile = default;
-        targetStation = EntityUid.Invalid;
-        targetGrid = EntityUid.Invalid;
-        targetCoords = EntityCoordinates.Invalid;
-        if (TryGetRandomStation(out targetStation))
-        {
-            return TryFindRandomTileOnStationAllFloors((targetStation.Value, Comp<StationDataComponent>(targetStation.Value)),
-                out tile,
-                out targetGrid,
-                out targetCoords);
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    ///     Z-level aware variant of <see cref="TryFindRandomTileOnStation"/>: instead of only the
-    ///     main grid, spreads the result across every z-level floor grid of the station, weighted by
-    ///     grid area so per-tile odds stay uniform. Falls back to the main grid when there is no z-network.
-    /// </summary>
-    protected bool TryFindRandomTileOnStationAllFloors(Entity<StationDataComponent> station,
-        out Vector2i tile,
-        out EntityUid targetGrid,
-        out EntityCoordinates targetCoords)
-    {
-        tile = default;
-        targetGrid = EntityUid.Invalid;
-        targetCoords = EntityCoordinates.Invalid;
-
-        if (GetStationMainGrid(station.Comp) is not { } mainGrid)
+        // Pirate: multiz - spread across all z-level floor grids (weighted by area), not just the main grid
+        var chosen = _zFloors.GetRandomFloorGrid(grid.Owner);
+        if (!TryComp<MapGridComponent>(chosen, out var chosenComp))
             return false;
 
-        var floors = _zFloors.GetFloorGrids(mainGrid.Owner);
-
-        var weighted = new ValueList<(EntityUid Grid, MapGridComponent Comp, float Cumulative)>(floors.Count);
-        var total = 0f;
-        foreach (var grid in floors)
-        {
-            if (!TryComp<MapGridComponent>(grid, out var gridComp))
-                continue;
-
-            var area = gridComp.LocalAABB.Width * gridComp.LocalAABB.Height;
-            if (area <= 0f)
-                continue;
-
-            total += area;
-            weighted.Add((grid, gridComp, total));
-        }
-
-        if (total <= 0f)
-            return false;
-
-        var roll = RobustRandom.NextFloat() * total;
-        foreach (var (grid, gridComp, cumulative) in weighted)
-        {
-            if (roll > cumulative)
-                continue;
-
-            targetGrid = grid;
-            return TryFindTileOnGrid((grid, gridComp), out tile, out targetCoords);
-        }
-
-        return false;
+        targetGrid = chosen;
+        return TryFindTileOnGrid((chosen, chosenComp), out tile, out targetCoords);
     }
-    #endregion
 
     protected Entity<MapGridComponent>? GetStationMainGrid(StationDataComponent station)
     {
