@@ -5,7 +5,8 @@
     forced: true
     transferDamage: true
     transferName: true
-    inventory: Transfer
+    # Pirate: Goob polymorph drops gear when Transfer targets a form without inventory slots.
+    inventory: None
     revertOnCrit: true
     revertOnDeath: true
     effectProto: null

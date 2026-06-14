@@ -6,6 +6,7 @@
     components:
       - ShowAntagIcons
       - Vampire
+      - VampireThrall
   icon:
     sprite: /Textures/_Pirate/Vampire/hud_icons.rsi
     state: hudvampire
