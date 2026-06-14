@@ -272,7 +272,6 @@
       bloodToUnlock: 800
       bloodCost: 100
       requiredClass: Hemomancer
-    - type: EorgPreventAction
 
 - type: entity
   parent: BaseAction
@@ -347,7 +346,6 @@
       bloodToUnlock: 200
       bloodCost: 20
       requiredClass: Umbrae
-    - type: EorgPreventAction
 
 - type: entity
   parent: BaseAction
@@ -402,7 +400,6 @@
       bloodToUnlock: 800
       bloodCost: 50
       requiredClass: Umbrae
-    - type: EorgPreventAction
 
 - type: entity
   parent: BaseAction
@@ -504,7 +501,6 @@
       bloodToUnlock: 150
       bloodCost: 150
       requiredClass: Dantalion
-    - type: EorgPreventAction
 
 - type: entity
   parent: BaseAction
