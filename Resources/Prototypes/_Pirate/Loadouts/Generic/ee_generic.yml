@@ -243,13 +243,13 @@
 - type: loadout
   id: LoadoutEyesEyepatch
   equipment:
-    eyes: ClothingEyesEyepatch
+    eyes: ClothingEyesEyepatchFake
 
 - type: loadout
   id: LoadoutEyesEyepatchColor
   customColorTint: true
   equipment:
-    eyes: ClothingEyesEyepatchColor
+    eyes: ClothingEyesEyepatchColorFake
 
 - type: loadout
   id: LoadoutEyesGlasses3D
@@ -317,7 +317,7 @@
 - type: loadout
   id: ClothingOuterCoatDetectiveLoadout
   equipment:
-    outerClothing: ClothingOuterCoatDetectiveLoadout
+    outerClothing: ClothingOuterCoatDetectiveLoadoutCivilian
 
 - type: loadout
   id: ClothingOuterCoatExpensive
@@ -440,7 +440,7 @@
 - type: loadout
   id: ClothingHandsTacticalMaidGlovesLoadout
   equipment:
-    gloves: ClothingHandsTacticalMaidGlovesLoadout
+    gloves: ClothingHandsTacticalMaidGlovesCivilian
 
 - type: loadout
   id: ClothingHandsGlovesCombatTCAF
@@ -465,13 +465,13 @@
   id: LoadoutShoesBootsCowboyFancy
   customColorTint: true
   equipment:
-    shoes: ClothingShoesBootsCowboyFancy
+    shoes: ClothingShoesBootsCowboyFancyLoadout
 
 - type: loadout
   id: LoadoutShoesBootsCowboyWhite
   customColorTint: true
   equipment:
-    shoes: ClothingShoesBootsCowboyWhite
+    shoes: ClothingShoesBootsCowboyWhiteLoadout
 
 - type: loadout
   id: LoadoutShoesBootsLaceup

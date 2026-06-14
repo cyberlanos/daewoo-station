@@ -360,6 +360,9 @@ public sealed partial class PullingSystem : EntitySystem // DOWNSTREAM-TPirates:
         if (args.Handled)
             return;
 
+        if (!_blocker.CanInteract(ent, null))
+            return;
+
         args.Handled = TryStopPull(ent, ent, ent);
     }
 

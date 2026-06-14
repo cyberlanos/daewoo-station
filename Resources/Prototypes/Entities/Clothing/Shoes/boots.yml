@@ -151,6 +151,13 @@
     sprite: Clothing/Shoes/Boots/performer.rsi
   - type: Clothing
     sprite: Clothing/Shoes/Boots/performer.rsi
+  # region Pirate: loadout
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  # endregion Pirate: loadout
 
 - type: entity
   parent: [ClothingShoesMilitaryBase, BaseSecurityContraband]
@@ -177,6 +184,13 @@
     sprite: Clothing/Shoes/Boots/highheelboots.rsi
   - type: Clothing
     sprite: Clothing/Shoes/Boots/highheelboots.rsi
+  # region Pirate: loadout
+  - type: HideLayerClothing
+    force: true
+    slots:
+    - LFoot
+    - RFoot
+  # endregion Pirate: loadout
   - type: FootstepModifier
     footstepSoundCollection:
       collection: FootstepHighHeels

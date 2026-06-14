@@ -344,8 +344,7 @@
               Airloss: -3
               Brute: -3
               Burn: -3
-        # Pirate port start: Mono - Hydrakin
-        - !type:GenericStatusEffect
+        - !type:GenericStatusEffect # Mono edit
           conditions:
           - !type:OrganType #
             type: Hydrakin
@@ -355,7 +354,6 @@
           component: ForcedSleeping
           refresh: false
           type: Add
-        # Pirate port end: Mono - Hydrakin
 
 - type: reagent
   id: Doxarubixadone
@@ -379,9 +377,10 @@
             scale: 1.6
           damage:
             types:
-             Cellular: -2
-        # Pirate port start: Mono - Hydrakin
-        - !type:GenericStatusEffect
+                Cellular: -2
+            groups: # Frontier
+                Brute: 1 # Frontier
+        - !type:GenericStatusEffect # Mono edit
           conditions:
           - !type:OrganType #
             type: Hydrakin
@@ -391,7 +390,6 @@
           component: ForcedSleeping
           refresh: false
           type: Add
-        # Pirate port end: Mono - Hydrakin
 
 - type: reagent
   id: Dermaline
@@ -773,21 +771,17 @@
         conditions:
         - !type:Temperature
           max: 293.15
-        # Pirate port start: Mono - Hydrakin
         - !type:OrganType
           type: Hydrakin
           shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         amount: 100000 # thermal energy, not temperature!
       - !type:AdjustTemperature
         conditions:
         - !type:Temperature
           min: 293.15
-        # Pirate port start: Mono - Hydrakin
         - !type:OrganType
           type: Hydrakin
           shouldHave: false
-        # Pirate port end: Mono - Hydrakin
         amount: -10000
       - !type:PopupMessage
         type: Local
@@ -797,16 +791,13 @@
       - !type:AdjustReagent
         reagent: Fresium
         amount: -5
-      # Pirate port start: Mono - Hydrakin
       - !type:AdjustTemperature
         conditions:
         - !type:Temperature
-          min: 115.15
+          min: 215.15
         - !type:OrganType
           type: Hydrakin
-          shouldHave: true
-        amount: -100000
-      # Pirate port end: Mono - Hydrakin
+        amount: -75000
 
 - type: reagent
   id: Barozine
@@ -1682,8 +1673,7 @@
               Brute: -5.0
               Burn: -5.0
               Toxin: -5.0
-        # Pirate port start: Mono - Hydrakin
-        - !type:GenericStatusEffect
+        - !type:GenericStatusEffect # Mono edit
           conditions:
           - !type:OrganType
             type: Hydrakin
@@ -1693,7 +1683,7 @@
           component: ForcedSleeping
           refresh: false
           type: Add
-        # Pirate port end: Mono - Hydrakin
+
 
 - type: reagent
   id : Aloxadone
@@ -1720,8 +1710,7 @@
             Heat: -10.0
             Shock: -10.0
             Caustic: -10.0
-      # Pirate port start: Mono - Hydrakin
-      - !type:GenericStatusEffect
+      - !type:GenericStatusEffect # Mono edit
         conditions:
         - !type:OrganType
           type: Hydrakin
@@ -1731,7 +1720,6 @@
         component: ForcedSleeping
         refresh: false
         type: Add
-      # Pirate port end: Mono - Hydrakin
 
 - type: reagent
   id : Mannitol # currently this is just a way to create psicodine

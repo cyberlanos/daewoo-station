@@ -831,7 +831,7 @@
     - Sidearm
   - type: PacifismAllowedGun
   - type: GunExecutionBlacklist # Goobstation
-  - type: UpgradeableWeapon # DOWNSTREAM-TPirates: gun flashlights
+  - type: ItemUpgradeable # DOWNSTREAM-TPirates: gun flashlights
   - type: ItemSlots # DOWNSTREAM-TPirates: gun flashlights
     slots:
       flashlight:
