@@ -68,7 +68,9 @@ public sealed class HereticRuleSystem : GameRuleSystem<HereticRuleComponent>
         if (!TryGetRandomStation(out var station))
             return;
 
-        var stationData = Comp<StationDataComponent>(station.Value); // Pirate: multiz
+        if (!TryComp<StationDataComponent>(station.Value, out var stationData)) // Pirate: multiz
+            return;
+
         for (var i = 0; i < ent.Comp.RealityShiftPerHeretic.Next(_rand); i++)
         {
             if (TryFindRandomTileOnStation((station.Value, stationData), out _, out _, out var coords)) // Pirate: multiz
