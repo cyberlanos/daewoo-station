@@ -1476,10 +1476,6 @@
         conditions:
         - !type:ReagentThreshold
           min: 10
-      - !type:CureVampire # Pirate - cure antag vampires back into mortals
-        conditions:
-        - !type:ReagentThreshold
-          min: 10
       - !type:HealthChange
         conditions:
         - !type:TotalDamage

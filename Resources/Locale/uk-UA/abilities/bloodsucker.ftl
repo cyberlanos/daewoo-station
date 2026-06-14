@@ -3,6 +3,7 @@ action-description-suck-blood = Висмокчіть кров жертви в р
 
 bloodsucker-fail-helmet = Вам потрібно видалити {THE($helmet)}.
 bloodsucker-fail-mask = Вам потрібно буде зняти маску!
+bloodsucker-fail-mouth-blocked = Ви не можете прокусити захист на голові {THE($target)}.
 
 bloodsucker-fail-not-blood = { CAPITALIZE(SUBJECT($target)) } не має смачної, поживної смертної крові.
 bloodsucker-fail-no-blood = { CAPITALIZE(SUBJECT($target)) } не має крові в { POSS-ADJ($target) } тілі.
@@ -19,3 +20,5 @@ bloodsucked-health-examine = [color=red]{ CAPITALIZE(SUBJECT($target)) } { CONJU
 bloodsucker-glands-throb = Залози за іклами трохи болять.
 
 bloodsucker-not-blood = {$target} не має смачної, поживної крові.
+bloodsucker-victim-is-vampire = Ця кров належить іншому вампіру, вона не дає тобі нічого.
+vampire-blooddrink-rotted = Їхнє тіло гниє, а кров зіпсована.

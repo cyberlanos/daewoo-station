@@ -106,6 +106,10 @@
         type: StoreBoundUserInterface
       enum.RadarConsoleUiKey.Key: #goob - contractor
         type: RadarConsoleBoundUserInterface
+      enum.VampireClassUiKey.Key:
+        type: VampireClassBui # Pirate
+      enum.VampireLocateUiKey.Key:
+        type: VampireLocateBui # Pirate
   # to prevent bag open/honk spam
   - type: UseDelay
     delay: 0.5
