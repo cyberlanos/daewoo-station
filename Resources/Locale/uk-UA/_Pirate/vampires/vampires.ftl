@@ -251,6 +251,7 @@ vampire-blood-swell-cancel-shoot = Твої пальці не влазять у 
 
 language-chat-confirmation = Повідомлення буде надіслано мовою { $lang }.
 language-Dantalion-name = Рабський зв'язок
+chat-language-Dantalion-name = Рабський зв'язок
 language-Dantalion-description = Безмовний зв'язок між Данталіоном і його поневоленими.
 chat-speech-verb-hivemind-1 = думає
 chat-speech-verb-hivemind-2 = розмірковує
