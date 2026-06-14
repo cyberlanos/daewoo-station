@@ -2,6 +2,7 @@ using Content.Pirate.Shared.TerrorSpider.Evolving;
 using Content.Pirate.Shared.TerrorSpider.Evolving.Conditions;
 using Content.Pirate.Shared.TerrorSpider.Evolving.EntitySystems;
 using Content.Server.Objectives.Components;
+using Content.Shared.Mind;
 using Content.Shared.Mind.Components;
 using Content.Shared.Objectives.Components;
 using Content.Shared.Objectives.Systems;
