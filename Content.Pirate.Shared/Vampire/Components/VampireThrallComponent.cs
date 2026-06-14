@@ -1,6 +1,6 @@
 using Content.Shared.Chemistry.Reagent;
-using Content.Shared.FixedPoint;
-using Content.Shared.Roles.Components;
+using Content.Goobstation.Maths.FixedPoint;
+using Content.Shared.Roles;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 

@@ -4,7 +4,7 @@ using Content.Shared.Actions.Events;
 using Content.Shared.Actions;
 using Content.Shared.Alert;
 using Content.Shared.Damage.Prototypes;
-using Content.Shared.FixedPoint;
+using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Movement.Pulling.Events;
 using Content.Shared.Movement.Systems;
 using Content.Shared.Popups;
@@ -39,7 +39,7 @@ public sealed class SharedGargantuaSystem : EntitySystem
         SubscribeLocalEvent<GargantuaComponent, PullAttemptEvent>(OnOverwhelmingForcePullAttempt);
         SubscribeLocalEvent<GargantuaComponent, DisarmAttemptEvent>(OnOverwhelmingForceDisarmAttempt);
         SubscribeLocalEvent<GargantuaComponent, AttemptMobTargetCollideEvent>(OnOverwhelmingForceMobPushAttempt);
-        SubscribeLocalEvent<GargantuaComponent, UserBeforePryEvent>(OnOverwhelmingForceBeforePry);
+        SubscribeLocalEvent<BeforePryEvent>(OnOverwhelmingForceBeforePry);
 
         SubscribeLocalEvent<ActiveBloodSwellComponent, GetMeleeDamageEvent>(OnBloodSwellMeleeDamage);
         SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRelayedEvent<GetMeleeDamageEvent>>(OnBloodSwellMeleeDamage);
@@ -230,9 +230,11 @@ public sealed class SharedGargantuaSystem : EntitySystem
         args.Cancelled = true;
     }
 
-    private void OnOverwhelmingForceBeforePry(EntityUid uid, GargantuaComponent component, ref UserBeforePryEvent args)
+    private void OnOverwhelmingForceBeforePry(ref BeforePryEvent args)
     {
-        if (!component.OverwhelmingForceActive
+        var uid = args.User;
+        if (!TryComp<GargantuaComponent>(uid, out var component)
+            || !component.OverwhelmingForceActive
             || !TryComp<VampireComponent>(uid, out var vampire)
             || vampire.TotalBlood >= component.OverwhelmingForceDoorPryBloodCost)
         {
