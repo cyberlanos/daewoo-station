@@ -42,7 +42,7 @@ public abstract class SharedEvolvingSystem : EntitySystem
             if (condition is not DamageDealCondition damageDealCondition || damageDealCondition.Condition())
                 continue;
 
-            if (!damageDealCondition.OnlyAlive || args.HitEntities.All(_mobStateSystem.IsAlive))
+            if (!damageDealCondition.OnlyAlive || args.HitEntities.All(entity => _mobStateSystem.IsAlive(entity)))
                 damageDealCondition.AddDamage(args.DealedDamage.GetTotal().Float());
         }
 
