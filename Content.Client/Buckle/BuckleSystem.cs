@@ -70,6 +70,7 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         SubscribeLocalEvent<StrapComponent, MoveEvent>(OnStrapMoveEvent);
         SubscribeLocalEvent<BuckleComponent, BuckledEvent>(OnBuckledEvent);
         SubscribeLocalEvent<BuckleComponent, UnbuckledEvent>(OnUnbuckledEvent);
+        SubscribeLocalEvent<BuckleComponent, ComponentRemove>(OnBuckleRemove);
         SubscribeLocalEvent<BuckleComponent, AttemptMobCollideEvent>(OnMobCollide);
     }
 
@@ -147,7 +148,8 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         // Goobstation - Start
         if (strapComp.SetVisible)
         {
-            ent.Comp.OriginalVisible = buckledSprite.Visible;
+            // Pirate: predicted buckles can run more than once; keep the real pre-hide value.
+            ent.Comp.OriginalVisible ??= buckledSprite.Visible;
             _sprite.SetVisible((ent.Owner, buckledSprite), false);
         }
 
@@ -179,17 +181,31 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         if (!TryComp<SpriteComponent>(ent.Owner, out var buckledSprite))
             return;
 
-        if (args.Strap.Comp.SetVisible && ent.Comp.OriginalVisible is { } originalVisible)
-        {
-            _sprite.SetVisible((ent.Owner, buckledSprite), originalVisible);
-            ent.Comp.OriginalVisible = null;
-        }
+        if (args.Strap.Comp.SetVisible)
+            RestoreHiddenSprite(ent, buckledSprite);
 
         if (!ent.Comp.OriginalDrawDepth.HasValue)
             return;
 
         _sprite.SetDrawDepth((ent.Owner, buckledSprite), ent.Comp.OriginalDrawDepth.Value);
         ent.Comp.OriginalDrawDepth = null;
+    }
+
+    private void OnBuckleRemove(Entity<BuckleComponent> ent, ref ComponentRemove args)
+    {
+        RestoreHiddenSprite(ent);
+    }
+
+    private void RestoreHiddenSprite(Entity<BuckleComponent> ent, SpriteComponent? sprite = null)
+    {
+        if (ent.Comp.OriginalVisible is not { } originalVisible)
+            return;
+
+        if (!Resolve(ent.Owner, ref sprite, false))
+            return;
+
+        _sprite.SetVisible((ent.Owner, sprite), originalVisible);
+        ent.Comp.OriginalVisible = null;
     }
 
     private void OnAppearanceChange(EntityUid uid, BuckleComponent component, ref AppearanceChangeEvent args)
