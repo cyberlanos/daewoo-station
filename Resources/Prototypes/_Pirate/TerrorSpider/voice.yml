@@ -11,16 +11,4 @@
     components:
     - BorgChassis
   chatMessages: ["chat-emote-msg-hiss"]
-  chatTriggers:
-  - hiss
-  - hiss.
-  - hiss!
-  - hiss?
-  - hissing
-  - hissing.
-  - hissing!
-  - hissing?
-  - hisses
-  - hisses.
-  - hisses!
-  - hisses?
+  # Pirate - local Hiss already owns Starlight's trigger words; this ID is for allowedEmotes wiring.
