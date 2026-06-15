@@ -6,24 +6,21 @@ using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Humanoid;
 using Content.Shared.Interaction;
 using Content.Shared.Movement.Events;
-using Content.Shared.Tag;
 using Robust.Shared.Containers;
 using Robust.Shared.Network;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
 namespace Content.Pirate.Shared.TerrorSpider.EntitySystems;
 
 public sealed class WrapSystem : EntitySystem
 {
-    private static readonly ProtoId<TagPrototype> SharpTag = "Sharp";
+    private const string SharpComponentName = "Sharp";
 
     [Dependency] private readonly ActionBlockerSystem _blocker = default!;
     [Dependency] private readonly AlertsSystem _alerts = default!;
     [Dependency] private readonly SharedContainerSystem _container = default!;
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedHandsSystem _hands = default!;
-    [Dependency] private readonly TagSystem _tag = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly INetManager _net = default!;
 
@@ -54,7 +51,7 @@ public sealed class WrapSystem : EntitySystem
 
     private void OnInteractUsing(Entity<WrapEntityHolderComponent> ent, ref InteractUsingEvent args)
     {
-        if (args.Handled || !_tag.HasTag(args.Used, SharpTag))
+        if (args.Handled || !HasSharp(args.Used))
             return;
 
         args.Handled = true;
@@ -101,7 +98,7 @@ public sealed class WrapSystem : EntitySystem
         }
 
         var activeItem = _hands.GetActiveItem(ent.Owner);
-        var time = activeItem == null || !_tag.HasTag(activeItem.Value, SharpTag)
+        var time = activeItem == null || !HasSharp(activeItem.Value)
             ? holder.UnWrapHandTime
             : holder.UnWrapItemTime;
 
@@ -183,5 +180,12 @@ public sealed class WrapSystem : EntitySystem
         });
 
         args.Handled = true;
+    }
+
+    private bool HasSharp(EntityUid uid)
+    {
+        // Pirate/Starlight: local sharpness is a component, not a TagPrototype.
+        return EntityManager.ComponentFactory.TryGetRegistration(SharpComponentName, out var registration) &&
+               EntityManager.HasComponent(uid, registration.Type);
     }
 }

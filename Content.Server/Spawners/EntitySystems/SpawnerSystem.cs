@@ -8,6 +8,8 @@
 
 using System.Threading;
 using Content.Server.Spawners.Components;
+using Content.Shared.Mobs;
+using Content.Shared.Mobs.Components;
 using Robust.Shared.Random;
 using Content.Shared.Friends.Components; // Shitmed Change
 using Content.Shared._Shitmed.Spawners.EntitySystems; // Shitmed Change
@@ -34,7 +36,11 @@ public sealed class SpawnerSystem : EntitySystem
 
     private void OnTimerFired(EntityUid uid, TimedSpawnerComponent component)
     {
-        if (!_random.Prob(component.Chance))
+        // Pirate/Starlight: spiderlings only mature while alive.
+        if ((component.RequiredState != MobState.Invalid &&
+             (!TryComp<MobStateComponent>(uid, out var stateComp) || stateComp.CurrentState != component.RequiredState)) ||
+            !_random.Prob(component.Chance) ||
+            component.Prototypes.Count == 0)
             return;
 
         var number = _random.Next(component.MinimumEntitiesSpawned, component.MaximumEntitiesSpawned);
@@ -49,6 +55,9 @@ public sealed class SpawnerSystem : EntitySystem
             RaiseLocalEvent(uid, ev);
             // Shitmed Change End
         }
+
+        if (component.DespawnWhenDone)
+            QueueDel(uid);
     }
 
     private void OnTimedSpawnerShutdown(EntityUid uid, TimedSpawnerComponent component, ComponentShutdown args)

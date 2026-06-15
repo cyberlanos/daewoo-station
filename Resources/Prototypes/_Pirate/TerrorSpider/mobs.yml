@@ -105,10 +105,9 @@
   - type: Bloodstream
     bleedReductionAmount: 1
     bloodRefreshAmount: 3
-    bloodReferenceSolution:
-      reagents:
-      - ReagentId: CopperBlood
-        Quantity: 150
+    # Pirate - local Bloodstream lacks Starlight bloodReferenceSolution.
+    bloodReagent: CopperBlood
+    bloodMaxVolume: 150
   - type: Speech
     speechVerb: Arachnid
     speechSounds: Arachnid
@@ -736,10 +735,9 @@
   - type: NoSlip
   - type: IgnoreSpiderWeb
   - type: Bloodstream
-    bloodReferenceSolution:
-      reagents:
-      - ReagentId: CopperBlood
-        Quantity: 50
+    # Pirate - local Bloodstream lacks Starlight bloodReferenceSolution.
+    bloodReagent: CopperBlood
+    bloodMaxVolume: 50
   - type: Speech
     speechVerb: Arachnid
     speechSounds: Arachnid

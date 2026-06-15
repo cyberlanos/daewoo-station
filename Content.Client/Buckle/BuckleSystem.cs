@@ -139,10 +139,18 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         if (!TryComp<SpriteComponent>(args.Strap, out var strapSprite))
             return;
 
+        var strapComp = args.Strap.Comp;
+
         if (!TryComp<SpriteComponent>(ent.Owner, out var buckledSprite))
             return;
 
         // Goobstation - Start
+        if (strapComp.SetVisible)
+        {
+            ent.Comp.OriginalVisible = buckledSprite.Visible;
+            _sprite.SetVisible((ent.Owner, buckledSprite), false);
+        }
+
         var angle = _xformSystem.GetWorldRotation(args.Strap) + _eye.CurrentEye.Rotation;
         var isNorth = angle.GetCardinalDir() == Direction.North;
         UpdateChairStrapDepth(args.Strap, strapSprite, isNorth, true); // DOWNSTREAM-TPirates: vehicle overlay fix (and chairs)
@@ -170,6 +178,12 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         #endregion
         if (!TryComp<SpriteComponent>(ent.Owner, out var buckledSprite))
             return;
+
+        if (args.Strap.Comp.SetVisible && ent.Comp.OriginalVisible is { } originalVisible)
+        {
+            _sprite.SetVisible((ent.Owner, buckledSprite), originalVisible);
+            ent.Comp.OriginalVisible = null;
+        }
 
         if (!ent.Comp.OriginalDrawDepth.HasValue)
             return;

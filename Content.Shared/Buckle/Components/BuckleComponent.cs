@@ -171,6 +171,11 @@ public sealed partial class BuckleComponent : Component
     /// Used for client rendering
     /// </summary>
     [ViewVariables] public int? OriginalDrawDepth;
+
+    /// <summary>
+    /// Pirate/Starlight: original sprite visibility before a strap hid this entity.
+    /// </summary>
+    [ViewVariables] public bool? OriginalVisible;
 }
 
 public sealed partial class UnbuckleAlertEvent : BaseAlertEvent;

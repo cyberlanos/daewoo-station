@@ -17,6 +17,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using System.Threading;
+using Content.Shared.Mobs;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 
@@ -61,6 +62,18 @@ public sealed partial class TimedSpawnerComponent : Component, ISerializationHoo
     /// </summary>
     [DataField]
     public int MaximumEntitiesSpawned = 1;
+
+    /// <summary>
+    /// Pirate/Starlight: despawn the spawner after a successful spawn.
+    /// </summary>
+    [DataField]
+    public bool DespawnWhenDone = false;
+
+    /// <summary>
+    /// Pirate/Starlight: only spawn when the owner is in this mob state.
+    /// </summary>
+    [DataField]
+    public MobState RequiredState = MobState.Invalid;
 
     public CancellationTokenSource? TokenSource;
 

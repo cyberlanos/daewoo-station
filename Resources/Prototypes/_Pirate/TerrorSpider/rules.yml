@@ -53,7 +53,6 @@
   requirements:
   - !type:OverallPlaytimeRequirement
     time: 172800 # Pirate - local role requirements use seconds; Starlight value was 48h.
-  playTimeTracker: AntagTerrorPrincess
 
 - type: entity
   parent: BaseMindRoleAntag
@@ -66,7 +65,6 @@
 
 - type: playTimeTracker
   id: AntagTerrorPrincess
-  name: roles-antag-terror-princess-name
 
 - type: entity
   categories: [ HideSpawnMenu, Spawner ]
