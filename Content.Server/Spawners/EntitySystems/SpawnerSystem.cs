@@ -6,11 +6,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-using System.Threading;
 using Content.Server.Spawners.Components;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Robust.Shared.Random;
+using Robust.Shared.Timing;
 using Content.Shared.Friends.Components; // Shitmed Change
 using Content.Shared._Shitmed.Spawners.EntitySystems; // Shitmed Change
 
@@ -19,19 +19,42 @@ namespace Content.Server.Spawners.EntitySystems;
 public sealed class SpawnerSystem : EntitySystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+
+    private readonly List<(EntityUid Uid, TimedSpawnerComponent Comp)> _toFire = new();
 
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<TimedSpawnerComponent, ComponentInit>(OnSpawnerInit);
-        SubscribeLocalEvent<TimedSpawnerComponent, ComponentShutdown>(OnTimedSpawnerShutdown);
+
+        SubscribeLocalEvent<TimedSpawnerComponent, MapInitEvent>(OnSpawnerInit);
     }
 
-    private void OnSpawnerInit(EntityUid uid, TimedSpawnerComponent component, ComponentInit args)
+    public override void Update(float frameTime)
     {
-        component.TokenSource?.Cancel();
-        component.TokenSource = new CancellationTokenSource();
-        uid.SpawnRepeatingTimer(TimeSpan.FromSeconds(component.IntervalSeconds), () => OnTimerFired(uid, component), component.TokenSource.Token);
+        base.Update(frameTime);
+
+        _toFire.Clear();
+        var curTime = _timing.CurTime;
+        var query = EntityQueryEnumerator<TimedSpawnerComponent>();
+        while (query.MoveNext(out var uid, out var timedSpawner))
+        {
+            if (timedSpawner.NextFire > curTime)
+                continue;
+
+            while (timedSpawner.NextFire <= curTime)
+                timedSpawner.NextFire += TimeSpan.FromSeconds(timedSpawner.IntervalSeconds);
+
+            _toFire.Add((uid, timedSpawner));
+        }
+
+        foreach (var (uid, comp) in _toFire)
+            OnTimerFired(uid, comp);
+    }
+
+    private void OnSpawnerInit(EntityUid uid, TimedSpawnerComponent component, MapInitEvent args)
+    {
+        component.NextFire = _timing.CurTime + TimeSpan.FromSeconds(component.IntervalSeconds);
     }
 
     private void OnTimerFired(EntityUid uid, TimedSpawnerComponent component)
@@ -58,10 +81,5 @@ public sealed class SpawnerSystem : EntitySystem
 
         if (component.DespawnWhenDone)
             QueueDel(uid);
-    }
-
-    private void OnTimedSpawnerShutdown(EntityUid uid, TimedSpawnerComponent component, ComponentShutdown args)
-    {
-        component.TokenSource?.Cancel();
     }
 }

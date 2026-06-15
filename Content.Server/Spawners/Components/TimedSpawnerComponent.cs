@@ -16,10 +16,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-using System.Threading;
 using Content.Shared.Mobs;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
 namespace Content.Server.Spawners.Components;
 
@@ -29,6 +29,7 @@ namespace Content.Server.Spawners.Components;
 /// and min/max number of entities to spawn.
 /// </summary>
 [RegisterComponent, EntityCategory("Spawner")]
+[AutoGenerateComponentPause]
 public sealed partial class TimedSpawnerComponent : Component, ISerializationHooks
 {
     /// <summary>
@@ -64,6 +65,12 @@ public sealed partial class TimedSpawnerComponent : Component, ISerializationHoo
     public int MaximumEntitiesSpawned = 1;
 
     /// <summary>
+    /// Pirate/Starlight: the time at which the current interval will elapse.
+    /// </summary>
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer)), AutoPausedField]
+    public TimeSpan NextFire = TimeSpan.Zero;
+
+    /// <summary>
     /// Pirate/Starlight: despawn the spawner after a successful spawn.
     /// </summary>
     [DataField]
@@ -74,8 +81,6 @@ public sealed partial class TimedSpawnerComponent : Component, ISerializationHoo
     /// </summary>
     [DataField]
     public MobState RequiredState = MobState.Invalid;
-
-    public CancellationTokenSource? TokenSource;
 
     void ISerializationHooks.AfterDeserialization()
     {
