@@ -13,7 +13,12 @@ public sealed class TerrorEggSystem : EntitySystem
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
 
-    private readonly EntProtoId[] _terrorSpiders = ["MobTerrorGray", "MobTerrorGreen", "MobTerrorRed"];
+    private readonly EntProtoId[] _terrorSpiders =
+    {
+        "MobTerrorGray",
+        "MobTerrorGreen",
+        "MobTerrorRed"
+    };
     private DamageSpecifier? _damage;
     private float _accumulator;
 
