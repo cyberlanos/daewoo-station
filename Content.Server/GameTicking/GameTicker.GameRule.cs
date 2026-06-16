@@ -158,9 +158,10 @@ public sealed partial class GameTicker
         var delayOverride = _cfg.GetCVar(PirateVars.EventsDelayOverride);
         if (delayOverride >= 0f)
         {
-            RemComp<DelayedStartRuleComponent>(ruleEntity);
-
-            if (delayOverride > 0f)
+            // RemComp also consumes a pending delay: when UpdateGameRules re-calls us after the
+            // delay expired the component already exists, so !RemComp is false and we fall through
+            // to activation instead of re-queueing the same override forever.
+            if (!RemComp<DelayedStartRuleComponent>(ruleEntity) && delayOverride > 0f)
             {
                 var overrideTime = TimeSpan.FromSeconds(delayOverride);
                 _sawmill.Info($"Queued start for game rule {ToPrettyString(ruleEntity)} with override delay {overrideTime}");

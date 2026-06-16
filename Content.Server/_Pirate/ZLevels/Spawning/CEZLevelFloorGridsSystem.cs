@@ -24,6 +24,17 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
         if (!TryComp<StationDataComponent>(station, out var data))
             return new List<EntityUid>();
 
+        // Resolve the network from whichever grid actually carries the linkage instead of
+        // re-guessing the main grid. OnStationPostInit links a grid picked by HashSet iteration
+        // order, which need not match the BecomesStation/largest grid below; on a mismatch
+        // GetFloorGrids would return a single deck. PeerGrids holds the full set, so any linked
+        // grid yields the complete network.
+        foreach (var grid in data.Grids)
+        {
+            if (HasComp<CEZLinkedGridComponent>(grid))
+                return GetFloorGrids(grid);
+        }
+
         EntityUid? main = null;
         foreach (var grid in data.Grids)
         {

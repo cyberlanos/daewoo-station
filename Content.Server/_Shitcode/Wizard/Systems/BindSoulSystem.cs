@@ -81,14 +81,15 @@ public sealed class BindSoulSystem : SharedBindSoulSystem
     protected override bool RespawnItem(EntityUid item, TransformComponent itemXform, TransformComponent userXform)
     {
         var grid = userXform.GridUid;
-        var map = userXform.MapUid;
-
-        if (map == null)
-            return false;
 
         grid ??= _wizard.GetWizardTargetRandomStationGrid();
 
         if (grid == null)
+            return false;
+
+        var map = Transform(grid.Value).MapUid; // Pirate: multiz - resolve map from chosen grid (may live on another z-map)
+
+        if (map == null)
             return false;
 
         if (itemXform.GridUid == grid.Value)

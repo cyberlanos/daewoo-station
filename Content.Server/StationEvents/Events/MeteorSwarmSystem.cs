@@ -15,7 +15,6 @@ using Content.Shared.Station.Components; // Pirate: multiz
 using Content.Shared.Random.Helpers;
 using Robust.Server.Audio;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components; // Pirate: multiz
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
@@ -65,20 +64,11 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
 
         var mainGrid = mainGridEnt.Owner;
 
-        var targets = new List<EntityUid>();
-        foreach (var grid in _zFloors.GetFloorGrids(mainGrid))
-        {
-            if (HasComp<MapGridComponent>(grid))
-                targets.Add(grid);
-        }
-
-        if (targets.Count == 0)
-            return;
-
-        // The wave's total meteor count stays the same; each meteor is aimed at a random floor.
+        // The wave's total meteor count stays the same; each meteor is aimed at an area-weighted
+        // random floor so per-tile targeting odds stay uniform across decks of differing sizes.
         var meteorsToSpawn = component.MeteorsPerWave.Next(RobustRandom);
         for (var i = 0; i < meteorsToSpawn; i++)
-            SpawnMeteor(uid, component, RobustRandom.Pick(targets));
+            SpawnMeteor(uid, component, _zFloors.GetRandomFloorGrid(mainGrid));
         #endregion
 
         component.WaveCounter--;
