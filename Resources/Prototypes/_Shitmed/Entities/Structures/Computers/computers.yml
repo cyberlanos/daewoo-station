@@ -75,6 +75,8 @@
   categories: [ HideSpawnMenu, DoNotMap ]
   suffix: DO NOT MAP
   components:
+  - type: CEZLevelPhysicsExempt # Pirate: multiz - free-floating eye, no falling/gravity/stairs
+  - type: CEZViewSource # Pirate: multiz - feed decks below/above to the abductor looking through it
   - type: NoFTL
   - type: WarpPoint
     follow: true

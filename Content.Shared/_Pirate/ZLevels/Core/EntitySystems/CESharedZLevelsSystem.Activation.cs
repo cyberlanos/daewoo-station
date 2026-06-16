@@ -164,7 +164,9 @@ public abstract partial class CESharedZLevelsSystem
     private bool IsAutomaticZPhysicsExcluded(EntityUid uid)
     {
         return HasComp<GhostComponent>(uid) ||
-               HasComp<CEZLevelGhostMoverComponent>(uid);
+               HasComp<CEZLevelGhostMoverComponent>(uid) ||
+               HasComp<CEZLevelPhysicsExemptComponent>(uid) || // Pirate: multiz - free-floating camera eyes
+               _container.IsEntityInContainer(uid); // Pirate: multiz - contained entities (e.g. mech pilot) ride their holder, never fall independently
     }
 
     /// <summary>

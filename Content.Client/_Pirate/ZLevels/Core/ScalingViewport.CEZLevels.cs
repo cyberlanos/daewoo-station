@@ -227,7 +227,11 @@ public sealed partial class ScalingViewport
             return;
         }
 
-        var viewEntity = CEZLevelViewEntity ?? _player.LocalEntity.Value;
+        // When the player looks through a relayed remote eye (AI holo, abductor console eye, ...),
+        // anchor the whole z-stack to where that eye actually is — its deck, grid and position —
+        // instead of the player's body. Otherwise lower decks resolve against the wrong grid/map.
+        var relayTarget = GetRelayViewTarget();
+        var viewEntity = CEZLevelViewEntity ?? relayTarget ?? _player.LocalEntity.Value;
         if (!_xformQuery.Value.TryComp(viewEntity, out var playerXform))
         {
             viewEntity = _player.LocalEntity.Value;
@@ -354,6 +358,18 @@ public sealed partial class ScalingViewport
 
         Eye = _fallbackEye;
         viewport.Eye = Eye;
+    }
+
+    // The entity whose eye the local player is currently looking through, when it differs from their
+    // own body — i.e. a relayed remote eye (AI holo, abductor console eye). Null when not relaying.
+    // The eye's own sprite is governed by its Visibility layer (Ghost/Abductor), so the controller
+    // and ghosts see the marker while normal crew never receive it — no client-side hiding needed.
+    private EntityUid? GetRelayViewTarget()
+    {
+        if (_player.LocalEntity is not { } local)
+            return null;
+
+        return _entityManager.TryGetComponent<EyeComponent>(local, out var eye) ? eye.Target : null;
     }
 
     // True when an active placement preview's cursor resolves to a different map than the one being

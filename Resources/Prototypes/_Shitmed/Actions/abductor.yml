@@ -40,6 +40,39 @@
   - type: WorldTargetAction
     event: !type:SendYourselfEvent
 
+# Pirate: multiz - traverse z-level floors while viewing through the observation console
+- type: entity
+  parent: BaseMentalAction
+  id: ActionAbductorViewUp
+  name: View deck above
+  description: Move the observation camera to the deck above.
+  components:
+  - type: Action
+    checkCanInteract: false
+    priority: -18
+    itemIconStyle: BigAction
+    icon:
+      sprite: _Pirate/Actions/misc.rsi # Pirate: multiz
+      state: up # Pirate: multiz
+  - type: InstantAction
+    event: !type:CEZViewUpEvent
+
+- type: entity
+  parent: BaseMentalAction
+  id: ActionAbductorViewDown
+  name: View deck below
+  description: Move the observation camera to the deck below.
+  components:
+  - type: Action
+    checkCanInteract: false
+    priority: -17
+    itemIconStyle: BigAction
+    icon:
+      sprite: _Pirate/Actions/misc.rsi # Pirate: multiz
+      state: down # Pirate: multiz
+  - type: InstantAction
+    event: !type:CEZViewDownEvent
+
 - type: entity
   parent: BaseAction
   id: ActionReturnToShip

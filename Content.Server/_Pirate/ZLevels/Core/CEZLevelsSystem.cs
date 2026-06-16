@@ -35,8 +35,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         InitItems(); // Pirate: multiz
         InitTransitionBudget();
 
-        // Run before the round-start variation rule so the floor grids are attached + linked
-        // by the time it spreads trash/decals/puddles across the station.
+        // Run before round-start variation so floor grids are linked before it spreads across them.
         SubscribeLocalEvent<CEStationZLevelsComponent, StationPostInitEvent>(OnStationPostInit,
             before: new[] { typeof(RoundstartStationVariationRuleSystem) });
     }

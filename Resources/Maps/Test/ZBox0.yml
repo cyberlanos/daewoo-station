@@ -4,8 +4,8 @@ meta:
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/02/2026 18:10:35
-  entityCount: 147
+  time: 06/16/2026 07:18:33
+  entityCount: 159
 maps:
 - 3
 grids:
@@ -255,6 +255,31 @@ entities:
     - type: Transform
       pos: 10.5,-0.5
       parent: 2
+  - uid: 149
+    components:
+    - type: Transform
+      pos: 9.5,-1.5
+      parent: 2
+  - uid: 156
+    components:
+    - type: Transform
+      pos: 9.5,-2.5
+      parent: 2
+  - uid: 157
+    components:
+    - type: Transform
+      pos: 9.5,-3.5
+      parent: 2
+  - uid: 158
+    components:
+    - type: Transform
+      pos: 9.5,-4.5
+      parent: 2
+  - uid: 159
+    components:
+    - type: Transform
+      pos: 10.5,-4.5
+      parent: 2
 - proto: CableMV
   entities:
   - uid: 88
@@ -266,6 +291,44 @@ entities:
     components:
     - type: Transform
       pos: -1.5,2.5
+      parent: 2
+- proto: CEMultizCableHub
+  entities:
+  - uid: 93
+    components:
+    - type: Transform
+      pos: -1.5,1.5
+      parent: 2
+- proto: CEZLevelVerticalLadderTallAperture
+  entities:
+  - uid: 145
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 11.5,-4.5
+      parent: 2
+- proto: ComputerSurveillanceCameraMonitor
+  entities:
+  - uid: 153
+    components:
+    - type: Transform
+      pos: -3.5,1.5
+      parent: 2
+- proto: DebugAPCRecharging
+  entities:
+  - uid: 92
+    components:
+    - type: Transform
+      pos: -1.5,2.5
+      parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: DefaultStationBeaconBridge
+  entities:
+  - uid: 152
+    components:
+    - type: Transform
+      pos: 5.5,-0.5
       parent: 2
 - proto: ElevatorCallButton
   entities:
@@ -493,30 +556,6 @@ entities:
       rot: -1.5707963267948966 rad
       pos: 14.5,0.5
       parent: 2
-- proto: CEMultizCableHub
-  entities:
-  - uid: 93
-    components:
-    - type: Transform
-      pos: -1.5,1.5
-      parent: 2
-- proto: CEZLevelVerticalLadderTallAperture
-  entities:
-  - uid: 145
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 11.5,-4.5
-      parent: 2
-- proto: DebugAPCRecharging
-  entities:
-  - uid: 92
-    components:
-    - type: Transform
-      pos: -1.5,2.5
-      parent: 2
-    - type: Fixtures
-      fixtures: {}
 - proto: Flare
   entities:
   - uid: 142
@@ -540,6 +579,13 @@ entities:
     components:
     - type: Transform
       pos: 10.5,-1.5
+      parent: 2
+- proto: PlayerStationAiEmpty
+  entities:
+  - uid: 154
+    components:
+    - type: Transform
+      pos: -2.5,1.5
       parent: 2
 - proto: PoweredFloorLight
   entities:
@@ -698,6 +744,27 @@ entities:
     components:
     - type: Transform
       anchored: False
+      parent: 2
+- proto: SurveillanceCameraRouterService
+  entities:
+  - uid: 155
+    components:
+    - type: Transform
+      pos: -1.5,-2.5
+      parent: 2
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 150
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 10.5,-4.5
+      parent: 2
+  - uid: 151
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: 2.5,0.5
       parent: 2
 - proto: WallSolid
   entities:
@@ -1051,6 +1118,17 @@ entities:
       rot: 1.5707963267948966 rad
       pos: 12.5,-4.5
       parent: 2
+- proto: WarpPoint
+  entities:
+  - uid: 148
+    components:
+    - type: Transform
+      pos: -1.5,1.5
+      parent: 2
+    - type: NavMapBeacon
+      text: ZBox Floor 0
+    - type: WarpPoint
+      location: ZBox Floor 0
 - proto: WindoorSecure
   entities:
   - uid: 85

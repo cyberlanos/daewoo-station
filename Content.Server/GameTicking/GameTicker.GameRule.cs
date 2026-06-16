@@ -154,8 +154,24 @@ public sealed partial class GameTicker
             return false;
 
         #region Pirate: multiz
-        if (_cfg.GetCVar(PirateVars.EventsSkipDelay))
+        // pirate.events.delay_override: -1 = prototype delay (default), 0 = instant, >0 = forced seconds.
+        var delayOverride = _cfg.GetCVar(PirateVars.EventsDelayOverride);
+        if (delayOverride >= 0f)
+        {
             RemComp<DelayedStartRuleComponent>(ruleEntity);
+
+            if (delayOverride > 0f)
+            {
+                var overrideTime = TimeSpan.FromSeconds(delayOverride);
+                _sawmill.Info($"Queued start for game rule {ToPrettyString(ruleEntity)} with override delay {overrideTime}");
+                _adminLogger.Add(LogType.EventStarted,
+                    $"Queued start for game rule {ToPrettyString(ruleEntity)} with override delay {overrideTime}");
+
+                var overrideDelayed = EnsureComp<DelayedStartRuleComponent>(ruleEntity);
+                overrideDelayed.RuleStartTime = _gameTiming.CurTime + overrideTime;
+                return true;
+            }
+        }
         #endregion
         // If we already have it, then we just skip the delay as it has already happened.
         else if (!RemComp<DelayedStartRuleComponent>(ruleEntity) && ruleData.Delay != null) // Pirate: multiz

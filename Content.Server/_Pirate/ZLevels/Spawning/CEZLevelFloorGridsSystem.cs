@@ -8,9 +8,7 @@ using Robust.Shared.Random;
 namespace Content.Server._Pirate.ZLevels.Spawning;
 
 /// <summary>
-/// Helper for game rules that pick a random station tile/grid (round-start variation, antag spawns,
-/// station events, anomalies) so they spread across every z-level floor grid of a station instead of
-/// only the main grid.
+/// Resolves a station's z-level floor grids so spawns can spread across all floors, not just the main grid.
 /// </summary>
 public sealed class CEZLevelFloorGridsSystem : EntitySystem
 {
@@ -18,9 +16,8 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
     [Dependency] private readonly StationSystem _station = default!;
 
     /// <summary>
-    /// Returns every z-level floor grid of <paramref name="station"/> — its main grid (the one with
-    /// <see cref="BecomesStationComponent"/>, falling back to the largest) plus its z-peers. Docked
-    /// shuttles and trade stations are excluded. Empty if the entity is not a station.
+    /// All floor grids of <paramref name="station"/>: its main grid (<see cref="BecomesStationComponent"/>,
+    /// else largest) plus z-peers. Excludes shuttles/trade stations; empty if not a station.
     /// </summary>
     public List<EntityUid> GetStationFloorGrids(EntityUid station)
     {
@@ -42,9 +39,7 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
     }
 
     /// <summary>
-    /// Returns <paramref name="mainGrid"/> plus every z-level peer floor grid linked to it.
-    /// Docked shuttles and other non-floor grids are excluded. If the station has no z-network
-    /// the result is just the main grid, matching pre-multiz behaviour.
+    /// <paramref name="mainGrid"/> plus its z-peer floor grids. Just the main grid when there's no z-network.
     /// </summary>
     public List<EntityUid> GetFloorGrids(EntityUid mainGrid)
     {
@@ -62,9 +57,8 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
     }
 
     /// <summary>
-    /// Picks one floor grid of the station <paramref name="anyFloorGrid"/> belongs to, weighted by
-    /// grid area so per-tile odds stay uniform across floors. Returns <paramref name="anyFloorGrid"/>
-    /// unchanged when the station has no z-network (or no usable area).
+    /// A random floor grid of <paramref name="anyFloorGrid"/>'s station, weighted by area so per-tile
+    /// odds stay uniform. Returns the input unchanged when there's no z-network.
     /// </summary>
     public EntityUid GetRandomFloorGrid(EntityUid anyFloorGrid)
     {

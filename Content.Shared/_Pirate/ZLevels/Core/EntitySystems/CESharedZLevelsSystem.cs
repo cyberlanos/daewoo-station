@@ -12,6 +12,7 @@ using Content.Shared.Shuttles.Components;
 using JetBrains.Annotations;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Configuration;
+using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
@@ -32,6 +33,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedGravitySystem _gravity = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+    [Dependency] private readonly SharedContainerSystem _container = default!;
 
     /// <summary>
     /// Per-grid cache of "opening" (empty/transparent) tiles, so cross-Z systems gate projection
