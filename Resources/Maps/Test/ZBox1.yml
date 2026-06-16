@@ -4,8 +4,8 @@ meta:
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/02/2026 18:10:35
-  entityCount: 158
+  time: 06/16/2026 07:18:33
+  entityCount: 168
 maps:
 - 3
 grids:
@@ -234,11 +234,6 @@ entities:
     - type: Transform
       pos: 8.5,-0.5
       parent: 2
-  - uid: 111
-    components:
-    - type: Transform
-      pos: 9.5,-0.5
-      parent: 2
   - uid: 112
     components:
     - type: Transform
@@ -283,6 +278,36 @@ entities:
     components:
     - type: Transform
       pos: -2.5,1.5
+      parent: 2
+  - uid: 161
+    components:
+    - type: Transform
+      pos: 9.5,-1.5
+      parent: 2
+  - uid: 162
+    components:
+    - type: Transform
+      pos: 9.5,-2.5
+      parent: 2
+  - uid: 163
+    components:
+    - type: Transform
+      pos: 9.5,-3.5
+      parent: 2
+  - uid: 164
+    components:
+    - type: Transform
+      pos: 9.5,-4.5
+      parent: 2
+  - uid: 165
+    components:
+    - type: Transform
+      pos: 10.5,-4.5
+      parent: 2
+  - uid: 166
+    components:
+    - type: Transform
+      pos: 9.5,-0.5
       parent: 2
 - proto: CableHV
   entities:
@@ -343,6 +368,58 @@ entities:
     - type: Transform
       pos: -1.5,1.5
       parent: 2
+- proto: CEMultizCableHub
+  entities:
+  - uid: 131
+    components:
+    - type: Transform
+      pos: -1.5,1.5
+      parent: 2
+- proto: CEZLevelVerticalLadderTallAperture
+  entities:
+  - uid: 155
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 11.5,-4.5
+      parent: 2
+- proto: CrateFunInstrumentsVariety
+  entities:
+  - uid: 129
+    components:
+    - type: Transform
+      pos: 9.5,-1.5
+      parent: 2
+- proto: DebugAPCRecharging
+  entities:
+  - uid: 43
+    components:
+    - type: Transform
+      pos: 0.5,3.5
+      parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: DebugSMESRecharging
+  entities:
+  - uid: 37
+    components:
+    - type: Transform
+      pos: -3.5,2.5
+      parent: 2
+- proto: DebugSubstationRecharging
+  entities:
+  - uid: 38
+    components:
+    - type: Transform
+      pos: -2.5,2.5
+      parent: 2
+- proto: DefaultStationBeaconArrivals
+  entities:
+  - uid: 160
+    components:
+    - type: Transform
+      pos: 6.5,-0.5
+      parent: 2
 - proto: ElevatorCallButton
   entities:
   - uid: 133
@@ -394,51 +471,6 @@ entities:
       elevatorId: elevator-1
     - type: Fixtures
       fixtures: {}
-- proto: CEMultizCableHub
-  entities:
-  - uid: 131
-    components:
-    - type: Transform
-      pos: -1.5,1.5
-      parent: 2
-- proto: CEZLevelVerticalLadderTallAperture
-  entities:
-  - uid: 155
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 11.5,-4.5
-      parent: 2
-- proto: CrateFunInstrumentsVariety
-  entities:
-  - uid: 129
-    components:
-    - type: Transform
-      pos: 9.5,-1.5
-      parent: 2
-- proto: DebugAPCRecharging
-  entities:
-  - uid: 43
-    components:
-    - type: Transform
-      pos: 0.5,3.5
-      parent: 2
-    - type: Fixtures
-      fixtures: {}
-- proto: DebugSMESRecharging
-  entities:
-  - uid: 37
-    components:
-    - type: Transform
-      pos: -3.5,2.5
-      parent: 2
-- proto: DebugSubstationRecharging
-  entities:
-  - uid: 38
-    components:
-    - type: Transform
-      pos: -2.5,2.5
-      parent: 2
 - proto: Flare
   entities:
   - uid: 139
@@ -492,6 +524,14 @@ entities:
     - type: Transform
       rot: -1.5707963267948966 rad
       pos: 10.5,-5.5
+      parent: 2
+- proto: PoweredLEDSmallLight
+  entities:
+  - uid: 1
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: -3.5,-0.5
       parent: 2
 - proto: Poweredlight
   entities:
@@ -652,12 +692,6 @@ entities:
       parent: 2
 - proto: SmallLight
   entities:
-  - uid: 146
-    components:
-    - type: Transform
-      rot: -1.5707963267948966 rad
-      pos: 0.5,-0.5
-      parent: 2
   - uid: 147
     components:
     - type: Transform
@@ -667,13 +701,41 @@ entities:
       parent: 3
     - type: Physics
       bodyType: Dynamic
-- proto: SpawnPointLatejoin
+- proto: SpawnPointPassenger
   entities:
-  - uid: 1
+  - uid: 111
+    components:
+    - type: Transform
+      pos: -0.5,-0.5
+      parent: 2
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 146
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: -3.5,-1.5
+      parent: 2
+  - uid: 167
     components:
     - type: Transform
       anchored: False
-      parent: 2
+      rot: 3.141592653589793 rad
+      pos: 5.5,0.5
+      parent: 3
+    - type: Physics
+      bodyType: Dynamic
+- proto: SurveillanceCameraSupply
+  entities:
+  - uid: 168
+    components:
+    - type: Transform
+      anchored: False
+      rot: 1.5707963267948966 rad
+      pos: 14.5,-0.5
+      parent: 3
+    - type: Physics
+      bodyType: Dynamic
 - proto: WallSolid
   entities:
   - uid: 5
@@ -1031,6 +1093,17 @@ entities:
       rot: 1.5707963267948966 rad
       pos: 12.5,-4.5
       parent: 2
+- proto: WarpPoint
+  entities:
+  - uid: 159
+    components:
+    - type: Transform
+      pos: 2.5,2.5
+      parent: 2
+    - type: NavMapBeacon
+      text: ZBox Floor 1
+    - type: WarpPoint
+      location: ZBox Floor 1
 - proto: WindoorSecure
   entities:
   - uid: 134

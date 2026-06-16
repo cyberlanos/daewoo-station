@@ -44,10 +44,8 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         }
 
         #region Pirate: multiz
-        // Use the main station grid (BecomesStation), not the largest grid which can be a docked
-        // ATS/shuttle. Preselect ONE random floor's spawn point and reuse it: AntagSelectLocationEvent
-        // is raised twice (ghost-role preview, then actual spawn), so offering all floors would make
-        // the preview and the real spawn land on different decks.
+        // Main grid (BecomesStation), not largest (could be a docked ATS). Preselect one random
+        // floor's point and reuse it, so the ghost-role preview and the real spawn match.
         if (!TryComp<StationDataComponent>(station, out var stationData)
             || GetStationMainGrid(stationData) is not { } mainGrid)
         {

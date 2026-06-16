@@ -112,6 +112,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Content.Shared._Goobstation.Wizard;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.ActionBlocker;
 using Content.Shared.Actions.Components;
 using Content.Shared.Actions.Events;
@@ -536,6 +537,25 @@ public abstract class SharedActionsSystem : EntitySystem
         return ValidateBaseTarget(user, target, (ent, targetAction));
     }
 
+    // Pirate: multiz - true when the target coords sit on a z-level floor map belonging to the same
+    // z-network as the user's current map (so e.g. abductors can teleport to any deck of a station).
+    private bool TargetOnZPeerMap(EntityUid? userMap, EntityCoordinates coords)
+    {
+        if (userMap == null
+            || !TryComp<CEZLevelMapComponent>(userMap.Value, out var userZ)
+            || !TryComp<CEZLevelsNetworkComponent>(userZ.NetworkUid, out var network))
+            return false;
+
+        var targetMapId = _transform.GetMapId(coords);
+        foreach (var map in network.ZLevels.Values)
+        {
+            if (map is { } m && Transform(m).MapID == targetMapId)
+                return true;
+        }
+
+        return false;
+    }
+
     private bool ValidateBaseTarget(EntityUid user, EntityCoordinates coords, Entity<TargetActionComponent> ent)
     {
         var comp = ent.Comp;
@@ -544,7 +564,8 @@ public abstract class SharedActionsSystem : EntitySystem
 
         // even if we don't check for obstructions, we may still need to check the range.
         var xform = Transform(user);
-        if (xform.MapID != _transform.GetMapId(coords))
+        // Pirate: multiz - the station's z-level floor maps count as the same place for targeting
+        if (xform.MapID != _transform.GetMapId(coords) && !TargetOnZPeerMap(xform.MapUid, coords))
         {
             _popup.PopupCursor(Loc.GetString("world-target-out-of-range"), user); // Goobstation Change
             return false;

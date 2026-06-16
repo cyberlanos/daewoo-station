@@ -4,6 +4,7 @@ using Content.Server._Pirate.ZLevels.Core;
 using Content.Server.SurveillanceCamera;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Core.EntitySystems;
+using Content.Shared._Pirate.ZLevels.Surveillance;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Player;
@@ -27,6 +28,10 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
 
         SubscribeLocalEvent<SurveillanceCameraComponent, ViewSubscriberAddedEvent>(OnViewSubscriberAdded);
         SubscribeLocalEvent<SurveillanceCameraComponent, ViewSubscriberRemovedEvent>(OnViewSubscriberRemoved);
+        // Remote eyes (AI holo, abductor eye) become view subscribers via EyeComponent.Target, so the
+        // same z-level PVS feed works for them once they carry the marker.
+        SubscribeLocalEvent<CEZViewSourceComponent, ViewSubscriberAddedEvent>(OnViewSourceSubscriberAdded);
+        SubscribeLocalEvent<CEZViewSourceComponent, ViewSubscriberRemovedEvent>(OnViewSourceSubscriberRemoved);
         SubscribeLocalEvent<CEZCameraViewSubscriptionComponent, ComponentShutdown>(OnSubscriptionShutdown);
     }
 
@@ -43,32 +48,66 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
         var query = EntityQueryEnumerator<CEZCameraViewSubscriptionComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var subscriptions, out var xform))
         {
+            // A remote eye (AI holo, abductor eye) force-feeds itself to its viewer's session via the
+            // engine view-subscription, which bypasses the visibility mask. Upstream only clears that
+            // subscription when the AI brain is carded — not when the player leaves the eye another way
+            // (aghost, mind transfer), so it leaks and the eye stays visible on whatever they control
+            // next. Drop subscribers that are no longer actually looking through this eye.
+            var pruneStale = HasComp<CEZViewSourceComponent>(uid);
+
             var targets = GetZViewTargets((uid, xform));
             foreach (var session in subscriptions.SessionEyes.Keys.ToArray())
             {
+                if (pruneStale && !IsLookingThrough(session, uid))
+                {
+                    _viewSubscriber.RemoveViewSubscriber(uid, session);
+                    continue;
+                }
+
                 RefreshSessionEyes((uid, subscriptions), session, targets);
             }
         }
     }
 
-    private void OnViewSubscriberAdded(Entity<SurveillanceCameraComponent> ent, ref ViewSubscriberAddedEvent args)
+    // True when the session's controlled entity is currently relayed through <paramref name="eye"/>
+    // (its eye target is that entity), i.e. it is legitimately looking through it.
+    private bool IsLookingThrough(ICommonSession session, EntityUid eye)
     {
-        if (!TryComp<TransformComponent>(ent, out var xform))
-            return;
-
-        var subscriptions = EnsureComp<CEZCameraViewSubscriptionComponent>(ent);
-        RefreshSessionEyes((ent.Owner, subscriptions), args.Subscriber, GetZViewTargets((ent.Owner, xform)));
+        return session.AttachedEntity is { } attached
+            && TryComp<EyeComponent>(attached, out var eyeComp)
+            && eyeComp.Target == eye;
     }
 
+    private void OnViewSubscriberAdded(Entity<SurveillanceCameraComponent> ent, ref ViewSubscriberAddedEvent args)
+        => AddViewSource(ent.Owner, args.Subscriber);
+
     private void OnViewSubscriberRemoved(Entity<SurveillanceCameraComponent> ent, ref ViewSubscriberRemovedEvent args)
+        => RemoveViewSource(ent.Owner, args.Subscriber);
+
+    private void OnViewSourceSubscriberAdded(Entity<CEZViewSourceComponent> ent, ref ViewSubscriberAddedEvent args)
+        => AddViewSource(ent.Owner, args.Subscriber);
+
+    private void OnViewSourceSubscriberRemoved(Entity<CEZViewSourceComponent> ent, ref ViewSubscriberRemovedEvent args)
+        => RemoveViewSource(ent.Owner, args.Subscriber);
+
+    private void AddViewSource(EntityUid uid, ICommonSession subscriber)
     {
-        if (!TryComp<CEZCameraViewSubscriptionComponent>(ent, out var subscriptions))
+        if (!TryComp<TransformComponent>(uid, out var xform))
             return;
 
-        RemoveSessionEyes(args.Subscriber, subscriptions);
+        var subscriptions = EnsureComp<CEZCameraViewSubscriptionComponent>(uid);
+        RefreshSessionEyes((uid, subscriptions), subscriber, GetZViewTargets((uid, xform)));
+    }
+
+    private void RemoveViewSource(EntityUid uid, ICommonSession subscriber)
+    {
+        if (!TryComp<CEZCameraViewSubscriptionComponent>(uid, out var subscriptions))
+            return;
+
+        RemoveSessionEyes(subscriber, subscriptions);
 
         if (subscriptions.SessionEyes.Count == 0)
-            RemCompDeferred<CEZCameraViewSubscriptionComponent>(ent);
+            RemCompDeferred<CEZCameraViewSubscriptionComponent>(uid);
     }
 
     private void OnSubscriptionShutdown(Entity<CEZCameraViewSubscriptionComponent> ent, ref ComponentShutdown args)

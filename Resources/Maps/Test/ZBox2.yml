@@ -4,8 +4,8 @@ meta:
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/02/2026 18:10:35
-  entityCount: 51
+  time: 06/16/2026 07:18:33
+  entityCount: 54
 maps:
 - 3
 grids:
@@ -139,6 +139,31 @@ entities:
     - type: Transform
       pos: 14.5,-5.5
       parent: 2
+- proto: CEZLevelVerticalLadderAperture
+  entities:
+  - uid: 45
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 11.5,-4.5
+      parent: 2
+- proto: DebugAPCRecharging
+  entities:
+  - uid: 37
+    components:
+    - type: Transform
+      rot: 1.5707963267948966 rad
+      pos: 10.5,-4.5
+      parent: 2
+    - type: Fixtures
+      fixtures: {}
+- proto: DefaultStationBeaconDorms
+  entities:
+  - uid: 54
+    components:
+    - type: Transform
+      pos: 13.5,-4.5
+      parent: 2
 - proto: ElevatorCallButton
   entities:
   - uid: 49
@@ -179,24 +204,6 @@ entities:
       parent: 2
     - type: ElevatorPanel
       elevatorId: elevator-1
-    - type: Fixtures
-      fixtures: {}
-- proto: CEZLevelVerticalLadderAperture
-  entities:
-  - uid: 45
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 11.5,-4.5
-      parent: 2
-- proto: DebugAPCRecharging
-  entities:
-  - uid: 37
-    components:
-    - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: 10.5,-4.5
-      parent: 2
     - type: Fixtures
       fixtures: {}
 - proto: Grille
@@ -242,6 +249,14 @@ entities:
       parent: 3
     - type: Physics
       bodyType: Dynamic
+- proto: SurveillanceCameraService
+  entities:
+  - uid: 53
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: 12.5,-3.5
+      parent: 2
 - proto: WallSolid
   entities:
   - uid: 1
@@ -379,6 +394,17 @@ entities:
     - type: Transform
       pos: 15.5,-4.5
       parent: 2
+- proto: WarpPoint
+  entities:
+  - uid: 52
+    components:
+    - type: Transform
+      pos: 12.5,-4.5
+      parent: 2
+    - type: NavMapBeacon
+      text: ZBox Floor 2
+    - type: WarpPoint
+      location: ZBox Floor 2
 - proto: WindoorSecure
   entities:
   - uid: 23
