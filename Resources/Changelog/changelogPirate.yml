@@ -1473,3 +1473,52 @@ Entries:
       message: додано дружніх павуків котрі точно не відкладуть у вас яйця
   id: 129
   time: '2026-06-15T19:05:09.0000000+00:00'
+- author: CyberLanos
+  changes:
+    - type: Tweak
+      message: >-
+        Location-based station events and round-start station variation now
+        choose linked station z-level floor grids instead of only the main deck.
+        This covers trash, dirt/graffiti/burn decals, puddles, light
+        aging/breakage, wall rust, solar panel damage, cut wires, gas leaks,
+        kudzu, bluespace artifacts, random station spawns/stashes, antag random
+        spawns, heretic reality shifts, cosmic malign rifts, anomaly
+        spawns/generation, meteor and space-dust swarms, and SpaceSpawnRule
+        arrivals such as dragons, ninjas, and derelict cyborgs.
+    - type: Fix
+      message: >-
+        Anomaly spawns, anomaly generator output, meteor/space-dust waves, and
+        space-spawn antag arrivals now anchor from the station’s BecomesStation
+        grid/z-network instead of a largest docked station grid such as the
+        automated trade station.
+    - type: Add
+      message: >-
+        Station AI and abductor observation consoles can move their remote eye
+        between station decks
+    - type: Add
+      message: >-
+        Looking through remote eyes, including the AI hologram and abductor eye,
+        now renders the relevant decks below and above the viewed eye
+    - type: Tweak
+      message: >-
+        Abductor observation consoles list beacons from every station deck, and
+        abductors can teleport to targets on any deck.
+    - type: Tweak
+      message: >-
+        Wizard station-target lookups now include every station deck; dimension
+        shift applies its atmosphere and parallax changes to every deck map.
+    - type: Add
+      message: >-
+        Event/game-rule delay testing now uses pirate.events.delay_override: -1
+        keeps prototype delays, 0 starts instantly, and positive values force
+        that delay in seconds
+    - type: Fix
+      message: >-
+        Mechs now use z-level physics and fall through open tiles as one unit,
+        carrying their pilot and contained equipment with them
+    - type: Fix
+      message: >-
+        Remote-eye view subscriptions are cleaned up after the viewer stops
+        looking through the eye, such as via aghost or mind transfer
+  id: 130
+  time: '2026-06-16T16:35:39.0000000+00:00'
