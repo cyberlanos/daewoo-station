@@ -7,6 +7,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Numerics; // Pirate: multiz
 using Content.Server.Antag;
 using Content.Server.Station.Components;
 using Content.Server.StationEvents.Components;
@@ -75,7 +76,10 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         var location = angle.ToVec() * distance;
 
         var xform = Transform(gridUid);
-        var position = _transform.GetWorldPosition(xform) + location;
+        // Center the ring on the grid bounds center (where size is measured from), not the transform
+        // origin, so it stays symmetric on grids whose AABB is offset from origin.
+        var center = Vector2.Transform(grid.LocalAABB.Center, _transform.GetWorldMatrix(gridUid));
+        var position = center + location;
         return new MapCoordinates(position, xform.MapID);
     }
     #endregion

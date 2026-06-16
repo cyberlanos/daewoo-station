@@ -209,13 +209,10 @@ public sealed partial class AnomalySystem
     {
         var xform = Transform(uid);
 
-        #region Pirate: multiz
-        if (xform.GridUid is not { } grid)
-            return;
-
-        grid = _zFloors.GetRandomFloorGrid(grid);
+        #region Pirate: multiz - spawn needs a valid grid, but the cleanup below must always run
+        if (xform.GridUid is { } grid)
+            SpawnOnRandomGridLocation(_zFloors.GetRandomFloorGrid(grid), component.SpawnerPrototype);
         #endregion
-        SpawnOnRandomGridLocation(grid, component.SpawnerPrototype);
         RemComp<GeneratingAnomalyGeneratorComponent>(uid);
         Appearance.SetData(uid, AnomalyGeneratorVisuals.Generating, false);
         Audio.PlayPvs(component.GeneratingFinishedSound, uid);

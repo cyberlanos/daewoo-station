@@ -21,8 +21,8 @@ public sealed class CEZLevelEyeSystem : EntitySystem
         SubscribeLocalEvent<CEZViewDownEvent>(OnViewDown);
     }
 
-    private void OnViewUp(CEZViewUpEvent ev) => TryMoveViewerFloor(ev.Performer, 1);
-    private void OnViewDown(CEZViewDownEvent ev) => TryMoveViewerFloor(ev.Performer, -1);
+    private void OnViewUp(CEZViewUpEvent ev) => ev.Handled = TryMoveViewerFloor(ev.Performer, 1);
+    private void OnViewDown(CEZViewDownEvent ev) => ev.Handled = TryMoveViewerFloor(ev.Performer, -1);
 
     /// <summary>
     /// Moves the eye that <paramref name="viewer"/> is currently looking through (its
