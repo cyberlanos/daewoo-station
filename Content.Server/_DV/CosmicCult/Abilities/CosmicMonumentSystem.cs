@@ -128,10 +128,9 @@ public sealed class CosmicMonumentSystem : EntitySystem
         //CHECK IF WE'RE ON THE STATION OR IF SOMEONE'S TRYING TO SNEAK THIS ONTO SOMETHING SMOL
         var station = _station.GetStationInMap(xform.MapID);
 
-        // Pirate: multiz - fail-closed: reject unless the grid is a confirmed station floor
-        var stationFloors = _zFloors.GetStationFloorGrids(station ?? EntityUid.Invalid);
+        var stationFloors = _zFloors.GetStationFloorGrids(station ?? EntityUid.Invalid); // Pirate: multiz
 
-        if (stationFloors.Count == 0 || !stationFloors.Contains(xform.GridUid.Value))
+        if (stationFloors.Count == 0 || !stationFloors.Contains(xform.GridUid.Value)) // Pirate: multiz
         {
             _popup.PopupEntity(Loc.GetString("cosmicability-monument-spawn-error-station"), uid, uid);
             return false;

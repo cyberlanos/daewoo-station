@@ -155,25 +155,24 @@ public sealed partial class AbductorSystem : SharedAbductorSystem
 
         foreach (var station in stations)
         {
-            if (!TryComp(station, out MetaDataComponent? stationMetaData))
-                continue;
+            if (!TryComp(station, out MetaDataComponent? stationMetaData)) // Pirate: multiz
+                continue; // Pirate: multiz
 
-            // Pirate: multiz - gather beacons from every z-level floor grid, not just the largest
-            var beacons = new List<SharedNavMapSystem.NavMapBeacon>();
-            foreach (var grid in _zFloors.GetStationFloorGrids(station))
+            var beacons = new List<SharedNavMapSystem.NavMapBeacon>(); // Pirate: multiz
+            foreach (var grid in _zFloors.GetStationFloorGrids(station)) // Pirate: multiz
             {
-                if (_entityManager.TryGetComponent<NavMapComponent>(grid, out var navMap))
-                    beacons.AddRange(navMap.Beacons.Values);
+                if (_entityManager.TryGetComponent<NavMapComponent>(grid, out var navMap)) // Pirate: multiz
+                    beacons.AddRange(navMap.Beacons.Values); // Pirate: multiz
             }
 
-            if (beacons.Count == 0)
-                continue;
+            if (beacons.Count == 0) // Pirate: multiz
+                continue; // Pirate: multiz
 
             result.Add(station.Id, new StationBeacons
             {
                 Name = stationMetaData.EntityName,
                 StationId = station.Id,
-                Beacons = beacons,
+                Beacons = beacons, // Pirate: multiz
             });
         }
 

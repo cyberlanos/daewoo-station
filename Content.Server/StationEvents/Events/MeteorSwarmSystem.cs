@@ -64,8 +64,7 @@ public sealed class MeteorSwarmSystem : GameRuleSystem<MeteorSwarmComponent>
 
         var mainGrid = mainGridEnt.Owner;
 
-        // The wave's total meteor count stays the same; each meteor is aimed at an area-weighted
-        // random floor so per-tile targeting odds stay uniform across decks of differing sizes.
+        // Keep the wave size; choose each target floor by grid area.
         var meteorsToSpawn = component.MeteorsPerWave.Next(RobustRandom);
         for (var i = 0; i < meteorsToSpawn; i++)
             SpawnMeteor(uid, component, _zFloors.GetRandomFloorGrid(mainGrid));

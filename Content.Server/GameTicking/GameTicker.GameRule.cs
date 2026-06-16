@@ -154,13 +154,11 @@ public sealed partial class GameTicker
             return false;
 
         #region Pirate: multiz
-        // pirate.events.delay_override: -1 = prototype delay (default), 0 = instant, >0 = forced seconds.
+        // pirate.events.delay_override: -1 prototype, 0 instant, >0 forced seconds.
         var delayOverride = _cfg.GetCVar(PirateVars.EventsDelayOverride);
         if (delayOverride >= 0f)
         {
-            // RemComp also consumes a pending delay: when UpdateGameRules re-calls us after the
-            // delay expired the component already exists, so !RemComp is false and we fall through
-            // to activation instead of re-queueing the same override forever.
+            // RemComp tells the next call that the override delay already elapsed.
             if (!RemComp<DelayedStartRuleComponent>(ruleEntity) && delayOverride > 0f)
             {
                 var overrideTime = TimeSpan.FromSeconds(delayOverride);

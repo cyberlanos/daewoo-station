@@ -493,8 +493,8 @@
     baseSprintSpeed: 14
     baseWalkSpeed: 28
   - type: AiEye # Pirate: audio muffle
-  - type: CEZLevelPhysicsExempt # Pirate: multiz - free-floating eye, no falling/gravity/stairs
-  - type: CEZViewSource # Pirate: multiz - feed decks below/above to the AI looking through it
+  - type: CEZLevelPhysicsExempt # Pirate: multiz
+  - type: CEZViewSource # Pirate: multiz
   - type: NoFTL
   - type: WarpPoint
     follow: true

@@ -361,8 +361,7 @@ public sealed class XenomorphsRuleSystem : GameRuleSystem<XenomorphsRuleComponen
         var stationGrids = new HashSet<EntityUid>();
         foreach (var station in _gameTicker.GetSpawnableStations())
         {
-            // Pirate: multiz
-            foreach (var grid in _zFloors.GetStationFloorGrids(station))
+            foreach (var grid in _zFloors.GetStationFloorGrids(station)) // Pirate: multiz
                 stationGrids.Add(grid);
         }
 
