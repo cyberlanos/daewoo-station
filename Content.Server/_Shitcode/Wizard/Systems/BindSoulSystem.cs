@@ -87,7 +87,7 @@ public sealed class BindSoulSystem : SharedBindSoulSystem
         if (grid == null)
             return false;
 
-        var map = Transform(grid.Value).MapUid; // Pirate: multiz - resolve map from chosen grid (may live on another z-map)
+        var map = Transform(grid.Value).MapUid; // Pirate: multiz
 
         if (map == null)
             return false;

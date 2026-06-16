@@ -227,9 +227,7 @@ public sealed partial class ScalingViewport
             return;
         }
 
-        // When the player looks through a relayed remote eye (AI holo, abductor console eye, ...),
-        // anchor the whole z-stack to where that eye actually is — its deck, grid and position —
-        // instead of the player's body. Otherwise lower decks resolve against the wrong grid/map.
+        // Remote eyes render z-levels from the eye's grid/map, not the viewer body's.
         var relayTarget = GetRelayViewTarget();
         var viewEntity = CEZLevelViewEntity ?? relayTarget ?? _player.LocalEntity.Value;
         if (!_xformQuery.Value.TryComp(viewEntity, out var playerXform))
@@ -360,10 +358,7 @@ public sealed partial class ScalingViewport
         viewport.Eye = Eye;
     }
 
-    // The entity whose eye the local player is currently looking through, when it differs from their
-    // own body — i.e. a relayed remote eye (AI holo, abductor console eye). Null when not relaying.
-    // The eye's own sprite is governed by its Visibility layer (Ghost/Abductor), so the controller
-    // and ghosts see the marker while normal crew never receive it — no client-side hiding needed.
+    // Returns the remote eye currently viewed by the local player, if any.
     private EntityUid? GetRelayViewTarget()
     {
         if (_player.LocalEntity is not { } local)
@@ -372,8 +367,7 @@ public sealed partial class ScalingViewport
         return _entityManager.TryGetComponent<EyeComponent>(local, out var eye) ? eye.Target : null;
     }
 
-    // True when an active placement preview's cursor resolves to a different map than the one being
-    // rendered — the case during a z-move, where SnapgridCenter.Render's MapToGrid would throw.
+    // True when an active placement preview targets a map other than the one being rendered.
     private bool PlacementOverlayWouldDesync(EntityUid renderedMapUid)
     {
         if (!_placement.IsActive || _placement.CurrentMode is not { } mode)

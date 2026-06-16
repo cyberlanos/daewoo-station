@@ -286,8 +286,7 @@ public sealed class ZombieRuleSystem : GameRuleSystem<ZombieRuleComponent>
         {
             foreach (var station in _gameTicker.GetSpawnableStations())  // Einstein Engines - Zombie Improvements Take 2
             {
-                // Pirate: multiz
-                foreach (var grid in _zFloors.GetStationFloorGrids(station))
+                foreach (var grid in _zFloors.GetStationFloorGrids(station)) // Pirate: multiz
                     stationGrids.Add(grid);
             }
         }

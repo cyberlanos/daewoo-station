@@ -120,8 +120,7 @@ public abstract partial class GameRuleSystem<T> where T: IComponent
             return false;
 
         #region Pirate: multiz
-        // Try an area-weighted floor first, then fall back to the rest: a single floor failing to
-        // yield a tile (e.g. an all-space deck) shouldn't fail the pick when others have valid tiles.
+        // Try the weighted floor first, then the rest in case one has no valid tiles.
         var floors = _zFloors.GetFloorGrids(grid.Owner);
         var chosen = _zFloors.GetRandomFloorGrid(grid.Owner);
         floors.Remove(chosen);

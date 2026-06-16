@@ -106,12 +106,13 @@ public sealed partial class AbductorsAbilitiesComponent : Component
     [DataField, AutoNetworkedField]
     public EntityUid? SendYourself;
 
-    // Pirate: multiz - camera floor up/down actions
+    #region Pirate: multiz
     [DataField, AutoNetworkedField]
     public EntityUid? ViewUp;
 
     [DataField, AutoNetworkedField]
     public EntityUid? ViewDown;
+    #endregion
 
     [DataField]
     public EntityUid[] HiddenActions = [];

@@ -136,9 +136,7 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
 
     #region Pirate: multiz
     /// <summary>
-    /// Returns every map the target station occupies (one per z-level floor) so station-wide wizard
-    /// effects hit all decks. Falls back to the single <see cref="GetTargetMap"/> result when there
-    /// is no clear target station.
+    /// Returns every z-level map occupied by the wizard target station.
     /// </summary>
     public List<EntityUid> GetTargetMaps()
     {
@@ -149,8 +147,7 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
         if (rule != null)
             targetStation = Comp<WizardRuleComponent>(rule.Value).TargetStation;
 
-        // Fall back to a random wizard-target station when the rule hasn't assigned one yet, so we
-        // still resolve the full z-level floor set (the old GetTargetMap fallback only gave one map).
+        // Pick a target station if the rule has not assigned one yet.
         if (targetStation == null)
         {
             var stations = GetWizardTargetStations().ToList();
@@ -167,7 +164,7 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
             }
         }
 
-        // Last-ditch: a single map, when there is no resolvable wizard-target station at all.
+        // Final fallback when no station can be resolved.
         if (maps.Count == 0 && GetTargetMap() is { } fallback)
             maps.Add(fallback);
 
@@ -177,17 +174,17 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
 
     private void OnDimensionShift(DimensionShiftEvent ev)
     {
-        var maps = GetTargetMaps(); // Pirate: multiz - apply to every floor's map, not just one
-        if (maps.Count == 0)
+        var maps = GetTargetMaps(); // Pirate: multiz
+        if (maps.Count == 0) // Pirate: multiz
             return;
 
         foreach (var map in maps) // Pirate: multiz
         {
             if (ev.Parallax != null)
             {
-                var parallax = EnsureComp<ParallaxComponent>(map);
+                var parallax = EnsureComp<ParallaxComponent>(map); // Pirate: multiz
                 parallax.Parallax = ev.Parallax;
-                Dirty(map, parallax);
+                Dirty(map, parallax); // Pirate: multiz
             }
 
             var moles = new float[Atmospherics.AdjustedNumberOfGases];
@@ -197,7 +194,7 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
 
             var mixture = new GasMixture(moles, ev.Temperature);
 
-            _atmos.SetMapAtmosphere(map, false, mixture);
+            _atmos.SetMapAtmosphere(map, false, mixture); // Pirate: multiz
         }
 
         var message = Loc.GetString("dimension-shift-message");

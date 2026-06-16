@@ -5,9 +5,7 @@ using Content.Shared.Eye;
 namespace Content.Server._Pirate.ZLevels.View;
 
 /// <summary>
-/// Reusable z-level traversal for eye/camera viewers. Any system that gives a viewer the
-/// <see cref="CEZViewUpEvent"/>/<see cref="CEZViewDownEvent"/> actions (abductor observation console,
-/// station AI, future camera eyes) gets floor up/down movement of its controlled eye for free.
+/// Shared z-level traversal for remote eye/camera viewers.
 /// </summary>
 public sealed class CEZLevelEyeSystem : EntitySystem
 {
@@ -25,8 +23,7 @@ public sealed class CEZLevelEyeSystem : EntitySystem
     private void OnViewDown(CEZViewDownEvent ev) => ev.Handled = TryMoveViewerFloor(ev.Performer, -1);
 
     /// <summary>
-    /// Moves the eye that <paramref name="viewer"/> is currently looking through (its
-    /// <see cref="EyeComponent.Target"/>) one floor up (delta &gt; 0) or down (delta &lt; 0).
+    /// Moves the eye <paramref name="viewer"/> is looking through one floor.
     /// </summary>
     public bool TryMoveViewerFloor(EntityUid viewer, int delta)
     {
@@ -37,9 +34,7 @@ public sealed class CEZLevelEyeSystem : EntitySystem
     }
 
     /// <summary>
-    /// Moves an eye/camera entity one z-level floor up (delta &gt; 0) or down (delta &lt; 0). Uses the
-    /// same ghost-style traversal observers use (<c>bypassPassability</c>), so the eye moves between
-    /// decks from anywhere — including over open, gridless space.
+    /// Moves an eye/camera entity one z-level floor, using ghost-style traversal.
     /// </summary>
     public bool TryMoveEyeFloor(EntityUid eye, int delta)
     {

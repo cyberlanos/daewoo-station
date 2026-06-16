@@ -28,8 +28,7 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
 
         SubscribeLocalEvent<SurveillanceCameraComponent, ViewSubscriberAddedEvent>(OnViewSubscriberAdded);
         SubscribeLocalEvent<SurveillanceCameraComponent, ViewSubscriberRemovedEvent>(OnViewSubscriberRemoved);
-        // Remote eyes (AI holo, abductor eye) become view subscribers via EyeComponent.Target, so the
-        // same z-level PVS feed works for them once they carry the marker.
+        // Remote eyes reuse the same z-level PVS feed as surveillance cameras.
         SubscribeLocalEvent<CEZViewSourceComponent, ViewSubscriberAddedEvent>(OnViewSourceSubscriberAdded);
         SubscribeLocalEvent<CEZViewSourceComponent, ViewSubscriberRemovedEvent>(OnViewSourceSubscriberRemoved);
         SubscribeLocalEvent<CEZCameraViewSubscriptionComponent, ComponentShutdown>(OnSubscriptionShutdown);
@@ -48,11 +47,7 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
         var query = EntityQueryEnumerator<CEZCameraViewSubscriptionComponent, TransformComponent>();
         while (query.MoveNext(out var uid, out var subscriptions, out var xform))
         {
-            // A remote eye (AI holo, abductor eye) force-feeds itself to its viewer's session via the
-            // engine view-subscription, which bypasses the visibility mask. Upstream only clears that
-            // subscription when the AI brain is carded — not when the player leaves the eye another way
-            // (aghost, mind transfer), so it leaks and the eye stays visible on whatever they control
-            // next. Drop subscribers that are no longer actually looking through this eye.
+            // Drop remote-eye subscribers left behind after aghost, mind transfer, etc.
             var pruneStale = HasComp<CEZViewSourceComponent>(uid);
 
             var targets = GetZViewTargets((uid, xform));
@@ -69,8 +64,7 @@ public sealed class CEZCameraViewSubscriptionSystem : EntitySystem
         }
     }
 
-    // True when the session's controlled entity is currently relayed through <paramref name="eye"/>
-    // (its eye target is that entity), i.e. it is legitimately looking through it.
+    // True while the session's controlled entity is looking through <paramref name="eye"/>.
     private bool IsLookingThrough(ICommonSession session, EntityUid eye)
     {
         return session.AttachedEntity is { } attached

@@ -45,8 +45,7 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         }
 
         #region Pirate: multiz
-        // Main grid (BecomesStation), not largest (could be a docked ATS). Preselect one random
-        // floor's point and reuse it, so the ghost-role preview and the real spawn match.
+        // Pick one floor for both the ghost-role preview and the real spawn.
         if (!TryComp<StationDataComponent>(station, out var stationData)
             || GetStationMainGrid(stationData) is not { } mainGrid)
         {
@@ -76,8 +75,7 @@ public sealed class SpaceSpawnRule : StationEventSystem<SpaceSpawnRuleComponent>
         var location = angle.ToVec() * distance;
 
         var xform = Transform(gridUid);
-        // Center the ring on the grid bounds center (where size is measured from), not the transform
-        // origin, so it stays symmetric on grids whose AABB is offset from origin.
+        // Use bounds center so the spawn ring stays symmetric around offset grids.
         var center = Vector2.Transform(grid.LocalAABB.Center, _transform.GetWorldMatrix(gridUid));
         var position = center + location;
         return new MapCoordinates(position, xform.MapID);
