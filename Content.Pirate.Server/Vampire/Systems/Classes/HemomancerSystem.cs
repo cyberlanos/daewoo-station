@@ -461,6 +461,7 @@ public sealed class HemomancerSystem : EntitySystem
 
         var targetsToDamage = new HashSet<EntityUid>();
         var targetsToVisualize = new HashSet<EntityUid>();
+        var foundBloodPuddle = false;
 
         foreach (var entity in nearbyEntities)
         {
@@ -479,6 +480,7 @@ public sealed class HemomancerSystem : EntitySystem
             if (_container.IsEntityOrParentInContainer(entity))
                 continue;
 
+            foundBloodPuddle = true;
             var puddleCoords = xform.Coordinates;
             var puddleTile = _map.CoordinatesToTile(gridUid, gridComp, puddleCoords);
             var targetsNearPuddle = _lookup.GetEntitiesInRange(puddleCoords, args.TargetRange)
@@ -506,7 +508,15 @@ public sealed class HemomancerSystem : EntitySystem
         }
 
         if (targetsToDamage.Count == 0)
+        {
+            _popup.PopupEntity(
+                Loc.GetString(foundBloodPuddle
+                    ? "action-vampire-blood-eruption-no-targets"
+                    : "action-vampire-blood-eruption-no-blood"),
+                uid,
+                uid);
             return;
+        }
 
         if (!_vampire.CheckAndConsumeBloodCost(uid, comp, args.Action.Owner))
             return;
@@ -542,7 +552,8 @@ public sealed class HemomancerSystem : EntitySystem
         if (!_solution.TryGetSolution(uid, puddle.SolutionName, out _, out var solution))
             return false;
 
-        return solution.ContainsReagent(reagent, null);
+        // Pirate: spilled mob blood can carry ReagentData, so match the reagent prototype instead.
+        return solution.ContainsPrototype(reagent);
     }
 
     private void OnBloodBringersRite(EntityUid uid, VampireComponent comp, ref VampireBloodBringersRiteActionEvent args)

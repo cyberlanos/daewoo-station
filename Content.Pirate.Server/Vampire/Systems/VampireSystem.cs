@@ -562,9 +562,9 @@ public sealed partial class VampireSystem : EntitySystem
             return;
         }
 
+        // Pirate: keep full-power actions clickable so the server can explain why they fail.
         var enabled = vamp.TotalBlood >= vac.BloodToUnlock
-             && (vac.RequiredClass == null || ValidateVampireClass(owner, vamp, vac.RequiredClass))
-             && (!vac.RequiresFullPower || vamp.FullPower);
+             && (vac.RequiredClass == null || ValidateVampireClass(owner, vamp, vac.RequiredClass));
 
         _actions.SetEnabled(action.AsNullable(), enabled);
     }
