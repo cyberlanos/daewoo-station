@@ -174,28 +174,46 @@ public sealed class WizardRuleSystem : GameRuleSystem<WizardRuleComponent>
 
     private void OnDimensionShift(DimensionShiftEvent ev)
     {
-        var maps = GetTargetMaps(); // Pirate: multiz
-        if (maps.Count == 0) // Pirate: multiz
+        #region Pirate: multiz
+        var maps = GetTargetMaps();
+        EntityUid? map = maps.Count == 0 ? null : maps[0];
+        #endregion
+
+        if (map == null)
             return;
 
-        foreach (var map in maps) // Pirate: multiz
+        if (ev.Parallax != null)
         {
+            var parallax = EnsureComp<ParallaxComponent>(map.Value);
+            parallax.Parallax = ev.Parallax;
+            Dirty(map.Value, parallax);
+        }
+
+        var moles = new float[Atmospherics.AdjustedNumberOfGases];
+        moles[(int) Gas.Oxygen] = ev.OxygenMoles;
+        moles[(int) Gas.Nitrogen] = ev.NitrogenMoles;
+        moles[(int) Gas.CarbonDioxide] = ev.CarbonDioxideMoles;
+
+        var mixture = new GasMixture(moles, ev.Temperature);
+
+        _atmos.SetMapAtmosphere(map.Value, false, mixture);
+
+        #region Pirate: multiz
+        foreach (var zMap in maps)
+        {
+            if (zMap == map.Value)
+                continue;
+
             if (ev.Parallax != null)
             {
-                var parallax = EnsureComp<ParallaxComponent>(map); // Pirate: multiz
+                var parallax = EnsureComp<ParallaxComponent>(zMap);
                 parallax.Parallax = ev.Parallax;
-                Dirty(map, parallax); // Pirate: multiz
+                Dirty(zMap, parallax);
             }
 
-            var moles = new float[Atmospherics.AdjustedNumberOfGases];
-            moles[(int) Gas.Oxygen] = ev.OxygenMoles;
-            moles[(int) Gas.Nitrogen] = ev.NitrogenMoles;
-            moles[(int) Gas.CarbonDioxide] = ev.CarbonDioxideMoles;
-
-            var mixture = new GasMixture(moles, ev.Temperature);
-
-            _atmos.SetMapAtmosphere(map, false, mixture); // Pirate: multiz
+            _atmos.SetMapAtmosphere(zMap, false, mixture);
         }
+        #endregion
 
         var message = Loc.GetString("dimension-shift-message");
         var wrappedMessage = Loc.GetString("chat-manager-server-wrap-message", ("message", message));
