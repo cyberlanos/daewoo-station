@@ -343,7 +343,7 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
                 }
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         #region Pirate: multiz - suppress IFF for adjacent-layer grids
         // Simpler than dedup: only draw IFF for grids on the focused layer. Adjacent-layer
@@ -353,7 +353,7 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         _zIffSuppressed.Clear();
         foreach (var gridUid in _zLevelGrids)
             _zIffSuppressed.Add(gridUid);
-        #endregion Pirate: multiz
+        #endregion
 
         // Frontier - collect blip location data outside foreach - more changes ahead
         var blipDataList = new List<BlipData>();

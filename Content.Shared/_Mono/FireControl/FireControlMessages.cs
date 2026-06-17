@@ -21,7 +21,7 @@ public struct FireControlLayerInfo
         Grid = grid;
     }
 }
-#endregion Pirate: multiz
+#endregion
 
 [Serializable, NetSerializable]
 public sealed class FireControlConsoleUpdateEvent : EntityEventArgs
@@ -48,7 +48,7 @@ public sealed class FireControlConsoleBoundInterfaceState : BoundUserInterfaceSt
     /// and only guns whose own depth is within their reach of this value are firing-eligible.
     /// </summary>
     public int CurrentLayer;
-    #endregion Pirate: multiz
+    #endregion
 
     public FireControlConsoleBoundInterfaceState(
         bool connected,
@@ -79,7 +79,7 @@ public sealed class FireControlConsoleSelectLayerMessage : BoundUserInterfaceMes
         Depth = depth;
     }
 }
-#endregion Pirate: multiz
+#endregion
 
 [Serializable, NetSerializable]
 public enum FireControlConsoleUiKey : byte
@@ -156,7 +156,7 @@ public struct FireControllableEntry
     /// Maximum number of z-levels the gun can fire above or below its own depth.
     /// </summary>
     public int Reach;
-    #endregion Pirate: multiz
+    #endregion
 
     public FireControllableEntry(NetEntity entity, NetCoordinates coordinates, string name)
     {

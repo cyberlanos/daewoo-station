@@ -36,12 +36,8 @@ public abstract partial class SharedShuttleSystem
 
     public string? GetIFFLabel(EntityUid gridUid, bool self = false, IFFComponent? component = null)
     {
-        // Pirate: multiz — for z-linked grids, the canonical name lives on the lowest-depth peer
-        // (typically the manned deck that actually got renamed). Reading the focused deck's own
-        // EntityName produces "Unknown" / default placeholder for upper decks; redirect so every
-        // peer in the network reports the same name on radar.
+        // Pirate: multiz - use the lowest linked deck as the display-name source.
         var nameSource = ResolveLinkedGridForLabel(gridUid);
-        // Pirate: multiz — ResolveLinkedGridForLabel may hand back a peer-deck uid; tolerate missing metadata gracefully.
         var entName = TryComp<MetaDataComponent>(nameSource, out var nameMeta) ? nameMeta.EntityName : string.Empty;
 
         if (self)
@@ -59,9 +55,7 @@ public abstract partial class SharedShuttleSystem
 
     #region Pirate: multiz
     /// <summary>
-    /// For a grid that is part of a <see cref="CEZLinkedGridComponent"/> network, returns the
-    /// peer with the lowest depth (the bottom deck). For non-linked grids, returns the grid
-    /// itself. Used to canonicalise display names across linked-grid networks.
+    /// Returns the lowest linked deck for shared IFF labels.
     /// </summary>
     private EntityUid ResolveLinkedGridForLabel(EntityUid gridUid)
     {
@@ -80,7 +74,7 @@ public abstract partial class SharedShuttleSystem
         }
         return bestUid;
     }
-    #endregion Pirate: multiz
+    #endregion
 
     /// <summary>
     /// Sets the color for this grid to appear as on radar.

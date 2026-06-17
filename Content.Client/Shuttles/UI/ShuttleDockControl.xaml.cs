@@ -151,7 +151,7 @@ public sealed partial class ShuttleDockControl : BaseShuttleControl
                 }
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         // offset the dotted-line position to the bounds.
         Vector2? viewedDockPos = _viewedState != null ? MidPointVector : null;

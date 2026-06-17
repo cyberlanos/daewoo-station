@@ -498,7 +498,7 @@ public sealed partial class ChatUIController : UIController
     private void AddSpeechBubble(ChatMessage msg, SpeechBubble.SpeechType speechType)
     {
         if (!TryResolveChatSenderEntity(msg, out var ent)) // Pirate: multiz
-            return;
+            return; // Pirate: multiz
 
         EnqueueSpeechBubble(ent, msg, speechType);
     }

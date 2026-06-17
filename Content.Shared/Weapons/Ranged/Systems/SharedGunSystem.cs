@@ -471,7 +471,7 @@ public abstract partial class SharedGunSystem : EntitySystem
         // render back on the aim line; the EndShotOffset() calls below clear it.
         if (_zLevelShooting.TryGetProjectileVisualOffset(user, sourceFromCoordinates, fromCoordinates, out var barrelShift, out var shotDepth))
             _zLevelShooting.BeginShotOffset(barrelShift, shotDepth);
-        #endregion
+        #endregion Pirate: multiz
 
         // Remove ammo
         var ev = new TakeAmmoEvent(shots, new List<(EntityUid? Entity, IShootable Shootable)>(), fromCoordinates, user);

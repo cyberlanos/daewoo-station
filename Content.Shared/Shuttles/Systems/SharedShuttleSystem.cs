@@ -86,24 +86,34 @@ public abstract partial class SharedShuttleSystem : EntitySystem
         if (destination.RequireCoordinateDisk)
         {
             if (!TryComp<ItemSlotsComponent>(consoleUid, out var slot))
+            {
                 return false;
+            }
 
             if (!_itemSlots.TryGetSlot(consoleUid, SharedShuttleConsoleComponent.DiskSlotName, out var itemSlot, component: slot) || !itemSlot.HasItem)
+            {
                 return false;
+            }
 
             if (itemSlot.Item is { Valid: true } disk)
             {
                 ShuttleDestinationCoordinatesComponent? diskCoordinates = null;
                 if (!Resolve(disk, ref diskCoordinates))
+                {
                     return false;
+                }
 
                 var diskCoords = diskCoordinates.Destination;
 
                 if (diskCoords == null || !TryComp<FTLDestinationComponent>(diskCoords.Value, out var diskDestination) || diskDestination != destination)
+                {
                     return false;
+                }
             }
             else
+            {
                 return false;
+            }
         }
 
         if (HasComp<FTLMapComponent>(mapUid))
@@ -200,13 +210,15 @@ public abstract partial class SharedShuttleSystem : EntitySystem
     /// <summary>
     /// Returns true if the spot is free to be FTLd to (not close to any objects and in range).
     /// </summary>
-    // `allowSameMap` is the narrow multiz escape hatch for deck consoles that resolve onto a root shuttle already sitting on the target map. // Pirate: multiz
+    // Pirate: multiz - deck consoles may resolve onto a root shuttle on the target map.
     public bool FTLFree(EntityUid shuttleUid, EntityCoordinates coordinates, Angle angle, List<ShuttleExclusionObject>? exclusionZones, FTLDriveComponent? ftl = null, bool allowSameMap = false) // Frontier edit - FTL drive // Pirate: multiz
     {
         if (!_physicsQuery.TryGetComponent(shuttleUid, out var shuttlePhysics) ||
             !_xformQuery.TryGetComponent(shuttleUid, out var shuttleXform)
             || !Resolve(shuttleUid, ref ftl, false))
+        {
             return false;
+        }
 
         // Just checks if any grids inside of a buffer range at the target position.
         _grids.Clear();
@@ -221,13 +233,15 @@ public abstract partial class SharedShuttleSystem : EntitySystem
         // FTL on the same map won't work without a bluespace drive on board.
         if (mapCoordinates.MapId == shuttleXform.MapID
             && !ftl.Data.FTLToSameMap
-            && !allowSameMap)
+            && !allowSameMap) // Pirate: multiz
             return false;
         // Frontier edit end
 
         // Check range even if it's cross-map.
         if ((targetPosition - ourPos).Length() > GetFTLRange(shuttleUid, ftl)) // Frontier edit - FTL range
+        {
             return false;
+        }
 
         // Check exclusion zones.
         // This needs to be passed in manually due to PVS.

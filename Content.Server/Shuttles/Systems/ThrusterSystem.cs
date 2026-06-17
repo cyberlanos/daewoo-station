@@ -224,14 +224,14 @@ public sealed class ThrusterSystem : EntitySystem
         // TODO: Don't make them rotatable and make it require anchoring.
 
         if (!component.Enabled ||
-            !TryComp(uid, out TransformComponent? xform))
+            !TryComp(uid, out TransformComponent? xform)) // Pirate: multiz
         {
             return;
         }
 
         var shuttleGridUid = ResolveZLinkedLeaderGrid(xform.GridUid); // Pirate: multiz
 
-        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
+        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent)) // Pirate: multiz
             return;
 
         var canEnable = CanEnable(uid, component);
@@ -261,7 +261,7 @@ public sealed class ThrusterSystem : EntitySystem
         if (args.ParentChanged)
         {
             var oldGridUid = ResolveZLinkedLeaderGrid(args.OldPosition.EntityId) ?? args.OldPosition.EntityId; // Pirate: multiz
-            oldShuttleComponent = Comp<ShuttleComponent>(oldGridUid);
+            oldShuttleComponent = Comp<ShuttleComponent>(oldGridUid); // Pirate: multiz
 
             // If no parent change doesn't matter for angular.
             if (component.Type == ThrusterType.Angular)
@@ -352,7 +352,7 @@ public sealed class ThrusterSystem : EntitySystem
         component.IsOn = true;
 
         var shuttleGridUid = ResolveZLinkedLeaderGrid(xform.GridUid); // Pirate: multiz
-        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent))
+        if (!TryComp(shuttleGridUid, out ShuttleComponent? shuttleComponent)) // Pirate: multiz
             return;
 
         // Logger.DebugS("thruster", $"Enabled thruster {uid}");
@@ -680,5 +680,5 @@ public sealed class ThrusterSystem : EntitySystem
 
         return linked.PeerGrids.TryGetValue(0, out var leaderGrid) ? leaderGrid : gridUid;
     }
-    #endregion Pirate: multiz
+    #endregion
 }

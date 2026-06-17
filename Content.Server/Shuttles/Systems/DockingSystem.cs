@@ -505,7 +505,7 @@ namespace Content.Server.Shuttles.Systems
 
             return consoleLinked.ZNetwork == dockLinked.ZNetwork;
         }
-        #endregion Pirate: multiz
+        #endregion
 
         public bool CanUndock(Entity<DockingComponent?> dock)
         {

@@ -11,6 +11,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+#region Pirate: multiz
 meta:
   format: 6
   postmapinit: false
@@ -69,4 +70,5 @@ entities:
     - type: Transform
       anchored: False
       parent: 3
+#endregion Pirate: multiz
 ...

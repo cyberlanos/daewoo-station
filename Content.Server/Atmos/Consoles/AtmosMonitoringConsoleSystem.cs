@@ -247,7 +247,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
             UpdateAtmosMonitoringConsoleGridData(uid, component, gridUid);
             _appliedMonitorGrids[uid] = gridUid;
         }
-        #endregion Pirate: multiz
+        #endregion
 
         // Console init, selection changes, and pipe/device rebuild paths already populate AtmosDevices/AtmosPipeChunks
         // and dirty the component; redoing it every 1-second UI refresh turned an idle console into a constant resender.
@@ -321,8 +321,8 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
         {
             foreach (var gas in Enum.GetValues<Gas>())
             {
-                if (pipeNode.Air[(int) gas] > 0)
-                    gasData.Add(gas, pipeNode.Air[(int) gas] / pipeNode.Air.TotalMoles);
+                if (pipeNode.Air[(int)gas] > 0)
+                    gasData.Add(gas, pipeNode.Air[(int)gas] / pipeNode.Air.TotalMoles);
             }
         }
 
@@ -462,7 +462,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
         // Remove all stale values for the tile
         foreach (var (index, atmosPipeData) in chunk.AtmosPipeData)
         {
-            var mask = (ulong) SharedNavMapSystem.AllDirMask << tileIdx * SharedNavMapSystem.Directions;
+            var mask = (ulong)SharedNavMapSystem.AllDirMask << tileIdx * SharedNavMapSystem.Directions;
             chunk.AtmosPipeData[index] = atmosPipeData & ~mask;
         }
 
@@ -525,7 +525,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
             var pipeDirection = pipeNode.CurrentPipeDirection;
 
             chunk.AtmosPipeData.TryGetValue(subnet, out var atmosPipeData);
-            atmosPipeData |= (ulong) pipeDirection << tileIdx * SharedNavMapSystem.Directions;
+            atmosPipeData |= (ulong)pipeDirection << tileIdx * SharedNavMapSystem.Directions;
             chunk.AtmosPipeData[subnet] = atmosPipeData;
         }
     }
@@ -542,7 +542,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
         {
             if (node is PipeNode)
             {
-                pipeNode = (PipeNode) node;
+                pipeNode = (PipeNode)node;
                 netId = GetPipeNodeNetId(pipeNode);
 
                 return true;
@@ -556,7 +556,7 @@ public sealed class AtmosMonitoringConsoleSystem : SharedAtmosMonitoringConsoleS
     {
         if (pipeNode.NodeGroup is BaseNodeGroup)
         {
-            var nodeGroup = (BaseNodeGroup) pipeNode.NodeGroup;
+            var nodeGroup = (BaseNodeGroup)pipeNode.NodeGroup;
 
             return nodeGroup.NetId;
         }

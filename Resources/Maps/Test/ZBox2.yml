@@ -1,3 +1,4 @@
+#region Pirate: multiz
 meta:
   format: 7
   category: Map
@@ -423,4 +424,5 @@ entities:
       parent: 2
     - type: ElevatorDoor
       elevatorId: elevator-1
+#endregion Pirate: multiz
 ...

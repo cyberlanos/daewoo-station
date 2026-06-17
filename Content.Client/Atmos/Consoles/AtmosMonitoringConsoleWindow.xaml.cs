@@ -257,7 +257,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         if (proto.TexturePaths == null || proto.TexturePaths.Length == 0)
             return;
 
-        var idx = Math.Clamp((int) metaData.Direction / 2, 0, proto.TexturePaths.Length - 1);
+        var idx = Math.Clamp((int)metaData.Direction / 2, 0, proto.TexturePaths.Length - 1);
         var texture = proto.TexturePaths.Length > 0 ? proto.TexturePaths[idx] : proto.TexturePaths[0];
         var color = isSensor ? proto.Color : proto.Color * metaData.PipeColor;
 
@@ -268,7 +268,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         var coords = _entManager.GetCoordinates(metaData.NetCoordinates);
 
         if (proto.Placement == NavMapBlipPlacement.Offset && metaData.PipeLayer > 0)
-            coords = coords.Offset(_pipeLayerOffsets[(int) metaData.PipeLayer]);
+            coords = coords.Offset(_pipeLayerOffsets[(int)metaData.PipeLayer]);
 
         var blip = new NavMapBlip(coords, _spriteSystem.Frame0(new SpriteSpecifier.Texture(texture)), color, blinks, proto.Selectable, proto.Scale);
         NavMap.TrackedEntities[metaData.NetEntity] = blip;
@@ -316,7 +316,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             return;
         }
 
-        var entryContainer = (AtmosMonitoringEntryContainer) tableChild;
+        var entryContainer = (AtmosMonitoringEntryContainer)tableChild;
         entryContainer.UpdateEntry(data, data.NetEntity == _focusEntity);
     }
 
@@ -327,7 +327,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             if (tableChild is not AtmosAlarmEntryContainer)
                 continue;
 
-            var entryContainer = (AtmosAlarmEntryContainer) tableChild;
+            var entryContainer = (AtmosAlarmEntryContainer)tableChild;
 
             if (entryContainer.NetEntity != currTrackedEntity)
                 entryContainer.RemoveAsFocus();
@@ -414,7 +414,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
             if (control is not AtmosMonitoringEntryContainer)
                 continue;
 
-            var entry = (AtmosMonitoringEntryContainer) control;
+            var entry = (AtmosMonitoringEntryContainer)control;
 
             if (entry.Data.NetEntity == _focusEntity)
                 return true;
@@ -456,7 +456,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
 
         for (int index = 0; index < AtmosNetworksTable.ChildCount; index++)
         {
-            var entry = (AtmosMonitoringEntryContainer) AtmosNetworksTable.GetChild(index);
+            var entry = (AtmosMonitoringEntryContainer)AtmosNetworksTable.GetChild(index);
 
             if (entry == null)
                 continue;

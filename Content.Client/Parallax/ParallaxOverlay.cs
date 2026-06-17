@@ -19,7 +19,7 @@
 
 using System.Numerics;
 using Content.Client.Parallax.Managers;
-using Content.Client.Viewport;
+using Content.Client.Viewport; // Pirate: multiz
 using Content.Shared.CCVar;
 using Content.Shared.Parallax.Biomes;
 using Robust.Client.GameObjects;
@@ -78,7 +78,7 @@ public sealed class ParallaxOverlay : Overlay
             // Suppress all other depths.
             return false;
         }
-        #endregion Pirate: multiz
+        #endregion
 
         return true;
     }

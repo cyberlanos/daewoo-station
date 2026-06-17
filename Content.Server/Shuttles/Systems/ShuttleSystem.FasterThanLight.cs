@@ -104,7 +104,7 @@ using Content.Shared.Timing;
 using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.Whitelist;
 using JetBrains.Annotations;
-using Robust.Shared.Log;
+using Robust.Shared.Log; // Pirate: multiz
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Components;
 using Robust.Shared.Collections;
@@ -187,7 +187,7 @@ public sealed partial class ShuttleSystem
         // The root FTL component owns the jump lifetime, so shutdown must also stop any mirrored peer-deck audio loops.
         ent.Comp.TravelStream = _audio.Stop(ent.Comp.TravelStream);
         StopPeerFTLTravelAudio(ent.Comp);
-        #endregion Pirate: multiz
+        #endregion
         QueueDel(ent.Comp.VisualizerEntity);
         ent.Comp.VisualizerEntity = null;
     }
@@ -211,22 +211,22 @@ public sealed partial class ShuttleSystem
     /// <summary>
     /// Ensures the FTL map exists and returns it.
     /// </summary>
-    private EntityUid EnsureFTLMap(int depth = 0)
+    private EntityUid EnsureFTLMap(int depth = 0) // Pirate: multiz
     {
         var query = AllEntityQuery<FTLMapComponent>();
 
-        // Depth 0 preserves the original single-map behavior; non-zero depths give linked decks isolated hyperspace lanes. // Pirate: multiz
-        while (query.MoveNext(out var uid, out var comp))
+        // Pirate: multiz - Depth 0 preserves the original single-map behavior; non-zero depths give linked decks isolated hyperspace lanes.
+        while (query.MoveNext(out var uid, out var comp)) // Pirate: multiz
         {
-            if (comp.Depth == depth)
-                return uid;
+            if (comp.Depth == depth) // Pirate: multiz
+                return uid; // Pirate: multiz
         }
 
         var mapUid = _mapSystem.CreateMap(out var mapId);
         var ftlMap = AddComp<FTLMapComponent>(mapUid);
-        ftlMap.Depth = depth;
+        ftlMap.Depth = depth; // Pirate: multiz
 
-        _metadata.SetEntityName(mapUid, depth == 0 ? "FTL" : $"FTL [{depth}]");
+        _metadata.SetEntityName(mapUid, depth == 0 ? "FTL" : $"FTL [{depth}]"); // Pirate: multiz
         Log.Debug($"Setup hyperspace map at {mapUid}");
         DebugTools.Assert(!_mapSystem.IsPaused(mapId));
         var parallax = EnsureComp<ParallaxComponent>(mapUid);
@@ -344,7 +344,7 @@ public sealed partial class ShuttleSystem
 
         component.ZPeerTravelStreams.Clear();
     }
-    #endregion Pirate: multiz
+    #endregion
 
     public StartEndTime GetStateTime(FTLComponent component)
     {
@@ -426,7 +426,7 @@ public sealed partial class ShuttleSystem
     /// </summary>
     public bool CanFTL(EntityUid shuttleUid, [NotNullWhen(false)] out string? reason)
     {
-        // Always gate FTL off the resolved root shuttle so active-jump and cooldown checks cannot disagree between linked decks. // Pirate: multiz
+        // Pirate: multiz - always gate FTL off the resolved root shuttle so active-jump and cooldown checks cannot disagree between linked decks.
         shuttleUid = ResolveFTLShuttle(shuttleUid); // Pirate: multiz
 
         // Currently in FTL already
@@ -440,7 +440,7 @@ public sealed partial class ShuttleSystem
         {
 
             // Too large to FTL
-            if (FTLMassLimit > 0 && shuttlePhysics.Mass > FTLMassLimit)
+            if (FTLMassLimit > 0 &&  shuttlePhysics.Mass > FTLMassLimit)
             {
                 reason = Loc.GetString("shuttle-console-mass");
                 return false;
@@ -479,7 +479,7 @@ public sealed partial class ShuttleSystem
         string? priorityTag = null,
         FTLDriveComponent? ftlDrive = null) // Frontier edit
     {
-        // Convert deck-local target data into root-shuttle space before the jump is queued, so range, docking, and arrival all operate on one frame of reference. // Pirate: multiz
+        // Pirate: multiz - convert deck-local target data into root-shuttle space before the jump is queued, so range, docking, and arrival all operate on one frame of reference.
         coordinates = ResolveFTLTargetCoordinates(shuttleUid, coordinates);
         shuttleUid = ResolveFTLShuttle(shuttleUid);
 
@@ -509,7 +509,8 @@ public sealed partial class ShuttleSystem
 
         _console.RefreshShuttleConsoles(shuttleUid);
 
-        var mapUid = _mapSystem.GetMap(_transform.GetMapId(coordinates));
+        var mapId = _transform.GetMapId(coordinates);
+        var mapUid = _mapSystem.GetMap(mapId);
         var ev = new FTLRequestEvent(mapUid);
         RaiseLocalEvent(shuttleUid, ref ev, true);
     }
@@ -527,7 +528,7 @@ public sealed partial class ShuttleSystem
         string? priorityTag = null,
         FTLDriveComponent? ftlDrive = null) // Frontier edit
     {
-        // Docking FTL has to use the same root shuttle as position FTL so multiz decks do not queue separate jump states. // Pirate: multiz
+        // Pirate: multiz - Docking FTL has to use the same root shuttle as position FTL so multiz decks do not queue separate jump states.
         shuttleUid = ResolveFTLShuttle(shuttleUid);
 
         ShuttleComponent? shuttleComp = component;
@@ -607,7 +608,7 @@ public sealed partial class ShuttleSystem
                 EnsureFTLMap(peerDepth);
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         // Make sure the map is setup before we leave to avoid pop-in (e.g. parallax).
         EnsureFTLMap();
@@ -692,7 +693,7 @@ public sealed partial class ShuttleSystem
                 }
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         _index += width + Buffer;
         comp.StateTime = StartEndTime.FromCurTime(_gameTiming, comp.TravelTime - (entity.Comp3.Data.ArrivalTime ?? DefaultArrivalTime)); // Frontier edit
@@ -716,7 +717,7 @@ public sealed partial class ShuttleSystem
         comp.ZPeerTravelStreams ??= new List<EntityUid>();
         comp.ZPeerTravelStreams.Clear();
         PlayFTLSoundForPeers(uid, comp.TravelSound, comp.ZPeerTravelStreams);
-        #endregion Pirate: multiz
+        #endregion
     }
 
     /// <summary>
@@ -846,7 +847,7 @@ public sealed partial class ShuttleSystem
                 }
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         if (_physicsQuery.TryGetComponent(uid, out body))
         {
@@ -871,13 +872,13 @@ public sealed partial class ShuttleSystem
         #region Pirate: multiz
         // Shut down mirrored peer travel loops before the arrival sting starts so decks do not keep humming after touchdown.
         StopPeerFTLTravelAudio(comp);
-        #endregion Pirate: multiz
+        #endregion
         var audio = _audio.PlayPvs(_arrivalSound, uid);
         SetFtlCueAudio(uid, audio); // Pirate: multiz
         #region Pirate: multiz
         // Arrival audio is mirrored too, otherwise riders on non-root decks would experience a silent exit from hyperspace.
         PlayFTLSoundForPeers(uid, _arrivalSound);
-        #endregion Pirate: multiz
+        #endregion
 
         if (TryComp<FTLDestinationComponent>(uid, out var dest))
         {
@@ -907,7 +908,6 @@ public sealed partial class ShuttleSystem
 
         while (query.MoveNext(out var uid, out var comp, out var shuttle, out var ftlDrive)) // Frontier edit - FTLDrive
         {
-
             if (curTime < comp.StateTime.End)
                 continue;
 

@@ -82,7 +82,9 @@ public sealed partial class ShuttleConsoleSystem
         var beaconEnt = GetEntity(args.Beacon);
 
         if (!_xformQuery.TryGetComponent(beaconEnt, out var targetXform))
+        {
             return;
+        }
 
         var nCoordinates = new NetCoordinates(GetNetEntity(targetXform.ParentUid), targetXform.LocalPosition);
         if (targetXform.ParentUid == EntityUid.Invalid)
@@ -92,7 +94,9 @@ public sealed partial class ShuttleConsoleSystem
 
         // Check target exists
         if (!_shuttle.CanFTLBeacon(nCoordinates))
+        {
             return;
+        }
 
         var angle = args.Angle.Reduced();
         var targetCoordinates = new EntityCoordinates(targetXform.MapUid!.Value, _transform.GetWorldPosition(targetXform));
@@ -106,7 +110,9 @@ public sealed partial class ShuttleConsoleSystem
 
         // If it's beacons only block all position messages.
         if (!Exists(mapUid) || _shuttle.IsBeaconMap(mapUid))
+        {
             return;
+        }
 
         var targetCoordinates = new EntityCoordinates(mapUid, args.Coordinates.Position);
         var angle = args.Angle.Reduced();
@@ -158,11 +164,11 @@ public sealed partial class ShuttleConsoleSystem
 
         var shuttleUid = _xformQuery.GetComponent(consoleUid.Value).GridUid;
 
-        if (shuttleUid == null)
+        if (shuttleUid == null) // Pirate: multiz
             return;
 
         #region Pirate: multiz
-        // Resolve local deck consoles onto the root shuttle before reading shuttle state so root-owned FTL gates stay authoritative.
+        // Resolve deck consoles through root shuttle FTL state.
         var selectedShuttleUid = shuttleUid.Value;
         var actualShuttleUid = _shuttle.ResolveFTLShuttle(selectedShuttleUid);
 
@@ -187,10 +193,7 @@ public sealed partial class ShuttleConsoleSystem
         var actualTargetCoordinates = _shuttle.ResolveFTLTargetCoordinates(selectedShuttleUid, adjustedCoordinates);
         var actualTargetMap = _transform.GetMapId(actualTargetCoordinates);
         var selectedMapId = _xformQuery.GetComponent(selectedShuttleUid).MapID;
-        // Linked decks can legitimately click onto the root shuttle's map, so only this multiz path gets the same-map override.
-        // Compare against the operator's original requested target map (targetMap), not the post-resolution actualTargetMap
-        // — actualTargetMap can resolve back onto the root shuttle and would erroneously enable same-map FTL when the
-        // operator was actually targeting the deck's own map.
+        // Use the requested target map; resolved coordinates can land back on the root.
         var allowResolvedSameMap = selectedShuttleUid != actualShuttleUid && selectedMapId != targetMap;
 
         // Check shuttle can FTL to this target.
@@ -199,14 +202,14 @@ public sealed partial class ShuttleConsoleSystem
 
         if (!_shuttle.FTLFree(actualShuttleUid, actualTargetCoordinates, targetAngle, exclusions, allowSameMap: allowResolvedSameMap))
             return;
-        #endregion Pirate: multiz
+        #endregion
 
         var tagEv = new FTLTagEvent();
-        RaiseLocalEvent(actualShuttleUid, ref tagEv);
+        RaiseLocalEvent(actualShuttleUid, ref tagEv); // Pirate: multiz
 
         var ev = new ShuttleConsoleFTLTravelStartEvent(ent.Owner);
         RaiseLocalEvent(ref ev);
 
-        _shuttle.FTLToCoordinates(actualShuttleUid, actualShuttleComp, actualTargetCoordinates, targetAngle);
+        _shuttle.FTLToCoordinates(actualShuttleUid, actualShuttleComp, actualTargetCoordinates, targetAngle); // Pirate: multiz
     }
 }

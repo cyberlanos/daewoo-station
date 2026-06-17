@@ -16,5 +16,5 @@ public sealed partial class FireControlConsoleComponent : Component
     /// </summary>
     [ViewVariables]
     public int? SelectedLayerDepth = null;
-    #endregion Pirate: multiz
+    #endregion
 }

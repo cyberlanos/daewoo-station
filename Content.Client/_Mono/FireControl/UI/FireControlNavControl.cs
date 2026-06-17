@@ -248,8 +248,8 @@ public sealed class FireControlNavControl : BaseShuttleControl
         _grids.Clear();
         _zLevelGrids.Clear(); // Pirate: multiz
         var maxRange = new Vector2(WorldRange, WorldRange);
-        var queryBox = new Box2(mapPos.Position - maxRange, mapPos.Position + maxRange);
-        _mapManager.FindGridsIntersecting(xform.MapID, queryBox, ref _grids, approx: true, includeMap: false);
+        var queryBox = new Box2(mapPos.Position - maxRange, mapPos.Position + maxRange); // Pirate: multiz
+        _mapManager.FindGridsIntersecting(xform.MapID, queryBox, ref _grids, approx: true, includeMap: false); // Pirate: multiz
 
         #region Pirate: multiz — overlay grids from the ±1 adjacent z-layers, marked for dimming
         var zLevels = EntManager.System<CESharedZLevelsSystem>();
@@ -273,7 +273,7 @@ public sealed class FireControlNavControl : BaseShuttleControl
                 }
             }
         }
-        #endregion Pirate: multiz
+        #endregion
 
         foreach (var grid in _grids)
         {

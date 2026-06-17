@@ -2,7 +2,7 @@
   id: CEZLevelsStairsDirtCliffBase
   abstract: true
   name: dirt cliff
-  description: A rough dirt cliff face that can be climbed between z-levels.
+  description: A rough dirt cliff face that can be climbed between floors.
   components:
   - type: Sprite
     sprite: _Pirate/Structures/Architecture/Ladders/dirt_cliff.rsi

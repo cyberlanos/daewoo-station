@@ -735,10 +735,10 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
-                // Combine entities represented by an master into a single entry; skip orphan
+                // Pirate: multiz - combine entities represented by an master into a single entry; skip orphan
                 // children whose master can't be resolved so they don't pollute the indexed view.
                 if (!TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice)) // Pirate: multiz
-                    continue;
+                    continue; // Pirate: multiz
 
                 if (indexedSources.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
@@ -769,10 +769,10 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
-                // Combine entities represented by an master into a single entry; skip orphan
+                // Pirate: multiz - combine entities represented by an master into a single entry; skip orphan
                 // children whose master can't be resolved so they don't pollute the indexed view.
                 if (!TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice)) // Pirate: multiz
-                    continue;
+                    continue; // Pirate: multiz
 
                 if (indexedSources.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
@@ -863,10 +863,10 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
-                // Combine entities represented by an master into a single entry; skip orphan
+                // Pirate: multiz - combine entities represented by an master into a single entry; skip orphan
                 // children whose master can't be resolved so they don't pollute the indexed view.
                 if (!TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice)) // Pirate: multiz
-                    continue;
+                    continue; // Pirate: multiz
 
                 if (indexedLoads.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {
@@ -897,10 +897,10 @@ internal sealed partial class PowerMonitoringConsoleSystem : SharedPowerMonitori
 
             if (TryComp<PowerMonitoringDeviceComponent>(ent, out var entDevice))
             {
-                // Combine entities represented by an master into a single entry; skip orphan
+                // Pirate: multiz - combine entities represented by an master into a single entry; skip orphan
                 // children whose master can't be resolved so they don't pollute the indexed view.
                 if (!TryGetEntryEntity(ent, entDevice, EntityManager, out var entryEnt, out var entryDevice)) // Pirate: multiz
-                    continue;
+                    continue; // Pirate: multiz
 
                 if (indexedLoads.TryGetValue(entryEnt, out var entry)) // Pirate: multiz
                 {

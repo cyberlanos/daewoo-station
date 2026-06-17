@@ -6,8 +6,8 @@
 // Copyright Rane (elijahrane@gmail.com) 2025
 // All rights reserved. Relicensed under AGPL with permission
 
-using System.Linq;
-using System.Numerics;
+using System.Linq; // Pirate: multiz
+using System.Numerics; // Pirate: multiz
 using Content.Server.Shuttles.Systems;
 using Content.Shared._Mono.FireControl;
 using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
@@ -16,7 +16,7 @@ using Content.Shared._Pirate.ZLevels.FireControl; // Pirate: multiz
 using Content.Shared.Power;
 using Content.Shared.Shuttles.BUIStates;
 using Robust.Server.GameObjects;
-using Robust.Shared.Map;
+using Robust.Shared.Map; // Pirate: multiz
 
 namespace Content.Server._Mono.FireControl;
 
@@ -132,9 +132,7 @@ public sealed partial class FireControlSystem : EntitySystem
             return;
 
         #region Pirate: multiz
-        // Enumerate every layer in this console's z-network (sourced from the network's full
-        // ZLevels dict, so layers that have a map but no peer grid are still selectable). For
-        // each layer that does have a grid+server, collect the guns.
+        // Build selectable z-layers and collect guns from layer servers.
         var consoleGrid = _xform.GetGrid(uid);
         var hostDepth = GetGridDepth(consoleGrid) ?? 0;
 
@@ -157,8 +155,7 @@ public sealed partial class FireControlSystem : EntitySystem
                 if (!Exists(controllable))
                     continue;
 
-                // Clamp negative YAML-authored reach so the UI never advertises a layer-locking
-                // value that the firing path would also clamp.
+                // Clamp bad YAML reach so UI and firing agree.
                 var reach = Math.Max(0, TryComp<CEZGunLayerReachComponent>(controllable, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach);
 
                 var entry = new FireControllableEntry
@@ -174,22 +171,20 @@ public sealed partial class FireControlSystem : EntitySystem
             }
         }
 
-        // Available layers = (gunDepths range expanded by max reach) ∩ existing network depths.
+        // Available layers are gun depth +/- reach, limited to existing maps.
         var layers = BuildLayerInfos(networkLayers, gunDepths, controllables);
         var currentLayer = ResolveCurrentLayer(component, layers, hostDepth);
 
-        // Point the radar at the selected layer. If a peer grid lives there we anchor on it
-        // (so the radar follows shuttle motion); otherwise we anchor on the layer's map and use
-        // the console's world position so the operator sees the corresponding empty-space area.
+        // Point the radar at the selected layer, using a map anchor for empty layers.
         var navState = BuildNavStateForLayer(uid, currentLayer, networkLayers);
         #endregion Pirate: multiz
 
         var array = controllables.ToArray();
 
-        var state = new FireControlConsoleBoundInterfaceState(
-            component.ConnectedServer != null,
-            array,
-            navState,
+        var state = new FireControlConsoleBoundInterfaceState( // Pirate: multiz
+            component.ConnectedServer != null, // Pirate: multiz
+            array, // Pirate: multiz
+            navState, // Pirate: multiz
             layers, // Pirate: multiz
             currentLayer); // Pirate: multiz
         _ui.SetUiState(uid, FireControlConsoleUiKey.Key, state);
@@ -197,16 +192,12 @@ public sealed partial class FireControlSystem : EntitySystem
 
     #region Pirate: multiz
     /// <summary>
-    /// Describes one z-layer the console can target: the map at that depth and, when it exists,
-    /// the peer grid the shuttle owns there. Grid is <c>null</c> for layers that exist in the
-    /// network's <c>ZLevels</c> dict but aren't a deck of this shuttle (e.g. the empty layer
-    /// above/below from the reach bonus).
+    /// Map plus optional shuttle grid for a selectable z-depth.
     /// </summary>
     private readonly record struct ConsoleNetworkLayer(EntityUid Map, EntityUid? Grid);
 
     /// <summary>
-    /// Returns a depth → (map, peer-grid?) map covering every layer in the console's z-network.
-    /// For a non-linked grid the result is a single entry at depth 0 with the host map and grid.
+    /// Returns mapped depths in the console z-network, with peer grids when present.
     /// </summary>
     private SortedDictionary<int, ConsoleNetworkLayer> GetNetworkLayers(EntityUid? consoleGrid)
     {
@@ -218,9 +209,7 @@ public sealed partial class FireControlSystem : EntitySystem
         if (hostMapUid is not { } hostMap)
             return result;
 
-        // Peer grids of THIS shuttle, keyed by depth, so each enumerated layer can be attached
-        // to a deck when one exists. Layers in the network without a shuttle deck (empty space
-        // above/below) end up with Grid=null and are still selectable for cross-layer fire.
+        // Empty mapped layers keep Grid=null but remain selectable.
         var hostDepth = 0;
         var peerGridsByDepth = new Dictionary<int, EntityUid>();
         if (TryComp<CEZLinkedGridComponent>(consoleGrid.Value, out var linked))
@@ -233,10 +222,7 @@ public sealed partial class FireControlSystem : EntitySystem
 
         result[hostDepth] = new ConsoleNetworkLayer(hostMap, consoleGrid.Value);
 
-        // Walk the network up and down from the host map using TryMapOffset — same canonical
-        // path the shuttle radar's adjacent-level overlay uses. Going through the offset helper
-        // sidesteps the unreliability of CEZLinkedGridComponent.ZNetwork (which sometimes reads
-        // back as the default UID and made our earlier direct-dict approach miss layers).
+        // Use map-offset lookup; linked-grid ZNetwork may be unset during UI updates.
         const int probeRange = 16;
 
         for (var offset = 1; offset <= probeRange; offset++)
@@ -261,11 +247,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Builds the layer-selector entries for the BUI. The selectable range is
-    /// <c>[min_gun_depth - maxReach, max_gun_depth + maxReach]</c> intersected with depths that
-    /// actually exist as maps in the network — so the operator can never target a layer with no
-    /// map, but CAN target empty-space layers above/below the shuttle (within reach). If no
-    /// guns exist yet, falls back to every layer in the network.
+    /// Builds selector entries from gun reach, limited to mapped network depths.
     /// </summary>
     private FireControlLayerInfo[] BuildLayerInfos(
         SortedDictionary<int, ConsoleNetworkLayer> networkLayers,
@@ -294,9 +276,7 @@ public sealed partial class FireControlSystem : EntitySystem
             .Where(kvp => kvp.Key >= minDepth && kvp.Key <= maxDepth)
             .Select(kvp =>
             {
-                // Prefer the peer grid for the NetEntity reference (so the client can still
-                // resolve it for any grid-specific bookkeeping); fall back to the map when the
-                // layer has no peer grid.
+                // Use peer grid when present; map anchor for empty layers.
                 var anchor = kvp.Value.Grid ?? kvp.Value.Map;
                 return new FireControlLayerInfo(kvp.Key, GetNetEntity(anchor));
             })
@@ -304,9 +284,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Picks the depth this UI push should target: the operator's preserved selection if it is
-    /// still inside the layer list, otherwise the console's own depth, otherwise the first
-    /// layer in the list.
+    /// Preserves a valid selected depth, falling back to host or first layer.
     /// </summary>
     private int ResolveCurrentLayer(FireControlConsoleComponent component, FireControlLayerInfo[] layers, int hostDepth)
     {
@@ -327,10 +305,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Builds a <see cref="NavInterfaceState"/> centred on the layer for
-    /// <paramref name="currentLayer"/>. Anchors on the peer grid when one exists at that depth
-    /// (so the view follows shuttle motion); otherwise anchors on the layer's map at the
-    /// console's world xy so the operator sees the matching empty-space region.
+    /// Builds radar state for the selected depth.
     /// </summary>
     private NavInterfaceState BuildNavStateForLayer(
         EntityUid consoleUid,
@@ -349,19 +324,12 @@ public sealed partial class FireControlSystem : EntitySystem
 
         if (layer.Grid is { } peerGrid)
         {
-            // Anchor on the peer grid at the console's local xy — z-synced peers share local
-            // coordinate systems, so this lines the view up with the operator's deck. The
-            // radar will compose this local rotation with the peer grid's world rotation, so
-            // total = console-world rotation.
+            // Peer decks share local coordinates; this preserves console world rotation.
             var coords = new EntityCoordinates(peerGrid, consoleXform.LocalPosition);
             return _shuttleConsoleSystem.GetNavState(consoleUid, allDocks, coords, consoleXform.LocalRotation);
         }
 
-        // No peer grid — anchor on the empty layer's map at the console's world xy. A bare map
-        // has zero world rotation, so the radar would otherwise apply only the console's local
-        // rotation (missing the shuttle's heading and visibly rotating the view by however many
-        // degrees the shuttle is currently pointing). Pass the console's world rotation here so
-        // total = console-world rotation, matching the peer-grid path.
+        // Empty layers need world rotation because map anchors have zero rotation.
         var consoleWorldPos = _xform.GetWorldPosition(consoleUid);
         var consoleWorldRot = _xform.GetWorldRotation(consoleUid);
         var mapCoords = new EntityCoordinates(layer.Map, consoleWorldPos);

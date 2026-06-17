@@ -1,1 +1,1 @@
-ui-options-zlevels-visible-below = Видимі Z-рівні знизу:
+ui-options-zlevels-visible-below = Видимі поверхи знизу

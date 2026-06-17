@@ -1,4 +1,4 @@
-# Pirate: multiz - z-level floor traversal actions for the station AI eye.
+# Pirate: multiz - floor traversal actions for the station AI eye.
 # Raise the shared CEZViewUp/DownEvent handled by CEZLevelEyeSystem (reused by abductors too).
 - type: entity
   parent: BaseMentalAction

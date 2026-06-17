@@ -1,7 +1,7 @@
 - type: entity
   id: CEActionZLevelUp
   name: Move up
-  description: Move up one Z-Level
+  description: Move up one floor
   components:
   - type: Action
     checkCanInteract: false
@@ -14,7 +14,7 @@
 - type: entity
   id: CEActionZLevelDown
   name: Move down
-  description: Move down one Z-Level
+  description: Move down one floor
   components:
   - type: Action
     checkCanInteract: false

@@ -1,6 +1,6 @@
 - type: entity
   id: CEZLevelAperture
-  name: z-level aperture
+  name: floor aperture
   description: A small reinforced opening that exposes the level below.
   categories: [ HideSpawnMenu ]
   placement:

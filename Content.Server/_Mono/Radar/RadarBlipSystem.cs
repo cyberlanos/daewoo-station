@@ -74,12 +74,12 @@ public sealed partial class RadarBlipSystem : EntitySystem
                     if (!zLevelMapIds.Contains(blipXform.MapID)) // Pirate: multiz
                         continue;
 
-                    // If we can determine the shooter and they're on a different map, don't show
-                    // the blip — unless that different map is part of this radar's z-network
+                    // Pirate: multiz - if we can determine the shooter and they're on a different map, don't show
+                    // the blip unless that different map is part of this radar's z-network
                     // (e.g. a gunnery console firing across z-layers from a peer deck).
                     if (projectile.Shooter != null &&
                         TryComp<TransformComponent>(projectile.Shooter, out var shooterXform) &&
-                        shooterXform.MapID != blipXform.MapID &&
+                        shooterXform.MapID != blipXform.MapID && // Pirate: multiz
                         !zLevelMapIds.Contains(shooterXform.MapID)) // Pirate: multiz
                         continue;
                 }

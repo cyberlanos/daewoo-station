@@ -112,7 +112,7 @@ namespace Content.Server.DeviceNetwork.Systems
             if (!TryComp<WirelessNetworkComponent>(args.Sender, out var sendingComponent))
                 return;
 
-            // same map: ordinary world-space range check
+            #region Pirate: multiz
             if (args.SenderTransform.MapID == xform.MapID)
             {
                 if ((ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
@@ -120,9 +120,6 @@ namespace Content.Server.DeviceNetwork.Systems
                 return;
             }
 
-            // Pirate: multiz — cross-map only reaches across a shared z-stack, and the range gate
-            // applies to the grid-local (footprint) distance between the stacked decks.
-            #region Pirate: multiz
             if (!TryGetZStackDistance(args.SenderTransform, ownPosition, xform, out var stackedDistance)
                 || stackedDistance > sendingComponent.Range)
             {
@@ -130,6 +127,7 @@ namespace Content.Server.DeviceNetwork.Systems
             }
             #endregion
         }
+
         #region Pirate: multiz
         private bool TryGetZStackDistance(TransformComponent senderXform, Vector2 senderWorldPos, TransformComponent receiverXform, out float distance)
         {
@@ -144,8 +142,7 @@ namespace Content.Server.DeviceNetwork.Systems
                 || senderLinked.ZNetwork != receiverLinked.ZNetwork)
                 return false;
 
-            // Stacked decks share an XY footprint; compare grid-local positions so the horizontal
-            // distance stays meaningful even though the decks live on separate maps.
+            // Compare grid-local positions for linked decks on separate maps.
             var senderLocal = Vector2.Transform(senderWorldPos, _transformSystem.GetInvWorldMatrix(senderGrid));
             var receiverLocal = Vector2.Transform(_transformSystem.GetWorldPosition(receiverXform), _transformSystem.GetInvWorldMatrix(receiverGrid));
             distance = (senderLocal - receiverLocal).Length();

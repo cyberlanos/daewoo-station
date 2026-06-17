@@ -1,3 +1,4 @@
+#region Pirate: multiz
 meta:
   format: 7
   category: Map
@@ -131,4 +132,5 @@ entities:
     - type: Transform
       pos: 1.5,1.5
       parent: 2
+#endregion Pirate: multiz
 ...

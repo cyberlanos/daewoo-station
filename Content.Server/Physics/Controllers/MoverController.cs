@@ -58,7 +58,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Systems;
-using Content.Shared._Pirate.ZLevels.Core.Components;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared.Friction;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
@@ -335,6 +335,7 @@ public sealed class MoverController : SharedMoverController
             if (!TryComp(consoleEnt, out TransformComponent? xform)) continue;
 
             var gridId = xform.GridUid;
+            #region Pirate: multiz
             if (gridId != null &&
                 TryComp<CEZLinkedGridComponent>(gridId, out var linked) &&
                 linked.Depth != 0 &&
@@ -342,6 +343,7 @@ public sealed class MoverController : SharedMoverController
             {
                 gridId = leaderGrid;
             }
+            #endregion
 
             // This tries to see if the grid is a shuttle and if the console should work.
             if (!TryComp<MapGridComponent>(gridId, out var _) ||

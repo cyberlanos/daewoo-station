@@ -40,37 +40,39 @@
   - type: WorldTargetAction
     event: !type:SendYourselfEvent
 
-- type: entity # Pirate: multiz
-  parent: BaseMentalAction # Pirate: multiz
-  id: ActionAbductorViewUp # Pirate: multiz
-  name: View deck above # Pirate: multiz
-  description: Move the observation camera to the deck above. # Pirate: multiz
-  components: # Pirate: multiz
-  - type: Action # Pirate: multiz
-    checkCanInteract: false # Pirate: multiz
-    priority: -18 # Pirate: multiz
-    itemIconStyle: BigAction # Pirate: multiz
-    icon: # Pirate: multiz
-      sprite: _Pirate/Actions/misc.rsi # Pirate: multiz
-      state: up # Pirate: multiz
-  - type: InstantAction # Pirate: multiz
-    event: !type:CEZViewUpEvent # Pirate: multiz
+# Pirate: multiz (start)
+- type: entity
+  parent: BaseMentalAction
+  id: ActionAbductorViewUp
+  name: View deck above
+  description: Move the observation camera to the deck above.
+  components:
+  - type: Action
+    checkCanInteract: false
+    priority: -18
+    itemIconStyle: BigAction
+    icon:
+      sprite: _Pirate/Actions/misc.rsi
+      state: up
+  - type: InstantAction
+    event: !type:CEZViewUpEvent
 
-- type: entity # Pirate: multiz
-  parent: BaseMentalAction # Pirate: multiz
-  id: ActionAbductorViewDown # Pirate: multiz
-  name: View deck below # Pirate: multiz
-  description: Move the observation camera to the deck below. # Pirate: multiz
-  components: # Pirate: multiz
-  - type: Action # Pirate: multiz
-    checkCanInteract: false # Pirate: multiz
-    priority: -17 # Pirate: multiz
-    itemIconStyle: BigAction # Pirate: multiz
-    icon: # Pirate: multiz
-      sprite: _Pirate/Actions/misc.rsi # Pirate: multiz
-      state: down # Pirate: multiz
-  - type: InstantAction # Pirate: multiz
-    event: !type:CEZViewDownEvent # Pirate: multiz
+- type: entity
+  parent: BaseMentalAction
+  id: ActionAbductorViewDown
+  name: View deck below
+  description: Move the observation camera to the deck below.
+  components:
+  - type: Action
+    checkCanInteract: false
+    priority: -17
+    itemIconStyle: BigAction
+    icon:
+      sprite: _Pirate/Actions/misc.rsi
+      state: down
+  - type: InstantAction
+    event: !type:CEZViewDownEvent
+# Pirate: multiz (end)
 
 - type: entity
   parent: BaseAction

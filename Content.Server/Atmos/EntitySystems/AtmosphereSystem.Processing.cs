@@ -167,7 +167,7 @@ namespace Content.Server.Atmos.EntitySystems
                 if (!tile.NoGridTile)
                     continue;
 
-                // Pirate: multiz — a NoGridTile sitting above a multiz floor is a legitimate air pocket, not orphan space; keep it.
+                // Pirate: multiz - keep air pockets above linked floors from being trimmed.
                 if (HasAnySolidZLevelTileBelow(ent.Owner, ent.Comp3, tile.GridIndices))
                     continue;
 

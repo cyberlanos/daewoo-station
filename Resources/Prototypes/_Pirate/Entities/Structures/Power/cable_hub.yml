@@ -1,7 +1,7 @@
 - type: entity
   id: CEMultizCableHub
   name: multiz cable hub
-  description: A compact relay for bridging matching power cable networks between linked Z-levels.
+  description: A compact relay for bridging matching power cable networks between linked floors.
   placement:
     mode: SnapgridCenter
   components:

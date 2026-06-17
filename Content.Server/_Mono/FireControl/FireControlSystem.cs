@@ -43,9 +43,7 @@ public sealed partial class FireControlSystem : EntitySystem
 
     #region Pirate: multiz
     /// <summary>
-    /// Gun -> map its projectiles teleport to. Held only across a single cross-layer
-    /// <see cref="FireWeapons"/> call (which fires the whole volley synchronously), so a later
-    /// non-console shot from the same gun can't be redirected to a stale target map.
+    /// Gun -> target map for the current synchronous console shot.
     /// </summary>
     private readonly Dictionary<EntityUid, EntityUid> _crossLayerTargetMap = new();
     #endregion Pirate: multiz
@@ -392,8 +390,7 @@ public sealed partial class FireControlSystem : EntitySystem
             return;
 
         #region Pirate: multiz
-        // The console may have selected a z-layer different from its own deck. The target's map
-        // is whatever the radar handed back; we honour it and translate per-gun below.
+        // Console target may be on another z-layer; translate per gun.
         var grid = component.ConnectedGrid;
         if (grid != null && TryComp<FTLComponent>((EntityUid)grid, out _))
             return;
@@ -404,7 +401,7 @@ public sealed partial class FireControlSystem : EntitySystem
             return;
 
         var targetMapUid = _mapManager.GetMapEntityId(targetMap.MapId);
-        // Resolve target depth via the console's z-network; null = not in network, reject all guns.
+        // Null means the target map is outside this console z-network.
         var targetDepth = ResolveLayerDepthForMap(targetMap.MapId, component);
         if (targetDepth is null)
             return;
@@ -415,9 +412,7 @@ public sealed partial class FireControlSystem : EntitySystem
             if (!Exists(localWeapon))
                 continue;
 
-            // The gun's controlling server may live on a peer grid in the same z-network; we
-            // accept any gun whose server's grid is a peer of ours. The "in our network" check
-            // happens implicitly via the depth lookup against the network we span.
+            // Accept guns controlled by any server in this z-network.
             if (!TryComp<FireControllableComponent>(localWeapon, out var controllableComp) ||
                 controllableComp.ControllingServer is not { } gunServer ||
                 !TryComp<FireControlServerComponent>(gunServer, out var gunServerComp) ||
@@ -432,16 +427,14 @@ public sealed partial class FireControlSystem : EntitySystem
             if (!TryComp<GunComponent>(localWeapon, out var gun))
                 continue;
 
-            // Per-gun z-reach gate: skip guns whose own deck is too far from the picked layer.
+            // Skip guns whose deck cannot reach the selected layer.
             var gunDepth = GetGridDepth(_xform.GetGrid(localWeapon)) ?? 0;
-            // Clamp negative YAML-authored reach to 0 so a typo doesn't silently lock the gun out
-            // entirely (|delta| > -n is always true, the gun would never fire).
+            // Clamp bad YAML reach to zero.
             var reach = Math.Max(0, TryComp<CEZGunLayerReachComponent>(localWeapon, out var reachComp) ? reachComp.Reach : DefaultGunLayerReach);
             if (Math.Abs(gunDepth - targetDepth.Value) > reach)
                 continue;
 
-            // Translate the target onto the gun's map. Z-synced peer grids share local
-            // coordinate systems, so the same world xy maps onto the gun's map directly.
+            // Use target xy on each gun's map; z-synced decks share local footprint.
             var weaponXform = Transform(localWeapon);
             var gunMapId = weaponXform.MapID;
             var gunMapUid = _mapManager.GetMapEntityId(gunMapId);
@@ -471,8 +464,7 @@ public sealed partial class FireControlSystem : EntitySystem
             if (!CanFireInDirection(localWeapon, weaponMapPos.Position, direction, targetMap.Position, gunMapId))
                 continue;
 
-            // Redirect this shot's projectiles to the target layer; entry dropped right after the
-            // (synchronous) shot so it can't leak into a later non-console shot. See the field doc.
+            // Redirect projectiles only for this synchronous shot.
             var crossLayerFire = gunMapId != targetMap.MapId;
             if (crossLayerFire)
                 _crossLayerTargetMap[localWeapon] = targetMapUid;
@@ -489,8 +481,7 @@ public sealed partial class FireControlSystem : EntitySystem
 
     #region Pirate: multiz
     /// <summary>
-    /// Wraps the existing line-of-sight check with a signature that takes a positional argument
-    /// for the target so we can re-use it after translating coordinates between maps.
+    /// Reuses the existing LOS check after coordinate translation.
     /// </summary>
     private bool HasLineOfSightOnMap(EntityUid weapon, Vector2 weaponPos, Vector2 targetPos, MapId mapId, float maxDistance = 500f)
     {
@@ -505,12 +496,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// True if two grids belong to the same z-network (or are the same grid). Two grids on the
-    /// same map are always in the same network. For grids on different maps we resolve the
-    /// network via the map → network helper instead of comparing
-    /// <see cref="CEZLinkedGridComponent.ZNetwork"/> directly: that field isn't always populated
-    /// by the time the BUI runs, which previously caused valid peer-deck guns to be silently
-    /// rejected from a fire request.
+    /// Compares grids by map network; linked-grid ZNetwork may be unset during BUI updates.
     /// </summary>
     private bool IsInSameZNetwork(EntityUid? a, EntityUid? b)
     {
@@ -534,9 +520,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Resolves the z-depth of a given map within the console's z-network. Returns null if the
-    /// target map isn't in the network so callers can reject fire requests rather than collide
-    /// with a legitimate depth of 0.
+    /// Returns target map depth in the console z-network, or null if outside it.
     /// </summary>
     private int? ResolveLayerDepthForMap(MapId mapId, FireControlServerComponent serverComp)
     {
@@ -574,9 +558,7 @@ public sealed partial class FireControlSystem : EntitySystem
     }
 
     /// <summary>
-    /// Teleports a freshly-spawned projectile onto the layer the console asked to fire at when
-    /// the gun is on a different deck. The projectile keeps its world xy, angle and velocity —
-    /// it just appears on the target z-layer instead of the gun's own.
+    /// Moves cross-layer projectiles to the selected target map while preserving motion.
     /// </summary>
     private void OnCrossLayerProjectileShot(EntityUid gunUid, FireControllableComponent comp, ProjectileShotEvent args)
     {
@@ -587,9 +569,7 @@ public sealed partial class FireControlSystem : EntitySystem
         if (!TryComp<TransformComponent>(args.FiredProjectile, out var projXform))
             return;
 
-        // Guard against a stale entry teleporting an unrelated projectile: if the projectile
-        // spawned on the same map we'd teleport it to, the gun has since moved onto its target's
-        // layer and no teleport is needed (or wanted).
+        // Ignore stale or no-op redirect entries.
         if (projXform.MapUid == targetMapUid)
             return;
 

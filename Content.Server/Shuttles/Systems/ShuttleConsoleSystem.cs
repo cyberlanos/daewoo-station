@@ -254,7 +254,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
             _lookup.GetChildEntities(refreshGridUid, _consoles);
             _dockingConsole.UpdateConsolesUsing(refreshGridUid); // Lavaland Change: FTL
         }
-        #endregion Pirate: multiz
+        #endregion
 
         foreach (var entity in _consoles)
         {
@@ -366,12 +366,13 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
             if (xform.ParentUid != xform.GridUid)
                 continue;
 
-            // Pirate: dock-refresh
+            #region Pirate: multiz
             // The refresh that runs when a docking port is being deleted fires via AnchorStateChangedEvent
             // raised during entity termination, while the DockingComponent is still attached.
             // Skip terminating entities so the refresh doesn't republish a dock the client is about to lose.
             if (metadata.EntityLifeStage >= EntityLifeStage.Terminating)
                 continue;
+            #endregion
 
             var gridDocks = result.GetOrNew(GetNetEntity(xform.GridUid.Value));
 
@@ -412,7 +413,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         EntityUid? ftlStateGridUid = shuttleGridUid != null
             ? _shuttle.ResolveFTLShuttle(shuttleGridUid.Value)
             : null;
-        #endregion Pirate: multiz
+        #endregion
 
         NavInterfaceState navState;
         ShuttleMapInterfaceState mapState;
@@ -421,7 +422,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         if (shuttleGridUid != null && entity != null)
         {
             navState = GetNavState(entity.Value, dockState.Docks);
-            mapState = GetMapState(ftlStateGridUid ?? shuttleGridUid.Value);
+            mapState = GetMapState(ftlStateGridUid ?? shuttleGridUid.Value); // Pirate: multiz
         }
         else
         {

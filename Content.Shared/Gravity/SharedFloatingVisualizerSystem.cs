@@ -82,8 +82,7 @@ public abstract class SharedFloatingVisualizerSystem : EntitySystem
             if (transform.GridUid != args.ChangedGridIndex)
                 continue;
 
-            // Pirate: multiz — recompute via CanFloat() so the z-gravity-from-below rule is re-evaluated,
-            // and float can re-enable when gravity is removed.
+            // Pirate: multiz - recompute so z-gravity can suppress floating.
             if (CanFloat(uid, floating, transform))
                 FloatAnimation(uid, floating.Offset, floating.AnimationKey, floating.AnimationTime);
         }

@@ -2,7 +2,7 @@
   id: CEZLevelVerticalLadderBase
   abstract: true
   name: ladder
-  description: A vertical ladder for moving between z-levels.
+  description: A vertical ladder for moving between floors.
   placement:
     mode: SnapgridCenter
   components:
@@ -46,7 +46,7 @@
   parent: CEZLevelVerticalLadderBase
   id: CEZLevelVerticalLadderAperture
   name: ladder with opening
-  description: A vertical ladder running through a z-level opening.
+  description: A vertical ladder running through a floor opening.
   suffix: Aperture
   components:
   - type: CEZLevelAperture
@@ -69,7 +69,7 @@
   parent: CEZLevelVerticalLadderTallBase
   id: CEZLevelVerticalLadderTallAperture
   name: tall ladder with opening
-  description: A tall vertical ladder running through a z-level opening.
+  description: A tall vertical ladder running through a floor opening.
   suffix: Aperture
   components:
   - type: CEZLevelAperture

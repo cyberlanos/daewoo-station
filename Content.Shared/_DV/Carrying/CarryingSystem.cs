@@ -169,8 +169,8 @@ public sealed class CarryingSystem : EntitySystem
         if (xform.MapUid != args.OldMapId)
             return;
 
-        // Do not drop the carried entity if the new parent is a grid, or the map itself — the
-        // latter happens transiently while descending over an open tile between z-levels.
+        // Pirate: multiz - do not drop the carried entity if the new parent is a grid, or the map itself.
+        // The latter happens transiently while descending over an open tile between z-levels.
         if (xform.ParentUid == xform.GridUid || xform.ParentUid == xform.MapUid) // Pirate: multiz
             return;
 

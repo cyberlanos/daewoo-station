@@ -1,1 +1,1 @@
-ui-options-zlevels-visible-below = Visible Z-levels below:
+ui-options-zlevels-visible-below = Visible floors below

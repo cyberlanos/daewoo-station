@@ -164,7 +164,7 @@ public sealed class AtmosAlertsComputerSystem : SharedAtmosAlertsComputerSystem
             if (entXform.GridUid == null)
                 continue;
 
-            if (!allGrids.Contains(GetSelectedMonitoringGrid(ent, entXform)))
+            if (!allGrids.Contains(GetSelectedMonitoringGrid(ent, entXform))) // Pirate: multiz
                 continue;
 
             InitalizeConsole(ent, entConsole);
