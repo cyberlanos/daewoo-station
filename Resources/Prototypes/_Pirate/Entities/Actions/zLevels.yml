@@ -56,21 +56,3 @@
       state: eye
   - type: InstantAction
     event: !type:CEToggleZLevelLookUpAction
-
-#- type: entity
-#  id: CEActionRespawn
-#  name: Respawn
-#  description: Return to the lobby to connect with a new character.
-#  components:
-#  - type: Action
-#    priority: 20
-#    startDelay: true
-#    useDelay: 300
-#    checkCanInteract: false
-#    icon:
-#      sprite: _Pirate/Actions/zLevel.rsi
-#      state: respawn
-#  - type: ConfirmableAction
-#    popup: CE-respawn-action-popup
-#  - type: InstantAction
-#    event: !type:CERespawnAction
