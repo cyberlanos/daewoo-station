@@ -57,6 +57,14 @@ public sealed partial class CEZLevelsSystem
 
     private EntityQuery<CEZLevelHighGroundComponent> _viewHighGroundQuery;
 
+    /// <summary>
+    /// When true, <see cref="OnViewerMapUidChanged"/> is skipped. Set while a shuttle is being flown
+    /// between z-levels: that relocates the grid (and aboard viewers) via a recursive ChangeMapId, and
+    /// rebuilding viewer probes mid-recursion spawns entities into the children collection currently
+    /// being enumerated. The periodic <see cref="UpdateView"/> poll rebuilds the probes right after.
+    /// </summary>
+    public bool SuppressViewerMapChange;
+
     private void InitView()
     {
         _viewHighGroundQuery = GetEntityQuery<CEZLevelHighGroundComponent>();
@@ -131,6 +139,9 @@ public sealed partial class CEZLevelsSystem
 
     private void OnViewerMapUidChanged(Entity<CEZLevelViewerComponent> ent, ref MapUidChangedEvent args)
     {
+        if (SuppressViewerMapChange)
+            return;
+
         // UpdateLookUpAction is intentionally omitted: AddAction creates a child entity, which
         // violates ChangeMapIdRecursive's assert that ChildCount stays constant during MapUidChangedEvent.
         // The UpdateView poll handles the action update with negligible delay.

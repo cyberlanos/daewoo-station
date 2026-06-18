@@ -182,6 +182,9 @@ public sealed partial class ShuttleConsoleSystem
         if (!_shuttle.CanFTL(actualShuttleUid, out _))
             return;
 
+        if (_ztravel.IsTraversing(actualShuttleUid)) // Pirate: multiz
+            return;
+
         List<ShuttleExclusionObject>? exclusions = null;
         GetExclusions(ref exclusions);
 
