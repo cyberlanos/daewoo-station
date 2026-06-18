@@ -4,6 +4,7 @@
  */
 
 using Content.Server._Pirate.ZLevels.Core.Components;
+using Content.Server._Pirate.ZLevels.Shuttles;
 using Content.Server.GameTicking.Rules;
 using Content.Shared.Station.Components;
 using Content.Server.Station.Events;
@@ -21,6 +22,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
     [Dependency] private readonly TransformSystem _transform = default!;
     [Dependency] private readonly MetaDataSystem _meta = default!;
     [Dependency] private readonly StationSystem _station = default!;
+    [Dependency] private readonly CEZShuttleRoofSystem _shuttleRoof = default!;
     private bool _serverInitialized;
 
     public override void Initialize()
@@ -148,6 +150,10 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         // left uninitialised — GameTicker.LoadMaps asserts that and inits it itself before spawning.
         foreach (var loaded in loadedMaps)
             _map.InitializeMap(loaded);
+
+        // Grid-fill shuttles (roundstart cargo, ATS) may have been placed before these upper maps
+        // existed, so their roof never built; roof every station shuttle now the network is up.
+        _shuttleRoof.RebuildStationRoofs(ent);
     }
 
     public override void Update(float frameTime)
