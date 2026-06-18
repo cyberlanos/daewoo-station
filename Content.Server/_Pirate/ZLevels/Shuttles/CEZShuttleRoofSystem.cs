@@ -4,6 +4,7 @@ using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Events;
 using Content.Shared._Pirate.ZLevels.Core.Components;
 using Content.Shared._Pirate.ZLevels.Shuttles.Components;
+using Content.Shared.Station.Components;
 using Content.Shared.Maps;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
@@ -26,6 +27,10 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private const string FallbackPlatingTileId = "Plating";
 
+    // Reentrancy guard: creating the roof grid reparents it (and it gains a ShuttleComponent via
+    // GridInitializeEvent), which would otherwise re-enter EnsureRoof through OnShuttleParentChanged.
+    private bool _rebuilding;
+
     public override void Initialize()
     {
         base.Initialize();
@@ -35,7 +40,40 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         SubscribeLocalEvent<FTLStartedEvent>(OnFTLStarted);
         SubscribeLocalEvent<ShuttleComponent, MapInitEvent>(OnShuttleMapInit);
         SubscribeLocalEvent<ShuttleComponent, EntityTerminatingEvent>(OnShuttleTerminating);
+        // Shuttles placed via TryFTLProximity/FTLDock (roundstart cargo, grid-spawns, grid-fill docks,
+        // ATS) never raise FTLCompletedEvent; catch them when they land on a new map instead.
+        SubscribeLocalEvent<ShuttleComponent, EntParentChangedMessage>(OnShuttleParentChanged);
         SubscribeLocalEvent<CEZShuttleRoofSourceComponent, TileChangedEvent>(OnSourceTileChanged);
+    }
+
+    /// <summary>
+    /// (Re)builds roofs for every shuttle currently on <paramref name="station"/>. Called once the
+    /// z-network is established, since grid-fill shuttles (roundstart cargo, ATS) are placed before
+    /// the upper maps exist - so their parent-change fired with no level above and never re-triggered.
+    /// </summary>
+    public void RebuildStationRoofs(EntityUid station)
+    {
+        if (!TryComp<StationDataComponent>(station, out var data))
+            return;
+
+        foreach (var grid in data.Grids)
+        {
+            if (HasComp<ShuttleComponent>(grid) && !HasComp<CEZShuttleRoofComponent>(grid))
+                EnsureRoof(grid);
+        }
+    }
+
+    private void OnShuttleParentChanged(Entity<ShuttleComponent> ent, ref EntParentChangedMessage args)
+    {
+        // Roof grids are shuttles too; never recurse on them.
+        if (HasComp<CEZShuttleRoofComponent>(ent))
+            return;
+
+        // Only act once the shuttle has settled onto a map (docking/proximity/FTL all reparent here).
+        if (!HasComp<MapComponent>(args.Transform.ParentUid))
+            return;
+
+        EnsureRoof(ent);
     }
 
     private void OnSourceTileChanged(Entity<CEZShuttleRoofSourceComponent> ent, ref TileChangedEvent args)
@@ -70,6 +108,24 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
     }
 
     public void EnsureRoof(EntityUid shuttleUid)
+    {
+        // A roof grid must never get a roof of its own, and the grid we spawn below reparents
+        // mid-build - both would re-enter here.
+        if (_rebuilding || HasComp<CEZShuttleRoofComponent>(shuttleUid))
+            return;
+
+        _rebuilding = true;
+        try
+        {
+            EnsureRoofCore(shuttleUid);
+        }
+        finally
+        {
+            _rebuilding = false;
+        }
+    }
+
+    private void EnsureRoofCore(EntityUid shuttleUid)
     {
         if (!TryFindTopShuttleGrid(shuttleUid, out var topGrid, out var topDepth))
             return;
