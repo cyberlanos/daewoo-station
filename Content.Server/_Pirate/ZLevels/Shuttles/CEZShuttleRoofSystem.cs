@@ -27,8 +27,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private const string FallbackPlatingTileId = "Plating";
 
-    // Reentrancy guard: creating the roof grid reparents it (and it gains a ShuttleComponent via
-    // GridInitializeEvent), which would otherwise re-enter EnsureRoof through OnShuttleParentChanged.
+    // Roof grid creation reparents mid-build.
     private bool _rebuilding;
 
     public override void Initialize()
@@ -40,16 +39,13 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         SubscribeLocalEvent<FTLStartedEvent>(OnFTLStarted);
         SubscribeLocalEvent<ShuttleComponent, MapInitEvent>(OnShuttleMapInit);
         SubscribeLocalEvent<ShuttleComponent, EntityTerminatingEvent>(OnShuttleTerminating);
-        // Shuttles placed via TryFTLProximity/FTLDock (roundstart cargo, grid-spawns, grid-fill docks,
-        // ATS) never raise FTLCompletedEvent; catch them when they land on a new map instead.
+        // Dock/proximity moves may skip FTLCompletedEvent.
         SubscribeLocalEvent<ShuttleComponent, EntParentChangedMessage>(OnShuttleParentChanged);
         SubscribeLocalEvent<CEZShuttleRoofSourceComponent, TileChangedEvent>(OnSourceTileChanged);
     }
 
     /// <summary>
-    /// (Re)builds roofs for every shuttle currently on <paramref name="station"/>. Called once the
-    /// z-network is established, since grid-fill shuttles (roundstart cargo, ATS) are placed before
-    /// the upper maps exist - so their parent-change fired with no level above and never re-triggered.
+    /// Rebuilds roofs for station shuttles after the z-network exists.
     /// </summary>
     public void RebuildStationRoofs(EntityUid station)
     {
@@ -65,11 +61,11 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private void OnShuttleParentChanged(Entity<ShuttleComponent> ent, ref EntParentChangedMessage args)
     {
-        // Roof grids are shuttles too; never recurse on them.
+        // Roof grids do not get roofs.
         if (HasComp<CEZShuttleRoofComponent>(ent))
             return;
 
-        // Only act once the shuttle has settled onto a map (docking/proximity/FTL all reparent here).
+        // Wait until the shuttle is back on a map.
         if (!HasComp<MapComponent>(args.Transform.ParentUid))
             return;
 
@@ -109,8 +105,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     public void EnsureRoof(EntityUid shuttleUid)
     {
-        // A roof grid must never get a roof of its own, and the grid we spawn below reparents
-        // mid-build - both would re-enter here.
+        // Roof grids and mid-build reparenting must not recurse.
         if (_rebuilding || HasComp<CEZShuttleRoofComponent>(shuttleUid))
             return;
 
@@ -155,7 +150,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
             if (Transform(existingRoof).MapUid != aboveMapUid || existingDepth != roofDepth)
             {
-                // Stranded on a different z-network or linked at a stale depth; rebuild.
+                // Rebuild if the roof moved networks or depths.
                 RemoveRoofGrid(existingRoof);
                 roofGrid = CreateRoofGrid(aboveMapUid, topGrid, shuttleUid);
                 LinkRoofToShuttle(shuttleUid, roofGrid, roofDepth);
@@ -174,8 +169,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         SyncRoofTransform(topGrid, roofGrid);
         CopyTiles(topGrid, roofGrid);
 
-        // Track the source deck so its later tile changes (build/deconstruct/damage) resync the
-        // roof; keep the marker on the current top deck only.
+        // Track tile changes on the current top deck.
         ClearSourceMarkers(shuttleUid, topGrid);
         EnsureComp<CEZShuttleRoofSourceComponent>(topGrid).Shuttle = shuttleUid;
     }
@@ -188,7 +182,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
         ClearSourceMarkers(shuttleUid, EntityUid.Invalid);
     }
 
-    // Drops the tile-change marker from every deck except keepGrid.
+    // Keep only the active tile-change marker.
     private void ClearSourceMarkers(EntityUid shuttleUid, EntityUid keepGrid)
     {
         if (shuttleUid != keepGrid)
@@ -295,7 +289,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
             else if (!string.IsNullOrEmpty(sourceDef.BaseTurf) &&
                      _tileDefMan.TryGetDefinition(sourceDef.BaseTurf, out var baseDef))
             {
-                // Drop floor tiles to their subfloor.
+                // Use subfloor under normal floors.
                 targetDef = baseDef;
             }
             else
@@ -306,7 +300,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
             tilesToSet.Add((tileRef.GridIndices, new Tile(targetDef.TileId)));
         }
 
-        // Clear orphan roof tiles whose source disappeared (shuttle damage/deconstruction).
+        // Clear roof tiles with no source tile.
         foreach (var existingTile in _mapSystem.GetAllTiles(roofGrid, roofMapGrid))
         {
             if (!sourcePositions.Contains(existingTile.GridIndices))
@@ -348,7 +342,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private void RemoveRoofGrid(EntityUid roofUid)
     {
-        // Drop and dirty peers ourselves; CEZLinkedGridComponent's removal handler doesn't dirty.
+        // Removal cleanup does not dirty peers for us.
         if (TryComp<CEZLinkedGridComponent>(roofUid, out var roofLinked))
         {
             var roofDepth = roofLinked.Depth;

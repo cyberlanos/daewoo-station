@@ -47,7 +47,7 @@ using Timer = Robust.Shared.Timing.Timer;
 using Content.Shared.Station.Components;
 using Content.Server.Cargo.Components;
 using Content.Shared.Cargo.Components;
-using Content.Server._Pirate.ZLevels.Spawning; // Pirate: zlevel-mining-dock
+using Content.Server._Pirate.ZLevels.Spawning; // Pirate: multiz
 
 namespace Content.Server._Lavaland.Shuttles.Systems;
 
@@ -60,7 +60,7 @@ public sealed class DockingConsoleSystem : SharedDockingConsoleSystem
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly StationSystem _station = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
-    [Dependency] private readonly CEZLevelFloorGridsSystem _floorGrids = default!; // Pirate: zlevel-mining-dock
+    [Dependency] private readonly CEZLevelFloorGridsSystem _floorGrids = default!; // Pirate: multiz
 
     public override void Initialize()
     {
@@ -258,11 +258,8 @@ public sealed class DockingConsoleSystem : SharedDockingConsoleSystem
             if (xform.MapID != map)
                 continue;
 
-            #region Pirate: zlevel-mining-dock
-            // A multi-z-level station spans several maps under one station. Resolve its decks through
-            // the z-network (not the largest grid, which may be a tiny linked deck or an unrelated
-            // larger grid), then dock to the deck on the destination map - the floor the shuttle
-            // spawned on - instead of escaping to a different level.
+            #region Pirate: multiz
+            // Prefer the station floor on the selected z-map.
             if (TryComp<StationMemberComponent>(gridUid, out var stationMember) &&
                 TryComp<StationDataComponent>(stationMember.Station, out _))
             {
@@ -271,8 +268,6 @@ public sealed class DockingConsoleSystem : SharedDockingConsoleSystem
                     if (Transform(floor).MapID == map)
                         return floor;
                 }
-
-                return _station.GetLargestGrid(stationMember.Station);
             }
             #endregion
 

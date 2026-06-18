@@ -64,10 +64,7 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
     }
 
     /// <summary>
-    /// Returns the station floor deck that carries a priority dock matching <paramref name="tag"/>,
-    /// resolved through the z-network via <see cref="GetStationFloorGrids"/> so a tiny linked deck or
-    /// an unrelated larger grid can't hijack the choice. Returns null when there is no tag or no
-    /// matching dock, letting the caller keep its own fallback (e.g. the station's largest grid).
+    /// Finds a station floor with a matching priority dock.
     /// </summary>
     public EntityUid? FindStationFloorWithPriorityDock(EntityUid station, string? tag)
     {
