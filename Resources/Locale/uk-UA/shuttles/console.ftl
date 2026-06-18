@@ -36,6 +36,14 @@ shuttle-console-ftl-button = НАДСВІТЛОВА ШВИДКІСТЬ
 shuttle-console-map-rebuild = Сканувати об'єкти
 shuttle-console-map-beacons = Показати маяки
 
+# Pirate: multiz
+shuttle-console-ztravel-label = Зміна поверху
+shuttle-console-ztravel-state-Available = Готовий
+shuttle-console-ztravel-state-Starting = Підйом/Спуск
+shuttle-console-ztravel-state-Cooldown = Стабілізація
+shuttle-console-ztravel-up = Піднятись
+shuttle-console-ztravel-down = Спуститись
+
 shuttle-console-no-signal = Немає сигналу
 
 shuttle-console-map-objects = Об'єкти сектора

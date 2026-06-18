@@ -30,6 +30,13 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
     // Roof grid creation reparents mid-build.
     private bool _rebuilding;
 
+    /// <summary>
+    /// When true, the parent-change roof rebuild is skipped. Set by z-traversal while it relocates the
+    /// decks: each deck move fires <see cref="OnShuttleParentChanged"/>, and rebuilding the roof
+    /// per-deck mid-move churns grids at intermediate positions. The mover rebuilds it once afterwards.
+    /// </summary>
+    public bool SuppressAutoUpdates;
+
     public override void Initialize()
     {
         base.Initialize();
@@ -61,6 +68,9 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
 
     private void OnShuttleParentChanged(Entity<ShuttleComponent> ent, ref EntParentChangedMessage args)
     {
+        if (SuppressAutoUpdates)
+            return;
+
         // Roof grids do not get roofs.
         if (HasComp<CEZShuttleRoofComponent>(ent))
             return;

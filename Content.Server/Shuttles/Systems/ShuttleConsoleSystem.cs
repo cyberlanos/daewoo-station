@@ -157,6 +157,8 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
 
     [Dependency] private readonly _Lavaland.Shuttles.Systems.DockingConsoleSystem _dockingConsole = default!; // Lavaland Change: FTL
 
+    [Dependency] private readonly _Pirate.ZLevels.Shuttles.CEZShuttleTraversalSystem _ztravel = default!; // Pirate: multiz
+
     private EntityQuery<MetaDataComponent> _metaQuery;
     private EntityQuery<TransformComponent> _xformQuery;
 
@@ -181,6 +183,10 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         {
             subs.Event<ShuttleConsoleFTLBeaconMessage>(OnBeaconFTLMessage);
             subs.Event<ShuttleConsoleFTLPositionMessage>(OnPositionFTLMessage);
+            #region Pirate: multiz
+            subs.Event<Content.Shared._Pirate.ZLevels.Shuttles.CEShuttleConsoleFlyUpMessage>(OnConsoleFlyUp);
+            subs.Event<Content.Shared._Pirate.ZLevels.Shuttles.CEShuttleConsoleFlyDownMessage>(OnConsoleFlyDown);
+            #endregion
             subs.Event<BoundUIClosedEvent>(OnConsoleUIClose);
         });
 
@@ -596,10 +602,14 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         GetBeacons(ref beacons);
         GetExclusions(ref exclusions);
 
-        return new ShuttleMapInterfaceState(
+        var mapState = new ShuttleMapInterfaceState(
             ftlState,
             stateDuration,
             beacons ?? new List<ShuttleBeaconObject>(),
             exclusions ?? new List<ShuttleExclusionObject>());
+
+        _ztravel.WriteConsoleState(shuttle.Owner, mapState); // Pirate: multiz
+
+        return mapState;
     }
 }
