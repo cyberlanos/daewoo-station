@@ -104,6 +104,8 @@ using Robust.Shared.Random;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
+using Content.Server._Pirate.ZLevels.Spawning; // Pirate: zlevel-mining-dock
+
 namespace Content.Server.Shuttles.Systems;
 
 public sealed partial class EmergencyShuttleSystem : EntitySystem
@@ -132,6 +134,7 @@ public sealed partial class EmergencyShuttleSystem : EntitySystem
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly ShuttleSystem _shuttle = default!;
     [Dependency] private readonly StationSystem _station = default!;
+    [Dependency] private readonly CEZLevelFloorGridsSystem _floorGrids = default!; // Pirate: zlevel-mining-dock
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = default!;
     [Dependency] private readonly ExplosionSystem _explosion = default!; // Goob edit
@@ -247,7 +250,9 @@ public sealed partial class EmergencyShuttleSystem : EntitySystem
             return;
         }
 
-        var targetGrid = _station.GetLargestGrid(station.Value);
+        // Pirate: zlevel-mining-dock - prefer the z-linked deck holding the emergency dock
+        var targetGrid = _floorGrids.FindStationFloorWithPriorityDock(station.Value, DockTag)
+            ?? _station.GetLargestGrid(station.Value);
         if (targetGrid == null)
             return;
 
@@ -336,7 +341,9 @@ public sealed partial class EmergencyShuttleSystem : EntitySystem
             return null;
         }
 
-        var targetGrid = _station.GetLargestGrid(stationUid);
+        // Pirate: zlevel-mining-dock - prefer the z-linked deck holding the emergency dock
+        var targetGrid = _floorGrids.FindStationFloorWithPriorityDock(stationUid, DockTag)
+            ?? _station.GetLargestGrid(stationUid);
 
         // UHH GOOD LUCK
         if (targetGrid == null)

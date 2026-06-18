@@ -1,12 +1,11 @@
-#region Pirate: multiz
 meta:
   format: 7
   category: Map
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/16/2026 07:18:33
-  entityCount: 159
+  time: 06/18/2026 18:07:56
+  entityCount: 161
 maps:
 - 3
 grids:
@@ -154,6 +153,14 @@ entities:
     - type: GridTree
     - type: Broadphase
     - type: OccluderTree
+- proto: AirlockExternalGlassShuttleMiningFilled
+  entities:
+  - uid: 161
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: -4.5,-0.5
+      parent: 2
 - proto: AirlockMaint
   entities:
   - uid: 120
@@ -161,6 +168,14 @@ entities:
     - type: Transform
       rot: 1.5707963267948966 rad
       pos: 9.5,-2.5
+      parent: 2
+- proto: AtmosDeviceFanTiny
+  entities:
+  - uid: 62
+    components:
+    - type: Transform
+      rot: -1.5707963267948966 rad
+      pos: -4.5,-0.5
       parent: 2
 - proto: AtmosFixAirMarker
   entities:
@@ -307,6 +322,14 @@ entities:
     - type: Transform
       rot: 1.5707963267948966 rad
       pos: 11.5,-4.5
+      parent: 2
+- proto: ComputerShuttleMiningLavaland
+  entities:
+  - uid: 12
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -3.5,-2.5
       parent: 2
 - proto: ComputerSurveillanceCameraMonitor
   entities:
@@ -598,11 +621,11 @@ entities:
       parent: 2
 - proto: Poweredlight
   entities:
-  - uid: 62
+  - uid: 160
     components:
     - type: Transform
-      rot: 1.5707963267948966 rad
-      pos: -3.5,-0.5
+      rot: 3.141592653589793 rad
+      pos: -2.5,-2.5
       parent: 2
 - proto: Railing
   entities:
@@ -804,11 +827,6 @@ entities:
     - type: Transform
       pos: 4.5,-2.5
       parent: 2
-  - uid: 12
-    components:
-    - type: Transform
-      pos: 3.5,-2.5
-      parent: 2
   - uid: 13
     components:
     - type: Transform
@@ -1009,8 +1027,7 @@ entities:
   - uid: 52
     components:
     - type: Transform
-      rot: 3.141592653589793 rad
-      pos: -4.5,-0.5
+      pos: 3.5,-2.5
       parent: 2
   - uid: 53
     components:
@@ -1140,5 +1157,4 @@ entities:
       parent: 2
     - type: ElevatorDoor
       elevatorId: elevator-1
-#endregion Pirate: multiz
 ...
