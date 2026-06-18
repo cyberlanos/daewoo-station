@@ -36,12 +36,14 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
 
     private EntityQuery<MapGridComponent> _gridQuery;
     private EntityQuery<TransformComponent> _xformQuery;
 
     private readonly List<EntityUid> _due = new();
+    private List<Entity<MapGridComponent>> _intersecting = new();
 
     // The fly buttons depend on the shuttle's live position (collision with grids on the adjacent
     // level), but console BUI state is otherwise only pushed on discrete events - so the buttons
@@ -193,7 +195,10 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
             if (!_refreshSeen.Add(root))
                 continue;
 
-            if (!TryGetFrontier(root, 1, out _, out _) && !TryGetFrontier(root, -1, out _, out _))
+            if (!TryGetRealDecks(root, out var decks) || decks.Count == 0)
+                continue;
+
+            if (!TryGetFrontier(decks, 1, out _) && !TryGetFrontier(decks, -1, out _))
                 continue;
 
             _console.RefreshShuttleConsoles(root);
@@ -223,30 +228,30 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
         if (!TryComp<ShuttleComponent>(root, out var shuttle) || !shuttle.Enabled)
             return false;
 
-        // Flying requires actual propulsion - at least one working thruster on some deck - so inert
-        // grids and stations can't be flown. An FTL drive is explicitly NOT required.
-        if (!HasThruster(root))
-            return false;
-
         // Don't overlap with an in-progress FTL jump (or its cooldown).
         if (HasComp<FTLComponent>(root))
             return false;
 
-        if (!TryGetFrontier(root, direction, out var frontierMap, out var decks))
+        if (!TryGetRealDecks(root, out var decks) || decks.Count == 0)
+            return false;
+
+        // Flying requires actual propulsion - at least one working thruster on some deck - so inert
+        // grids and stations can't be flown. An FTL drive is explicitly NOT required.
+        if (!HasThruster(decks))
+            return false;
+
+        if (!TryGetFrontier(decks, direction, out var frontierMap))
             return false;
 
         return !IsBlocked(root, decks, frontierMap);
     }
 
     /// <summary>
-    /// True if any real deck has at least one working (powered + anchored + functional) thruster,
-    /// linear or angular. Uses the aggregated <see cref="ShuttleComponent"/> thruster lists.
+    /// True if any deck has at least one working (powered + anchored + functional) thruster, linear
+    /// or angular. Uses the aggregated <see cref="ShuttleComponent"/> thruster lists.
     /// </summary>
-    private bool HasThruster(EntityUid root)
+    private bool HasThruster(List<(int Depth, EntityUid Grid)> decks)
     {
-        if (!TryGetRealDecks(root, out var decks))
-            return false;
-
         foreach (var (_, deck) in decks)
         {
             if (!TryComp<ShuttleComponent>(deck, out var shuttle))
@@ -296,11 +301,11 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     /// bottom real deck (down). The fake roof is ignored, so a roof sitting above the top deck never
     /// blocks flying up.
     /// </summary>
-    private bool TryGetFrontier(EntityUid root, int direction, out EntityUid frontierMap, out List<(int Depth, EntityUid Grid)> decks)
+    private bool TryGetFrontier(List<(int Depth, EntityUid Grid)> decks, int direction, out EntityUid frontierMap)
     {
         frontierMap = default;
 
-        if (!TryGetRealDecks(root, out decks) || decks.Count == 0)
+        if (decks.Count == 0)
             return false;
 
         var edgeDeck = direction > 0 ? decks[^1].Grid : decks[0].Grid;
@@ -315,25 +320,24 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     }
 
     /// <summary>
-    /// Checks the destination map for any non-own grid intersecting the shuttle's footprint, using
-    /// the union of the real decks' world AABBs.
+    /// Checks the destination map for any non-own grid intersecting the shuttle's footprint (the
+    /// union of the decks' world AABBs). Uses a map-scoped broadphase query rather than scanning
+    /// every grid in the world. If the footprint can't be determined, treats it as blocked.
     /// </summary>
     private bool IsBlocked(EntityUid root, List<(int Depth, EntityUid Grid)> decks, EntityUid frontierMap)
     {
+        if (GetShuttleWorldAabb(decks) is not { } shuttleAabb)
+            return true;
+
         var own = GetOwnGrids(root);
-        var shuttleAabb = GetShuttleWorldAabb(decks);
+        var mapId = Comp<MapComponent>(frontierMap).MapId;
 
-        var query = EntityQueryEnumerator<MapGridComponent, TransformComponent>();
-        while (query.MoveNext(out var gridUid, out var grid, out var xform))
+        _intersecting.Clear();
+        _mapManager.FindGridsIntersecting(mapId, shuttleAabb, ref _intersecting, approx: true, includeMap: false);
+
+        foreach (var grid in _intersecting)
         {
-            if (xform.MapUid != frontierMap || own.Contains(gridUid))
-                continue;
-
-            var pos = _transform.GetWorldPosition(gridUid);
-            var rot = _transform.GetWorldRotation(gridUid);
-            var otherAabb = new Box2Rotated(grid.LocalAABB.Translated(pos), rot, pos).CalcBoundingBox();
-
-            if (shuttleAabb.Intersects(otherAabb))
+            if (!own.Contains(grid.Owner))
                 return true;
         }
 
@@ -353,7 +357,8 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
         return set;
     }
 
-    private Box2 GetShuttleWorldAabb(List<(int Depth, EntityUid Grid)> decks)
+    /// <summary>Union of the decks' world AABBs, or null if none could be computed.</summary>
+    private Box2? GetShuttleWorldAabb(List<(int Depth, EntityUid Grid)> decks)
     {
         Box2? union = null;
         foreach (var (_, grid) in decks)
@@ -367,7 +372,7 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
             union = union is { } u ? u.Union(box) : box;
         }
 
-        return union ?? new Box2();
+        return union;
     }
 
     /// <summary>
