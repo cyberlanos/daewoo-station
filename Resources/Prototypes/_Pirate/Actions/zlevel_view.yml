@@ -1,5 +1,3 @@
-# Pirate: multiz - floor traversal actions for the station AI eye.
-# Raise the shared CEZViewUp/DownEvent handled by CEZLevelEyeSystem (reused by abductors too).
 - type: entity
   parent: BaseMentalAction
   id: ActionStationAiViewUp
@@ -8,7 +6,7 @@
   components:
   - type: Action
     checkCanInteract: false
-    priority: -7
+    priority: -8
     itemIconStyle: BigAction
     icon:
       sprite: _Pirate/Actions/misc.rsi
@@ -24,7 +22,7 @@
   components:
   - type: Action
     checkCanInteract: false
-    priority: -8
+    priority: -7
     itemIconStyle: BigAction
     icon:
       sprite: _Pirate/Actions/misc.rsi
