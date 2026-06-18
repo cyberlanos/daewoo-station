@@ -37,11 +37,11 @@ public abstract partial class CESharedZLevelsSystem
 
     public bool TryDisableShootDown(EntityUid uid)
     {
-        if (!TryComp<CEZLevelShooterComponent>(uid, out var shooter) || !shooter.ShootDown)
+        if (!TryComp<CMUZLevelShooterComponent>(uid, out var shooter) || !shooter.ShootDown)
             return false;
 
         shooter.ShootDown = false;
-        DirtyField(uid, shooter, nameof(CEZLevelShooterComponent.ShootDown));
+        DirtyField(uid, shooter, nameof(CMUZLevelShooterComponent.ShootDown));
         return true;
     }
 

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from CMU.
 using System.Numerics;
 using Robust.Shared.GameStates;
@@ -11,7 +13,7 @@ namespace Content.Shared._Pirate.ZLevels.Core.Components;
 /// real (target-layer) spawn point.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(fieldDeltas: true)]
-public sealed partial class CEZLevelProjectileVisualOffsetComponent : Component
+public sealed partial class CMUZLevelProjectileVisualOffsetComponent : Component
 {
     /// <summary>
     /// Eye-independent barrel-shift (source barrel minus the projectile's target-layer spawn), in

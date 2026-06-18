@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse Content.Client/_CMU14/ZLevels/Lighting/CMUProjectedLightComponent.cs.
 
 using System.Numerics;
@@ -6,12 +8,12 @@ using Robust.Shared.Map;
 namespace Content.Client._Pirate.ZLevels.Lighting;
 
 /// <summary>
-/// Marker for client-only projected light entities created by <see cref="CEZLevelProjectedLightingSystem"/>.
+/// Marker for client-only projected light entities created by <see cref="CMUZLevelProjectedLightingSystem"/>.
 /// These live on the receiving map and carry a regular <c>PointLightComponent</c> whose
 /// parameters are derived from a source light on an adjacent Z-level.
 /// </summary>
 [RegisterComponent]
-public sealed partial class CEZProjectedLightComponent : Component
+public sealed partial class CMUZProjectedLightComponent : Component
 {
     /// <summary>The source light entity on the adjacent Z-level this projection represents.</summary>
     public EntityUid SourceLight;

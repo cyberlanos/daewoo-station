@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse Content.Shared/_CMU14/ZLevels/Core/EntitySystems/CMUZLevelShootingSystem.cs.
 // Adapted for lanos:
 //   * Subscribes to per-projectile PlayerShotProjectileEvent (lanos's prediction-correct hook
@@ -25,7 +27,7 @@ using Robust.Shared.Timing;
 
 namespace Content.Shared._Pirate.ZLevels.Shooting;
 
-public sealed partial class CEZLevelShootingSystem : EntitySystem
+public sealed partial class CMUZLevelShootingSystem : EntitySystem
 {
     [Dependency] private readonly CESharedZLevelsSystem _zLevels = default!;
     [Dependency] private readonly SharedGunSystem _gun = default!;
@@ -63,13 +65,13 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
                             ToggleShootDown(user);
                     },
                     handle: false))
-            .Register<CEZLevelShootingSystem>();
+            .Register<CMUZLevelShootingSystem>();
     }
 
     public override void Shutdown()
     {
         base.Shutdown();
-        CommandBinds.Unregister<CEZLevelShootingSystem>();
+        CommandBinds.Unregister<CMUZLevelShootingSystem>();
     }
 
     private void OnGunUnwielded(Entity<GunComponent> ent, ref ItemUnwieldedEvent args)
@@ -154,12 +156,12 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
     }
 
     public bool IsShootDownEnabled(EntityUid user) =>
-        TryComp<CEZLevelShooterComponent>(user, out var shooter) && shooter.ShootDown;
+        TryComp<CMUZLevelShooterComponent>(user, out var shooter) && shooter.ShootDown;
 
     public void SetShootDown(EntityUid user, bool enabled)
     {
-        CEZLevelShooterComponent shooter;
-        if (TryComp<CEZLevelShooterComponent>(user, out var existing))
+        CMUZLevelShooterComponent shooter;
+        if (TryComp<CMUZLevelShooterComponent>(user, out var existing))
         {
             shooter = existing;
         }
@@ -168,14 +170,14 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
             if (!enabled)
                 return;
 
-            shooter = EnsureComp<CEZLevelShooterComponent>(user);
+            shooter = EnsureComp<CMUZLevelShooterComponent>(user);
         }
 
         if (shooter.ShootDown == enabled)
             return;
 
         shooter.ShootDown = enabled;
-        DirtyField(user, shooter, nameof(CEZLevelShooterComponent.ShootDown));
+        DirtyField(user, shooter, nameof(CMUZLevelShooterComponent.ShootDown));
 
         // ShootDown + LookUp are mutually exclusive — both modify the +/-1 routing.
         if (enabled)
@@ -305,9 +307,9 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
         // component instead; the server will add the synced variant when it confirms the shot.
         if (_timing.InPrediction && !IsClientSide(projectile))
         {
-            if (!TryComp<CEZLevelPredictedProjectileVisualOffsetComponent>(projectile, out var predicted))
+            if (!TryComp<CMUZLevelPredictedProjectileVisualOffsetComponent>(projectile, out var predicted))
             {
-                predicted = new CEZLevelPredictedProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
+                predicted = new CMUZLevelPredictedProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
                 AddComp(projectile, predicted);
                 return;
             }
@@ -317,9 +319,9 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
             return;
         }
 
-        if (!TryComp<CEZLevelProjectileVisualOffsetComponent>(projectile, out var visual))
+        if (!TryComp<CMUZLevelProjectileVisualOffsetComponent>(projectile, out var visual))
         {
-            visual = new CEZLevelProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
+            visual = new CMUZLevelProjectileVisualOffsetComponent { Offset = barrelShift, Depth = depth };
             AddComp(projectile, visual);
             Dirty(projectile, visual);
             return;
@@ -349,7 +351,7 @@ public sealed partial class CEZLevelShootingSystem : EntitySystem
     /// <summary>Resolves the shooter's current Z-offset request: -1 down, +1 up, 0 normal.</summary>
     private int GetRequestedShotOffset(EntityUid shooter, bool requireReadyGunForLookUp = false)
     {
-        if (TryComp<CEZLevelShooterComponent>(shooter, out var shooterComp) && shooterComp.ShootDown)
+        if (TryComp<CMUZLevelShooterComponent>(shooter, out var shooterComp) && shooterComp.ShootDown)
             return -1;
 
         if (TryComp<CEZLevelViewerComponent>(shooter, out var viewer) &&

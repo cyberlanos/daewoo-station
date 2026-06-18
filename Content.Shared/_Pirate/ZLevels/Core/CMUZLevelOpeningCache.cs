@@ -1,5 +1,7 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse (Content.Shared/_CMU14/ZLevels/Core/CMUZLevelOpeningCache.cs).
-// MIT-licensed; renames to lanos identifiers.
+// CMU code implemented after 2026-04-30 is AGPL-3.0 per their README; renames to lanos identifiers.
 
 using System.Numerics;
 using Content.Shared.Maps;
@@ -13,14 +15,14 @@ namespace Content.Shared._Pirate.ZLevels.Core;
 /// Per-grid bitmask cache of "opening" tiles (empty or transparent) for deciding whether sound or
 /// vision crosses a Z layer at a given XY. Cached per chunk (8x8 = 64 bits), invalidated by tick.
 /// </summary>
-public sealed class CEZLevelOpeningCache
+public sealed class CMUZLevelOpeningCache
 {
     public const int DefaultChunkSize = 8;
 
     private readonly Dictionary<EntityUid, GridOpeningCache> _gridCaches = new();
     private readonly int _chunkSize;
 
-    public CEZLevelOpeningCache(int chunkSize = DefaultChunkSize)
+    public CMUZLevelOpeningCache(int chunkSize = DefaultChunkSize)
     {
         if (chunkSize <= 0)
             throw new ArgumentOutOfRangeException(nameof(chunkSize), chunkSize, "chunkSize must be > 0");

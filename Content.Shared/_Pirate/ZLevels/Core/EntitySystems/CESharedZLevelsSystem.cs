@@ -39,7 +39,7 @@ public abstract partial class CESharedZLevelsSystem : EntitySystem
     /// Per-grid cache of "opening" (empty/transparent) tiles, so cross-Z systems gate projection
     /// without scanning tiles on every event.
     /// </summary>
-    private readonly CEZLevelOpeningCache _openingCache = new();
+    private readonly CMUZLevelOpeningCache _openingCache = new();
     private readonly List<Entity<MapGridComponent>> _openingGridScratch = new();
 
     private EntityQuery<MapComponent> _mapQuery;

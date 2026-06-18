@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse Content.Client/_CMU14/ZLevels/Core/CMUClientZLevelsSystem.cs
 // (projectile visual offset portions only — lanos already has the rest of the client z-system).
 
@@ -16,7 +18,7 @@ namespace Content.Client._Pirate.ZLevels.Shooting;
 /// instead of at the actual (target-layer) spawn point. On component shutdown the original
 /// sprite offset is restored.
 /// </summary>
-public sealed class CEZLevelClientShootingSystem : EntitySystem
+public sealed class CMUZLevelClientShootingSystem : EntitySystem
 {
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly SpriteSystem _sprite = default!;
@@ -26,32 +28,32 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<CEZLevelProjectileVisualOffsetComponent, ComponentStartup>(OnSyncedStartup);
-        SubscribeLocalEvent<CEZLevelProjectileVisualOffsetComponent, ComponentShutdown>(OnSyncedShutdown);
-        SubscribeLocalEvent<CEZLevelPredictedProjectileVisualOffsetComponent, ComponentStartup>(OnPredictedStartup);
-        SubscribeLocalEvent<CEZLevelPredictedProjectileVisualOffsetComponent, ComponentShutdown>(OnPredictedShutdown);
+        SubscribeLocalEvent<CMUZLevelProjectileVisualOffsetComponent, ComponentStartup>(OnSyncedStartup);
+        SubscribeLocalEvent<CMUZLevelProjectileVisualOffsetComponent, ComponentShutdown>(OnSyncedShutdown);
+        SubscribeLocalEvent<CMUZLevelPredictedProjectileVisualOffsetComponent, ComponentStartup>(OnPredictedStartup);
+        SubscribeLocalEvent<CMUZLevelPredictedProjectileVisualOffsetComponent, ComponentShutdown>(OnPredictedShutdown);
     }
 
-    private void OnSyncedStartup(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
+    private void OnSyncedStartup(Entity<CMUZLevelProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
     {
-        if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
+        if (HasComp<CMUZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
             return;
         TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ent.Comp.Depth, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
     }
 
-    private void OnSyncedShutdown(Entity<CEZLevelProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
+    private void OnSyncedShutdown(Entity<CMUZLevelProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
     {
-        if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
+        if (HasComp<CMUZLevelPredictedProjectileVisualOffsetComponent>(ent.Owner))
             return;
         RestoreProjectileVisualOffset(ent.Owner, ent.Comp.OriginalOffset);
     }
 
-    private void OnPredictedStartup(Entity<CEZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
+    private void OnPredictedStartup(Entity<CMUZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentStartup args)
     {
         TryApplyProjectileVisualOffset(ent.Owner, ent.Comp.Offset, ent.Comp.Depth, ref ent.Comp.OriginalOffset, ref ent.Comp.AppliedOffset);
     }
 
-    private void OnPredictedShutdown(Entity<CEZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
+    private void OnPredictedShutdown(Entity<CMUZLevelPredictedProjectileVisualOffsetComponent> ent, ref ComponentShutdown args)
     {
         RestoreProjectileVisualOffset(ent.Owner, ent.Comp.OriginalOffset);
     }
@@ -63,16 +65,16 @@ public sealed class CEZLevelClientShootingSystem : EntitySystem
         // Re-apply each frame so projectile rotation/render-rotation updates keep the offset
         // correctly oriented. Predicted-only projectiles take precedence — skip the synced
         // entry to avoid double-applying.
-        var syncedQuery = EntityQueryEnumerator<CEZLevelProjectileVisualOffsetComponent, SpriteComponent, TransformComponent>();
+        var syncedQuery = EntityQueryEnumerator<CMUZLevelProjectileVisualOffsetComponent, SpriteComponent, TransformComponent>();
         while (syncedQuery.MoveNext(out var uid, out var visual, out var sprite, out var xform))
         {
-            if (HasComp<CEZLevelPredictedProjectileVisualOffsetComponent>(uid))
+            if (HasComp<CMUZLevelPredictedProjectileVisualOffsetComponent>(uid))
                 continue;
 
             ApplyProjectileVisualOffset(uid, visual.Offset, visual.Depth, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);
         }
 
-        var predictedQuery = EntityQueryEnumerator<CEZLevelPredictedProjectileVisualOffsetComponent, SpriteComponent, TransformComponent>();
+        var predictedQuery = EntityQueryEnumerator<CMUZLevelPredictedProjectileVisualOffsetComponent, SpriteComponent, TransformComponent>();
         while (predictedQuery.MoveNext(out var uid, out var visual, out var sprite, out var xform))
         {
             ApplyProjectileVisualOffset(uid, visual.Offset, visual.Depth, ref visual.OriginalOffset, ref visual.AppliedOffset, sprite, xform);

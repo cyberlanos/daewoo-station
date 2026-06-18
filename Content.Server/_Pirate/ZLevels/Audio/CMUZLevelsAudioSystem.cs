@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse Content.Server/_CMU14/ZLevels/Core/CMUZLevelsSystem.Audio.cs.
 // Re-emits cross-Z audio through floor openings so listeners on adjacent maps hear sound from the
 // level above/below. lanos adaptations:
@@ -20,7 +22,7 @@ using Robust.Shared.Map;
 
 namespace Content.Server._Pirate.ZLevels.Audio;
 
-public sealed class CEZLevelsAudioSystem : EntitySystem
+public sealed class CMUZLevelsAudioSystem : EntitySystem
 {
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;

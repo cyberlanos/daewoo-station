@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 ColonialMarinesUniverse contributors <https://github.com/AU-14/ColonialMarinesUniverse>
+// SPDX-License-Identifier: AGPL-3.0-only
 // Ported from ColonialMarinesUniverse Content.Client/_CMU14/ZLevels/Lighting/CMUZLevelProjectedLightingSystem.cs.
 // Client-only fake-light projection: lights on adjacent Z layers spawn PointLights at floor-opening
 // centers on the viewer's map, attenuated by depth and distance. Purely cosmetic.
@@ -24,7 +26,7 @@ namespace Content.Client._Pirate.ZLevels.Lighting;
 /// <summary>
 /// Projects client-only point lights from adjacent Z-level maps onto the local receiving map.
 /// </summary>
-public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
+public sealed partial class CMUZLevelProjectedLightingSystem : EntitySystem
 {
     private const float OpeningConnectionDistance = 1.5f;
     private const int MinStripCandidateCount = 4;
@@ -63,7 +65,7 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
     private readonly List<List<int>> _openingCandidateBucketPool = new();
     private readonly ProjectedLightAlongAxisComparer _alongAxisComparer = new();
 
-    private EntityQuery<CEZProjectedLightComponent> _projectedQuery;
+    private EntityQuery<CMUZProjectedLightComponent> _projectedQuery;
     private EntityQuery<PointLightComponent> _pointLightQuery;
     private EntityQuery<MapComponent> _mapQuery;
     private EntityQuery<TransformComponent> _xformQuery;
@@ -73,7 +75,7 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
     {
         base.Initialize();
 
-        _projectedQuery = GetEntityQuery<CEZProjectedLightComponent>();
+        _projectedQuery = GetEntityQuery<CMUZProjectedLightComponent>();
         _pointLightQuery = GetEntityQuery<PointLightComponent>();
         _mapQuery = GetEntityQuery<MapComponent>();
         _xformQuery = GetEntityQuery<TransformComponent>();
@@ -793,7 +795,7 @@ public sealed partial class CEZLevelProjectedLightingSystem : EntitySystem
         if (!hasProjectedLight || !Exists(projectedUid))
         {
             projectedUid = Spawn(null, new MapCoordinates(candidate.ProjectedCenter, candidate.ReceivingMapId));
-            var projectedComp = AddComp<CEZProjectedLightComponent>(projectedUid);
+            var projectedComp = AddComp<CMUZProjectedLightComponent>(projectedUid);
             projectedComp.SourceLight = candidate.SourceLight;
             projectedComp.SourceMapId = candidate.SourceMapId;
             projectedComp.DepthOffset = candidate.DepthOffset;

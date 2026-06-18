@@ -138,7 +138,7 @@ public abstract partial class SharedGunSystem : EntitySystem
     [Dependency] protected readonly ThrowingSystem ThrowingSystem = default!;
     [Dependency] private   readonly UseDelaySystem _useDelay = default!;
     [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
-    [Dependency] private readonly CEZLevelShootingSystem _zLevelShooting = default!; // Pirate: multiz
+    [Dependency] private readonly CMUZLevelShootingSystem _zLevelShooting = default!; // Pirate: multiz
 
     private const float InteractNextFire = 0.3f;
     private const double SafetyNextFire = 0.5;

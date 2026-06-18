@@ -6,7 +6,7 @@ using Robust.Shared.Map.Events;
 namespace Content.Shared._Pirate.ZLevels.Core.EntitySystems;
 
 /// <summary>
-/// Public surface over <see cref="CEZLevelOpeningCache"/>. The cache invalidates per-chunk via
+/// Public surface over <see cref="CMUZLevelOpeningCache"/>. The cache invalidates per-chunk via
 /// <see cref="InvalidateOpeningCache(Entity{MapGridComponent}, ReadOnlySpan{TileChangedEntry})"/>
 /// and on grid removal.
 /// </summary>
@@ -40,7 +40,7 @@ public abstract partial class CESharedZLevelsSystem
         if (!_gridQuery.TryComp(mapUid, out var grid))
             return true;
 
-        return CEZLevelOpeningCache.IsOpeningTile(mapUid, grid, worldPos, _map, TilDefMan);
+        return CMUZLevelOpeningCache.IsOpeningTile(mapUid, grid, worldPos, _map, TilDefMan);
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ public abstract partial class CESharedZLevelsSystem
                 for (var dy = -tileRadius; dy <= tileRadius; dy++)
                 {
                     var tile = centerTile + new Vector2i(dx, dy);
-                    if (!CEZLevelOpeningCache.IsExistingOpeningTile(grid, tile, _map, TilDefMan))
+                    if (!CMUZLevelOpeningCache.IsExistingOpeningTile(grid, tile, _map, TilDefMan))
                         continue;
 
                     var tileCenter = Vector2.Transform(
@@ -231,7 +231,7 @@ public abstract partial class CESharedZLevelsSystem
         bool TryUseOpeningTile(Vector2i tile)
         {
             var hasTileRef = _map.TryGetTileRef(openingGrid, grid, tile, out var tileRef);
-            var tileIsOpening = !hasTileRef || CEZLevelOpeningCache.IsOpeningTile(tileRef.Tile, TilDefMan);
+            var tileIsOpening = !hasTileRef || CMUZLevelOpeningCache.IsOpeningTile(tileRef.Tile, TilDefMan);
 
             if (hasTileRef && !tileIsOpening)
                 return false;
