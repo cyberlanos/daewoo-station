@@ -35,7 +35,7 @@ public sealed class CEZShuttleRoofSystem : EntitySystem
     /// decks: each deck move fires <see cref="OnShuttleParentChanged"/>, and rebuilding the roof
     /// per-deck mid-move churns grids at intermediate positions. The mover rebuilds it once afterwards.
     /// </summary>
-    public bool SuppressAutoUpdates;
+    internal bool SuppressAutoUpdates;
 
     public override void Initialize()
     {

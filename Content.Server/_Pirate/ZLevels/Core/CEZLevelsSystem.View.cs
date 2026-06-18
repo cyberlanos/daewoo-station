@@ -63,7 +63,7 @@ public sealed partial class CEZLevelsSystem
     /// rebuilding viewer probes mid-recursion spawns entities into the children collection currently
     /// being enumerated. The periodic <see cref="UpdateView"/> poll rebuilds the probes right after.
     /// </summary>
-    public bool SuppressViewerMapChange;
+    internal bool SuppressViewerMapChange;
 
     private void InitView()
     {
