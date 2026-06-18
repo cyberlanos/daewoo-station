@@ -151,8 +151,7 @@ public sealed partial class CEZLevelsSystem : CESharedZLevelsSystem
         foreach (var loaded in loadedMaps)
             _map.InitializeMap(loaded);
 
-        // Grid-fill shuttles (roundstart cargo, ATS) may have been placed before these upper maps
-        // existed, so their roof never built; roof every station shuttle now the network is up.
+        // Grid-fill shuttles may have landed before upper maps existed.
         _shuttleRoof.RebuildStationRoofs(ent);
     }
 
