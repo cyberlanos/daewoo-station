@@ -1,3 +1,4 @@
+using Content.Server.Shuttles.Components;
 using Content.Server.Station.Components;
 using Content.Server.Station.Systems;
 using Content.Shared._Pirate.ZLevels.Core.Components;
@@ -60,6 +61,34 @@ public sealed class CEZLevelFloorGridsSystem : EntitySystem
         }
 
         return grids;
+    }
+
+    /// <summary>
+    /// Returns the station floor deck that carries a priority dock matching <paramref name="tag"/>,
+    /// resolved through the z-network via <see cref="GetStationFloorGrids"/> so a tiny linked deck or
+    /// an unrelated larger grid can't hijack the choice. Returns null when there is no tag or no
+    /// matching dock, letting the caller keep its own fallback (e.g. the station's largest grid).
+    /// </summary>
+    public EntityUid? FindStationFloorWithPriorityDock(EntityUid station, string? tag)
+    {
+        if (tag == null)
+            return null;
+
+        var floors = GetStationFloorGrids(station);
+        if (floors.Count == 0)
+            return null;
+
+        var query = EntityQueryEnumerator<PriorityDockComponent, TransformComponent>();
+        while (query.MoveNext(out _, out var priority, out var xform))
+        {
+            if (priority.Tag != tag || xform.GridUid is not { } grid)
+                continue;
+
+            if (floors.Contains(grid))
+                return grid;
+        }
+
+        return null;
     }
 
     /// <summary>

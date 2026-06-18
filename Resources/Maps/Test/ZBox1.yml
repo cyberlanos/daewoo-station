@@ -1,12 +1,11 @@
-#region Pirate: multiz
 meta:
   format: 7
   category: Map
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/16/2026 07:18:33
-  entityCount: 168
+  time: 06/18/2026 18:07:56
+  entityCount: 170
 maps:
 - 3
 grids:
@@ -148,6 +147,21 @@ entities:
     - type: GridTree
     - type: Broadphase
     - type: OccluderTree
+- proto: AirlockExternalGlassShuttleArrivals
+  entities:
+  - uid: 170
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -0.5,3.5
+      parent: 2
+- proto: AirlockExternalGlassShuttleEmergencyLocked
+  entities:
+  - uid: 169
+    components:
+    - type: Transform
+      pos: -0.5,-4.5
+      parent: 2
 - proto: AirlockMaint
   entities:
   - uid: 157
@@ -155,6 +169,19 @@ entities:
     - type: Transform
       rot: 1.5707963267948966 rad
       pos: 9.5,-2.5
+      parent: 2
+- proto: AtmosDeviceFanDirectional
+  entities:
+  - uid: 7
+    components:
+    - type: Transform
+      pos: -0.5,-4.5
+      parent: 2
+  - uid: 27
+    components:
+    - type: Transform
+      rot: 3.141592653589793 rad
+      pos: -0.5,3.5
       parent: 2
 - proto: AtmosFixAirMarker
   entities:
@@ -749,11 +776,6 @@ entities:
     - type: Transform
       pos: 2.5,-4.5
       parent: 2
-  - uid: 7
-    components:
-    - type: Transform
-      pos: 1.5,-4.5
-      parent: 2
   - uid: 8
     components:
     - type: Transform
@@ -762,7 +784,7 @@ entities:
   - uid: 9
     components:
     - type: Transform
-      pos: -0.5,-4.5
+      pos: 1.5,-4.5
       parent: 2
   - uid: 10
     components:
@@ -842,17 +864,12 @@ entities:
   - uid: 25
     components:
     - type: Transform
-      pos: -0.5,3.5
+      pos: 1.5,3.5
       parent: 2
   - uid: 26
     components:
     - type: Transform
       pos: 0.5,3.5
-      parent: 2
-  - uid: 27
-    components:
-    - type: Transform
-      pos: 1.5,3.5
       parent: 2
   - uid: 28
     components:
@@ -1115,5 +1132,4 @@ entities:
       parent: 2
     - type: ElevatorDoor
       elevatorId: elevator-1
-#endregion Pirate: multiz
 ...

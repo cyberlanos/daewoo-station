@@ -107,6 +107,8 @@ using Robust.Shared.Spawners;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
+using Content.Server._Pirate.ZLevels.Spawning; // Pirate: zlevel-mining-dock
+
 namespace Content.Server.Shuttles.Systems;
 
 /// <summary>
@@ -131,6 +133,7 @@ public sealed class ArrivalsSystem : EntitySystem
     [Dependency] private readonly ShuttleSystem _shuttles = default!;
     [Dependency] private readonly StationSpawningSystem _stationSpawning = default!;
     [Dependency] private readonly StationSystem _station = default!;
+    [Dependency] private readonly CEZLevelFloorGridsSystem _floorGrids = default!; // Pirate: zlevel-mining-dock
 
     private EntityQuery<PendingClockInComponent> _pendingQuery;
     private EntityQuery<ArrivalsBlacklistComponent> _blacklistQuery;
@@ -555,7 +558,9 @@ public sealed class ArrivalsSystem : EntitySystem
                 // Go to station
                 else
                 {
-                    var targetGrid = _station.GetLargestGrid(comp.Station);
+                    // Pirate: zlevel-mining-dock - prefer the z-linked deck holding the arrivals dock
+                    var targetGrid = _floorGrids.FindStationFloorWithPriorityDock(comp.Station, "DockArrivals")
+                        ?? _station.GetLargestGrid(comp.Station);
 
                     if (targetGrid != null)
                         _shuttles.FTLToDock(uid, shuttle, targetGrid.Value);

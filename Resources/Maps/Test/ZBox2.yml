@@ -1,11 +1,10 @@
-#region Pirate: multiz
 meta:
   format: 7
   category: Map
   engineVersion: 268.1.0
   forkId: ""
   forkVersion: ""
-  time: 06/16/2026 07:18:33
+  time: 06/18/2026 18:07:56
   entityCount: 54
 maps:
 - 3
@@ -424,5 +423,4 @@ entities:
       parent: 2
     - type: ElevatorDoor
       elevatorId: elevator-1
-#endregion Pirate: multiz
 ...
