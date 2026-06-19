@@ -80,7 +80,6 @@ public sealed partial class ShuttleConsoleSystem
     private void OnBeaconFTLMessage(Entity<ShuttleConsoleComponent> ent, ref ShuttleConsoleFTLBeaconMessage args)
     {
         var beaconEnt = GetEntity(args.Beacon);
-
         if (!_xformQuery.TryGetComponent(beaconEnt, out var targetXform))
         {
             return;
@@ -182,7 +181,7 @@ public sealed partial class ShuttleConsoleSystem
         if (!_shuttle.CanFTL(actualShuttleUid, out _))
             return;
 
-        if (_ztravel.IsTraversing(actualShuttleUid)) // Pirate: multiz
+        if (_ztravel.IsTraversing(actualShuttleUid))
             return;
 
         List<ShuttleExclusionObject>? exclusions = null;

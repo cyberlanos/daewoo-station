@@ -192,8 +192,7 @@ public sealed partial class MapScreen : BoxContainer
         _zTime = state.ZTraversalTime;
         ZTraversalStateLabel.Text = Loc.GetString($"shuttle-console-ztravel-state-{_zState.ToString()}");
 
-        // Buttons are only pressable when the server says the move is possible (level exists, clear,
-        // and not already busy). During a traversal both stay disabled.
+        // Server state already accounts for traversal and cooldown.
         FlyUpButton.Disabled = !state.CanFlyUp;
         FlyDownButton.Disabled = !state.CanFlyDown;
 
@@ -314,7 +313,7 @@ public sealed partial class MapScreen : BoxContainer
                 continue;
             }
 
-            // Skip non-primary Z-level floors (depth != 0) — they are sub-levels not visible as FTL destinations. Pirate: multiz
+            // Pirate: multiz - hide non-primary floor maps from FTL destinations.
             if (_entManager.TryGetComponent(mapUid, out CEZLevelMapComponent? zLevelMap) && zLevelMap.Depth != 0) // Pirate: multiz
                 continue; // Pirate: multiz
             var mapName = mapMetadata.EntityName;

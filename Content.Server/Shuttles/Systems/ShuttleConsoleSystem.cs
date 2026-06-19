@@ -240,7 +240,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         DockingInterfaceState? dockState = null;
 
         #region Pirate: multiz
-        // When the root shuttle changes FTL state, consoles mounted on linked peer decks need the same refresh to avoid stale UI.
+        // Refresh linked deck consoles with the root shuttle.
         var refreshGridUids = new ValueList<EntityUid>();
         refreshGridUids.Add(gridUid);
 
@@ -373,9 +373,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
                 continue;
 
             #region Pirate: multiz
-            // The refresh that runs when a docking port is being deleted fires via AnchorStateChangedEvent
-            // raised during entity termination, while the DockingComponent is still attached.
-            // Skip terminating entities so the refresh doesn't republish a dock the client is about to lose.
+            // Ignore docks being deleted during refresh events.
             if (metadata.EntityLifeStage >= EntityLifeStage.Terminating)
                 continue;
             #endregion
@@ -415,7 +413,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         TryComp(entity, out TransformComponent? consoleXform);
         var shuttleGridUid = consoleXform?.GridUid;
         #region Pirate: multiz
-        // A console may live on an upper or lower deck, but its displayed FTL state must come from the root shuttle that owns the jump lifecycle.
+        // Deck consoles display root shuttle FTL state.
         EntityUid? ftlStateGridUid = shuttleGridUid != null
             ? _shuttle.ResolveFTLShuttle(shuttleGridUid.Value)
             : null;
