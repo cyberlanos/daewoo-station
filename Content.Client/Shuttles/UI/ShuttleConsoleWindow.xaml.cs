@@ -33,9 +33,8 @@ public sealed partial class ShuttleConsoleWindow : FancyWindow,
     public event Action<MapCoordinates, Angle>? RequestFTL;
     public event Action<NetEntity, Angle>? RequestBeaconFTL;
 
-    // Pirate: multiz
-    public event Action? RequestFlyUp;
-    public event Action? RequestFlyDown;
+    public event Action? RequestFlyUp; // Pirate: multiz
+    public event Action? RequestFlyDown; // Pirate: multiz
 
     public event Action<NetEntity, NetEntity>? DockRequest;
     public event Action<NetEntity>? UndockRequest;
