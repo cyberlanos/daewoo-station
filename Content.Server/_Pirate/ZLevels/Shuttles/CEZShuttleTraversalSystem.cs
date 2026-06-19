@@ -44,6 +44,8 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
 
     private readonly List<EntityUid> _due = new();
     private List<Entity<MapGridComponent>> _intersecting = new();
+    private readonly List<(int Depth, EntityUid Grid)> _decksScratch = new();
+    private readonly HashSet<EntityUid> _ownScratch = new();
 
     // The fly buttons depend on the shuttle's live position (collision with grids on the adjacent
     // level), but console BUI state is otherwise only pushed on discrete events - so the buttons
@@ -83,7 +85,8 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     /// </summary>
     public bool TryStartTraversal(EntityUid root, int direction)
     {
-        if (!CanFly(root, direction))
+        // Don't start a second traversal while one is already running, then check reachability.
+        if (HasComp<CEZShuttleTraversalComponent>(root) || !CanReach(root, direction))
             return false;
 
         var comp = AddComp<CEZShuttleTraversalComponent>(root);
@@ -116,8 +119,9 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
             state.ZTraversalTime = default;
         }
 
-        state.CanFlyUp = CanFly(root, 1);
-        state.CanFlyDown = CanFly(root, -1);
+        GetFlyOptions(root, out var canUp, out var canDown);
+        state.CanFlyUp = canUp;
+        state.CanFlyDown = canDown;
     }
 
     public override void Update(float frameTime)
@@ -145,15 +149,14 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
             {
                 // The destination z-map could have become blocked or unreachable during the startup
                 // wind-up (another grid moved in, lost a thruster, etc.). Re-check right before the
-                // move commits and abort if it's no longer valid.
-                if (!CanReach(uid, comp.Direction))
+                // move commits, and treat a failed (non-atomic) move the same way - abort without
+                // changing state if it's no longer valid.
+                if (!CanReach(uid, comp.Direction) || !DoTraversal(uid, comp.Direction))
                 {
                     RemComp<CEZShuttleTraversalComponent>(uid);
                     _console.RefreshShuttleConsoles(uid);
                     continue;
                 }
-
-                DoTraversal(uid, comp.Direction);
 
                 comp.State = CEZTraversalState.Cooldown;
                 comp.StateTime = StartEndTime.FromStartDuration(now, ExitTime);
@@ -206,44 +209,76 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     }
 
     /// <summary>
-    /// Whether the shuttle can currently start flying in <paramref name="direction"/>: not already
-    /// traversing, FTL-ready, a z-map exists past the edge deck, and that map is clear of other grids.
+    /// Computes whether the shuttle can currently start flying up and/or down, for the button gate.
+    /// Shares the deck list, own-grid set and footprint AABB across both directions.
     /// </summary>
-    private bool CanFly(EntityUid root, int direction)
+    private void GetFlyOptions(EntityUid root, out bool canUp, out bool canDown)
     {
+        canUp = false;
+        canDown = false;
+
         // Don't start a second traversal while one is already running.
         if (HasComp<CEZShuttleTraversalComponent>(root))
-            return false;
+            return;
 
-        return CanReach(root, direction);
+        if (!TryGetMoveContext(root, out var decks, out var own, out var aabb))
+            return;
+
+        canUp = CanReachDirection(decks, own, aabb, 1);
+        canDown = CanReachDirection(decks, own, aabb, -1);
     }
 
     /// <summary>
-    /// Reachability check shared by the button gate and the pre-move revalidation: shuttle enabled,
-    /// has a working thruster, not mid-FTL, a z-map exists past the edge deck, and that map is clear.
-    /// Excludes the already-traversing guard so it can also run during an in-progress traversal.
+    /// Single-direction reachability used for the pre-move revalidation. Excludes the
+    /// already-traversing guard so it can run during an in-progress traversal.
     /// </summary>
     private bool CanReach(EntityUid root, int direction)
     {
+        return TryGetMoveContext(root, out var decks, out var own, out var aabb) &&
+               CanReachDirection(decks, own, aabb, direction);
+    }
+
+    /// <summary>
+    /// Direction-independent gate plus the data shared by every reachability check: shuttle enabled,
+    /// not mid-FTL, has decks with a working thruster. Outputs the deck list, own-grid set, and
+    /// footprint AABB so callers compute them once. An FTL drive is explicitly NOT required.
+    /// </summary>
+    private bool TryGetMoveContext(
+        EntityUid root,
+        out List<(int Depth, EntityUid Grid)> decks,
+        out HashSet<EntityUid> own,
+        out Box2? aabb)
+    {
+        decks = default!;
+        own = default!;
+        aabb = null;
+
         if (!TryComp<ShuttleComponent>(root, out var shuttle) || !shuttle.Enabled)
             return false;
 
-        // Don't overlap with an in-progress FTL jump (or its cooldown).
         if (HasComp<FTLComponent>(root))
             return false;
 
-        if (!TryGetRealDecks(root, out var decks) || decks.Count == 0)
+        if (!TryGetRealDecks(root, out decks) || decks.Count == 0)
             return false;
 
         // Flying requires actual propulsion - at least one working thruster on some deck - so inert
-        // grids and stations can't be flown. An FTL drive is explicitly NOT required.
+        // grids and stations can't be flown.
         if (!HasThruster(decks))
             return false;
 
-        if (!TryGetFrontier(decks, direction, out var frontierMap))
-            return false;
+        own = GetOwnGrids(root);
+        aabb = GetShuttleWorldAabb(decks);
+        return true;
+    }
 
-        return !IsBlocked(root, decks, frontierMap);
+    private bool CanReachDirection(
+        List<(int Depth, EntityUid Grid)> decks,
+        HashSet<EntityUid> own,
+        Box2? aabb,
+        int direction)
+    {
+        return TryGetFrontier(decks, direction, out var frontierMap) && !IsBlocked(own, aabb, frontierMap);
     }
 
     /// <summary>
@@ -272,10 +307,13 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
 
     /// <summary>
     /// Returns the real decks of the shuttle, sorted by depth ascending, excluding the fake roof.
+    /// Returns a shared scratch list to avoid per-call allocations on the refresh hot path: callers
+    /// must consume the result before the next <see cref="TryGetRealDecks"/> call and never retain it.
     /// </summary>
     private bool TryGetRealDecks(EntityUid root, out List<(int Depth, EntityUid Grid)> decks)
     {
-        decks = new List<(int, EntityUid)>();
+        _decksScratch.Clear();
+        decks = _decksScratch;
 
         if (!TryComp<CEZLinkedGridComponent>(root, out var linked))
         {
@@ -320,20 +358,20 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
     }
 
     /// <summary>
-    /// Checks the destination map for any non-own grid intersecting the shuttle's footprint (the
-    /// union of the decks' world AABBs). Uses a map-scoped broadphase query rather than scanning
-    /// every grid in the world. If the footprint can't be determined, treats it as blocked.
+    /// Checks the destination map for any non-own grid intersecting the shuttle's footprint
+    /// <paramref name="aabb"/>. Uses a map-scoped broadphase query rather than scanning every grid in
+    /// the world. If the footprint couldn't be determined (<paramref name="aabb"/> is null), treats
+    /// it as blocked.
     /// </summary>
-    private bool IsBlocked(EntityUid root, List<(int Depth, EntityUid Grid)> decks, EntityUid frontierMap)
+    private bool IsBlocked(HashSet<EntityUid> own, Box2? aabb, EntityUid frontierMap)
     {
-        if (GetShuttleWorldAabb(decks) is not { } shuttleAabb)
+        if (aabb is not { } box)
             return true;
 
-        var own = GetOwnGrids(root);
         var mapId = Comp<MapComponent>(frontierMap).MapId;
 
         _intersecting.Clear();
-        _mapManager.FindGridsIntersecting(mapId, shuttleAabb, ref _intersecting, approx: true, includeMap: false);
+        _mapManager.FindGridsIntersecting(mapId, box, ref _intersecting, approx: true, includeMap: false);
 
         foreach (var grid in _intersecting)
         {
@@ -344,17 +382,21 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
         return false;
     }
 
-    /// <summary>Every grid belonging to the shuttle (all decks plus the fake roof).</summary>
+    /// <summary>
+    /// Every grid belonging to the shuttle (all decks plus the fake roof). Returns a shared scratch
+    /// set to avoid per-call allocations: callers must consume it before the next GetOwnGrids call.
+    /// </summary>
     private HashSet<EntityUid> GetOwnGrids(EntityUid root)
     {
-        var set = new HashSet<EntityUid> { root };
+        _ownScratch.Clear();
+        _ownScratch.Add(root);
         if (TryComp<CEZLinkedGridComponent>(root, out var linked))
         {
             foreach (var (_, peer) in linked.PeerGrids)
-                set.Add(peer);
+                _ownScratch.Add(peer);
         }
 
-        return set;
+        return _ownScratch;
     }
 
     /// <summary>Union of the decks' world AABBs, or null if none could be computed.</summary>
@@ -377,12 +419,25 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
 
     /// <summary>
     /// Relocates every real deck to the adjacent z-map, preserving world position/rotation and
-    /// leaving the z-linkage untouched. The roof is dropped first and rebuilt afterwards.
+    /// leaving the z-linkage untouched. The roof is dropped first and rebuilt afterwards. Returns
+    /// false (moving nothing) if any deck lacks an adjacent map, so the stack can't be split.
     /// </summary>
-    private void DoTraversal(EntityUid root, int direction)
+    private bool DoTraversal(EntityUid root, int direction)
     {
         if (!TryGetRealDecks(root, out var decks))
-            return;
+            return false;
+
+        // Resolve every deck's destination up front so the move is atomic: if any deck has no
+        // adjacent map we bail before relocating anything, rather than stranding part of the stack.
+        var moves = new List<(EntityUid Deck, TransformComponent Xform, EntityUid TargetMap)>(decks.Count);
+        foreach (var (_, deck) in decks)
+        {
+            var xform = _xformQuery.GetComponent(deck);
+            if (xform.MapUid is not { } curMap || !_zLevels.TryMapOffset(curMap, direction, out var target))
+                return false;
+
+            moves.Add((deck, xform, target.Value.Owner));
+        }
 
         // Suppress reentrant rebuilds for the duration of the move. Each SetCoordinates relocates a
         // grid (and aboard viewers) via a recursive ChangeMapId; letting the roof system or the
@@ -398,22 +453,15 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
             // Detach from any docks first - moving a docked grid across maps tears its docking joints
             // apart mid-relocation (the dock ports are grid children), which corrupts the transform
             // recursion and leaves grids at invalid positions. This mirrors what FTL does on launch.
-            foreach (var (_, deck) in decks)
+            foreach (var (deck, _, _) in moves)
                 _dock.UndockDocks(deck);
 
-            foreach (var (_, deck) in decks)
+            foreach (var (deck, xform, targetMap) in moves)
             {
-                var xform = _xformQuery.GetComponent(deck);
-                if (xform.MapUid is not { } curMap)
-                    continue;
-
-                if (!_zLevels.TryMapOffset(curMap, direction, out var target))
-                    continue;
-
                 var worldPos = _transform.GetWorldPosition(deck);
                 var worldRot = _transform.GetWorldRotation(deck);
 
-                _transform.SetCoordinates(deck, xform, new EntityCoordinates(target.Value.Owner, worldPos), rotation: worldRot);
+                _transform.SetCoordinates(deck, xform, new EntityCoordinates(targetMap, worldPos), rotation: worldRot);
 
                 if (TryComp<PhysicsComponent>(deck, out var body))
                 {
@@ -431,6 +479,7 @@ public sealed class CEZShuttleTraversalSystem : EntitySystem
         // Rebuild the roof for the new top deck now the move is complete (no-op if there's no level
         // above it now).
         _roof.EnsureRoof(root);
+        return true;
     }
 
     private void PlayForDecks(EntityUid root, SoundSpecifier sound)
