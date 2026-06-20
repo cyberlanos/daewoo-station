@@ -14,8 +14,7 @@ using Robust.Shared.Timing;
 namespace Content.Server._Pirate.ZLevels.VentCrawl;
 
 /// <summary>
-/// Grants a vent-crawling mob z-level up/down actions while it sits in a multi-z pipe adapter that
-/// has a matching adapter above/below, and relocates its holder to that peer adapter when used.
+/// Lets vent-crawlers move between matching multi-z pipe adapters.
 /// </summary>
 public sealed class CEVentCrawlZMoverSystem : EntitySystem
 {
@@ -120,7 +119,7 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
 
         var holderUid = crawler.Holder;
 
-        // Detach the holder from the current tube before re-inserting into the peer, mirroring the crawl Update loop.
+        // Mirror normal tube traversal: detach before entering the peer tube.
         if (TryComp<VentCrawlerTubeComponent>(currentTube, out var tubeComp) && tubeComp.Contents != null)
             _container.Remove(holderUid, tubeComp.Contents, reparent: false, force: true);
 
@@ -134,7 +133,7 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
     }
 
     /// <summary>
-    /// True if the crawler's holder is currently resting in a multi-z pipe adapter, outputting that tube.
+    /// True when the crawler's holder is in a multi-z adapter tube.
     /// </summary>
     private bool TryGetAdapterTube(BeingVentCrawlerComponent crawler, out EntityUid tube)
     {
@@ -152,8 +151,7 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
     }
 
     /// <summary>
-    /// Finds a connected adapter tube on the linked peer grid <paramref name="offset"/> levels away,
-    /// sitting at the same world tile. Mirrors <see cref="CEMultizAtmosPipeAdapterNode"/>'s peer lookup.
+    /// Finds the matching adapter tube on the linked peer grid.
     /// </summary>
     private EntityUid? FindPeerAdapterTube(EntityUid tube, int offset)
     {
@@ -172,12 +170,11 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
             return null;
         }
 
-        // Match the adapter the crawler actually sits in: with stacked Primary/Secondary/Tertiary
-        // adapters on one tile, only the peer on the same pipe layer/group is atmospherically linked.
+        // Stacked adapters only link to peers on the same pipe layer/group.
         if (GetAdapterNode(tube) is not { } sourceNode)
             return null;
 
-        // Source tile won't line up on peer decks with a different transform; reproject via world pos.
+        // Reproject through world space so transformed peer decks line up.
         var worldPos = _transform.GetWorldPosition(xform);
         var peerTile = _map.WorldToTile(peerGridUid, peerGrid, worldPos);
 
@@ -203,7 +200,7 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
         return null;
     }
 
-    /// <summary>Returns the adapter's multi-z pipe node, used to match pipe layer/group across decks.</summary>
+    /// <summary>Returns the adapter node used for layer/group matching.</summary>
     private CEMultizAtmosPipeAdapterNode? GetAdapterNode(EntityUid uid)
     {
         if (!TryComp<NodeContainerComponent>(uid, out var nodeContainer))
