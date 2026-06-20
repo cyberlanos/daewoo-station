@@ -5,6 +5,7 @@ using Content.Shared._Starlight.VentCrawling;
 using Content.Shared._Starlight.VentCrawling.Components;
 using Content.Shared.Actions;
 using Content.Shared.Actions.Components;
+using Content.Shared.NodeContainer;
 using Content.Shared.VentCrawler.Tube.Components;
 using Robust.Shared.Containers;
 using Robust.Shared.Map.Components;
@@ -171,18 +172,47 @@ public sealed class CEVentCrawlZMoverSystem : EntitySystem
             return null;
         }
 
+        // Match the adapter the crawler actually sits in: with stacked Primary/Secondary/Tertiary
+        // adapters on one tile, only the peer on the same pipe layer/group is atmospherically linked.
+        if (GetAdapterNode(tube) is not { } sourceNode)
+            return null;
+
         // Source tile won't line up on peer decks with a different transform; reproject via world pos.
         var worldPos = _transform.GetWorldPosition(xform);
         var peerTile = _map.WorldToTile(peerGridUid, peerGrid, worldPos);
 
         foreach (var ent in _map.GetAnchoredEntities(peerGridUid, peerGrid, peerTile))
         {
-            if (HasComp<CEMultizAtmosPipeAdapterComponent>(ent) &&
-                TryComp<VentCrawlerTubeComponent>(ent, out var peerTube) &&
-                peerTube.Connected)
+            if (!HasComp<CEMultizAtmosPipeAdapterComponent>(ent) ||
+                !TryComp<VentCrawlerTubeComponent>(ent, out var peerTube) ||
+                !peerTube.Connected)
             {
-                return ent;
+                continue;
             }
+
+            if (GetAdapterNode(ent) is not { } peerNode ||
+                peerNode.NodeGroupID != sourceNode.NodeGroupID ||
+                peerNode.CurrentPipeLayer != sourceNode.CurrentPipeLayer)
+            {
+                continue;
+            }
+
+            return ent;
+        }
+
+        return null;
+    }
+
+    /// <summary>Returns the adapter's multi-z pipe node, used to match pipe layer/group across decks.</summary>
+    private CEMultizAtmosPipeAdapterNode? GetAdapterNode(EntityUid uid)
+    {
+        if (!TryComp<NodeContainerComponent>(uid, out var nodeContainer))
+            return null;
+
+        foreach (var node in nodeContainer.Nodes.Values)
+        {
+            if (node is CEMultizAtmosPipeAdapterNode adapter)
+                return adapter;
         }
 
         return null;
