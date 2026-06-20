@@ -59,7 +59,8 @@ public sealed class StealthOnWebSystem : EntitySystem
 
         // Pirate: a terror web cocoon is both a strap and a web object. If the physics
         // contact is lost during buckling, clear that web contact when the spider exits.
-        if (ent.Comp.Contacts.RemoveWhere(contact => contact.Other == args.Strap) > 0)
+        var strap = args.Strap.Owner;
+        if (ent.Comp.Contacts.RemoveWhere(contact => contact.Other == strap) > 0)
             UpdateStealth(ent);
     }
 
