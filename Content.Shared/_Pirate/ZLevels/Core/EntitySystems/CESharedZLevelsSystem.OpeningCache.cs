@@ -124,7 +124,7 @@ public abstract partial class CESharedZLevelsSystem
                 for (var dy = -tileRadius; dy <= tileRadius; dy++)
                 {
                     var tile = centerTile + new Vector2i(dx, dy);
-                    if (!CMUZLevelOpeningCache.IsExistingOpeningTile(grid, tile, _map, TilDefMan))
+                    if (!CMUZLevelOpeningCache.IsSoundOpening(grid, tile, _map, TilDefMan))
                         continue;
 
                     var tileCenter = Vector2.Transform(
@@ -231,7 +231,7 @@ public abstract partial class CESharedZLevelsSystem
         bool TryUseOpeningTile(Vector2i tile)
         {
             var hasTileRef = _map.TryGetTileRef(openingGrid, grid, tile, out var tileRef);
-            var tileIsOpening = !hasTileRef || CMUZLevelOpeningCache.IsOpeningTile(tileRef.Tile, TilDefMan);
+            var tileIsOpening = !hasTileRef || CMUZLevelOpeningCache.IsShotOpening(tileRef.Tile, TilDefMan);
 
             if (hasTileRef && !tileIsOpening)
                 return false;

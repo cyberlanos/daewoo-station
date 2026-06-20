@@ -2,6 +2,7 @@
   id: ElevatorSolidMetalGrate
   parent: FloorSteel
   name: solid metal grate
+  zTransparent: true
   sprite: /Textures/_Pirate/Tiles/Elevator/solidgrate5.png
   variants: 1
   placementVariants: [1.0]

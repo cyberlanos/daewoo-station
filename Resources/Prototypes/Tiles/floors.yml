@@ -1558,6 +1558,7 @@
 - type: tile
   id: FloorGlass
   name: tiles-glass-floor
+  zTransparent: true # Pirate: multiz
   sprite: /Textures/Tiles/glass.png
   variants: 4
   placementVariants:
@@ -1577,6 +1578,7 @@
 - type: tile
   id: FloorRGlass
   name: tiles-reinforced-glass-floor
+  zTransparent: true # Pirate: multiz
   sprite: /Textures/Tiles/rglass.png
   variants: 4
   placementVariants:
