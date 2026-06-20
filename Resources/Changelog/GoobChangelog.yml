@@ -22872,50 +22872,50 @@ Entries:
 - author: Super7522
   changes:
     - type: Fix
-      message: Hydrakin can now breathe Oxygen and Plasma
+      message: Гідракіни тепер можуть дихати киснем і плазмою.
     - type: Fix
-      message: Hydrakin can eat meat now...
+      message: Гідракіни тепер можуть їсти м'ясо...
     - type: Fix
-      message: Fixed Hydrakin look in Character Creator
+      message: Виправлено вигляд гідракінів у створенні персонажа.
     - type: Fix
       message: >-
-        Not being able to use Goob interfaces as Hydrakin (Changeling UI,
-        Wantedhud, etc...)
+        Виправлено неможливість користуватися інтерфейсами Goob за гідракінів
+        (інтерфейс генокрада, інтерфейс розшуку тощо).
     - type: Fix
-      message: Not being able to Cool off without hands ( amputation or handcuffs )
+      message: Виправлено неможливість охолодитися без рук (через ампутацію або кайданки).
     - type: Fix
-      message: Hydrakins now get a Survival box for once
+      message: Гідракіни нарешті отримують аварійний набір виживання.
   id: 2700
   time: '2026-06-18T08:51:26.0000000+00:00'
 - author: pheenty
   changes:
     - type: Fix
       message: >-
-        Fixed natural regen (below 20 damage) being like 10 times less effective
-        as it should've been.
+        Виправлено природну регенерацію (до 20 ушкоджень), яка була приблизно в
+        10 разів слабшою, ніж мала бути.
     - type: Tweak
       message: >-
-        Slimes now have double natural regen speed again, and regenerate up to
-        **65** damage.
+        Слайми знову мають подвоєну швидкість природної регенерації й
+        відновлюються до **65** ушкоджень.
   id: 2701
   time: '2026-06-18T10:29:29.0000000+00:00'
 - author: Sanyati
   changes:
     - type: Add
-      message: Reptilian stealth suit sprites.
+      message: Спрайти стелс-костюма для рептилій.
   id: 2702
   time: '2026-06-18T10:32:13.0000000+00:00'
 - author: lucapgiannotti
   changes:
     - type: Tweak
-      message: monkeys are blind while sleeping like other species!
+      message: Мавпи сліпнуть під час сну, як і інші види!
   id: 2703
   time: '2026-06-19T03:12:09.0000000+00:00'
 - author: RedTerror
   changes:
     - type: Tweak
       message: >-
-        Now all Chaplain armor sets have the SAME stats. Different armor sets
-        are now reskins.
+        Тепер усі комплекти броні капелана мають ОДНАКОВІ характеристики. Різні
+        комплекти броні тепер є рескінами.
   id: 2704
   time: '2026-06-20T11:39:08.0000000+00:00'
