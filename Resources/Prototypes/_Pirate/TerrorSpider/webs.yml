@@ -5,6 +5,18 @@
   description: It's stringy, sticky and airtight.
   components:
   - type: Airtight
+    # Pirate - airtight web should seal the room, not vacuum its own tile.
+    noAirWhenFullyAirBlocked: false
+  - type: ReplaceFloorOnSpawn
+    # Pirate - airtight web must create a grid tile before atmos can seal or refill it.
+    replaceableTiles:
+    - Plating
+    - Lattice
+    - TrainLattice
+    replacementTiles:
+    - Plating
+    offsets:
+    - 0,0
   - type: Sprite
     color: "#ffffffdd"
   - type: Fixtures

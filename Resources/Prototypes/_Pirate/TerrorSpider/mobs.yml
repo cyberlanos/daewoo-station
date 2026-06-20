@@ -68,7 +68,7 @@
       amount: 4
   - type: CombatMode
   - type: Body
-    prototype: AnimalHemocyanin
+    prototype: TerrorSpiderHemocyanin
   - type: Damageable
     damageContainer: Biological
     damageModifierSet: TerrorSpider
@@ -781,6 +781,8 @@
   id: MobSpiderlingTerrorRed
   suffix: Terror Red
   components:
+  - type: Body
+    prototype: TerrorSpiderHemocyanin
   - type: TimedSpawner
     prototypes:
     - MobTerrorRed
@@ -791,6 +793,8 @@
   id: MobSpiderlingTerrorGray
   suffix: Terror Gray
   components:
+  - type: Body
+    prototype: TerrorSpiderHemocyanin
   - type: TimedSpawner
     prototypes:
     - MobTerrorGray
@@ -801,6 +805,8 @@
   id: MobSpiderlingTerrorGreen
   suffix: Terror Green
   components:
+  - type: Body
+    prototype: TerrorSpiderHemocyanin
   - type: TimedSpawner
     prototypes:
     - MobTerrorGreen
