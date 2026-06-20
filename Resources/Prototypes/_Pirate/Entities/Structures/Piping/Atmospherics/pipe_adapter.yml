@@ -33,6 +33,11 @@
       Secondary: CEMultizAtmosPipeAdapterAlt1
       Tertiary: CEMultizAtmosPipeAdapterAlt2
   - type: CEMultizAtmosPipeAdapter
+  - type: VentCrawlerTube
+    containerId: VentCrawlerTube
+  - type: VentCrawlerJunction
+    degrees:
+    - 0
   - type: RCDDeconstructable
     cost: 1
     delay: 2
