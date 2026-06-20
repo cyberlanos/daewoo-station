@@ -1,121 +1,121 @@
 <Document>
-  # Terror spiders
+  # Жахливі павуки
 
   <Box>
-    [color=#999999][italic]"Spiders! Oh, no! I am arachnophobic! "[/italic][/color]
+    [color=#999999][italic]"Павуки! О ні! У мене арахнофобія!"[/italic][/color]
   </Box>
   <Box>
     <GuideEntityEmbed Entity="MobTerrorPrince" Caption=""/>
   </Box>
 
-  Terror spiders are capture antagonists that kill all humanoids that they see.
+  Жахливі павуки — антагоністи-загарбники, які вбивають усіх гуманоїдів, яких бачать.
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorPrincess" Caption=""/>
   </Box>
 
-  ## Initial spider (Princess of terror)
-  You are princess [color=#fc6cff]TIER 3[/color] spider.
+  ## Початковий павук (принцеса жаху)
+  Ви — принцеса павуків [color=#fc6cff]РІВНЯ 3[/color].
 
-  ### Abilities
+  ### Здібності
 
-  You can open powered doors, spin a web and breach welded vents.
+  Ви можете відкривати заживлені двері, плести павутину та прориватися крізь заварені вентиляції.
 
-  ### Extending your population
+  ### Розширення популяції
 
-  You have [color=#ace9ff]Lay the egg[/color] action which allows you to spawn [color=#fc6cff]TIER 1[/color] eggs with spiders.
-  eggs will hatch into spiderlings after a 90 seconds and then spiderlings will grow into [color=#fc6cff]TIER 1[/color] spiders with type which you selected before after another 90 seconds.
+  Ви маєте дію [color=#ace9ff]Відкласти яйце[/color], яка дозволяє створювати яйця з павуками [color=#fc6cff]РІВНЯ 1[/color].
+  Яйця вилупляться в павучків через 90 секунд, а ще через 90 секунд павучки виростуть у павуків [color=#fc6cff]РІВНЯ 1[/color] вибраного вами типу.
 
-  # TIER 1 spiders
+  # Павуки РІВНЯ 1
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorRed" Caption=""/>
   </Box>
 
-  ## Terror red
+  ## Червоний жахливий павук
 
-  It's combat spider. It has [color=#ace9ff]Strong[/color] web, bigger health and damage.
+  Це бойовий павук. Він має [color=#ace9ff]міцну[/color] павутину, більше здоров'я та вищу шкоду.
 
-  Also can open [color=#ace9ff]powered doors[/color].
+  Також може відкривати [color=#ace9ff]заживлені двері[/color].
 
-  Can evolve into [color=#fc6cff]TIER 2[/color] purple terror after spinning 36 webs.
+  Може еволюціонувати у фіолетового жахливого павука [color=#fc6cff]РІВНЯ 2[/color], сплівши 36 павутин.
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorGreen" Caption=""/>
   </Box>
 
-  ## Terror green
+  ## Зелений жахливий павук
 
-  It's support spider. It can [color=#ace9ff]lay[/color] eggs into humanoids, so with time eggs will hatch into spiderlings inside humanoid's body.
+  Це павук підтримки. Він може [color=#ace9ff]вводити[/color] яйця в гуманоїдів, тож з часом яйця вилупляться у павучків усередині тіла гуманоїда.
 
-  Also has [color=#4d7954]Slime[/color] web which slows humanoids speeds to 30% of their original speed(instead of default 50%).
+  Також має [color=#4d7954]слизову[/color] павутину, яка сповільнює гуманоїдів до 30% від їхньої початкової швидкості (замість стандартних 50%).
 
-  Can evolve into [color=#fc6cff]TIER 2[/color] white terror after injecting 4 eggs into humanoids.
+  Може еволюціонувати у білого жахливого павука [color=#fc6cff]РІВНЯ 2[/color], ввівши яйця у 4 гуманоїдів.
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorGray" Caption=""/>
   </Box>
 
-  ## Terror gray
+  ## Сірий жахливий павук
 
-  It's a stealth spider. It has [color=#ace9ff]Invisibility[/color] ability which makes it invisible at any web.
+  Це скритний павук. Він має здібність [color=#ace9ff]невидимості[/color], яка робить його невидимим на будь-якій павутині.
 
-  Also has [color=#665a4f]Stealth[/color] web which more harder to see.
+  Також має [color=#665a4f]скритну[/color] павутину, яку важче помітити.
 
-  Can evolve into [color=#fc6cff]TIER 2[/color] black terror after spinning 36 webs.
+  Може еволюціонувати у чорного жахливого павука [color=#fc6cff]РІВНЯ 2[/color], сплівши 36 павутин.
 
-  # TIER 2 spiders
+  # Павуки РІВНЯ 2
 
-  ## Terror purple
+  ## Фіолетовий жахливий павук
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorPurple" Caption=""/>
   </Box>
 
-  It's an advanced combat spider. In contrast to the red terror it has [color=#a3f2fe]EMP scream[/color] ability which can drain energy from energy devices.
+  Це просунутий бойовий павук. На відміну від червоного жахливого павука, він має здібність [color=#a3f2fe]ЕМІ-крику[/color], яка виснажує енергію електронних пристроїв.
 
-  Can evolve into [color=#fc6cff]TIER 3[/color] prince of terror after spinning 36 webs.
+  Може еволюціонувати у принца жаху [color=#fc6cff]РІВНЯ 3[/color], сплівши 36 павутин.
 
-  ## Terror white
+  ## Білий жахливий павук
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorWhite" Caption=""/>
   </Box>
 
-  It's an advanced support spider. In contrast to the green terror it has acid spit long-distance attack.
+  Це просунутий павук підтримки. На відміну від зеленого жахливого павука, він має далекобійну атаку кислотним плювком.
 
-  Can evolve into [color=#fc6cff]TIER 3[/color] princess of terror after injecting 6 eggs into humanoids.
+  Може еволюціонувати у принцесу жаху [color=#fc6cff]РІВНЯ 3[/color], ввівши яйця у 6 гуманоїдів.
 
-  ## Terror black
+  ## Чорний жахливий павук
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorBlack" Caption=""/>
   </Box>
 
-  It's an advanced stealth spider. In contrast to the gray terror it has Jump ability which allows it to jump, jumping also knocks off humanoids.
+  Це просунутий скритний павук. На відміну від сірого жахливого павука, він має здібність стрибка; стрибок також збиває гуманоїдів з ніг.
 
-  Also has [color=#4d643e]Poison[/color] web which injects toxin to humanoids standing in it.
+  Також має [color=#4d643e]отруйну[/color] павутину, яка вводить токсин гуманоїдам, що стоять у ній.
 
-  Can evolve into [color=#fc6cff]TIER 3[/color] mother of terror after spinning 36 webs.
+  Може еволюціонувати у матір жаху [color=#fc6cff]РІВНЯ 3[/color], сплівши 36 павутин.
 
-  # TIER 3 spiders
+  # Павуки РІВНЯ 3
 
-  ## Prince of terror
+  ## Принц жаху
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorPrince" Caption=""/>
   </Box>
 
-  It's an even more advanced combat spider. It inherits all the properties of terror purple, but has more health and deals more damage.
+  Це ще просунутіший бойовий павук. Він успадковує всі властивості фіолетового жахливого павука, але має більше здоров'я та завдає більше шкоди.
 
-  ## Mother of terror
+  ## Мати жаху
 
   <Box>
     <GuideEntityEmbed Entity="MobTerrorMother" Caption=""/>
   </Box>
 
-  It's an even more advanced support spider. It inherits all the properties of terror black, and can spawn royal jelly, which heals fellow spiders.
+  Це ще просунутіший павук підтримки. Вона успадковує всі властивості чорного жахливого павука та може створювати королівське желе, яке лікує інших павуків.
 
-  Also has [color=#4d643e]Poison[/color] web which injects toxin to humanoids standing in it.
+  Також має [color=#4d643e]отруйну[/color] павутину, яка вводить токсин гуманоїдам, що стоять у ній.
 
 </Document>
