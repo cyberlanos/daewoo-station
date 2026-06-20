@@ -1,6 +1,7 @@
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Pirate.Shared.Vampire.Components.Classes;
 using Content.Shared.Actions;
+using Content.Shared.Actions.Events;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Movement.Pulling.Events;
 using Content.Shared.Movement.Systems;
