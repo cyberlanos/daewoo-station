@@ -18,7 +18,7 @@
   - type: Sprite
     sprite: _Pirate/Structures/Power/cable_hub.rsi
     state: cablerelay
-    drawdepth: Mobs
+    drawdepth: BelowFloor
     noRot: true
   - type: Icon
     sprite: _Pirate/Structures/Power/cable_hub.rsi
@@ -35,6 +35,7 @@
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: CollideOnAnchor
+  - type: SubFloorHide
   - type: Appearance
   - type: Electrified
     onHandInteract: true
