@@ -77,8 +77,8 @@ public sealed class GargantuaSystem : EntitySystem
 
         SubscribeLocalEvent<GargantuaComponent, StartCollideEvent>(OnChargeCollide);
 
-        SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRelayedEvent<BeforeDamageChangedEvent>>(OnBloodSwellIncomingDamage);
-        SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRelayedEvent<BeforeStaminaDamageEvent>>(OnBloodSwellStaminaDamage);
+        SubscribeLocalEvent<StatusEffectContainerComponent, BeforeDamageChangedEvent>(OnBloodSwellIncomingDamage);
+        SubscribeLocalEvent<StatusEffectContainerComponent, BeforeStaminaDamageEvent>(OnBloodSwellStaminaDamage);
 
         SubscribeLocalEvent<GargantuaComponent, VampireBloodDrankEvent>(OnBloodDrank);
         SubscribeLocalEvent<BeforePryEvent>(OnDoorPried);
@@ -145,25 +145,42 @@ public sealed class GargantuaSystem : EntitySystem
 
     #region Blood Swell
 
-    private void OnBloodSwellIncomingDamage(EntityUid uid, ActiveBloodSwellComponent active, ref StatusEffectRelayedEvent<BeforeDamageChangedEvent> args)
+    private void OnBloodSwellIncomingDamage(Entity<StatusEffectContainerComponent> ent, ref BeforeDamageChangedEvent args)
     {
-        foreach (var entry in args.Args.Damage.DamageDict.ToArray())
+        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent, out var effects))
+            return;
+
+        foreach (var entry in args.Damage.DamageDict.ToArray())
         {
             var type = entry.Key;
             var value = entry.Value;
             if (value <= 0)
                 continue;
 
-            if (active.ReducedDamageTypes.Contains(type))
-                args.Args.Damage.DamageDict[type] = value * active.IncomingDamageMultiplier;
+            var multiplier = 1f;
+            foreach (var activeEffect in effects)
+            {
+                if (activeEffect.Comp1.ReducedDamageTypes.Contains(type))
+                    multiplier = MathF.Min(multiplier, activeEffect.Comp1.IncomingDamageMultiplier);
+            }
+
+            if (multiplier < 1f)
+                args.Damage.DamageDict[type] = value * multiplier;
         }
     }
 
-    private void OnBloodSwellStaminaDamage(EntityUid uid, ActiveBloodSwellComponent active, ref StatusEffectRelayedEvent<BeforeStaminaDamageEvent> args)
+    private void OnBloodSwellStaminaDamage(Entity<StatusEffectContainerComponent> ent, ref BeforeStaminaDamageEvent args)
     {
-        var ev = args.Args;
-        ev.Value *= active.StaminaDamageMultiplier;
-        args.Args = ev;
+        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent, out var effects))
+            return;
+
+        var multiplier = 1f;
+        foreach (var activeEffect in effects)
+        {
+            multiplier = MathF.Min(multiplier, activeEffect.Comp1.StaminaDamageMultiplier);
+        }
+
+        args.Value *= multiplier;
     }
 
     private void OnStatusEffectApplied(EntityUid effectUid, StatusEffectComponent effect, ref StatusEffectAppliedEvent args)

@@ -1,30 +1,34 @@
-using Content.Shared.Popups;
-using Robust.Shared.Timing;
-using Robust.Shared.Network;
-using Content.Shared.Weapons.Ranged.Events;
-
 using Content.Pirate.Shared.Vampire.Components.Classes;
+using Content.Shared.Popups;
+using Content.Shared.StatusEffectNew;
+using Content.Shared.Weapons.Ranged.Events;
+using Robust.Shared.Network;
+using Robust.Shared.Timing;
 
 namespace Content.Pirate.Shared.Vampire.Systems;
 
 public sealed class GargantuaBloodSwellSystem : EntitySystem
 {
     [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private readonly StatusEffectsSystem _statusEffects = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly INetManager _net = default!;
 
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<ActiveBloodSwellComponent, ShotAttemptedEvent>(OnShotAttempted);
+        SubscribeLocalEvent<GargantuaComponent, ShotAttemptedEvent>(OnShotAttempted);
     }
 
-    private void OnShotAttempted(Entity<ActiveBloodSwellComponent> ent, ref ShotAttemptedEvent args)
+    private void OnShotAttempted(Entity<GargantuaComponent> ent, ref ShotAttemptedEvent args)
     {
-        if (!TryComp<GargantuaComponent>(ent.Owner, out var gargantua))
+        if (args.User != ent.Owner
+            || !_statusEffects.HasEffectComp<ActiveBloodSwellComponent>(ent.Owner))
+        {
             return;
+        }
 
-        TryShowPopup((ent.Owner, gargantua), args.Used);
+        TryShowPopup(ent, args.Used);
         args.Cancel();
     }
 
