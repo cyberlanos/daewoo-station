@@ -104,7 +104,7 @@ public abstract partial class CESharedZLevelsSystem
 
         var tileDef = (ContentTileDefinition)TilDefMan[tileRef.Tile.TypeId];
 
-        return !tileDef.Transparent;
+        return !tileDef.ZTransparent;
     }
 }
 

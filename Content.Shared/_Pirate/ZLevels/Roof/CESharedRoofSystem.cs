@@ -58,7 +58,7 @@ public abstract class CESharedRoofSystem : EntitySystem
             var tileDef = (ContentTileDefinition)TilDefMan[change.NewTile.TypeId];
 
             var roovedAbove = Roof.IsRooved((ent, currentMapGrid, currentRoof), change.GridIndices);
-            var roovedTile = !tileDef.Transparent;
+            var roovedTile = !tileDef.ZTransparent;
             // Indexer overwrites; duplicate GridIndices in args.Changes would throw with Add.
             roofMap[change.GridIndices] = roovedAbove || roovedTile;
         }

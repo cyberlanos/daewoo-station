@@ -12,8 +12,9 @@ using Robust.Shared.Timing;
 namespace Content.Shared._Pirate.ZLevels.Core;
 
 /// <summary>
-/// Per-grid bitmask cache of "opening" tiles (empty or transparent) for deciding whether sound or
-/// vision crosses a Z layer at a given XY. Cached per chunk (8x8 = 64 bits), invalidated by tick.
+/// Per-grid bitmask cache of "sight opening" tiles (genuine holes, or tiles flagged ZSightPermeable)
+/// for deciding whether vision/light crosses a Z layer at a given XY. Cached per chunk (8x8 = 64 bits),
+/// invalidated by tick. Cross-Z sound and shooting use their own predicates (IsSoundOpening / IsShotOpening).
 /// </summary>
 public sealed class CMUZLevelOpeningCache
 {
@@ -377,6 +378,11 @@ public sealed class CMUZLevelOpeningCache
         return foundOpening;
     }
 
+    /// <summary>
+    /// Sight predicate, backing this cache: a tile is a vision opening if it's a genuine hole or
+    /// flagged <see cref="ContentTileDefinition.ZSightPermeable"/>. Drives PVS-probe gating and light spill.
+    /// Sound and shooting use <see cref="IsSoundOpening"/> / <see cref="IsShotOpening"/> instead.
+    /// </summary>
     public static bool IsOpeningTile(
         Tile tile,
         ITileDefinitionManager tileDefinition)
@@ -384,8 +390,37 @@ public sealed class CMUZLevelOpeningCache
         if (tile.IsEmpty)
             return true;
 
-        var tileDef = (ContentTileDefinition) tileDefinition[tile.TypeId];
-        return tileDef.Transparent;
+        return ((ContentTileDefinition) tileDefinition[tile.TypeId]).ZSightPermeable;
+    }
+
+    /// <summary>Cross-Z shooting predicate: a genuine hole or <see cref="ContentTileDefinition.ZShotPermeable"/>.</summary>
+    public static bool IsShotOpening(
+        Tile tile,
+        ITileDefinitionManager tileDefinition)
+    {
+        if (tile.IsEmpty)
+            return true;
+
+        return ((ContentTileDefinition) tileDefinition[tile.TypeId]).ZShotPermeable;
+    }
+
+    /// <summary>
+    /// Cross-Z sound predicate for an existing grid tile: a genuine hole or
+    /// <see cref="ContentTileDefinition.ZSoundPermeable"/>. Off-grid (no tile) does not count.
+    /// </summary>
+    public static bool IsSoundOpening(
+        Entity<MapGridComponent> grid,
+        Vector2i tile,
+        SharedMapSystem map,
+        ITileDefinitionManager tileDefinition)
+    {
+        if (!map.TryGetTileRef(grid.Owner, grid.Comp, tile, out var tileRef))
+            return false;
+
+        if (tileRef.Tile.IsEmpty)
+            return true;
+
+        return ((ContentTileDefinition) tileDefinition[tileRef.Tile.TypeId]).ZSoundPermeable;
     }
 
     public static bool IsOpeningTile(

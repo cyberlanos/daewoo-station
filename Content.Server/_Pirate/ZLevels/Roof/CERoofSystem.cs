@@ -57,7 +57,7 @@ public sealed class CERoofSystem : CESharedRoofSystem
 
                 var tileDef = (ContentTileDefinition)TilDefMan[tileRef.Value.Tile.TypeId];
 
-                if (!tileDef.Transparent)
+                if (!tileDef.ZTransparent)
                     _roofMap.Add(tileRef.Value.GridIndices);
             }
         }

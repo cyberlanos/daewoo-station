@@ -23,6 +23,7 @@
     snap:
     - Wall
   components:
+  - type: CEFallCushion # Pirate: multiz
   - type: FloorOccluder
   - type: Transform
     anchored: true

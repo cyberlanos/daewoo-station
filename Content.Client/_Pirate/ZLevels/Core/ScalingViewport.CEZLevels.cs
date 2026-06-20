@@ -106,7 +106,7 @@ public sealed partial class ScalingViewport
             {
                 var tile = grid.GetTileRef(new Vector2i(x, y));
                 var tileDef = (ContentTileDefinition)_tile[tile.Tile.TypeId];
-                if (tileDef.Transparent || tile.Tile.IsEmpty)
+                if (tileDef.ZTransparent || tile.Tile.IsEmpty)
                     return true;
             }
         }
