@@ -1,4 +1,5 @@
 using Content.Shared.Damage.Events;
+using Content.Shared.Buckle.Components;
 using Content.Shared.Movement.Components;
 using Content.Shared.Spider;
 using Content.Shared.Stealth;
@@ -17,6 +18,7 @@ public sealed class StealthOnWebSystem : EntitySystem
     {
         SubscribeLocalEvent<StealthOnWebComponent, StartCollideEvent>(OnEntityEnter);
         SubscribeLocalEvent<StealthOnWebComponent, EndCollideEvent>(OnEntityExit);
+        SubscribeLocalEvent<StealthOnWebComponent, UnbuckledEvent>(OnUnbuckled);
         SubscribeLocalEvent<StealthOnWebComponent, StaminaMeleeHitEvent>(OnHit);
     }
 
@@ -37,12 +39,8 @@ public sealed class StealthOnWebSystem : EntitySystem
         if (_timing.InPrediction || !HasComp<SpiderWebObjectComponent>(args.OtherEntity))
             return;
 
-        ent.Comp.Collisions = Math.Max(ent.Comp.Collisions - 1, 0);
-        if (ent.Comp.Collisions != 0)
-            return;
-
-        RemComp<StealthComponent>(ent.Owner);
-        RemComp<StealthOnMoveComponent>(ent.Owner);
+        if (ent.Comp.Contacts.Remove(GetContact(args)))
+            UpdateStealth(ent);
     }
 
     private void OnEntityEnter(Entity<StealthOnWebComponent> ent, ref StartCollideEvent args)
@@ -50,8 +48,37 @@ public sealed class StealthOnWebSystem : EntitySystem
         if (_timing.InPrediction || !HasComp<SpiderWebObjectComponent>(args.OtherEntity))
             return;
 
-        ent.Comp.Collisions++;
-        EnsureComp<StealthComponent>(ent.Owner);
-        EnsureComp<StealthOnMoveComponent>(ent.Owner);
+        ent.Comp.Contacts.Add(GetContact(args));
+        UpdateStealth(ent);
     }
+
+    private void OnUnbuckled(Entity<StealthOnWebComponent> ent, ref UnbuckledEvent args)
+    {
+        if (_timing.InPrediction || !HasComp<SpiderWebObjectComponent>(args.Strap))
+            return;
+
+        // Pirate: a terror web cocoon is both a strap and a web object. If the physics
+        // contact is lost during buckling, clear that web contact when the spider exits.
+        if (ent.Comp.Contacts.RemoveWhere(contact => contact.Other == args.Strap) > 0)
+            UpdateStealth(ent);
+    }
+
+    private void UpdateStealth(Entity<StealthOnWebComponent> ent)
+    {
+        if (ent.Comp.Contacts.Count != 0)
+        {
+            EnsureComp<StealthComponent>(ent.Owner);
+            EnsureComp<StealthOnMoveComponent>(ent.Owner);
+            return;
+        }
+
+        RemComp<StealthComponent>(ent.Owner);
+        RemComp<StealthOnMoveComponent>(ent.Owner);
+    }
+
+    private static SpiderWebContact GetContact(StartCollideEvent args)
+        => new(args.OtherEntity, args.OurFixtureId, args.OtherFixtureId);
+
+    private static SpiderWebContact GetContact(EndCollideEvent args)
+        => new(args.OtherEntity, args.OurFixtureId, args.OtherFixtureId);
 }

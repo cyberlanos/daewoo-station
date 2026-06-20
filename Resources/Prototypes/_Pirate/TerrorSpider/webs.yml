@@ -94,6 +94,7 @@
   description: It's stringy, sticky, opaque and strong.
   components:
   - type: Occluder
+  - type: TerrorSpiderWebOccluder
   - type: Destructible
     thresholds:
     - trigger:
