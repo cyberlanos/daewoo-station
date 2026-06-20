@@ -33,11 +33,14 @@ using Content.Shared.Chemistry.EntitySystems;
 using Robust.Shared.Prototypes;
 using Content.Server.EUI;
 using Content.Server.Roles;
+using Content.Shared._Starlight.CollectiveMind;
 
 namespace Content.Pirate.Server.Vampire.Systems;
 
 public sealed class DantalionSystem : EntitySystem
 {
+    private static readonly ProtoId<CollectiveMindPrototype> DantalionCollectiveMind = "Dantalion";
+
     private static readonly ProtoId<DamageGroupPrototype> _bruteGroupId = "Brute";
     private static readonly ProtoId<DamageGroupPrototype> _burnGroupId = "Burn";
     private static readonly ProtoId<DamageTypePrototype> _asphyxiationTypeId = "Asphyxiation";
@@ -64,6 +67,7 @@ public sealed class DantalionSystem : EntitySystem
     [Dependency] private readonly ISharedPlayerManager _player = default!;
     [Dependency] private readonly LanguageSystem _language = default!;
     [Dependency] private readonly RoleSystem _role = default!;
+    [Dependency] private readonly CollectiveMindUpdateSystem _collectiveMind = default!;
 
     public override void Initialize()
     {
@@ -73,7 +77,7 @@ public sealed class DantalionSystem : EntitySystem
         SubscribeLocalEvent<DantalionComponent, VampireEnthrallDoAfterEvent>(OnEnthrallDoAfter);
         SubscribeLocalEvent<VampireThrallComponent, ComponentShutdown>(OnThrallShutdown);
 
-        SubscribeLocalEvent<DantalionComponent, ComponentInit>((uid, _, _) => _language.AddLanguage(uid, "Dantalion"));
+        SubscribeLocalEvent<DantalionComponent, ComponentInit>(OnDantalionInit);
         SubscribeLocalEvent<DantalionComponent, ComponentShutdown>(OnDantalionShutdown);
 
         SubscribeLocalEvent<DantalionComponent, VampirePacifyActionEvent>(OnPacify);
@@ -265,6 +269,8 @@ public sealed class DantalionSystem : EntitySystem
         TryAssignThrallObeyObjective(uid, target, thrallComp);
 
         _language.AddLanguage(target, "Dantalion");
+        GrantDantalionCollectiveMind(target, out thrallComp.HadCollectiveMindComponent, out thrallComp.PreviousCollectiveMindDefault);
+        Dirty(target, thrallComp);
 
         _popup.PopupEntity(Loc.GetString("vampire-enthrall-success", ("target", Identity.Entity(target, EntityManager))), uid, uid);
         _popup.PopupEntity(Loc.GetString("vampire-enthrall-target"), target, target, PopupType.Medium);
@@ -289,6 +295,9 @@ public sealed class DantalionSystem : EntitySystem
 
     private void OnThrallShutdown(EntityUid uid, VampireThrallComponent component, ComponentShutdown args)
     {
+        _language.RemoveLanguage(uid, "Dantalion");
+        RemoveDantalionCollectiveMind(uid, component.HadCollectiveMindComponent, component.PreviousCollectiveMindDefault);
+
         if (component.Master is not { } master || !TryComp(master, out DantalionComponent? dantalion)
             || !dantalion.Thralls.Remove(uid))
             return;
@@ -296,8 +305,54 @@ public sealed class DantalionSystem : EntitySystem
         dantalion.ThrallSlotsUsed = Math.Max(0, dantalion.ThrallSlotsUsed - 1);
     }
 
+    private void OnDantalionInit(EntityUid uid, DantalionComponent component, ComponentInit args)
+    {
+        _language.AddLanguage(uid, "Dantalion");
+        GrantDantalionCollectiveMind(uid, out component.HadCollectiveMindComponent, out component.PreviousCollectiveMindDefault);
+        Dirty(uid, component);
+    }
+
     private void OnDantalionShutdown(EntityUid uid, DantalionComponent component, ComponentShutdown args)
-        => ReleaseAllThralls(uid, component);
+    {
+        ReleaseAllThralls(uid, component);
+        _language.RemoveLanguage(uid, "Dantalion");
+        RemoveDantalionCollectiveMind(uid, component.HadCollectiveMindComponent, component.PreviousCollectiveMindDefault);
+    }
+
+    private void GrantDantalionCollectiveMind(
+        EntityUid uid,
+        out bool hadCollectiveMindComponent,
+        out ProtoId<CollectiveMindPrototype>? previousDefault)
+    {
+        hadCollectiveMindComponent = TryComp<CollectiveMindComponent>(uid, out var collective);
+        previousDefault = collective?.DefaultChannel;
+
+        collective ??= EnsureComp<CollectiveMindComponent>(uid);
+        collective.Channels.Add(DantalionCollectiveMind);
+        collective.DefaultChannel = DantalionCollectiveMind;
+        _collectiveMind.UpdateCollectiveMind(uid, collective);
+        Dirty(uid, collective);
+    }
+
+    private void RemoveDantalionCollectiveMind(
+        EntityUid uid,
+        bool hadCollectiveMindComponent,
+        ProtoId<CollectiveMindPrototype>? previousDefault)
+    {
+        if (!TryComp<CollectiveMindComponent>(uid, out var collective))
+            return;
+
+        collective.Channels.Remove(DantalionCollectiveMind);
+        if (collective.DefaultChannel == DantalionCollectiveMind)
+            collective.DefaultChannel = previousDefault;
+
+        _collectiveMind.UpdateCollectiveMind(uid, collective);
+
+        if (!hadCollectiveMindComponent && collective.Channels.Count == 0)
+            RemComp<CollectiveMindComponent>(uid);
+        else
+            Dirty(uid, collective);
+    }
 
     private void ReleaseAllThralls(EntityUid _, DantalionComponent component)
     {
@@ -339,8 +394,6 @@ public sealed class DantalionSystem : EntitySystem
 
         //Remove the component
         RemComp<VampireThrallComponent>(thrall);
-
-        _language.RemoveLanguage(thrall, "Dantalion");
 
         //If everything worked, thrall gets stunned for a few seconds for them to register that something has changed and notice they are no longer a thrall
         var stunTime = comp.DeconvertStunDuration;
