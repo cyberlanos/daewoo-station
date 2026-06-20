@@ -10,9 +10,10 @@ namespace Content.Pirate.Shared.TerrorSpider;
 [RegisterComponent]
 public sealed partial class StealthOnWebComponent : Component
 {
-    [DataField]
-    public int Collisions;
+    public readonly HashSet<SpiderWebContact> Contacts = new();
 }
+
+public readonly record struct SpiderWebContact(EntityUid Other, string OurFixtureId, string OtherFixtureId);
 
 [RegisterComponent]
 public sealed partial class EggHolderComponent : Component
@@ -45,8 +46,11 @@ public sealed partial class TerrorPrincessComponent : Component
     public EntityUid? LayEggAction;
 }
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class TerrorSpiderComponent : Component;
+
+[RegisterComponent, NetworkedComponent]
+public sealed partial class TerrorSpiderWebOccluderComponent : Component;
 
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class SpawnOnActionComponent : Component

@@ -71,6 +71,7 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         SubscribeLocalEvent<BuckleComponent, BuckledEvent>(OnBuckledEvent);
         SubscribeLocalEvent<BuckleComponent, UnbuckledEvent>(OnUnbuckledEvent);
         SubscribeLocalEvent<BuckleComponent, ComponentRemove>(OnBuckleRemove);
+        SubscribeLocalEvent<BuckleComponent, AfterAutoHandleStateEvent>(OnAfterBuckleState);
         SubscribeLocalEvent<BuckleComponent, AttemptMobCollideEvent>(OnMobCollide);
     }
 
@@ -184,16 +185,22 @@ internal sealed class BuckleSystem : SharedBuckleSystem
         if (args.Strap.Comp.SetVisible)
             RestoreHiddenSprite(ent, buckledSprite);
 
-        if (!ent.Comp.OriginalDrawDepth.HasValue)
-            return;
-
-        _sprite.SetDrawDepth((ent.Owner, buckledSprite), ent.Comp.OriginalDrawDepth.Value);
-        ent.Comp.OriginalDrawDepth = null;
+        RestoreDrawDepth(ent, buckledSprite);
     }
 
     private void OnBuckleRemove(Entity<BuckleComponent> ent, ref ComponentRemove args)
     {
         RestoreHiddenSprite(ent);
+        RestoreDrawDepth(ent);
+    }
+
+    private void OnAfterBuckleState(Entity<BuckleComponent> ent, ref AfterAutoHandleStateEvent args)
+    {
+        if (ent.Comp.Buckled)
+            return;
+
+        RestoreHiddenSprite(ent);
+        RestoreDrawDepth(ent);
     }
 
     private void RestoreHiddenSprite(Entity<BuckleComponent> ent, SpriteComponent? sprite = null)
@@ -206,6 +213,18 @@ internal sealed class BuckleSystem : SharedBuckleSystem
 
         _sprite.SetVisible((ent.Owner, sprite), originalVisible);
         ent.Comp.OriginalVisible = null;
+    }
+
+    private void RestoreDrawDepth(Entity<BuckleComponent> ent, SpriteComponent? sprite = null)
+    {
+        if (ent.Comp.OriginalDrawDepth is not { } originalDrawDepth)
+            return;
+
+        if (!Resolve(ent.Owner, ref sprite, false))
+            return;
+
+        _sprite.SetDrawDepth((ent.Owner, sprite), originalDrawDepth);
+        ent.Comp.OriginalDrawDepth = null;
     }
 
     private void OnAppearanceChange(EntityUid uid, BuckleComponent component, ref AppearanceChangeEvent args)
