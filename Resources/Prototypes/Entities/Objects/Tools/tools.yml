@@ -549,6 +549,7 @@
     - LVCable
     - MVCable
     - HVCable
+    - CEMultizCableHub # Pirate: multiz
     - CableTerminal
     - Deconstruct
   - type: LimitedCharges
@@ -593,6 +594,7 @@
     - PipeStraight
     - PipeBend
     - PipeTJunction
+    - CEMultizAtmosPipeAdapter # Pirate: multiz
     - OutletInjector
     - ManualValve
     - VolumetricPump

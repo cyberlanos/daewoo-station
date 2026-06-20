@@ -96,6 +96,7 @@ namespace Content.Server.Atmos.EntitySystems
 
                     // Update tile.IsSpace and tile.MapAtmosphere, and tile.AirtightData.
                     UpdateTileData(ent, mapAtmos, tile);
+                    RefreshZAtmosTransferCandidates(ent, indices); // Pirate: multiz
                 }
                 atmosphere.InvalidatedCoords.Clear();
 
@@ -109,6 +110,7 @@ namespace Content.Server.Atmos.EntitySystems
                 DebugTools.Assert(atmosphere.Tiles.GetValueOrDefault(tile.GridIndices) == tile);
                 UpdateAdjacentTiles(ent, tile, activate: true);
                 UpdateTileAir(ent, tile, volume);
+                ActivateZAtmosTransferCandidate(ent.Comp1, tile); // Pirate: multiz
                 InvalidateVisuals(ent, tile);
 
                 if (number++ < InvalidCoordinatesLagCheckIterations)
@@ -165,6 +167,10 @@ namespace Content.Server.Atmos.EntitySystems
                 if (!tile.NoGridTile)
                     continue;
 
+                // Pirate: multiz - keep air pockets above linked floors from being trimmed.
+                if (HasAnySolidZLevelTileBelow(ent.Owner, ent.Comp3, tile.GridIndices))
+                    continue;
+
                 var connected = false;
                 for (var i = 0; i < Atmospherics.Directions; i++)
                 {
@@ -201,6 +207,8 @@ namespace Content.Server.Atmos.EntitySystems
             {
                 var contentDef = (ContentTileDefinition) _tileDefinitionManager[gTile.TypeId];
                 mapAtmosphere = contentDef.MapAtmosphere;
+                if (mapAtmosphere && HasZLevelTileBelow(ent, idx)) // Pirate: multiz
+                    mapAtmosphere = false; // Pirate: multiz
                 tile.ThermalConductivity = contentDef.ThermalConductivity;
                 tile.HeatCapacity = contentDef.HeatCapacity;
                 tile.NoGridTile = false;
@@ -208,6 +216,8 @@ namespace Content.Server.Atmos.EntitySystems
             else
             {
                 mapAtmosphere = true;
+                if (HasZLevelTileBelow(ent, idx)) // Pirate: multiz
+                    mapAtmosphere = false; // Pirate: multiz
                 tile.ThermalConductivity =  0.5f;
                 tile.HeatCapacity = float.PositiveInfinity;
 
@@ -272,6 +282,11 @@ namespace Content.Server.Atmos.EntitySystems
                 DebugTools.Assert(tile.Air?.Immutable ?? false);
                 return;
             }
+
+            #region Pirate: multiz
+            if (TryUpdateZLevelProtectedTileAir(ent, tile, volume))
+                return;
+            #endregion
 
             var data = tile.AirtightData;
             var fullyBlocked = data.BlockedDirections == AtmosDirection.All;
@@ -584,6 +599,7 @@ namespace Content.Server.Atmos.EntitySystems
 
             if (!_simulationPaused)
             {
+                RunZAtmosProcessing(); // Pirate: multiz
                 _currentRunAtmosphereIndex = 0;
                 _currentRunAtmosphere.Clear();
 

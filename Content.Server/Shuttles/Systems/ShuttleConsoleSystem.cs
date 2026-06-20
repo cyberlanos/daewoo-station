@@ -117,6 +117,7 @@ using Content.Server.Power.EntitySystems;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Events;
 using Content.Server.Station.Systems;
+using Content.Shared._Pirate.ZLevels.Core.Components; // Pirate: multiz
 using Content.Shared._NF.Shuttles.Events;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Alert;
@@ -156,6 +157,8 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
 
     [Dependency] private readonly _Lavaland.Shuttles.Systems.DockingConsoleSystem _dockingConsole = default!; // Lavaland Change: FTL
 
+    [Dependency] private readonly _Pirate.ZLevels.Shuttles.CEZShuttleTraversalSystem _ztravel = default!; // Pirate: multiz
+
     private EntityQuery<MetaDataComponent> _metaQuery;
     private EntityQuery<TransformComponent> _xformQuery;
 
@@ -180,6 +183,10 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         {
             subs.Event<ShuttleConsoleFTLBeaconMessage>(OnBeaconFTLMessage);
             subs.Event<ShuttleConsoleFTLPositionMessage>(OnPositionFTLMessage);
+            #region Pirate: multiz
+            subs.Event<Content.Shared._Pirate.ZLevels.Shuttles.CEShuttleConsoleFlyUpMessage>(OnConsoleFlyUp);
+            subs.Event<Content.Shared._Pirate.ZLevels.Shuttles.CEShuttleConsoleFlyDownMessage>(OnConsoleFlyDown);
+            #endregion
             subs.Event<BoundUIClosedEvent>(OnConsoleUIClose);
         });
 
@@ -230,15 +237,35 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         var exclusions = new List<ShuttleExclusionObject>();
         GetExclusions(ref exclusions);
         _consoles.Clear();
-        _lookup.GetChildEntities(gridUid, _consoles);
         DockingInterfaceState? dockState = null;
+
+        #region Pirate: multiz
+        // Refresh linked deck consoles with the root shuttle.
+        var refreshGridUids = new ValueList<EntityUid>();
+        refreshGridUids.Add(gridUid);
+
+        if (TryComp<CEZLinkedGridComponent>(gridUid, out var linked))
+        {
+            foreach (var (_, peerGridUid) in linked.PeerGrids)
+            {
+                refreshGridUids.Add(peerGridUid);
+            }
+        }
+
+        foreach (var refreshGridUid in refreshGridUids)
+        {
+            if (!Exists(refreshGridUid))
+                continue;
+
+            _lookup.GetChildEntities(refreshGridUid, _consoles);
+            _dockingConsole.UpdateConsolesUsing(refreshGridUid); // Lavaland Change: FTL
+        }
+        #endregion
 
         foreach (var entity in _consoles)
         {
             UpdateState(entity, ref dockState);
         }
-
-        _dockingConsole.UpdateConsolesUsing(gridUid); // Lavaland Change: FTL
     }
 
     /// <summary>
@@ -345,6 +372,12 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
             if (xform.ParentUid != xform.GridUid)
                 continue;
 
+            #region Pirate: multiz
+            // Ignore docks being deleted during refresh events.
+            if (metadata.EntityLifeStage >= EntityLifeStage.Terminating)
+                continue;
+            #endregion
+
             var gridDocks = result.GetOrNew(GetNetEntity(xform.GridUid.Value));
 
             var state = new DockingPortState()
@@ -379,6 +412,12 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
 
         TryComp(entity, out TransformComponent? consoleXform);
         var shuttleGridUid = consoleXform?.GridUid;
+        #region Pirate: multiz
+        // Deck consoles display root shuttle FTL state.
+        EntityUid? ftlStateGridUid = shuttleGridUid != null
+            ? _shuttle.ResolveFTLShuttle(shuttleGridUid.Value)
+            : null;
+        #endregion
 
         NavInterfaceState navState;
         ShuttleMapInterfaceState mapState;
@@ -387,7 +426,7 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         if (shuttleGridUid != null && entity != null)
         {
             navState = GetNavState(entity.Value, dockState.Docks);
-            mapState = GetMapState(shuttleGridUid.Value);
+            mapState = GetMapState(ftlStateGridUid ?? shuttleGridUid.Value); // Pirate: multiz
         }
         else
         {
@@ -561,10 +600,14 @@ public sealed partial class ShuttleConsoleSystem : SharedShuttleConsoleSystem
         GetBeacons(ref beacons);
         GetExclusions(ref exclusions);
 
-        return new ShuttleMapInterfaceState(
+        var mapState = new ShuttleMapInterfaceState(
             ftlState,
             stateDuration,
             beacons ?? new List<ShuttleBeaconObject>(),
             exclusions ?? new List<ShuttleExclusionObject>());
+
+        _ztravel.WriteConsoleState(shuttle.Owner, mapState); // Pirate: multiz
+
+        return mapState;
     }
 }

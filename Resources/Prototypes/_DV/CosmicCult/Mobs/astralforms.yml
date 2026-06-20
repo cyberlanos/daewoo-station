@@ -24,6 +24,7 @@
     drawFov: false
   - type: ContentEye
     maxZoom: 1.2, 1.2
+  - type: CEZLevelGhostMover # Pirate: multiz
   - type: Speech
     speechVerb: Ghost
   - type: PointLight
@@ -82,6 +83,7 @@
   - type: Examiner
   - type: ContentEye
     maxZoom: 1.2, 1.2
+  - type: CEZLevelGhostMover # Pirate: multiz
   - type: Speech
     enabled: false
   - type: PointLight

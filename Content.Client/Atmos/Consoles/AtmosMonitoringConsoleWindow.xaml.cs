@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Client.Pinpointer.UI;
+using Content.Shared._Pirate.ZLevels.Monitoring; // Pirate: multiz
 using Content.Client.UserInterface.Controls;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Prototypes;
@@ -32,6 +33,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
     private readonly IEntityManager _entManager;
     private readonly IPrototypeManager _protoManager;
     private readonly SpriteSystem _spriteSystem;
+    private readonly AtmosMonitoringConsoleBoundUserInterface _userInterface; // Pirate: multiz
 
     private EntityUid? _owner;
     private NetEntity? _focusEntity;
@@ -48,6 +50,7 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
     public AtmosMonitoringConsoleWindow(AtmosMonitoringConsoleBoundUserInterface userInterface, EntityUid? owner)
     {
         RobustXamlLoader.Load(this);
+        _userInterface = userInterface; // Pirate: multiz
         _entManager = IoCManager.Resolve<IEntityManager>();
         _protoManager = IoCManager.Resolve<IPrototypeManager>();
         _spriteSystem = _entManager.System<SpriteSystem>();
@@ -64,6 +67,12 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         {
             consoleCoords = xform.Coordinates;
             NavMap.MapUid = xform.GridUid;
+            #region Pirate: multiz
+            NavMap.ZLevelSelectorEnabled = true;
+            NavMap.ZFilterTrackedBlipsToDisplayedMap = true;
+            NavMap.SetZLevelSelectorRoot(xform.GridUid);
+            NavMap.ZLevelSelectedAction += OnZLevelSelected;
+            #endregion
 
             // Assign station name
             if (_entManager.TryGetComponent<MetaDataComponent>(xform.GridUid, out var stationMetaData))
@@ -104,6 +113,13 @@ public sealed partial class AtmosMonitoringConsoleWindow : FancyWindow
         // Initalize
         UpdateUI(consoleCoords, Array.Empty<AtmosMonitoringConsoleEntry>());
     }
+
+    #region Pirate: multiz
+    private void OnZLevelSelected(EntityUid gridUid, int depth)
+    {
+        _userInterface.SendMessage(new CEZMonitoringConsoleLevelSelectedMessage(_entManager.GetNetEntity(gridUid), depth));
+    }
+    #endregion
 
     #region Toggle handling
 

@@ -112,6 +112,8 @@ namespace Content.Server.Atmos.EntitySystems
                 }
             }
 
+            ShareZLevelAtmos(ent, tile, fireCount); // Pirate: multiz
+
             if(tile.Air != null)
                 React(tile.Air, tile);
 

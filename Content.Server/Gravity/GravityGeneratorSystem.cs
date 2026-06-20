@@ -61,7 +61,7 @@ public sealed class GravityGeneratorSystem : EntitySystem
 
         if (TryComp(xform.ParentUid, out GravityComponent? gravity))
         {
-            _gravitySystem.EnableGravity(xform.ParentUid, gravity);
+            _gravitySystem.RefreshGravity(xform.ParentUid, gravity); // Pirate: multiz
         }
     }
 
@@ -81,7 +81,12 @@ public sealed class GravityGeneratorSystem : EntitySystem
     {
         if (component.GravityActive && TryComp(args.OldParent, out GravityComponent? gravity))
         {
-            _gravitySystem.RefreshGravity(args.OldParent.Value, gravity);
+            _gravitySystem.RefreshGravity(args.OldParent.Value, gravity); // Pirate: multiz
+        }
+
+        if (component.GravityActive && TryComp(args.Transform.ParentUid, out GravityComponent? newGravity)) // Pirate: multiz
+        {
+            _gravitySystem.RefreshGravity(args.Transform.ParentUid, newGravity); // Pirate: multiz
         }
     }
 }
