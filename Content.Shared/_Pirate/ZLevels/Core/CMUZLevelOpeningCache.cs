@@ -12,9 +12,7 @@ using Robust.Shared.Timing;
 namespace Content.Shared._Pirate.ZLevels.Core;
 
 /// <summary>
-/// Per-grid bitmask cache of "sight opening" tiles (genuine holes, or tiles flagged ZSightPermeable)
-/// for deciding whether vision/light crosses a Z layer at a given XY. Cached per chunk (8x8 = 64 bits),
-/// invalidated by tick. Cross-Z sound and shooting use their own predicates (IsSoundOpening / IsShotOpening).
+/// Per-grid chunk cache for sight openings. Sound and shooting use separate predicates.
 /// </summary>
 public sealed class CMUZLevelOpeningCache
 {
@@ -379,9 +377,7 @@ public sealed class CMUZLevelOpeningCache
     }
 
     /// <summary>
-    /// Sight predicate, backing this cache: a tile is a vision opening if it's a genuine hole or
-    /// flagged <see cref="ContentTileDefinition.ZSightPermeable"/>. Drives PVS-probe gating and light spill.
-    /// Sound and shooting use <see cref="IsSoundOpening"/> / <see cref="IsShotOpening"/> instead.
+    /// Sight predicate backing this cache.
     /// </summary>
     public static bool IsOpeningTile(
         Tile tile,
@@ -393,7 +389,7 @@ public sealed class CMUZLevelOpeningCache
         return ((ContentTileDefinition) tileDefinition[tile.TypeId]).ZSightPermeable;
     }
 
-    /// <summary>Cross-Z shooting predicate: a genuine hole or <see cref="ContentTileDefinition.ZShotPermeable"/>.</summary>
+    /// <summary>Cross-Z shooting predicate.</summary>
     public static bool IsShotOpening(
         Tile tile,
         ITileDefinitionManager tileDefinition)
@@ -405,8 +401,7 @@ public sealed class CMUZLevelOpeningCache
     }
 
     /// <summary>
-    /// Cross-Z sound predicate for an existing grid tile: a genuine hole or
-    /// <see cref="ContentTileDefinition.ZSoundPermeable"/>. Off-grid (no tile) does not count.
+    /// Cross-Z sound predicate. Off-grid space does not count.
     /// </summary>
     public static bool IsSoundOpening(
         Entity<MapGridComponent> grid,

@@ -14,8 +14,7 @@ using Robust.Shared.Map.Components;
 namespace Content.Shared._Pirate.ZLevels.Roof;
 
 /// <summary>
-/// Systems that automatically covers tiles with roofs (or removes roofs)
-/// if there is a tile on one of the levels above in the ZLevels network.
+/// Maintains roof coverage from tiles on higher Z-levels.
 /// </summary>
 public abstract class CESharedRoofSystem : EntitySystem
 {
@@ -38,7 +37,7 @@ public abstract class CESharedRoofSystem : EntitySystem
     }
 
     /// <summary>
-    /// When changing tiles, we iteratively go down to the end of the ZLevels network, repeatedly calculating whether the tiles at the bottom now have a roof or not.
+    /// Propagates changed roof coverage down the Z-level stack.
     /// </summary>
     private void OnTileChanged(Entity<CEZLevelMapRoofComponent> ent, ref TileChangedEvent args)
     {
@@ -80,7 +79,7 @@ public abstract class CESharedRoofSystem : EntitySystem
             {
                 Roof.SetRoof((mapBelow, mapGridBelow, roofBelow), indices, rooved);
 
-                // Defer dictionary mutation until after enumeration; setter bumps version and throws.
+                // Mutate after enumeration; the setter bumps dictionary version.
                 if (Map.TryGetTile(mapGridBelow, indices, out var tile) && !tile.IsEmpty)
                     (promoted ??= new List<Vector2i>()).Add(indices);
             }

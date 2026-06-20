@@ -35,7 +35,7 @@ public sealed partial class ScalingViewport
 
     private CEClientZLevelsSystem? _zLevels;
     private SharedMapSystem? _mapSystem;
-    // Lazily resolved so secondary z-level passes can convert the current eye between linked deck grid spaces.
+    // Lazily resolved for linked-deck eye reprojection.
     private SharedTransformSystem? _transform;
 
     private EntityQuery<TransformComponent>? _xformQuery;
@@ -52,8 +52,7 @@ public sealed partial class ScalingViewport
 
     // Cached reference to the engine's PlacementOverlay, found by type name. Pirate: multiz
     private Overlay? _cachedPlacementOverlay; // Pirate: multiz
-    // Parallax draws a full-screen background per pass; keep it only on the deepest pass so an upper
-    // deck's parallax (e.g. an FTL hyperspace map's FastSpace) can't occlude the decks beneath it.
+    // Only the deepest pass may draw full-screen parallax.
     private Overlay? _cachedParallaxOverlay;
 
     /// <summary>
@@ -115,11 +114,7 @@ public sealed partial class ScalingViewport
     }
 
     /// <summary>
-    /// Tries to find the map for a given depth offset.
-    /// Prioritizes the player's grid-specific peer links (CEZLinkedGridComponent) so that
-    /// shuttles always render their own Z-levels, even when docked at or arrived at a Z-leveled station.
-    /// Falls back to the map-level Z-network lookup for entities not on a linked grid.
-    /// Also returns the resolved peer grid entity when available, used for correct ZEye positioning.
+    /// Resolves the map for a depth offset, preferring linked-grid peers.
     /// </summary>
     private bool TryResolveZMap(EntityUid playerMapUid, EntityUid? playerGridUid, int depthOffset, out MapId mapId)
         => TryResolveZMap(playerMapUid, playerGridUid, depthOffset, out mapId, out _);
@@ -139,7 +134,7 @@ public sealed partial class ScalingViewport
         mapId = default;
         peerGridUid = null; // Pirate: multiz
 
-        // Primary path: grid-specific peer lookup (always shows the structure the player is on)
+        // Prefer the linked structure the player is on.
         if (playerGridUid != null &&
             _entityManager.TryGetComponent<CEZLinkedGridComponent>(playerGridUid.Value, out var linked))
         {
@@ -158,11 +153,11 @@ public sealed partial class ScalingViewport
                 }
             }
 
-            // Linked grid present but peer at requested depth missing — don't fall back to map-level.
+            // Linked grids should not fall back to unrelated map-level decks.
             return false;
         }
 
-        // Fallback: map-level Z-network lookup (for players not on a linked grid)
+        // Fallback for players not on a linked grid.
         if (_zLevels!.TryMapOffset(playerMapUid, depthOffset, out var targetMap))
         {
             if (_mapQuery!.Value.TryComp(targetMap.Value, out var mapComp))
@@ -176,7 +171,7 @@ public sealed partial class ScalingViewport
         return false;
     }
 
-    // Reproject the current eye into the peer grid's world space so linked shuttle decks render from the correct relative viewpoint.
+    // Reproject the eye into the peer grid's world space.
     private MapCoordinates GetResolvedEyePosition(TransformComponent playerXform, EntityUid? peerGridUid, MapId targetMapId)
     {
         _transform ??= _entityManager.System<SharedTransformSystem>();
@@ -276,7 +271,7 @@ public sealed partial class ScalingViewport
         }
 
         // Find the engine's PlacementOverlay once and cache it. Pirate: multiz
-        // It must not render during secondary (non-depth-0) passes to avoid duplicate placement previews. Pirate: multiz
+        // Hide it on secondary passes to avoid duplicate previews. Pirate: multiz
         _cachedPlacementOverlay ??= _overlayManager.AllOverlays // Pirate: multiz
             .FirstOrDefault(o => o.GetType().FullName == "Robust.Client.Placement.PlacementManager+PlacementOverlay"); // Pirate: multiz
         _cachedParallaxOverlay ??= _overlayManager.AllOverlays
@@ -308,7 +303,7 @@ public sealed partial class ScalingViewport
 
                 Angle rotation = _fallbackEye.Rotation * -1;
                 var offset = rotation.ToWorldVec() * CEClientZLevelsSystem.ZLevelOffset * depth;
-                // Secondary passes need a peer-aware eye position; otherwise linked decks render as if they shared the root grid's world transform.
+                // Peer-aware eye position keeps linked decks aligned.
                 var eyePosition = GetResolvedEyePosition(playerXform, peerGridUid, targetMapId);
 
                 var eye = new ZEye(lowestDepth, depth, lookUp)
@@ -328,15 +323,13 @@ public sealed partial class ScalingViewport
             viewport.ClearColor = depth == lowestDepth ? Color.Black : null;
 
             #region Pirate: multiz
-            // Hide on non-primary passes (duplicate previews), and on the primary pass mid z-move when the
-            // cursor's grid is on a different map than the eye (snap-placement's MapToGrid would throw).
+            // Hide duplicate previews, plus unsafe mid-z-move placement snaps.
             var hidePlacement = _cachedPlacementOverlay != null
                 && (depth != 0 || PlacementOverlayWouldDesync(renderedMapUid));
             if (hidePlacement)
                 _overlayManager.RemoveOverlay(_cachedPlacementOverlay!);
 
-            // Keep parallax only on the deepest pass; otherwise a higher deck's full-screen parallax
-            // (FTL maps each carry FastSpace) paints over the below decks already composited beneath it.
+            // Higher deck parallax would cover the already composited lower decks.
             var hideParallax = depth != lowestDepth && _cachedParallaxOverlay != null;
             if (hideParallax)
                 _overlayManager.RemoveOverlay(_cachedParallaxOverlay!);

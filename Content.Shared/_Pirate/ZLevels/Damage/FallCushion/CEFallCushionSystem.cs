@@ -1,7 +1,7 @@
 namespace Content.Shared._Pirate.ZLevels.Damage.FallCushion;
 
 /// <summary>
-/// Softens or negates fall damage for entities that land on a <see cref="CEFallCushionComponent"/> surface.
+/// Applies <see cref="CEFallCushionComponent"/> landing modifiers.
 /// </summary>
 public sealed class CEFallCushionSystem : EntitySystem
 {
@@ -14,8 +14,7 @@ public sealed class CEFallCushionSystem : EntitySystem
 
     private void OnFallingDamageCalculate(Entity<CEFallCushionComponent> ent, ref CEZFallingDamageCalculateEvent args)
     {
-        // The event also fires on the faller's own components; a cushion only applies when something
-        // falls onto it, not when it is itself the faller.
+        // Cushions only apply to other falling entities.
         if (ent.Owner == args.Fallen)
             return;
 

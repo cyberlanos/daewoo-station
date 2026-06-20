@@ -187,32 +187,26 @@ namespace Content.Shared.Maps
 
         #region Pirate: multiz
         /// <summary>
-        /// Visual vertical see-through. When true the tile is not treated as a solid floor/ceiling
-        /// by rendering, the look-up action, or the roof system: the deck below renders through it,
-        /// you can look up through it, and a tile above does not mark the column below as rooved
-        /// (e.g. open catwalks, glass floors). This is purely visual — it does NOT let sound,
-        /// projectiles or vision PVS cross Z-levels (see the Z*Permeable flags below).
+        /// Visual-only see-through for rendering, look-up, and roof coverage.
+        /// Does not affect cross-Z sight, sound, or shooting.
         /// </summary>
         [DataField]
         public bool ZTransparent = false;
 
         /// <summary>
-        /// Cross-Z vision: players near this tile are streamed (PVS) the contents of the adjacent
-        /// deck, and light spills through it between decks. Genuine empty space always allows this.
+        /// Allows cross-Z PVS and light through this tile.
         /// </summary>
         [DataField]
         public bool ZSightPermeable = false;
 
         /// <summary>
-        /// Cross-Z sound: audio propagates between this tile's deck and the adjacent one.
-        /// Genuine empty space always allows this.
+        /// Allows cross-Z audio through this tile.
         /// </summary>
         [DataField]
         public bool ZSoundPermeable = false;
 
         /// <summary>
-        /// Cross-Z shooting: projectiles fired up/down pass through this tile.
-        /// Genuine empty space always allows this.
+        /// Allows cross-Z projectiles through this tile.
         /// </summary>
         [DataField]
         public bool ZShotPermeable = false;
