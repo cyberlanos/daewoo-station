@@ -1,4 +1,5 @@
 using Content.Shared.Chemistry.Reagent;
+using Content.Shared._Starlight.CollectiveMind;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Roles;
 using Robust.Shared.GameStates;
@@ -43,4 +44,10 @@ public sealed partial class VampireThrallComponent : BaseMindRoleComponent
     [ViewVariables]
     [AutoPausedField]
     public TimeSpan NextBreakFreeCheck;
+
+    [ViewVariables(VVAccess.ReadOnly)]
+    public bool HadCollectiveMindComponent;
+
+    [ViewVariables(VVAccess.ReadOnly)]
+    public ProtoId<CollectiveMindPrototype>? PreviousCollectiveMindDefault;
 }

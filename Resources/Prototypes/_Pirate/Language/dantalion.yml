@@ -2,6 +2,7 @@
   id: Dantalion
   speech:
     allowRadio: false
+    chatTypeOverride: CollectiveMind
     requireSpeech: false
     color: "#066338"
     speechVerbOverrides:

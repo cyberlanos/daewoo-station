@@ -1,3 +1,4 @@
+using Content.Shared._Starlight.CollectiveMind;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
@@ -83,4 +84,10 @@ public sealed partial class DantalionComponent : VampireClassComponent
     {
         { "Asphyxiation", 5 },
     };
+
+    [ViewVariables(VVAccess.ReadOnly)]
+    public bool HadCollectiveMindComponent;
+
+    [ViewVariables(VVAccess.ReadOnly)]
+    public ProtoId<CollectiveMindPrototype>? PreviousCollectiveMindDefault;
 }
