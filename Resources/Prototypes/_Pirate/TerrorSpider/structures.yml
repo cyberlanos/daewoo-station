@@ -239,6 +239,16 @@
     spawnAmount: 20
     # Pirate - local GasMiner does not support Starlight showInfoOnExamine.
   - type: AtmosDevice
+  - type: ReplaceFloorOnSpawn
+    # Pirate - GasMiner disables itself on space tiles, so give the egg a valid turf when spawned in breaches.
+    replaceableTiles:
+    - Plating
+    - Lattice
+    - TrainLattice
+    replacementTiles:
+    - Plating
+    offsets:
+    - 0,0
 
 - type: entity
   id: EffectTerrorCocoon

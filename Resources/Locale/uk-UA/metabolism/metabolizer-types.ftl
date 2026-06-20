@@ -15,3 +15,4 @@ metabolizer-type-liquorlifeline = Алкогольна життєва підтр
 
 metabolizer-type-goblin = Гоблін
 metabolizer-type-vampire = Вампір
+metabolizer-type-terror-spider = Павук терору
