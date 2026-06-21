@@ -6,14 +6,10 @@
   - TrinketsClothingHeadPaperSack
   - TrinketsPhotoAlbum
   - TrinketsPhotoCameraFilled
+  - Pillow
   subgroups:
   - PiratePlushies
 
-- type: loadoutGroup
-  abstract: true
-  id: TrinketsUtility
-  loadouts:
-  - Pillow
 
 - type: loadoutGroup
   id: PiratePlushies
