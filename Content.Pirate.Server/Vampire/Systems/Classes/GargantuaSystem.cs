@@ -77,8 +77,8 @@ public sealed class GargantuaSystem : EntitySystem
 
         SubscribeLocalEvent<GargantuaComponent, StartCollideEvent>(OnChargeCollide);
 
-        SubscribeLocalEvent<StatusEffectContainerComponent, BeforeDamageChangedEvent>(OnBloodSwellIncomingDamage);
-        SubscribeLocalEvent<StatusEffectContainerComponent, BeforeStaminaDamageEvent>(OnBloodSwellStaminaDamage);
+        SubscribeLocalEvent<GargantuaComponent, BeforeDamageChangedEvent>(OnBloodSwellIncomingDamage);
+        SubscribeLocalEvent<GargantuaComponent, BeforeStaminaDamageEvent>(OnBloodSwellStaminaDamage);
 
         SubscribeLocalEvent<GargantuaComponent, VampireBloodDrankEvent>(OnBloodDrank);
         SubscribeLocalEvent<BeforePryEvent>(OnDoorPried);
@@ -145,9 +145,9 @@ public sealed class GargantuaSystem : EntitySystem
 
     #region Blood Swell
 
-    private void OnBloodSwellIncomingDamage(Entity<StatusEffectContainerComponent> ent, ref BeforeDamageChangedEvent args)
+    private void OnBloodSwellIncomingDamage(Entity<GargantuaComponent> ent, ref BeforeDamageChangedEvent args)
     {
-        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent, out var effects))
+        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent.Owner, out var effects))
             return;
 
         foreach (var entry in args.Damage.DamageDict.ToArray())
@@ -169,9 +169,9 @@ public sealed class GargantuaSystem : EntitySystem
         }
     }
 
-    private void OnBloodSwellStaminaDamage(Entity<StatusEffectContainerComponent> ent, ref BeforeStaminaDamageEvent args)
+    private void OnBloodSwellStaminaDamage(Entity<GargantuaComponent> ent, ref BeforeStaminaDamageEvent args)
     {
-        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent, out var effects))
+        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent.Owner, out var effects))
             return;
 
         var multiplier = 1f;
