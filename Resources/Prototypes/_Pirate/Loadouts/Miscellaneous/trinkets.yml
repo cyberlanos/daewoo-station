@@ -1,4 +1,4 @@
-# Additional accessories / Додаткові аксесуари 
+# Additional accessories / Додаткові аксесуари
 - type: loadout
   id: TrinketsClothingHeadPaperSack
   storage:
@@ -19,6 +19,31 @@
   effects:
   - !type:PointsCostLoadoutEffect
     cost: 1
+
+# Pillows
+- type: loadout
+  id: Pillow
+  storage:
+    back:
+    - PillowBaseWrapped
+
+- type: loadout
+  id: PillowCommand
+  storage:
+    back:
+    - PillowCommandWrapped
+
+- type: loadout
+  id: PillowEngineering
+  storage:
+    back:
+    - PillowEngineeringWrapped
+
+- type: loadout
+  id: PillowMedical
+  storage:
+    back:
+    - PillowMedicalWrapped
 
 # Toys / Іграшки
 - type: loadout
@@ -90,3 +115,4 @@
     back:
     - PlushiePocketAssistant
   groupBy: "Plushie"
+
