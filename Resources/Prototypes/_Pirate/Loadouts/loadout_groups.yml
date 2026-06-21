@@ -977,3 +977,29 @@
   loadouts:
   - LoadoutJumpsuitOperative
   - LoadoutJumpskirtOperative
+
+
+# Дрібнички для професій
+- type: loadoutGroup
+  id: TrinketsCommand
+  name: loadout-group-command-trinkets
+  minLimit: 0
+  maxLimit: 1
+  loadouts:
+  - PillowCommand
+
+- type: loadoutGroup
+  id: TrinketsMedical
+  name: loadout-group-medical-trinkets
+  minLimit: 0
+  maxLimit: 1
+  loadouts:
+  - PillowMedical
+
+- type: loadoutGroup
+  id: TrinketsEngineering
+  name: loadout-group-engineering-trinkets
+  minLimit: 0
+  maxLimit: 1
+  loadouts:
+  - PillowEngineeringWrapped

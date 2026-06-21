@@ -235,3 +235,8 @@ loadout-group-boxer-gloves = Боксерські рукавиці
 loadout-group-medical-glasses = Медичні окуляри
 
 # Універсальні
+
+#Дрібнички
+loadout-group-command-trinkets = Дрібнички командування
+loadout-group-medical-trinkets = Медичні дрібнички
+loadout-group-engineering-trinkets = Інженерні дрібнички
