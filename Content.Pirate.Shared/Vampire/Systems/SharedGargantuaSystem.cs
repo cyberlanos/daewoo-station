@@ -1,17 +1,13 @@
 using Content.Pirate.Shared.Vampire.Components;
 using Content.Pirate.Shared.Vampire.Components.Classes;
-using Content.Shared.Actions.Events;
 using Content.Shared.Actions;
-using Content.Shared.Alert;
-using Content.Shared.Damage.Prototypes;
+using Content.Shared.Actions.Events;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Movement.Pulling.Events;
 using Content.Shared.Movement.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Prying.Components;
 using Content.Shared.StatusEffectNew;
-using Content.Shared.StatusEffectNew.Components;
-using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Melee.Events;
 using Robust.Shared.Prototypes;
 
@@ -41,9 +37,7 @@ public sealed class SharedGargantuaSystem : EntitySystem
         SubscribeLocalEvent<GargantuaComponent, AttemptMobTargetCollideEvent>(OnOverwhelmingForceMobPushAttempt);
         SubscribeLocalEvent<BeforePryEvent>(OnOverwhelmingForceBeforePry);
 
-        SubscribeLocalEvent<ActiveBloodSwellComponent, GetMeleeDamageEvent>(OnBloodSwellMeleeDamage);
-        SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRelayedEvent<GetMeleeDamageEvent>>(OnBloodSwellMeleeDamage);
-        SubscribeLocalEvent<MeleeWeaponComponent, GetMeleeDamageEvent>(OnMeleeWeaponDamage);
+        SubscribeLocalEvent<GargantuaComponent, GetUserMeleeDamageEvent>(OnBloodSwellMeleeDamage);
         SubscribeLocalEvent<ActiveBloodRushComponent, StatusEffectRelayedEvent<RefreshMovementSpeedModifiersEvent>>(OnRefreshMovementSpeed);
         SubscribeLocalEvent<ActiveBloodSwellComponent, StatusEffectRemovedEvent>(OnBloodSwellRemoved);
         SubscribeLocalEvent<ActiveBloodRushComponent, StatusEffectRemovedEvent>(OnBloodRushRemoved);
@@ -83,38 +77,10 @@ public sealed class SharedGargantuaSystem : EntitySystem
         args.Handled = true;
     }
 
-    private void OnBloodSwellMeleeDamage(Entity<ActiveBloodSwellComponent> ent, ref GetMeleeDamageEvent args)
+    private void OnBloodSwellMeleeDamage(Entity<GargantuaComponent> ent, ref GetUserMeleeDamageEvent args)
     {
-        if (!TryComp<StatusEffectComponent>(ent, out var effect)
-            || effect.AppliedTo is not { } target
-            || !TryComp<VampireComponent>(target, out var vampire))
-            return;
-
-        if (args.Weapon != target)
-            return;
-
-        if (vampire.TotalBlood < ent.Comp.EnhancedThreshold)
-            return;
-
-        var damageType = ent.Comp.MeleeBonusDamageType;
-        args.Damage.DamageDict.TryGetValue(damageType, out var damage);
-        args.Damage.DamageDict[damageType] = damage + ent.Comp.MeleeBonusDamage;
-    }
-
-    private void OnBloodSwellMeleeDamage(Entity<ActiveBloodSwellComponent> ent, ref StatusEffectRelayedEvent<GetMeleeDamageEvent> args)
-    {
-        var ev = args.Args;
-        OnBloodSwellMeleeDamage(ent, ref ev);
-        args.Args = ev;
-    }
-
-    private void OnMeleeWeaponDamage(Entity<MeleeWeaponComponent> ent, ref GetMeleeDamageEvent args)
-    {
-        if (args.Weapon == args.User)
-            return;
-
-        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(args.User, out var effects)
-            || !TryComp<VampireComponent>(args.User, out var vampire))
+        if (!_statusEffects.TryEffectsWithComp<ActiveBloodSwellComponent>(ent.Owner, out var effects)
+            || !TryComp<VampireComponent>(ent.Owner, out var vampire))
         {
             return;
         }
