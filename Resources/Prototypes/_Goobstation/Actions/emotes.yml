@@ -30,9 +30,7 @@
   - does a flip!
   event: !type:AnimationFlipEmoteEvent
 
-#region Pirate: multiz
-# Blink emotes - functional port of tgstation blinking (#88927). Placed next to Flip
-# so they sit together in the emote menu. Handled by Content.Pirate.Server.Blinking.BlinkingSystem.
+#region Pirate: blinking
 - type: emote
   id: Blink
   name: chat-emote-name-blink
@@ -59,7 +57,7 @@
   chatTriggers:
   - blinks rapidly
   - blink rapidly
-#endregion Pirate: multiz
+#endregion Pirate: blinking
 
 - type: emote
   id: Tweak

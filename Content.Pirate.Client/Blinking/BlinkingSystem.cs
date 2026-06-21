@@ -4,36 +4,23 @@ using Content.Shared.Eye.Blinding.Components;
 using Content.Shared.Humanoid;
 using Content.Shared.Mobs.Systems;
 using Robust.Client.GameObjects;
+using Robust.Client.Graphics;
 using Robust.Shared.Random;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Pirate.Client.Blinking;
 
 /// <summary>
-/// Client half of the blinking feature. Drives skin-tinted "eyelid" sprite layers whose
-/// alpha fades in/out to read as a blink.
-///
-/// Blinking is event-driven: one shared scheduler fires a blink "event" on a randomized
-/// ~5s cadence (and on demand from the blink emotes). Synchronized blinkers animate a single
-/// eyelid cloned from the humanoid Eyes layer, so both eyes close together. Asynchronous
-/// blinkers (e.g. lizards) animate two eyelid halves from a configured split RSI: each event
-/// blinks both eyes, but the trailing eye (chosen at random) is given a small random lead so
-/// the eyes don't close in perfect unison while staying locked to the same cadence — a port
-/// of tgstation's coupled async blinking.
-///
-/// Eyelid layers are <b>transient</b>: they only exist while an eye is actually closed (a blink,
-/// or held shut for sleep/death). The rest of the time none are present. This is deliberate —
-/// the humanoid system rebuilds its sprite by absolute layer index, and the displaced-marking
-/// path even mutates the layer map mid-enumeration; a foreign layer parked in the eye region
-/// can corrupt that rebuild (e.g. an invisible head when a lizard gains a coloured eye marking).
-/// Since appearance/marking changes happen while a mob is idle (eyes open), keeping our layers
-/// out of the stack except during the brief blink window keeps those rebuilds clean.
+/// Client-side blink visuals using transient, skin-tinted eyelid layers.
+/// Passive blinks stay local; blink emotes only schedule visible client effects.
 /// </summary>
 public sealed class BlinkingSystem : EntitySystem
 {
     [Dependency] private readonly SpriteSystem _sprite = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly MobStateSystem _mobState = default!;
+    [Dependency] private readonly IPrototypeManager _prototype = default!;
 
     public override void Initialize()
     {
@@ -41,9 +28,7 @@ public sealed class BlinkingSystem : EntitySystem
         SubscribeAllEvent<BlinkEffectEvent>(OnBlinkEffect);
     }
 
-    // FrameUpdate (render frame), not Update: this is purely cosmetic and must run at
-    // real wall-clock rate. Update() is re-run by client prediction every frame, which
-    // would make the timers advance many times too fast.
+    // Cosmetic animation: render-frame time avoids predicted Update advancing timers repeatedly.
     public override void FrameUpdate(float frameTime)
     {
         base.FrameUpdate(frameTime);
@@ -59,12 +44,9 @@ public sealed class BlinkingSystem : EntitySystem
 
             var async = IsAsync(blink);
 
-            // Newly seen entity: stagger its first blink so crowds don't blink in unison.
+            // Stagger first blinks so crowds do not synchronize.
             if (!EnsureComp<BlinkingVisualsComponent>(uid, out var visuals))
-            {
-                visuals.Async = async;
                 visuals.MasterDelay = NextDelay(blink);
-            }
 
             UpdateEntity(uid, blink, sprite, humanoid, visuals, async, frameTime);
         }
@@ -79,9 +61,7 @@ public sealed class BlinkingSystem : EntitySystem
         bool async,
         float frameTime)
     {
-        // Gate + eyelid color only (no layer creation). If there are no drawable eyes, make sure
-        // any eyelid layers are gone so we don't leave skin-colored lids over a mob whose eyes
-        // were removed/hidden.
+        // Missing or hidden eyes should not keep stale eyelid layers.
         if (!TryGetEyelidColor(uid, sprite, humanoid, out var color))
         {
             RemoveAllEyelids(uid, sprite);
@@ -90,10 +70,7 @@ public sealed class BlinkingSystem : EntitySystem
 
         visuals.EyelidColor = color;
 
-        // Hold the lids shut (and stop auto-blinking) while asleep, or when the eyes are
-        // deliberately/forcibly closed via the toggle-eyes action (also used to feign death).
-        // SS14 has no client visual for these otherwise, so this is what makes shut eyes visible
-        // to onlookers. Eyes reopen and blinking resumes automatically once awake/reopened.
+        // Closed-eye states hold eyelids shut and pause passive blinking.
         if (HasComp<SleepingComponent>(uid) ||
             (TryComp<EyeClosingComponent>(uid, out var closing) && closing.EyesClosed))
         {
@@ -101,8 +78,7 @@ public sealed class BlinkingSystem : EntitySystem
             return;
         }
 
-        // Dead bodies hold their eyes shut by default (matching tgstation); CloseOnDeath can turn
-        // that off so the eyes stay open. Either way a dead body never blinks.
+        // Dead mobs never blink; CloseOnDeath controls whether lids stay shut.
         if (_mobState.IsDead(uid))
         {
             if (blink.CloseOnDeath)
@@ -113,12 +89,10 @@ public sealed class BlinkingSystem : EntitySystem
             return;
         }
 
-        // Scheduler: fire the next blink event once the current one has fully cleared.
         visuals.MasterDelay -= frameTime;
         if (visuals.MasterDelay <= 0f && AllEyesIdle(visuals, async))
             LaunchEvent(blink, visuals, async);
 
-        // Animate whichever eyelid(s) this entity uses.
         if (async)
         {
             AnimateEye(uid, sprite, blink, visuals, true, 0, BlinkingVisualsComponent.LeftKey, frameTime);
@@ -130,10 +104,6 @@ public sealed class BlinkingSystem : EntitySystem
         }
     }
 
-    /// <summary>
-    /// Starts a blink event: both eyes (async) or the unified eyelid (sync) begin closing,
-    /// with the trailing async eye offset by a small random lead. Then schedules the next event.
-    /// </summary>
     private void LaunchEvent(BlinkingComponent blink, BlinkingVisualsComponent visuals, bool async)
     {
         var rapid = visuals.RapidActive;
@@ -141,7 +111,7 @@ public sealed class BlinkingSystem : EntitySystem
 
         if (async)
         {
-            // One eye leads, the other trails by a random fraction of AsyncOffset.
+            // One async eye leads; the other trails by up to AsyncOffset.
             var leftLeads = _random.Prob(0.5f);
             var offset = _random.NextFloat() * (float) blink.AsyncOffset.TotalSeconds;
             ArmEye(visuals, 0, leftLeads ? 0f : offset, duration);
@@ -152,8 +122,7 @@ public sealed class BlinkingSystem : EntitySystem
             ArmEye(visuals, 0, 0f, duration);
         }
 
-        // Schedule the next event: tight RapidInterval spacing during a burst, else the
-        // normal randomized cadence.
+        // Rapid bursts use fixed spacing; idle blinks use randomized spacing.
         if (visuals.RapidEventsLeft > 0)
         {
             visuals.RapidEventsLeft--;
@@ -175,7 +144,6 @@ public sealed class BlinkingSystem : EntitySystem
         visuals.Progress[eye] = -1f;
     }
 
-    /// <summary>Advances one eye's pending/blinking state and drives its (transient) eyelid layer.</summary>
     private void AnimateEye(
         EntityUid uid,
         SpriteComponent sprite,
@@ -188,7 +156,7 @@ public sealed class BlinkingSystem : EntitySystem
     {
         if (visuals.Progress[eye] < 0f)
         {
-            // Idle, or waiting out the lead offset: no eyelid layer should exist yet.
+            // No visible eyelid until this eye actually starts closing.
             if (!visuals.Pending[eye])
             {
                 RemoveEyelid(uid, sprite, layerKey);
@@ -202,25 +170,24 @@ public sealed class BlinkingSystem : EntitySystem
                 return;
             }
 
-            // Blink starts now: create the eyelid layer.
             visuals.Pending[eye] = false;
             visuals.Progress[eye] = 0f;
             EnsureEyelidLayer(uid, sprite, blink, async, layerKey);
         }
 
         visuals.Progress[eye] += frameTime;
-        var hold = MathF.Max(visuals.CurrentDuration[eye], 0.01f);
-        var total = hold + 2f * BlinkFade;
+        var duration = MathF.Max(visuals.CurrentDuration[eye], 0.01f);
 
-        if (visuals.Progress[eye] >= total)
+        if (visuals.Progress[eye] >= duration)
         {
             visuals.Progress[eye] = -1f;
             RemoveEyelid(uid, sprite, layerKey);
             return;
         }
 
-        var alpha = EyelidAlpha(visuals.Progress[eye], hold);
-        ShowEyelid(uid, sprite, layerKey, visuals.EyelidColor.WithAlpha(alpha));
+        // Wipe closed at the midpoint, then immediately wipe open.
+        var coverage = EyelidCoverage(visuals.Progress[eye], duration);
+        ShowEyelid(uid, sprite, layerKey, visuals.EyelidColor, coverage, blink.WipeDirection);
     }
 
     private void OnBlinkEffect(BlinkEffectEvent ev)
@@ -231,7 +198,7 @@ public sealed class BlinkingSystem : EntitySystem
 
         var visuals = EnsureComp<BlinkingVisualsComponent>(uid);
 
-        // Fire an event as soon as the eyes are idle (next frame if currently open).
+        // Fire when idle, or on the next open frame.
         visuals.RapidActive = ev.Rapid;
         visuals.RapidEventsLeft = ev.Rapid ? Math.Max(blink.RapidCount - 1, 0) : 0;
         visuals.MasterDelay = 0f;
@@ -246,10 +213,6 @@ public sealed class BlinkingSystem : EntitySystem
         return true;
     }
 
-    /// <summary>
-    /// Gates blinking and computes the skin-tinted eyelid color. Returns false when there are no
-    /// drawable eyes (robotic/missing/hidden). Does not touch sprite layers.
-    /// </summary>
     private bool TryGetEyelidColor(EntityUid uid, SpriteComponent sprite, HumanoidAppearanceComponent humanoid, out Color color)
     {
         color = default;
@@ -257,8 +220,7 @@ public sealed class BlinkingSystem : EntitySystem
         if (!_sprite.LayerMapTryGet((uid, sprite), HumanoidVisualLayers.Eyes, out var eyesIndex, false))
             return false;
 
-        // No blinking when the eyes layer isn't actually drawn (hidden by equipment, a
-        // blindfold/closed-eyes state, or a removed eyes organ).
+        // Hidden eyes include equipment, closed-eye states, and removed eye organs.
         if (!sprite[eyesIndex].Visible)
             return false;
 
@@ -269,16 +231,12 @@ public sealed class BlinkingSystem : EntitySystem
         if (!_sprite.LayerGetRsiState((uid, sprite), eyesIndex).IsValid)
             return false;
 
-        // Eyelid is the skin color darkened a touch, matching tgstation's ~85% HSL tint.
+        // Skin-tinted eyelids, slightly darkened.
         var skin = humanoid.SkinColor;
         color = new Color(skin.R * 0.85f, skin.G * 0.85f, skin.B * 0.85f, 1f);
         return true;
     }
 
-    /// <summary>
-    /// Creates the eyelid layer for <paramref name="key"/> if it doesn't already exist. Async
-    /// eyes use the configured split RSI/state; the unified eyelid clones the live Eyes layer.
-    /// </summary>
     private void EnsureEyelidLayer(EntityUid uid, SpriteComponent sprite, BlinkingComponent blink, bool async, string key)
     {
         if (_sprite.LayerExists((uid, sprite), key))
@@ -303,18 +261,16 @@ public sealed class BlinkingSystem : EntitySystem
             if (rsi == null || !state.IsValid)
                 return;
 
-            // Clone the eyes layer (using the RSI object directly, no path reload).
             index = _sprite.AddRsiLayer((uid, sprite), state, rsi, EyelidInsertIndex(uid, sprite, eyesIndex));
         }
 
         _sprite.LayerMapSet((uid, sprite), key, index);
+        sprite.LayerSetShader(index, _prototype.Index(EyelidShader).InstanceUnique(), EyelidShader.Id);
         _sprite.LayerSetVisible((uid, sprite), index, false);
     }
 
     /// <summary>
-    /// Index at which to insert an eyelid layer so it sits above the eye markings. Eye markings
-    /// target the Eyes slot and stack directly above the eyeball, so the next base humanoid layer
-    /// above Eyes is above them; inserting there puts the eyelid on top of the whole eye region.
+    /// Inserts eyelids above eye markings but below the next base humanoid layer.
     /// </summary>
     private int EyelidInsertIndex(EntityUid uid, SpriteComponent sprite, int eyesIndex)
     {
@@ -328,19 +284,22 @@ public sealed class BlinkingSystem : EntitySystem
         return insert == int.MaxValue ? eyesIndex + 1 : insert;
     }
 
-    private void ShowEyelid(EntityUid uid, SpriteComponent sprite, string layerKey, Color color)
+    private void ShowEyelid(EntityUid uid, SpriteComponent sprite, string layerKey, Color color, float coverage = 1f, BlinkingWipeDirection wipeDirection = BlinkingWipeDirection.TopDown)
     {
         if (!_sprite.LayerMapTryGet((uid, sprite), layerKey, out var index, false))
             return;
 
+        if (_sprite.TryGetLayer((uid, sprite), index, out var layer, false))
+        {
+            layer.Shader?.SetParameter(EyelidCoverageParameter, Math.Clamp(coverage, 0f, 1f));
+            layer.Shader?.SetParameter(EyelidWipeDirectionParameter, (float) wipeDirection);
+        }
         _sprite.LayerSetColor((uid, sprite), index, color);
         _sprite.LayerSetVisible((uid, sprite), index, true);
     }
 
     /// <summary>
-    /// Removes an eyelid layer. Drops the layer-map key <b>before</b> removing the layer: the
-    /// engine's RemoveLayer(index) mutates the layer map inside a foreach over it, which throws if
-    /// a key still points at the removed index.
+    /// Removes an eyelid layer; the map key must go first because RemoveLayer mutates layer maps.
     /// </summary>
     private void RemoveEyelid(EntityUid uid, SpriteComponent sprite, string layerKey)
     {
@@ -351,7 +310,6 @@ public sealed class BlinkingSystem : EntitySystem
         _sprite.RemoveLayer((uid, sprite), index, false);
     }
 
-    /// <summary>Creates (if needed) and holds the relevant eyelid(s) fully closed (dead / shut eyes).</summary>
     private void HoldClosed(EntityUid uid, SpriteComponent sprite, BlinkingComponent blink, bool async, Color color)
     {
         if (async)
@@ -378,21 +336,18 @@ public sealed class BlinkingSystem : EntitySystem
     private static bool IsAsync(BlinkingComponent blink)
         => blink.Asynchronous && blink.EyelidRsi != null && blink.EyelidStateLeft != null && blink.EyelidStateRight != null;
 
-    /// <summary>Quick eyelid fade in/out around the fully-closed hold, in seconds.</summary>
-    private const float BlinkFade = 0.03f;
+    private static readonly ProtoId<ShaderPrototype> EyelidShader = "PirateBlinkEyelid";
+    private const string EyelidCoverageParameter = "Coverage";
+    private const string EyelidWipeDirectionParameter = "WipeDirection";
 
     /// <summary>
-    /// Eyelid alpha over a blink: a short fade closed, a fully-closed hold of <paramref name="hold"/>
-    /// seconds (matching tgstation, which keeps the eyelid fully opaque for BLINK_DURATION), then a
-    /// short fade open. <paramref name="t"/> is seconds since the blink started.
+    /// Wipe coverage over one close+open blink. 0 = open, 1 = fully covered.
     /// </summary>
-    private static float EyelidAlpha(float t, float hold)
+    private static float EyelidCoverage(float t, float duration)
     {
-        if (t < BlinkFade)
-            return t / BlinkFade;
-        if (t < BlinkFade + hold)
-            return 1f;
-        return MathF.Max(0f, (2f * BlinkFade + hold - t) / BlinkFade);
+        var half = MathF.Max(duration * 0.5f, 0.0001f);
+        var x = t < half ? t / half : (duration - t) / half;
+        return Math.Clamp(x, 0f, 1f);
     }
 
     private float NextDelay(BlinkingComponent blink)

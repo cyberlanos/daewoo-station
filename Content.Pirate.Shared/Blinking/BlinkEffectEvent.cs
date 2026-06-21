@@ -3,8 +3,7 @@ using Robust.Shared.Serialization;
 namespace Content.Pirate.Shared.Blinking;
 
 /// <summary>
-/// Raised on the server and sent to clients to make an entity blink once, now
-/// (used by the blink emotes). <see cref="Rapid"/> requests a quick triple-blink.
+/// Network event for blink emote visuals.
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class BlinkEffectEvent : EntityEventArgs

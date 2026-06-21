@@ -5,8 +5,7 @@ using Robust.Shared.Player;
 namespace Content.Pirate.Server.Blinking;
 
 /// <summary>
-/// Server half of the blinking feature: turns the blink emotes into networked
-/// <see cref="BlinkEffectEvent"/>s so every nearby client plays the animation.
+/// Sends blink emote effects to clients in PVS.
 /// </summary>
 public sealed class BlinkingSystem : EntitySystem
 {
@@ -36,7 +35,7 @@ public sealed class BlinkingSystem : EntitySystem
     }
 
     /// <summary>
-    /// Make an entity visibly blink for everyone who can currently see it.
+    /// Makes an entity visibly blink for nearby clients.
     /// </summary>
     public void Blink(EntityUid uid, bool rapid = false)
     {
