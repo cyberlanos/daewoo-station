@@ -166,10 +166,6 @@
 # Miscellaneous
 - type: loadoutGroup
   id: Trinkets
-  # Pirate additions
-  parent:
-  - TrinketsUtility
-  # Pirate end
   name: loadout-group-trinkets
   minLimit: 0
   maxLimit: 3

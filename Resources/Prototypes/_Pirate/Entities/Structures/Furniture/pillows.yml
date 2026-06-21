@@ -103,7 +103,7 @@
   parent: PillowBaseWrapped
   id: PillowMedicalWrapped
   name: wrapped medical pillow
-  description: A pillow sewn into an soft antimicrobial case, for the comfort of patients and overworked professionals alike. Deploy as needed.
+  description: A pillow sewn into a soft antimicrobial case, for the comfort of patients and overworked professionals alike. Deploy as needed.
   components:
   - type: Sprite
     sprite: /Textures/_pirate/Structures/Furniture/pillows.rsi
@@ -123,7 +123,7 @@
   parent: PillowBaseUnwrapped
   id: PillowMedicalUnwrapped
   name: medical pillow
-  description: A pillow sewn into an soft antimicrobial case, for the comfort of patients and overworked professionals alike.
+  description: A pillow sewn into a soft antimicrobial case, for the comfort of patients and overworked professionals alike.
   components:
   - type: Sprite
     sprite: /Textures/_pirate/Structures/Furniture/pillows.rsi
