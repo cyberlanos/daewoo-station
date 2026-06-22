@@ -96,37 +96,29 @@ public sealed partial class ShockwaveOverlay : Robust.Client.Graphics.Overlay
 
     private sealed class ShaderArgs
     {
-        private readonly List<Vector2> _epicenters;
-        private readonly List<float> _intensities;
-        private readonly List<float> _widths;
-        private readonly List<float> _fallOffs;
-        private readonly List<float> _powerFactors;
-        private readonly List<float> _startTimes;
-        private readonly List<float> _timeScales;
+        private readonly Vector2[] _epicenters;
+        private readonly float[] _intensities;
+        private readonly float[] _widths;
+        private readonly float[] _fallOffs;
+        private readonly float[] _powerFactors;
+        private readonly float[] _startTimes;
+        private readonly float[] _timeScales;
 
         public int Count { get; private set; }
 
         public ShaderArgs(int instanceLimit)
         {
-            _epicenters = new List<Vector2>(instanceLimit);
-            _intensities = new List<float>(instanceLimit);
-            _widths = new List<float>(instanceLimit);
-            _fallOffs = new List<float>(instanceLimit);
-            _powerFactors = new List<float>(instanceLimit);
-            _startTimes = new List<float>(instanceLimit);
-            _timeScales = new List<float>(instanceLimit);
+            _epicenters = new Vector2[instanceLimit];
+            _intensities = new float[instanceLimit];
+            _widths = new float[instanceLimit];
+            _fallOffs = new float[instanceLimit];
+            _powerFactors = new float[instanceLimit];
+            _startTimes = new float[instanceLimit];
+            _timeScales = new float[instanceLimit];
         }
 
         public void Clear()
         {
-            _epicenters.Clear();
-            _intensities.Clear();
-            _widths.Clear();
-            _fallOffs.Clear();
-            _powerFactors.Clear();
-            _startTimes.Clear();
-            _timeScales.Clear();
-
             Count = 0;
         }
 
@@ -139,25 +131,25 @@ public sealed partial class ShockwaveOverlay : Robust.Client.Graphics.Overlay
             float startTime,
             float timeScale)
         {
-            _epicenters.Add(epicenter);
-            _intensities.Add(intensity);
-            _widths.Add(width);
-            _fallOffs.Add(fallOff);
-            _powerFactors.Add(powerFactor);
-            _startTimes.Add(startTime);
-            _timeScales.Add(timeScale);
+            _epicenters[Count] = epicenter;
+            _intensities[Count] = intensity;
+            _widths[Count] = width;
+            _fallOffs[Count] = fallOff;
+            _powerFactors[Count] = powerFactor;
+            _startTimes[Count] = startTime;
+            _timeScales[Count] = timeScale;
             Count++;
         }
 
         public void SetShaderParams(ShaderInstance shader)
         {
-            shader.SetParameter("EPICENTERS", _epicenters.ToArray());
-            shader.SetParameter("INTENSITIES", _intensities.ToArray());
-            shader.SetParameter("WIDTHS", _widths.ToArray());
-            shader.SetParameter("FALLOFFS", _fallOffs.ToArray());
-            shader.SetParameter("START_TIMES", _startTimes.ToArray());
-            shader.SetParameter("POWER_FACTORS", _powerFactors.ToArray());
-            shader.SetParameter("TIME_SCALES", _timeScales.ToArray());
+            shader.SetParameter("EPICENTERS", _epicenters);
+            shader.SetParameter("INTENSITIES", _intensities);
+            shader.SetParameter("WIDTHS", _widths);
+            shader.SetParameter("FALLOFFS", _fallOffs);
+            shader.SetParameter("START_TIMES", _startTimes);
+            shader.SetParameter("POWER_FACTORS", _powerFactors);
+            shader.SetParameter("TIME_SCALES", _timeScales);
             shader.SetParameter("COUNT", Count);
         }
     }

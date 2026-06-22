@@ -49,16 +49,20 @@ public sealed partial class AbilitySonicBoomSystem : EntitySystem
         if (args.Handled || !_timing.IsFirstTimePredicted)
             return;
 
-        var random = PredictedRandom(entity.Owner);
         var entityCoords = _transform.GetMoverCoordinates(entity);
 
         foreach (var target in _lookup.GetEntitiesInRange(entity, entity.Comp.FlingRadius, LookupFlags.Uncontained))
         {
+            var random = PredictedRandom(entity.Owner, target);
             var thrownVec = NextThrowDir(random) + (_transform.GetMoverCoordinates(target).Position - entityCoords.Position);
+            var lenSq = thrownVec.LengthSquared();
+
+            if (lenSq < 0.000001f)
+                continue;
 
             _throwing.TryThrow(
                 target,
-                thrownVec.Normalized() * (entity.Comp.FlingStrength / (1.0f + thrownVec.LengthSquared())),
+                Vector2.Normalize(thrownVec) * (entity.Comp.FlingStrength / (1.0f + lenSq)),
                 pushbackRatio: 0.0f);
         }
 
@@ -76,10 +80,17 @@ public sealed partial class AbilitySonicBoomSystem : EntitySystem
         args.Handled = true;
     }
 
-    private System.Random PredictedRandom(EntityUid uid)
+    private System.Random PredictedRandom(EntityUid source, EntityUid target)
     {
-        var netEntity = GetNetEntity(uid);
-        var seed = SharedRandomExtensions.HashCodeCombine(new() { (int) _timing.CurTick.Value, netEntity.Id, 0x50495241 });
+        var sourceNet = GetNetEntity(source);
+        var targetNet = GetNetEntity(target);
+        var seed = SharedRandomExtensions.HashCodeCombine(new()
+        {
+            (int) _timing.CurTick.Value,
+            sourceNet.Id,
+            targetNet.Id,
+            0x50495241,
+        });
 
         return new System.Random(seed);
     }
