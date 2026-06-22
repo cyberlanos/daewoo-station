@@ -37,7 +37,6 @@ public sealed partial class AbilitySonicBoomSystem : EntitySystem
     private void OnMapInit(Entity<AbilitySonicBoomComponent> entity, ref MapInitEvent args)
     {
         _actions.AddAction(entity.Owner, ref entity.Comp.Action, entity.Comp.ActionProto, entity.Owner);
-        Dirty(entity);
     }
 
     private void OnShutdown(Entity<AbilitySonicBoomComponent> entity, ref ComponentShutdown args)
