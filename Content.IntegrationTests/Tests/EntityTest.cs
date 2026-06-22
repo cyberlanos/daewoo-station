@@ -70,6 +70,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.Manager.Attributes;
+using Robust.Shared.Spawners;
 
 namespace Content.IntegrationTests.Tests
 {
@@ -436,9 +437,10 @@ namespace Content.IntegrationTests.Tests
 
             await pair.RunTicksSync(3);
 
-            // We consider only non-audio entities, as some entities will just play sounds when they spawn.
-            int Count(IEntityManager ent) => ent.EntityCount - ent.Count<AudioComponent>();
-            IEnumerable<EntityUid> Entities(IEntityManager entMan) => entMan.GetEntities().Where(e => !entMan.HasComponent<AudioComponent>(e));
+            // We consider only persistent non-audio entities, as some entities will play sounds or spawn timed effects.
+            int Count(IEntityManager ent) => ent.EntityCount - ent.Count<AudioComponent>() - ent.Count<TimedDespawnComponent>();
+            IEnumerable<EntityUid> Entities(IEntityManager entMan) => entMan.GetEntities()
+                .Where(e => !entMan.HasComponent<AudioComponent>(e) && !entMan.HasComponent<TimedDespawnComponent>(e));
 
             await Assert.MultipleAsync(async () =>
             {
