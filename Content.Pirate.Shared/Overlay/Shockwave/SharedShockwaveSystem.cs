@@ -1,6 +1,6 @@
 using Robust.Shared.Timing;
 
-namespace Content.Pirate.Shared.Overlay.Shockwave;
+namespace Content.Pirate.Shared.Overlays.Shockwave;
 
 /// <summary>
 /// Shared system that starts shockwave overlay timing.

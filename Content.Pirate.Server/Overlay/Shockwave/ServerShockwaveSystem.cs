@@ -1,5 +1,5 @@
-using Content.Pirate.Shared.Overlay.Shockwave;
+using Content.Pirate.Shared.Overlays.Shockwave;
 
-namespace Content.Pirate.Server.Overlay.Shockwave;
+namespace Content.Pirate.Server.Overlays.Shockwave;
 
 public sealed partial class ServerShockwaveSystem : SharedShockwaveSystem;

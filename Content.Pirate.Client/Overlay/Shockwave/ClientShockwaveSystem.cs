@@ -1,7 +1,7 @@
-using Content.Pirate.Shared.Overlay.Shockwave;
+using Content.Pirate.Shared.Overlays.Shockwave;
 using Robust.Client.Graphics;
 
-namespace Content.Pirate.Client.Overlay.Shockwave;
+namespace Content.Pirate.Client.Overlays.Shockwave;
 
 /// <summary>
 /// Manages the shockwave fullscreen overlay while shockwave entities exist.

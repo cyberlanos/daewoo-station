@@ -1,6 +1,6 @@
 using Robust.Shared.GameStates;
 
-namespace Content.Pirate.Shared.Overlay.Shockwave;
+namespace Content.Pirate.Shared.Overlays.Shockwave;
 
 /// <summary>
 /// Holds the parameters for the shockwave overlay on an entity.

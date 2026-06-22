@@ -1,5 +1,5 @@
 using System.Numerics;
-using Content.Pirate.Shared.Overlay.Shockwave;
+using Content.Pirate.Shared.Overlays.Shockwave;
 using Content.Shared.CCVar;
 using Robust.Client.Graphics;
 using Robust.Shared.Configuration;
@@ -8,7 +8,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
-namespace Content.Pirate.Client.Overlay.Shockwave;
+namespace Content.Pirate.Client.Overlays.Shockwave;
 
 public sealed partial class ShockwaveOverlay : Robust.Client.Graphics.Overlay
 {
