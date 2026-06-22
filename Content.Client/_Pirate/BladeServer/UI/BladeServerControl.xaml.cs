@@ -74,7 +74,12 @@ public sealed partial class BladeServerControl : Control
 
     public void SetLocked(bool locked)
     {
+        var slotFilled = Entity != null;
+
         EjectButton.Modulate = locked ? Color.DarkGray : Color.White;
         InsertButton.Modulate = locked ? Color.DarkGray : Color.White;
+
+        EjectButton.Disabled = locked || !slotFilled;
+        InsertButton.Disabled = locked || slotFilled;
     }
 }

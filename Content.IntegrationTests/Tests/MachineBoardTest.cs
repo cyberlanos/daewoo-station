@@ -97,17 +97,22 @@ public sealed class MachineBoardTest
                 if (!p.TryGetComponent<BladeServerBoardComponent>(out var bladeBoard, compFact))
                     continue;
 
+                var hasBladePrototype = protoMan.TryIndex<EntityPrototype>(bladeBoard.Prototype, out var bladeProto);
+                var hasBladeServer = bladeProto?.TryGetComponent<BladeServerComponent>(out _, compFact) == true;
+                MachineComponent? machine = null;
+                var hasMachine = bladeProto?.TryGetComponent<MachineComponent>(out machine, compFact) == true;
+
                 Assert.Multiple(() =>
                 {
                     Assert.That(p.TryGetComponent<MachineBoardComponent>(out _, compFact),
                         $"Blade server board {p.ID} does not have a {nameof(MachineBoardComponent)}.");
-                    Assert.That(protoMan.TryIndex<EntityPrototype>(bladeBoard.Prototype, out var bladeProto),
+                    Assert.That(hasBladePrototype,
                         $"Blade server board {p.ID}'s corresponding blade server has an invalid prototype.");
-                    Assert.That(bladeProto!.TryGetComponent<BladeServerComponent>(out _, compFact),
+                    Assert.That(hasBladeServer,
                         $"Blade server board {p.ID}'s corresponding blade server {bladeBoard.Prototype} does not have {nameof(BladeServerComponent)}.");
-                    Assert.That(bladeProto.TryGetComponent<MachineComponent>(out var machine, compFact),
+                    Assert.That(hasMachine,
                         $"Blade server board {p.ID}'s corresponding blade server {bladeBoard.Prototype} does not have {nameof(MachineComponent)}.");
-                    Assert.That(machine!.Board, Is.EqualTo(p.ID),
+                    Assert.That(machine?.Board, Is.EqualTo(p.ID),
                         $"Blade server {bladeBoard.Prototype}'s BoardPrototype is not equal to its corresponding machine board, {p.ID}.");
                 });
             }

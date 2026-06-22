@@ -174,6 +174,9 @@ public abstract partial class SharedBladeServerSystem : EntitySystem
 
     private void OnEjectPressed(Entity<BladeServerRackComponent> entity, ref BladeServerRackEjectPressedMessage args)
     {
+        if (!_interaction.InRangeAndAccessible(args.Actor, entity.Owner))
+            return;
+
         if (GetSlotOrNull(entity.AsNullable(), args.Index) is not { } slot ||
             slot.Item == null)
             return;
@@ -185,6 +188,9 @@ public abstract partial class SharedBladeServerSystem : EntitySystem
 
     private void OnInsertPressed(Entity<BladeServerRackComponent> entity, ref BladeServerRackInsertPressedMessage args)
     {
+        if (!_interaction.InRangeAndAccessible(args.Actor, entity.Owner))
+            return;
+
         if (GetSlotOrNull(entity.AsNullable(), args.Index) is not { Item: null } slot)
             return;
 
@@ -194,6 +200,9 @@ public abstract partial class SharedBladeServerSystem : EntitySystem
 
     private void OnPowerPressed(Entity<BladeServerRackComponent> entity, ref BladeServerRackPowerPressedMessage args)
     {
+        if (!_interaction.InRangeAndAccessible(args.Actor, entity.Owner))
+            return;
+
         if (GetSlotOrNull(entity.AsNullable(), args.Index) is not { } slot)
             return;
 

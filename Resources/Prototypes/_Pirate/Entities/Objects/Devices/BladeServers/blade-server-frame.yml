@@ -66,6 +66,8 @@
     layers:
     - state: frame
     - state: wires
+    - state: board
+      visible: false
   - type: Item
     size: Huge
     sprite: _Pirate/Structures/Machines/blade_server.rsi
