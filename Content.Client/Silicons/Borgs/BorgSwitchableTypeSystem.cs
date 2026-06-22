@@ -70,6 +70,7 @@ public sealed class BorgSwitchableTypeSystem : SharedBorgSwitchableTypeSystem
             _sprite.LayerSetRsiState((entity, sprite), BorgVisualLayers.Body, prototype.SpriteBodyState);
             _sprite.LayerSetRsiState((entity, sprite), BorgVisualLayers.LightStatus, prototype.SpriteToggleLightState);
             _sprite.SetScale((entity, sprite), prototype.SpriteScale); // Pirate: source quadborg art uses a custom sprite scale.
+            sprite.NoRotation = prototype.SpriteNoRotation; // Pirate: source quadborg art uses directional states.
         }
 
         if (TryComp(entity, out BorgChassisComponent? chassis))

@@ -31,6 +31,7 @@
   spriteNoMindState: quadsalv_e_r
   spriteToggleLightState: quadsalv_l
   spriteScale: 0.7, 0.7
+  spriteNoRotation: true
   petSuccessString: petting-success-salvage-cyborg
   petFailureString: petting-failure-salvage-cyborg
 
@@ -75,6 +76,7 @@
   spriteNoMindState: quadmed_e_r
   spriteToggleLightState: quadmed_l
   spriteScale: 0.7, 0.7
+  spriteNoRotation: true
   petSuccessString: petting-success-medical-cyborg
   petFailureString: petting-failure-medical-cyborg
 
@@ -107,5 +109,6 @@
   spriteNoMindState: quadserv_e_r
   spriteToggleLightState: quadserv_l
   spriteScale: 0.7, 0.7
+  spriteNoRotation: true
   petSuccessString: petting-success-service-cyborg
   petFailureString: petting-failure-service-cyborg

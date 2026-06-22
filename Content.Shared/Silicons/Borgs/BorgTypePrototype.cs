@@ -141,6 +141,12 @@ public sealed partial class BorgTypePrototype : IPrototype
     [DataField]
     public Vector2 SpriteScale { get; set; } = Vector2.One;
 
+    /// <summary>
+    /// Pirate: disables entity rotation for directional chassis sprites from source ports.
+    /// </summary>
+    [DataField]
+    public bool SpriteNoRotation { get; set; } = false;
+
     //
     // Minor information
     //
