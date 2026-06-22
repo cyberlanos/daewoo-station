@@ -438,12 +438,12 @@ namespace Content.IntegrationTests.Tests
             await pair.RunTicksSync(3);
 
             // We consider only non-audio entities, as some entities will just play sounds when they spawn.
-            int Count(IEntityManager ent) => ent.EntityCount - ent.Count<AudioComponent>();
-            int CountPersistent(IEntityManager ent) => Count(ent) - ent.Count<TimedDespawnComponent>();
             IEnumerable<EntityUid> Entities(IEntityManager entMan) => entMan.GetEntities()
                 .Where(e => !entMan.HasComponent<AudioComponent>(e));
             IEnumerable<EntityUid> PersistentEntities(IEntityManager entMan) => entMan.GetEntities()
                 .Where(e => !entMan.HasComponent<AudioComponent>(e) && !entMan.HasComponent<TimedDespawnComponent>(e));
+            int Count(IEntityManager ent) => Entities(ent).Count();
+            int CountPersistent(IEntityManager ent) => PersistentEntities(ent).Count();
 
             await Assert.MultipleAsync(async () =>
             {
