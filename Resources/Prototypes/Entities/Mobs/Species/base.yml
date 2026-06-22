@@ -541,6 +541,7 @@
         Brute: -0.07
   - type: Fingerprint
   - type: Blindable
+  - type: Blinking # Pirate: blinking
   # Other
   - type: Temperature
     heatDamageThreshold: 325
