@@ -101,6 +101,7 @@
   - PortableGeneratorJrPacmanMachineCircuitboard
   - EmitterCircuitboard
   - TelecomServerCircuitboard
+  - BladeServerRackMachineCircuitboard # Pirate
   - SMESAdvancedMachineCircuitboard
   - HolopadMachineCircuitboard
   - TeslaCoilCircuitboard
