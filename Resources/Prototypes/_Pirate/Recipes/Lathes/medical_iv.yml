@@ -1,0 +1,6 @@
+- type: latheRecipe
+  id: IVBloodPack
+  result: IVBloodPack
+  completetime: 4
+  materials:
+    Plastic: 625
