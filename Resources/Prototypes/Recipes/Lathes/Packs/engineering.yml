@@ -59,6 +59,9 @@
   - WeaponCapacitorRechargerCircuitboard
   - FreezerElectronics
   - CameraElectronics # goob
+  # Pirate: mass driver port.
+  - MassDriverCircuitboard
+  - MassDriverComputerCircuitboard
 
 - type: latheRecipePack
   id: EngineeringBoardsStatic
