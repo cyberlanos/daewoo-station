@@ -407,7 +407,7 @@ public sealed class SurveillanceCameraMonitorSystem : EntitySystem
         // Goobstation end
     }
 
-    private void DisconnectCamera(EntityUid uid, bool removeViewers, SurveillanceCameraMonitorComponent? monitor = null)
+    public void DisconnectCamera(EntityUid uid, bool removeViewers, SurveillanceCameraMonitorComponent? monitor = null) // Pirate: FPV drones
     {
         if (!Resolve(uid, ref monitor))
         {
@@ -628,7 +628,7 @@ public sealed class SurveillanceCameraMonitorSystem : EntitySystem
 
     // Attempts to switch over the current viewed camera on this monitor
     // to the new camera.
-    private void TrySwitchCameraByUid(EntityUid uid, EntityUid newCamera, SurveillanceCameraMonitorComponent? monitor = null)
+    public void TrySwitchCameraByUid(EntityUid uid, EntityUid newCamera, SurveillanceCameraMonitorComponent? monitor = null) // Pirate: FPV drones
     {
         if (!Resolve(uid, ref monitor))
         {
@@ -671,7 +671,7 @@ public sealed class SurveillanceCameraMonitorSystem : EntitySystem
         AddViewer(uid, player);
     }
 
-    private void UpdateUserInterface(EntityUid uid, SurveillanceCameraMonitorComponent? monitor = null, EntityUid? player = null)
+    public void UpdateUserInterface(EntityUid uid, SurveillanceCameraMonitorComponent? monitor = null, EntityUid? player = null) // Pirate: FPV drones
     {
         if (!Resolve(uid, ref monitor))
         {

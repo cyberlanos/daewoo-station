@@ -12,7 +12,7 @@ using Robust.Shared.Map; // Goobstation
 namespace Content.Server.SurveillanceCamera;
 
 [RegisterComponent]
-[Access(typeof(SurveillanceCameraMonitorSystem))]
+[Access(typeof(SurveillanceCameraMonitorSystem), Other = AccessPermissions.ReadExecute)] // Pirate: FPV drones pass monitor components into public monitor methods.
 public sealed partial class SurveillanceCameraMonitorComponent : Component
 {
     // Currently active camera viewed by this monitor.
