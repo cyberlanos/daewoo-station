@@ -53,8 +53,7 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (entity.Comp.Controlling)
         {
             args.Cancel();
-            if (!args.Silent)
-                _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-already-in-use"), entity.Owner, args.User);
+            _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-already-in-use"), entity.Owner, args.User);
 
             return;
         }
@@ -62,8 +61,7 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (entity.Comp.LinkedDroneUid is not { } droneUid)
         {
             args.Cancel();
-            if (!args.Silent)
-                _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-no-linked-drone"), entity.Owner, args.User);
+            _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-no-linked-drone"), entity.Owner, args.User);
 
             return;
         }
@@ -71,8 +69,7 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (AttemptControlDroneWasCancelled(entity, droneUid, args.User))
         {
             args.Cancel();
-            if (!args.Silent)
-                _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-bad-connection"), entity.Owner, args.User, PopupType.SmallCaution);
+            _popupSystem.PopupClient(Loc.GetString("remote-drone-controller-bad-connection"), entity.Owner, args.User, PopupType.SmallCaution);
 
             return;
         }
