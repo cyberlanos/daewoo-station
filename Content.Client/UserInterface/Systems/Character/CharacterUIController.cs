@@ -143,7 +143,8 @@ public sealed class CharacterUIController : UIController, IOnStateEntered<Gamepl
         }
 
         CharacterButton.Pressed = false;
-        _window?.DetailExaminableSubmitButton.Disabled = true;
+        if (_window != null)
+            _window.DetailExaminableSubmitButton.Disabled = true;
     }
 
     private void ActivateButton()
