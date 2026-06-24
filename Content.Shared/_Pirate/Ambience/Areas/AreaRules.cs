@@ -32,7 +32,7 @@ public sealed partial class InAreaRule : RulesRule
         foreach (var area in _areaMarkers)
         {
             var prototype = entManager.GetComponent<MetaDataComponent>(area.Owner).EntityPrototype;
-            if (prototype == null || !Areas.Any(id => id.Id == prototype.ID))
+            if (prototype == null || !Areas.Contains(new EntProtoId(prototype.ID)))
                 continue;
 
             return !Inverted;
