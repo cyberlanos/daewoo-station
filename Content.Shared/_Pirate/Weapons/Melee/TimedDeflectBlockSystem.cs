@@ -233,7 +233,7 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
             args.Args.Shooter == null ||
             !TryComp<WieldableComponent>(ent, out var wieldable) ||
             !wieldable.Wielded ||
-            !TryApplyDirectedDeflect(args.Args.Target, ent.Owner, ent.Comp, args.Args.Shooter.Value, GetDamageTotal(args.Args.Damage)))
+            !TryApplyDirectedDeflect(args.Args.Target, ent.Owner, ent.Comp, args.Args.Shooter.Value, GetDamageTotal(args.Args.Damage), isProjectile: false))
         {
             return;
         }
@@ -339,13 +339,14 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
         EntityUid weapon,
         TimedDeflectBlockComponent block,
         EntityUid attacker,
-        float incomingDamage)
+        float incomingDamage,
+        bool isProjectile)
     {
         if (!CanDefendAgainst(defender, attacker) ||
             !IsWithinDeflectWindow(defender, block))
             return false;
 
-        ApplySuccessfulDeflect(defender, weapon, block, attacker, incomingDamage);
+        ApplySuccessfulDeflect(defender, weapon, block, attacker, incomingDamage, isProjectile);
         RevealDefender(defender);
         return true;
     }
@@ -379,7 +380,7 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
             return false;
 
         // All checks passed — apply deflect side effects (power gain, stamina, sound, stealth reveal).
-        if (!TryApplyDirectedDeflect(defender, weapon, block, attacker, incomingDamage))
+        if (!TryApplyDirectedDeflect(defender, weapon, block, attacker, incomingDamage, isProjectile: true))
             return false;
 
         var desiredVelocity = direction * speed;
@@ -425,10 +426,14 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
         deflected = IsWithinDeflectWindow(defender, block);
 
         if (deflected)
-            ApplySuccessfulDeflect(defender, weapon, block, attacker, incomingDamage);
+            ApplySuccessfulDeflect(defender, weapon, block, attacker, incomingDamage, isProjectile: projectile != null);
         else
         {
-            AdjustStamina(defender, ScaleStaminaFraction(GetBlockStaminaDamage(block), block, incomingDamage), attacker, weapon);
+            var staminaCost = GetBlockStaminaDamage(block);
+            if (projectile != null)
+                staminaCost *= block.ProjectileStaminaMultiplier;
+
+            AdjustStamina(defender, ScaleStaminaFraction(staminaCost, block, incomingDamage), attacker, weapon);
             _audio.PlayPredicted(block.BlockSound, weapon, attacker);
         }
 
@@ -455,7 +460,8 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
         EntityUid weapon,
         TimedDeflectBlockComponent block,
         EntityUid? attacker,
-        float incomingDamage)
+        float incomingDamage,
+        bool isProjectile = false)
     {
         AddDeflectPower(weapon, block);
         block.DeflectWindowEnd = _timing.CurTime + TimeSpan.FromSeconds(GetDeflectWindow(block));
@@ -463,7 +469,11 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
         if (_net.IsServer)
             Dirty(weapon, block);
 
-        AdjustStamina(defender, ScaleStaminaFraction(GetDeflectStaminaCost(block), block, incomingDamage), attacker, weapon);
+        var staminaCost = GetDeflectStaminaCost(block);
+        if (isProjectile)
+            staminaCost *= block.ProjectileStaminaMultiplier;
+
+        AdjustStamina(defender, ScaleStaminaFraction(staminaCost, block, incomingDamage), attacker, weapon);
         _sparks.DoSparks(Transform(weapon).Coordinates, minSparks: 1, maxSparks: 2, playSound: false);
         _audio.PlayPredicted(block.DeflectSound, weapon, attacker);
         TryBackflip(defender, block);
