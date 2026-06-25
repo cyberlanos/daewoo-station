@@ -107,7 +107,11 @@ public sealed class TimedDeflectBlockSystem : EntitySystem
                 block.IsSheathed = false;
             }
 
-            if (_timing.CurTime - block.LastDeflectTime < TimeSpan.FromSeconds(block.PowerDecayDelay) ||
+            var effectiveLastDeflect = block.LastDeflectTime;
+            if (sheathed)
+                effectiveLastDeflect += (_timing.CurTime - block.SheathStartTime) * (1.0 - block.SheathWindowMultiplier);
+
+            if (_timing.CurTime - effectiveLastDeflect < TimeSpan.FromSeconds(block.PowerDecayDelay) ||
                 block.CurrentPower <= block.MinPower)
             {
                 continue;
