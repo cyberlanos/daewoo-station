@@ -9,6 +9,7 @@
   - Pillow
   subgroups:
   - PiratePlushies
+  - PirateGambling
 
 
 - type: loadoutGroup
@@ -25,6 +26,17 @@
   - PlushieSkeleton
   - PlushieTayler
   - PlushiePocketAssistant
+
+- type: loadoutGroup
+  id: PirateGambling
+  name: loadout-group-trinkets
+  loadouts:
+  - CardBoxBlack
+  - CardBoxNanotrasen
+  - CardBoxTarot
+  - CardBoxSparot
+  - CardBoxTippyTrump
+  - TippyTrumpMysteryPack
 
 - type: loadoutGroup
   id: PirateEEGenericItems
