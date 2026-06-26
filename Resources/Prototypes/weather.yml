@@ -44,6 +44,7 @@
     path: /Audio/_starcup/Effects/Weather/firestorm.ogg
     params:
       loop: true
+      volume: -1
 
 - type: weather
   id: Fallout
@@ -127,6 +128,7 @@
     path: /Audio/_starcup/Effects/Weather/polar_wind.ogg
     params:
       loop: true
+      volume: -3
 
 - type: weather
   id: SnowfallHeavy
