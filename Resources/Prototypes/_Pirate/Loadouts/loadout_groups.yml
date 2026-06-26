@@ -37,6 +37,7 @@
   - CardBoxSparot
   - CardBoxTippyTrump
   - TippyTrumpMysteryPack
+  - CardBoxNuno
 
 - type: loadoutGroup
   id: PirateEEGenericItems

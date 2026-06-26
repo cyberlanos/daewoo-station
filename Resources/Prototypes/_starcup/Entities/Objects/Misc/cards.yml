@@ -11,8 +11,12 @@
     state: box
     layers:
     - state: copper_box
+      map: [ "closeLayer" ]
     - state: copper_box_open
       map: [ "openLayer" ]
+      visible: false
+    - state: copper_box
+      map: [ "fullLayer" ]
       visible: false
   - type: OpenTriggeredStorageFill
     contents:

@@ -10,8 +10,12 @@
     state: box
     layers:
     - state: purple_box
+      map: [ "closeLayer" ]
     - state: purple_box_open
       map: [ "openLayer" ]
+      visible: false
+    - state: purple_box
+      map: [ "fullLayer" ]
       visible: false
   - type: OpenTriggeredStorageFill
     contents:
@@ -1137,8 +1141,12 @@
     state: box
     layers:
     - state: tt_boxclosed
+      map: [ "closeLayer" ]
     - state: tt_boxopen
       map: [ "openLayer" ]
+      visible: false
+    - state: tt_boxclosed
+      map: [ "fullLayer" ]
       visible: false
   - type: OpenTriggeredStorageFill
     contents:

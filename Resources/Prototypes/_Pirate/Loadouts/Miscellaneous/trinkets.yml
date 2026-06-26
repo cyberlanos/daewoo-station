@@ -159,3 +159,10 @@
     - TippyTrumpMysteryPack
   groupBy: "Gambling"
 
+- type: loadout
+  id: CardBoxNuno
+  storage:
+    back:
+    - CardBoxNuno
+  groupBy: "Gambling"
+

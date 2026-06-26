@@ -34,6 +34,7 @@
     CardBoxBlack: 3 # GoobStation
     CardBoxSparot: 1 # GoobStation
     CardBoxTarot: 2 # GoobStation
+    CardBoxNuno: 1 # GoobStation
     PokerChips100: 6 # GoobStation
   contrabandInventory:
     Basketball: 1
