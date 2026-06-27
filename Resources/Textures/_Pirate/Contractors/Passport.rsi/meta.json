@@ -50,16 +50,10 @@
             "name": "passport_sol_open"
         },
         {
-            "name": "passport_species_human"
-        },
-        {
             "name": "vox_wallet_closed"
         },
         {
             "name": "vox_wallet_open"
-        },
-        {
-            "name": "vox_wallet_text"
         }
     ]
 }

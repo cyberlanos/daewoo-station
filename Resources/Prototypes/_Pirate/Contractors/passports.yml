@@ -9,8 +9,7 @@
     - type: Sprite
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
-      - state: passport_biesel_open # Override this for a new nationality
-      - state: passport_species_human # Todo: make variable via a custom component
+      - state: passport_biesel_open
     - type: Appearance
     - type: EmitSoundOnPickup
       sound:
@@ -37,7 +36,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_biesel_open
-      - state: passport_species_human # Todo: make variable via a custom component
 #    - type: ExtendDescription
 #      descriptionList:
 #      - description: "bieselite_view_biesel_passport"
@@ -66,7 +64,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_nralakk_open
-      - state: passport_species_human # Todo: make variable via a custom component
 
 - type: entity
   name: паспорт Солоріанського Альянсу
@@ -77,7 +74,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_sol_open
-      - state: passport_species_human # Todo: make variable via a custom component
 #    - type: ExtendDescription
 #      descriptionList:
 #      - description: "bieselite_view_sol_passport"
@@ -106,7 +102,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_eridan_open
-      - state: passport_species_human # Todo: make variable via a custom component
 
 - type: entity
   name: паспорт Адхомаі
@@ -117,7 +112,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_adhomai_open
-      - state: passport_species_human # Todo: make variable via a custom component
 
 - type: entity
   name: паспорт Ізвескі-Гегемонії
@@ -128,7 +122,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_izweski_open
-      - state: passport_species_human # Todo: make variable via a custom component
 
 - type: entity
   name: паспорт Золотої Глибини
@@ -139,7 +132,6 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_goldendeep_open
-      - state: passport_species_human # Todo: make variable via a custom component
 
 - type: entity
   name: гаманець Вокса
@@ -150,4 +142,3 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: vox_wallet_open
-      - state: vox_wallet_text
