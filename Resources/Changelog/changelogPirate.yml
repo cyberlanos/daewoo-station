@@ -1500,3 +1500,13 @@ Entries:
         обличчя.
   id: 131
   time: '2026-06-22T16:06:46.0000000+00:00'
+- author: SpaceCowboyServer
+  changes:
+    - type: Add
+      message: Динамічна погода на мапах Льодовик та Піраміда.
+    - type: Add
+      message: Денний цикл на мапі Льодовик.
+    - type: Add
+      message: Нові звуки погоди.
+  id: 132
+  time: '2026-06-27T10:15:43.0000000+00:00'
