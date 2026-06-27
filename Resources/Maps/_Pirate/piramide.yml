@@ -118,6 +118,8 @@ entities:
       offset: 720
       duration: 2400
       originalColor: '#E0A0C0FF'
+    - type: DynamicWeather
+      scheduler: WeatherPiramide
     - type: MapAtmosphere
       space: False
       mixture:
