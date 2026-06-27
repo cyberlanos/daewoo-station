@@ -1522,3 +1522,13 @@ Entries:
       message: Додано Єгермейстер та коктейлі з нього
   id: 134
   time: '2026-06-27T10:57:32.0000000+00:00'
+- author: SpaceCowboyServer
+  changes:
+    - type: Add
+      message: Набір гральних колод Таро, Нуно, Спарот
+    - type: Add
+      message: Картки TippyTrump
+    - type: Add
+      message: Картки TippyTrump синдикату які створюють тварин при викиданні
+  id: 135
+  time: '2026-06-27T11:47:18.0000000+00:00'
