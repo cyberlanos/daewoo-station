@@ -81,7 +81,6 @@
     - !type:CharacterEmployerRequirement
       employers:
       - NanoTrasen
-      #- EinsteinEngines # ЕЕ не состоїть в SCC
       - ZavodskiyInterstellar
       - HephaestusIndustries
     # Pirate contractor end

@@ -43,7 +43,7 @@
         - IPC
   languages:
     - Tradeband
-  passportPrototype: EridanPassport
+  passportPrototype: EridanCorpID
 
 - type: nationality
   id: Adhomai
