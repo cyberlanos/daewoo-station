@@ -298,6 +298,9 @@
         reagents:
         - ReagentId: EggCream
           Quantity: 30
+  - type: Icon
+    sprite: _DEN/Objects/Consumable/Drinks/eggcream.rsi
+    state: icon
 
 - type: entity
   parent: DrinkGlass
@@ -311,6 +314,9 @@
         reagents:
         - ReagentId: VanillaMilkshake
           Quantity: 30
+  - type: Icon
+    sprite: _DEN/Objects/Consumable/Drinks/vanillamilkshake.rsi
+    state: icon
 
 - type: entity
   parent: DrinkGlass
@@ -324,6 +330,9 @@
         reagents:
         - ReagentId: ChocolateMilkshake
           Quantity: 30
+  - type: Icon
+    sprite: _DEN/Objects/Consumable/Drinks/chocolatemilkshake.rsi
+    state: icon
 
 - type: entity
   parent: DrinkGlass
@@ -337,6 +346,9 @@
         reagents:
         - ReagentId: BerryMilkshake
           Quantity: 30
+  - type: Icon
+    sprite: _DEN/Objects/Consumable/Drinks/berrymilkshake.rsi
+    state: icon
 
 - type: entity
   parent: DrinkGlass
@@ -350,3 +362,6 @@
         reagents:
         - ReagentId: CottonMilkshake
           Quantity: 30
+  - type: Icon
+    sprite: _DEN/Objects/Consumable/Drinks/cottonmilkshake.rsi
+    state: icon
