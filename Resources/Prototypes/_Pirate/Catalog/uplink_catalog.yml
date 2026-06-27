@@ -136,6 +136,25 @@
         - SurplusBundle
 
 - type: listing
+  id: UplinkMobCatReject
+  name: uplink-mobcat-reject-name
+  description: uplink-mobcat-reject-desc
+  icon: { sprite: _Pirate/Objects/Devices/syndicatyarn.rsi, state: radio-syndicat }
+  productEntity: ReinforcementRadioSyndicateSyndiCatReject
+  cost:
+    Telecrystal: 2
+  categories:
+  - UplinkAllies
+  conditions:
+  - !type:StoreWhitelistCondition
+    blacklist:
+      tags:
+      - NukeOpsUplink
+      - ContravendUplink # Pirate: follow local ally listing restrictions.
+  - !type:ListingLimitedStockCondition
+    stock: 1
+
+- type: listing
   id: UplinkMobMothroachSyndicate
   name: uplink-syndicate-mothroach-name
   description: uplink-syndicate-mothroach-description
