@@ -96,7 +96,7 @@
       points: 2
       required: false
     Tail:
-      points: 2
+      points: 1
       required: false
     # PIRATE START
     Face:
