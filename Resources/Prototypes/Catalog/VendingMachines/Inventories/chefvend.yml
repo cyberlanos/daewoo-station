@@ -90,7 +90,8 @@
     ReagentContainerCornmeal: 2
     ReagentContainerSugar: 2
     ReagentContainerRice: 2
-    FoodCondimentPacketSalt: 4
+    ReagentContainerSalt: 1 # Pirate: salt and pepper bags
+    ReagentContainerPepper: 1 # Pirate: salt and pepper bags
     FoodCondimentBottleEnzyme: 2
     FoodCondimentBottleHotsauce: 1
     FoodCondimentBottleKetchup: 1
