@@ -1510,3 +1510,9 @@ Entries:
       message: Нові звуки погоди.
   id: 132
   time: '2026-06-27T10:15:43.0000000+00:00'
+- author: SpaceCowboyServer
+  changes:
+    - type: Add
+      message: Хвости інших рас для слаймів
+  id: 133
+  time: '2026-06-27T10:48:20.0000000+00:00'
