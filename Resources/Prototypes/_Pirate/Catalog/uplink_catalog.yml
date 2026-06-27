@@ -21,6 +21,17 @@
     - UplinkWeaponry
 
 - type: listing
+  id: UplinkRifleBandit
+  name: uplink-rifle-bandit-name
+  description: uplink-rifle-bandit-desc
+  productEntity: ClothingBackpackDuffelSyndicateFilledDMR
+  icon: { sprite: /Textures/_Pirate/Objects/Weapons/Guns/Rifles/bandit.rsi, state: icon }
+  cost:
+    Telecrystal: 18
+  categories:
+    - UplinkWeaponry
+
+- type: listing
   id: uplinkFlamethrower
   name: uplink-flamethrower-name
   description: uplink-flamethrower-desc
@@ -69,6 +80,17 @@
   productEntity: EchionSynth
   cost:
     Telecrystal: 40
+  categories:
+  - UplinkAmmo
+
+- type: listing
+  id: UplinkRifleDMRMagazine
+  name: uplink-rifle-magazine-bandit-name
+  description: uplink-rifle-magazine-bandit-desc
+  icon: { sprite: /Textures/_Pirate/Objects/Weapons/Guns/Ammunition/Magazine/LightRifle/dmr_mag.rsi, state: base }
+  productEntity: MagazineLightRifleCaseless
+  cost:
+    Telecrystal: 2
   categories:
   - UplinkAmmo
 
