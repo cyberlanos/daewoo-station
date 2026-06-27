@@ -1,0 +1,1163 @@
+- type: entity
+  parent: BaseWeaponPowerCell
+  id: BaseMantisRanged # Lorewise, they use altered and contained anomaly cores to generate physical ammo
+  abstract: true # But codewise, they're just battery guns that look and sound like they're shooting ballistics
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+    - state: mag-0
+      map: ["enum.GunVisualLayers.Mag"]
+  - type: Item
+    size: Normal # Defaults to a 2x2 square
+  - type: Clothing
+    quickEquip: false
+    slots:
+    - suitStorage
+  - type: Gun
+    #fireOnDropChance: 0.1
+    soundEmpty:
+      path: /Audio/_DV/Weapons/Guns/Empty/dry_fire.ogg
+      params:
+        volume: -5
+        variation: 0.05
+  - type: MagazineVisuals
+    magState: mag
+    zeroVisible: true
+  #- type: ItemSlots # These guns in the game yet and are causing build errors, will repair in the upcoming caster pr
+  #  slots:
+  #    gun_magazine:
+  #      name: Magazine
+  #      startingItem: null
+  #      whitelist:
+  #        tags:
+  #        - MantisCaster
+  - type: Execution
+  - type: MeleeWeapon
+    attackRate: 1.2
+    damage:
+      types:
+        Blunt: 7.5
+    wideAnimationRotation: 90
+    soundHit:
+      collection: MetalThud
+  - type: ThrowingAngle
+    angle: -90
+    angularVelocity: true
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisRanged
+  id: MantisRangedPistol
+  name: OCC-P12 "Kalliste"
+  description: "A sleek mantis sidearm favored for its balance and effortless precision. It uses specialized magazines called \"casters,\" each containing an anomaly core that continually forms its own bullets. Issued with both banishing and silencing casters for confronting supernatural threats and rogue psions. Designed for the Outer Chamber Crucible by special commission."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-pistol.rsi
+  - type: Item
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-pistol.rsi
+    size: Small
+    shape:
+    - 0,0,1,0
+    - 0,1,0,1
+  - type: Clothing
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-pistol.rsi
+    slots:
+    - Belt
+    - suitStorage
+  - type: Gun
+    fireRate: 5
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/pistol.ogg
+      params:
+        volume: -1
+  - type: MagazineVisuals
+    steps: 13
+  #- type: ItemSlots # These guns in the game yet and are causing build errors, will repair in the upcoming caster pr
+  #  slots:
+  #    gun_magazine:
+  #      name: Magazine
+  #      startingItem: MantisCasterPistolHoly
+  #      insertSound: /Audio/Weapons/Guns/MagIn/pistol_magin.ogg
+  #      ejectSound: /Audio/Weapons/Guns/MagOut/pistol_magout.ogg
+  #      whitelist:
+  #        tags:
+  #        - MantisCasterPistol
+  - type: Tag
+    tags:
+    - Sidearm
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisRanged
+  id: MantisRangedRevolver
+  name: OCC-P06 "Charon"
+  description: "A gilded mantis revolver engineered for measured control and heavy, deliberate impact. It uses specialized cylinders called \"casters,\" each containing an anomaly core that continually forms its own bullets. Issued with both banishing and silencing casters for confronting supernatural threats and rogue psions. Designed for the Outer Chamber Crucible by special commission."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-revolver.rsi
+  - type: Item
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-revolver.rsi
+    size: Small
+    shape:
+    - 0,0,1,0
+    - 0,1,0,1
+  - type: Clothing
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-revolver.rsi
+    slots:
+    - Belt
+    - suitStorage
+  - type: Gun
+    fireRate: 2
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/revolver.ogg
+      params:
+        volume: -1
+  - type: MagazineVisuals
+    steps: 7
+  #- type: ItemSlots # These guns in the game yet and are causing build errors, will repair in the upcoming caster pr
+  #  slots:
+  #    gun_magazine:
+  #      name: Magazine
+  #      startingItem: MantisCasterRevolverHoly
+  #      insertSound: /Audio/Weapons/Guns/Misc/revolver_spin.ogg
+  #      ejectSound: /Audio/Weapons/Guns/MagOut/ltrifle_magout.ogg
+  #      whitelist:
+  #        tags:
+  #        - MantisCasterRevolver
+  - type: Tag
+    tags:
+    - Sidearm
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisRanged
+  id: MantisRangedShotgun
+  name: OCC-S05 "Empusa"
+  description: "A vicious sawn-off mantis shotgun designed to dominate close-range encounters. It uses specialized cylinders called \"casters,\" each containing an anomaly core that continually forms its own pellets. Issued with both banishing and silencing casters for confronting supernatural threats and rogue psions. Designed for the Outer Chamber Crucible by special commission."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-shotgun.rsi
+  - type: Item
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-shotgun-inhands-64x.rsi
+    size: Normal
+    shape:
+    - 0,0,2,1 # 3x2 rectangle
+  - type: Clothing
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-shotgun.rsi
+    slots:
+    - Back
+    - suitStorage
+  - type: Gun
+    fireRate: 2
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/shotgun.ogg
+      params:
+        volume: -1
+  - type: MagazineVisuals
+    steps: 6
+  #- type: ItemSlots # These guns in the game yet and are causing build errors, will repair in the upcoming caster pr
+  #  slots:
+  #    gun_magazine:
+  #      name: Magazine
+  #      startingItem: MantisCasterShotgunHoly
+  #      insertSound: /Audio/Weapons/Guns/Misc/revolver_spin.ogg
+  #      ejectSound: /Audio/Weapons/Guns/MagOut/sfrifle_magout.ogg
+  #      whitelist:
+  #        tags:
+  #        - MantisCasterShotgun
+  - type: MeleeWeapon
+    attackRate: 1.3333
+    damage:
+      types:
+        Blunt: 9
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisRanged
+  id: MantisRangedSubMachineGun
+  name: OCC-A24 "Strix"
+  description: "A compact, fast-cycling mantis submachine gun built for relentless fire in tight spaces. It uses specialized magazines called \"casters,\" each containing an anomaly core that continually forms its own bullets. Issued with both banishing and silencing casters for confronting supernatural threats and rogue psions. Designed for the Outer Chamber Crucible by special commission."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-submachinegun.rsi
+  - type: Item
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-submachinegun.rsi
+    size: Normal
+    shape:
+    - 0,0,2,1 # 3x2 rectangle
+  - type: Clothing
+    sprite: _DEN/Objects/Weapons/Guns/Battery/Mantis/mantis-submachinegun.rsi
+    slots:
+    - Back
+    - suitStorage
+  - type: Gun
+    fireRate: 8
+    burstFireRate: 8
+    minAngle: 6
+    maxAngle: 18
+    angleIncrease: 10
+    angleDecay: 10
+    selectedMode: FullAuto
+    availableModes:
+    - FullAuto
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/smg.ogg
+      params:
+        volume: -1
+  - type: MagazineVisuals
+    steps: 37
+  #- type: ItemSlots # These guns in the game yet and are causing build errors, will repair in the upcoming caster pr
+  #  slots:
+  #    gun_magazine:
+  #      name: Magazine
+  #      startingItem: MantisCasterSubMachineGunHoly
+  #      insertSound: /Audio/Weapons/Guns/MagIn/smg_magin.ogg
+  #      ejectSound: /Audio/Weapons/Guns/MagOut/smg_magout.ogg
+  #      whitelist:
+  #        tags:
+  #        - MantisCasterSubMachineGun
+  - type: MeleeWeapon
+    attackRate: 1.3333
+    damage:
+      types:
+        Blunt: 9
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+# Mantis guns end
+
+
+- type: entity
+  parent: BaseItem
+  id: BaseMantisCaster
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o1 # Overridden by the max charge levels, noting that this layer disappears when the charge is depleted
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: Item
+    size: Small
+  - type: Battery # All recharging casters have the same maxCharge, and the fireCost varies per gun
+    pricePerJoule: 0 # No credit value regardless of charge
+    maxCharge: 360 # Same charge as PowerCellSmall in case they accidentally plug into something
+    startingCharge: 360 # Not intended to be a particularly useful power source if so
+  - type: PowerCell
+  - type: Appearance
+  - type: PowerCellVisuals
+  - type: BatterySelfRecharger
+    autoRecharge: true # Takes 30 seconds to charge itself back to full, comparable to WeaponAdvancedLaser (but with special ammo that doesn't hurt player characters)
+    autoRechargeRate: 12 # If this needs balanced, consider adding autoRechargePause and autoRechargePauseTime instead of just lowering it (whatever works though)
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgun # Inherited by BaseMantisCasterCapgun
+    fireCost: 72 # Can fire 5 times, takes 12 seconds to recharge 1 shot (just as an example)
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterNoRecharge # Variant base for the lethal versions that won't recharge on their own
+  description: "A rock anomaly core harnessed as an ammo source. It forms diamond shards into lethal projectiles, each one perfectly faceted and catastrophically illegal. Unlike other casters, it must be placed in a cell recharger to replenish itself."
+  abstract: true # If they need to become disposable, add the NoRecharge tag and adjust their TC cost in _DEN's uplink_catalog.yml
+  components:
+  - type: Battery
+    maxCharge: 1080 # On par with WeaponLaserCarbine's battery for a 54-second recharge in a cell recharger, per direction
+    startingCharge: 1080 # The guns still fire as many times as usual, because lethal casters also cost more to fire
+  - type: BatterySelfRecharger # 1080 instead of 1000 so the numbers divide evenly by the number of shots
+    autoRecharge: false
+    autoRechargeRate: 0 # You gotta go plug it in, buddy
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterCapgun # Variant base without glowing bullets and a 5x longer recharge rate
+  description: "An exotic anomaly core harnessed as a self-replenishing ammo source. It generates harmless percussion caps suitable for drills and training. Despite the playful construction, the device still radiates the faint, uncanny energy of all anomaly tech."
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o2
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: shaded
+  - type: BatterySelfRecharger
+    autoRechargeRate: 1.2 # Takes 5 minutes to charge itself back to full (so people aren't too annoying with the capguns)
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterPistol
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o7
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgun
+    fireCost: 30 # Can fire 12 times, takes 2.5 seconds to recharge 1 shot
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterPistol
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterRevolver
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o6
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgun
+    fireCost: 60 # Can fire 6 times, takes 5 seconds to recharge 1 shot
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterRevolver
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterShotgun
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o5
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+   # levels: 5 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgun
+    fireCost: 72 # Can fire 5 times, takes 6 seconds to recharge 1 shot
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterShotgun
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCaster
+  id: BaseMantisCasterSubMachineGun
+  abstract: true
+  components:
+  - type: Sprite
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o8
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+    #levels: 8 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgun
+    fireCost: 15 # Can fire 24 times, takes 1.25 seconds to recharge 1 shot
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterSubMachineGun
+      - MantisBeltStorable
+
+# Cryptobiolin casters
+
+
+- type: entity
+  parent: BaseMantisCasterPistol
+  id: MantisCasterPistolCrypto
+  name: pistol caster (silencing)
+  description: "A liquid anomaly core harnessed as a self-replenishing ammo source. Each bullet carries a measured droplet of cryptobiolin that dampens noospheric connection on contact, suppressing psionics for nearly two minutes per hit. A full magazine carries enough to last twenty minutes. Built to neutralize violent psions without causing harm."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-pistol-cryptobiolin.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCrypto
+
+
+- type: entity
+  parent: BaseMantisCasterRevolver
+  id: MantisCasterRevolverCrypto
+  name: revolver caster (silencing)
+  description: "A liquid anomaly core harnessed as a self-replenishing ammo source. Each bullet carries a measured droplet of cryptobiolin that dampens noospheric connection on contact, suppressing psionics for over three minutes per hit. A full cylinder carries enough to last twenty minutes. Built to neutralize violent psions without causing harm."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-revolver-cryptobiolin.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCryptoRevolver
+
+
+- type: entity
+  parent: BaseMantisCasterShotgun
+  id: MantisCasterShotgunCrypto
+  name: shotgun caster (silencing)
+  description: "A liquid anomaly core harnessed as a self-replenishing ammo source. Each blast disperses measured droplets of cryptobiolin that dampen noospheric connection on contact, suppressing psionics for forty seconds per pellet or four minutes per shot. A full cylinder carries enough to last twenty minutes. Built to neutralize violent psions without causing harm."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-shotgun-cryptobiolin.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCryptoSpread
+
+
+- type: entity
+  parent: BaseMantisCasterSubMachineGun
+  id: MantisCasterSubMachineGunCrypto
+  name: submachine gun caster (silencing)
+  description: "A liquid anomaly core harnessed as a self-replenishing ammo source. Each bullet carries a measured droplet of cryptobiolin that dampens noospheric connection on contact, suppressing psionics for over thirty seconds per hit. A full magazine carries enough to last twenty minutes. Built to neutralize violent psions without causing harm."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-submachinegun-cryptobiolin.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCryptoSubMachineGun
+
+# Holy casters
+
+
+- type: entity
+  parent: BaseMantisCasterPistol
+  id: MantisCasterPistolHoly
+  name: pistol caster (banishing)
+  description: "A floral anomaly core harnessed as a self-replenishing ammo source. The bullets it manifests tear through supernatural threats without harming anything mundane. Called \"holy\" by laypeople--thanks to the chaplain--but \"metaphysical\" would be a more accurate description."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-pistol-holy.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisHoly
+
+
+- type: entity
+  parent: BaseMantisCasterRevolver
+  id: MantisCasterRevolverHoly
+  name: revolver caster (banishing)
+  description: "A floral anomaly core harnessed as a self-replenishing ammo source. The bullets it manifests tear through supernatural threats without harming anything mundane. Called \"holy\" by laypeople--thanks to the chaplain--but \"metaphysical\" would be a more accurate description."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-revolver-holy.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisHolyRevolver
+
+
+- type: entity
+  parent: BaseMantisCasterShotgun
+  id: MantisCasterShotgunHoly
+  name: shotgun caster (banishing)
+  description: "A floral anomaly core harnessed as a self-replenishing ammo source. The pellets it manifests tear through supernatural threats without harming anything mundane. Called \"holy\" by laypeople--thanks to the chaplain--but \"metaphysical\" would be a more accurate description."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-shotgun-holy.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisHolySpread
+
+
+- type: entity
+  parent: BaseMantisCasterSubMachineGun
+  id: MantisCasterSubMachineGunHoly
+  name: submachine gun caster (banishing)
+  description: "A floral anomaly core harnessed as a self-replenishing ammo source. The bullets it manifests tear through supernatural threats without harming anything mundane. Called \"holy\" by laypeople--thanks to the chaplain--but \"metaphysical\" would be a more accurate description."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-submachinegun-holy.rsi
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisHolySubMachineGun
+
+# Lethal casters (traitor items)
+
+
+- type: entity
+  parent: BaseMantisCasterNoRecharge
+  id: MantisCasterPistolLethal
+  name: pistol caster (piercing)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-pistol-lethal.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o7
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+    #levels: 7 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisLethal
+    fireCost: 90 # Can fire 12 times, takes 4.5 seconds in a cell recharger to recharge 1 shot
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterPistol
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterNoRecharge
+  id: MantisCasterRevolverLethal
+  name: revolver caster (piercing)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-revolver-lethal.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o6
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+    #levels: 6 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisLethalRevolver
+    fireCost: 180 # Can fire 6 times, takes 9 seconds in a cell recharger to recharge 1 shot
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterRevolver
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterNoRecharge
+  id: MantisCasterShotgunLethal
+  name: shotgun caster (piercing)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-shotgun-lethal.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o5
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+    #levels: 5 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisLethalSpread
+    fireCost: 216 # Can fire 5 times, takes 10.8 seconds in a cell recharger to recharge 1 shot
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterShotgun
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterNoRecharge
+  id: MantisCasterSubMachineGunLethal
+  name: submachine gun caster (piercing)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-submachinegun-lethal.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o8
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: unshaded
+  - type: PowerCell
+    # levels: 8 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisLethalSubMachineGun
+    fireCost: 42.5 # Can fire 24 times, takes 2.125 seconds in a cell recharger to recharge 1 shot
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterSubMachineGun
+      - MantisBeltStorable
+
+# Capgun casters
+
+
+- type: entity
+  parent: BaseMantisCasterCapgun
+  id: MantisCasterPistolCapgun
+  name: pistol caster (training)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-pistol-capgun.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o7
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: shaded
+  - type: PowerCell
+    # levels: 7 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    fireCost: 30 # Can fire 12 times
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterPistol
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterCapgun
+  id: MantisCasterRevolverCapgun
+  name: revolver caster (training)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-revolver-capgun.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o6
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: shaded
+  - type: PowerCell
+    # levels: 6 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    fireCost: 60 # Can fire 6 times
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterRevolver
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterCapgun
+  id: MantisCasterShotgunCapgun
+  name: shotgun caster (training)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-shotgun-capgun.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o5
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: shaded
+  - type: PowerCell
+   # levels: 5 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    proto: BulletMantisCapgunSpread
+    fireCost: 72 # Can fire 5 times
+  - type: Item
+    storedRotation: 90
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterShotgun
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: BaseMantisCasterCapgun
+  id: MantisCasterSubMachineGunCapgun
+  name: submachine gun caster (training)
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Ammunition/Magazine/Battery/Mantis/mantis-submachinegun-capgun.rsi
+    layers:
+    - state: base
+      map: [ "enum.PowerCellVisualLayers.Base" ]
+    - state: o8
+      map: [ "enum.PowerCellVisualLayers.Unshaded" ]
+      shader: shaded
+  - type: PowerCell
+    #levels: 8 # Aurora: Comment out, fix when casters are ported
+  - type: ProjectileBatteryAmmoProvider
+    fireCost: 15 # Can fire 24 times
+  - type: Tag
+    tags:
+      - MantisCaster
+      - MantisCasterSubMachineGun
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: MuzzleFlashEffect
+  id: MuzzleFlashEffectMantisCapgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.4
+  - type: Sprite
+    drawdepth: Effects
+    offset: 0.1, 0
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: muzzle_capgun
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 2
+    energy: 3
+    color: "#ffb869"
+
+
+- type: entity
+  parent: MuzzleFlashEffect
+  id: MuzzleFlashEffectMantisCrypto
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.4
+  - type: Sprite
+    drawdepth: Effects
+    offset: 0.1, 0
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: muzzle_crypto
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 2
+    energy: 3
+    color: "#6279f9"
+
+
+- type: entity
+  parent: MuzzleFlashEffect
+  id: MuzzleFlashEffectMantisHoly
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.4
+  - type: Sprite
+    drawdepth: Effects
+    offset: 0.1, 0
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: muzzle_holy
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 2
+    energy: 3
+    color: "#88b0d0"
+
+
+- type: entity
+  parent: MuzzleFlashEffect
+  id: MuzzleFlashEffectMantisLethal
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.4
+  - type: Sprite
+    drawdepth: Effects
+    offset: 0.1, 0
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: muzzle_lethal
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 2
+    energy: 3
+    color: "#44fbf7"
+
+# Capgun bullets
+
+
+- type: entity
+  parent: BaseBullet
+  id: BulletMantisCapgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+    layers:
+    - state: bullet_capgun
+  - type: Ammo
+    muzzleFlash: MuzzleFlashEffectMantisCapgun # Big fiery flash
+  - type: Projectile
+    impactEffect: BulletImpactEffectMantisCapgun # Silly little sparkle
+    damage:
+      types:
+        Piercing: 0
+    soundHit:
+      path: /Audio/_DEN/Weapons/Guns/Hits/bwomp.ogg
+      params:
+        variation: 0.05
+
+
+- type: entity
+  parent: BulletMantisCapgun
+  id: BulletMantisCapgunSpread
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ProjectileSpread
+    proto: BulletMantisCapgun
+    count: 6
+    spread: 20
+
+# Pistol bullets, the rest are parented to these with damage/transfer amounts adjusted
+# Initial piercing/holy damage values chosen by direction, may need work
+
+
+- type: entity
+  parent: BaseBullet
+  id: BulletMantisCrypto
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+    layers:
+    - state: bullet_crypto
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.75
+    energy: 1.75
+    color: "#6279f9"
+  - type: Ammo
+    muzzleFlash: MuzzleFlashEffectMantisCrypto
+  - type: Projectile
+    impactEffect: BulletImpactEffectMantisCrypto
+    damage:
+      types:
+        Piercing: 0
+    soundHit:
+      path: /Audio/_DEN/Weapons/Guns/Hits/hyposhot.ogg
+      params:
+        variation: 0.05
+  - type: ChemicalAmmo
+  - type: SolutionContainerManager
+    solutions:
+      ammo:
+        reagents:
+        - ReagentId: Cryptobiolin
+          Quantity: 5
+  - type: SolutionInjectOnProjectileHit
+    solution: ammo
+    transferAmount: 5 # 5u of crypto disables psionics for 1m40s, and a full magazine of any mantis gun will disable psionics for 20m
+
+
+- type: entity
+  parent: BaseBullet
+  id: BulletMantisHoly
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+    layers:
+    - state: bullet_holy
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.75
+    energy: 1.75
+    color: "#88b0d0"
+  - type: Ammo
+    muzzleFlash: MuzzleFlashEffectMantisHoly
+  - type: Projectile
+    impactEffect: BulletImpactEffectMantisHoly
+    damage:
+      types:
+        Holy: 10
+    soundHit:
+      path: /Audio/_DEN/Weapons/Guns/Hits/burnshot.ogg
+      params:
+        variation: 0.05
+
+
+- type: entity
+  parent: BaseBullet
+  id: BulletMantisLethal
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+    layers:
+    - state: bullet_lethal
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.75
+    energy: 1.75
+    color: "#44fbf7"
+  - type: Ammo
+    muzzleFlash: MuzzleFlashEffectMantisLethal
+  - type: Projectile
+    impactEffect: BulletImpactEffectMantisLethal
+    damage:
+      types:
+        Piercing: 15
+    soundHit:
+      path: /Audio/Weapons/Guns/Hits/bullet_hit.ogg
+      params:
+        variation: 0.05
+
+# Revolver bullets
+
+
+- type: entity
+  parent: BulletMantisCrypto
+  id: BulletMantisCryptoRevolver
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: SolutionContainerManager
+    solutions:
+      ammo:
+        reagents:
+        - ReagentId: Cryptobiolin
+          Quantity: 10
+  - type: SolutionInjectOnProjectileHit
+    solution: ammo
+    transferAmount: 10 # 10u of crypto disables psionics for 3m20s, and a full magazine of any mantis gun will disable psionics for 20m
+
+
+- type: entity
+  parent: BulletMantisHoly
+  id: BulletMantisHolyRevolver
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Holy: 30
+
+
+- type: entity
+  parent: BulletMantisLethal
+  id: BulletMantisLethalRevolver
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Piercing: 36
+
+# Shotgun bullets
+
+
+- type: entity
+  parent: BulletMantisCrypto
+  id: BulletMantisCryptoShotgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: SolutionContainerManager
+    solutions:
+      ammo:
+        reagents:
+        - ReagentId: Cryptobiolin
+          Quantity: 2
+  - type: SolutionInjectOnProjectileHit
+    solution: ammo
+    transferAmount: 2 # 2u of crypto disables psionics for 40s, and a full magazine of any mantis gun will disable psionics for 20m
+
+
+- type: entity
+  parent: BulletMantisCryptoShotgun
+  id: BulletMantisCryptoSpread
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ProjectileSpread
+    proto: BulletMantisCryptoShotgun
+    count: 6 # 12u of crypto disables psionics for 4m, and a full magazine of any mantis gun will disable psionics for 20m
+    spread: 20
+
+
+- type: entity
+  parent: BulletMantisHoly
+  id: BulletMantisHolyShotgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Holy: 8
+
+
+- type: entity
+  parent: BulletMantisHolyShotgun
+  id: BulletMantisHolySpread
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ProjectileSpread
+    proto: BulletMantisHolyShotgun
+    count: 6
+    spread: 20
+
+
+- type: entity
+  parent: BulletMantisLethal
+  id: BulletMantisLethalShotgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Piercing: 9
+
+
+- type: entity
+  parent: BulletMantisLethalShotgun
+  id: BulletMantisLethalSpread
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: ProjectileSpread
+    proto: BulletMantisLethalShotgun
+    count: 6
+    spread: 20
+
+# Submachine gun bullets
+
+
+- type: entity
+  parent: BulletMantisCrypto
+  id: BulletMantisCryptoSubMachineGun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: SolutionContainerManager
+    solutions:
+      ammo:
+        reagents:
+        - ReagentId: Cryptobiolin
+          Quantity: 2.5
+  - type: SolutionInjectOnProjectileHit
+    solution: ammo
+    transferAmount: 2.5 # 2.5u of crypto disables psionics for 50s, and a full magazine of any mantis gun will disable psionics for 20m
+
+
+- type: entity
+  parent: BulletMantisHoly
+  id: BulletMantisHolySubMachineGun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Holy: 8
+
+
+- type: entity
+  parent: BulletMantisLethal
+  id: BulletMantisLethalSubMachineGun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Piercing: 12
+# Mantis projectiles end
+
+
+- type: entity
+  parent: BulletImpactEffect
+  id: BulletImpactEffectMantisCapgun
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.18
+  - type: Sprite
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: impact_capgun
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.5
+    energy: 1.0
+    color: "#ffb869"
+
+
+- type: entity
+  parent: BulletImpactEffect
+  id: BulletImpactEffectMantisCrypto
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.18
+  - type: Sprite
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: impact_crypto
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.5
+    energy: 1.0
+    color: "#6279f9"
+
+
+- type: entity
+  parent: BulletImpactEffect
+  id: BulletImpactEffectMantisHoly
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.18
+  - type: Sprite
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: impact_holy
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.5
+    energy: 1.0
+    color: "#88b0d0"
+
+
+- type: entity
+  parent: BulletImpactEffect
+  id: BulletImpactEffectMantisLethal
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: TimedDespawn
+    lifetime: 0.18
+  - type: Sprite
+    layers:
+    - sprite: _DEN/Objects/Weapons/Guns/Projectiles/mantis.rsi
+      state: impact_lethal
+      map: ["enum.EffectLayers.Unshaded"]
+      shader: unshaded
+  - type: PointLight
+    enabled: true
+    radius: 1.5
+    energy: 1.0
+    color: "#44fbf7"
+# Mantis impacts end

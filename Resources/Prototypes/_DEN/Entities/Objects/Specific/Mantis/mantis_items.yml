@@ -1,0 +1,703 @@
+- type: entity
+  parent: BaseChemistryEmptyBottle
+  id: ChemistryEmptyBottleMantis
+  name: electrum bottle
+  description: "An eidolite bottle in a durable electrum shell. Useful for your rituals."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Specific/Mantis/bottlemantis.rsi
+    layers:
+      - state: bottle
+      - state: bottle-1
+        map: ["enum.SolutionContainerLayers.Fill"]
+        visible: false
+  - type: Item
+    sprite: _DEN/Objects/Specific/Mantis/bottlemantis.rsi
+  - type: SolutionContainerVisuals
+    maxFillLevels: 6
+    fillBaseName: bottle-
+  - type: DamageOnLand
+    damage:
+      types:
+        Blunt: 0 # Metal shell
+  - type: DamageOnHighSpeedImpact
+    damage:
+      types:
+        Blunt: 0 # Metal shell
+  - type: DamageOtherOnHit
+    damage:
+      types:
+        Blunt: 1 # Doink
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Metallic # Metal shell
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 10
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: GlassBreak # There's still a crystal interior
+          params:
+            volume: -4
+      - !type:SpillBehavior { }
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: Tag
+    tags:
+    - Bottle
+    - MantisBeltStorable
+    - MantisBoxChemicalsStorable
+
+
+- type: entity
+  parent: BaseSyringe
+  id: SyringeMantis
+  name: electrum syringe
+  description: "An electrum syringe with an eidolite barrel. Naturally antimicrobial."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Specific/Mantis/syringemantis.rsi
+  - type: Item
+    sprite: _DEN/Objects/Specific/Mantis/syringemantis.rsi
+  - type: SolutionContainerVisuals
+    maxFillLevels: 3
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Metallic # Metal shell
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 10
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: GlassBreak # There's still a crystal interior
+          params:
+            volume: -4
+      - !type:SpillBehavior { }
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: Tag
+    tags:
+    - Syringe
+    - MantisBeltStorable
+    - MantisBoxChemicalsStorable
+
+
+- type: entity
+  parent: PillCanister
+  id: PillCanisterMantis
+  name: electrum pill canister
+  description: "A electrum pill canister with an eidolite window. Expensive for no reason."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Specific/Mantis/pillcanistermantis.rsi
+    state: pill_canister
+  - type: Item
+    sprite: _DEN/Objects/Specific/Mantis/pillcanistermantis.rsi
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Metallic # Metal shell
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 10
+      behaviors:
+      - !type:PlaySoundBehavior
+        sound:
+          collection: GlassBreak # There's still a crystal interior
+          params:
+            volume: -4
+      - !type:SpillBehavior { }
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+  - type: Tag
+    tags:
+      - PillCanister
+      - MantisBeltStorable
+      - MantisBoxChemicalsStorable
+
+
+- type: entity
+  parent: [ BaseStorageItem, BaseBagOpenClose ]
+  id: MantisCase
+  name: amaranth case # Generic version with no whitelist, but also doesn't fit in the mantis belt. Gift box?
+  description: "A case made of exotic, extremely durable hardwood."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Storage/boxmantis.rsi
+    layers:
+    - state: 2-closed # The 2-wide version
+    - state: 2-open
+      map: ["openLayer"]
+  - type: Item
+    sprite: _DEN/Objects/Storage/boxmantis.rsi
+    size: Normal
+    shape: # All mantis cases are 2-tall so the mantis-specific ones will physically fit in their belt
+    - 0,0,1,1 # 2x2
+  - type: Storage
+    maxItemSize: Normal
+    grid:
+    - 0,0,1,1 # 2x2
+
+
+- type: entity
+  parent: MantisCase
+  id: MantisCaseSmall
+  name: amaranth case (small)
+  description: "A case made of exotic, extremely durable hardwood."
+  components:
+  - type: Sprite
+    layers:
+    - state: 1-closed # The 1-wide version
+    - state: 1-open
+      map: ["openLayer"]
+  - type: Item
+    size: Small
+    shape:
+    - 0,0,0,1 # 1x2
+  - type: Storage
+    maxItemSize: Small
+    grid:
+    - 0,0,0,1 # 1x2
+
+
+- type: entity
+  parent: MantisCase
+  id: MantisCaseLarge
+  name: amaranth case (long)
+  description: "A case made of exotic, extremely durable hardwood."
+  components:
+  - type: Sprite
+    layers:
+    - state: 3-closed # The 3-wide version
+    - state: 3-open
+      map: ["openLayer"]
+  - type: Item
+    sprite: _DEN/Objects/Storage/boxmantis.rsi
+    size: Normal
+    shape:
+    - 0,0,2,1 # 3x2
+  - type: Storage
+    maxItemSize: Normal
+    grid:
+    - 0,0,2,1 # 3x2
+
+
+- type: entity
+  parent: MantisCase
+  id: MantisCaseExtraLarge
+  name: amaranth case (extra long)
+  description: "A case made of exotic, extremely durable hardwood."
+  components:
+  - type: Sprite
+    layers:
+    - state: 4-closed # The 4-wide version
+    - state: 4-open
+      map: ["openLayer"]
+  - type: Item
+    sprite: _DEN/Objects/Storage/boxmantis.rsi
+    size: Large
+    shape:
+    - 0,0,3,1 # 4x2
+  - type: Storage
+    maxItemSize: Large
+    grid:
+    - 0,0,3,1 # 4x2
+
+
+- type: entity
+  parent: MantisCaseLarge # Contraband since its contents are
+  id: MantisCaseTools
+  name: mantis tools case # In the mantis locker
+  description: "An amaranth case to store your things. A Greek psi is carved into the top, marking it as yours."
+  components:
+  - type: Sprite
+    layers:
+    - state: 3-closed # The 3-wide version
+    - state: label-psi
+    - state: 3-open
+      map: ["openLayer"]
+  - type: Storage
+    whitelist: # Exactly the same whitelist as the belt, so you can't cheat and store non-whitelisted things in it on the belt
+      tags:
+        - Folder
+        - Document
+        - Write
+        # - HandLabeler # tag not available
+        - Flashlight
+        - Syringe
+        - Bottle
+        - PillCanister
+        - Pill
+        - MantisBeltStorable
+      components:
+        - AnomalyScanner
+        - NodeScanner
+        - Flash
+  - type: StorageFill
+    contents:
+    - id: LanternMantis
+    #- id: BoxFolderMantis
+    - id: HandLabelerMantis
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: MantisCaseSmall # Contraband since its contents are
+  id: MantisCaseChemicals
+  name: mantis chemicals case # In the mantis locker
+  description: "An amaranth case to carry your chemicals. Conveniently portable, but the slots inside will only fit their original contents. A watchful eye is carved into the top, marking it as yours."
+  components:
+  - type: Sprite
+    layers:
+    - state: 1-closed # The 1-wide version
+    - state: label-eye
+    - state: 1-open
+      map: ["openLayer"]
+  - type: Storage
+    grid:
+    - 0,0,1,2 # 2x3, bigger on the inside. The idea is to replicate a cigarette pack's function, but more restrictive and with less space
+    whitelist: # Only the tiny chemistry items from the belt's whitelist
+      tags:
+        - Syringe
+        - Bottle
+        - PillCanister
+        - Pill
+        - MantisBoxChemicalsStorable # Possibly redundant, but it has its own tag just in case
+  - type: StorageFill
+    contents:
+    - id: SyringeMantis
+    - id: ChemistryEmptyBottleMantis
+    #- id: PillCanisterMnemolithMantis # The bottles are labeled and color coded for safety
+    #- id: PillCanisterSpaceDrugsMantis
+    #- id: PillCanisterCryptobiolinMantis
+    #- id: PillCanisterMindbreakerToxinMantis # They don't have mindbreaker bullets anymore, so they get this instead
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: MantisCase
+  id: MantisCaseCandles
+  name: mnemolith candle case # Loadout option
+  description: "An amaranth case of mixed mnemolith candles. Conveniently portable, but the slots inside will only fit their original contents."
+  components:
+  - type: Sprite
+    layers:
+    - state: 2-closed
+    - state: label-candles
+    - state: 2-open
+      map: ["openLayer"]
+  - type: Storage
+    grid: # The box itself is 2x2
+    - 0,0,2,2 # 3x3, bigger on the inside, but it can only store what already comes inside it
+    whitelist:
+      tags:
+        - MantisBoxCandlesStorable # Only the mantis candles should have this
+  - type: StorageFill
+    contents: # A cute radial arrangement of items, like a gift box
+    - id: CandleSomberMantisSmall
+    - id: CandleSomberMantis
+    - id: CandleSomberMantisSmall
+    - id: CandleSomberMantis
+    - id: CandleSomberMantisCluster
+    - id: CandleSomberMantis
+    - id: CandleSomberMantisSmall
+    - id: CandleSomberMantis
+    - id: CandleSomberMantisSmall
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: MantisCaseLarge # Contraband since its contents are
+  id: MantisCaseRestraints
+  suffix: DO NOT MAP # Mantes need to get this from loadout - see tags below
+  name: mantis restraints case # Loadout option
+  description: "An amaranth case filled with shackles and chains, complete with an antique wrench. Conveniently portable, but the slots inside will only fit their original contents."
+  components:
+  - type: Sprite
+    layers:
+    - state: 3-closed
+    - state: label-restraints
+    - state: 3-open
+      map: ["openLayer"]
+  - type: Storage
+    grid: # The box itself is 3x2, because only three of these items have real mechanics (the rest are just roleplay toys)
+    - 0,0,5,1 # 6x2, bigger on the inside, but it can only store what already comes inside it
+    whitelist:
+      tags:
+        - MantisBoxRestraintsStorable # Only the items below should have this
+  - type: StorageFill
+    contents:
+    #- id: ClothingHeadCageMantis # This version has a chain on the front to match the other restraints case items (the locker version does not)
+    - id: HandcuffsMantis # If these are ever used to selfsec I swear to god, the breakout time is already one second
+    - id: ClothingNeckMantisShackles # Just a cosmetic neck item to complete the set
+    - id: WrenchMantis # A pretty but otherwise normal wrench for anchoring chains
+    #- id: LeashMantis # Matching chain leashes with sprites made to look like anchor points rather than handles
+      amount: 4
+  - type: Tag
+    tags:
+    - MantisBeltStorable
+    - MantisBoxRestraintsStorable # Technically you could put this box inside itself, but only one should exist in a game at a time since it's a loadout item
+
+# Mantis cases end
+
+
+- type: entity
+  parent: BaseItem
+  id: HandcuffsMantis
+  suffix: DO NOT MAP # We don't want to give mantes the idea that selfsec is a part of their job's function...
+  name: graven shackles
+  description: "Heavy mu-metal shackles to bind unruly psionic subjects, inscribed for both record and suppression. Never to be used for security matters. In fact, that locking bar seems to be damaged... Perhaps they won't notice."
+  components:
+  - type: Item
+    size: Small
+  - type: Handcuff
+    breakoutTime: 1 # Is this low enough? These cuffs are just for roleplay
+    cuffTime: 5 # Long enough for a player to interrupt the doafter if they don't want to roleplay that
+    stunBonus: -5 # You shouldn't be able to force these onto someone who's stunned
+    uncuffTime: 1
+    cuffedRSI: _DEN/Objects/Misc/handcuffsmantis.rsi
+    bodyIconState: body-overlay
+    breakOnRemove: false
+    startCuffSound:
+      path: /Audio/_DEN/Items/Handcuffs/chain_start.ogg
+    endCuffSound:
+      path: /Audio/_DEN/Items/Handcuffs/chain_end.ogg
+    startUncuffSound:
+      path: /Audio/_DEN/Items/Handcuffs/chain_start.ogg
+    endUncuffSound:
+      path: /Audio/_DEN/Items/Handcuffs/chain_end.ogg
+    startBreakoutSound:
+      path: /Audio/_DEN/Items/Handcuffs/chain_takeoff.ogg
+  - type: Sprite
+    sprite: _DEN/Objects/Misc/handcuffsmantis.rsi
+    state: icon
+  - type: Tag
+    tags:
+    - MantisBoxRestraintsStorable
+    - MantisBeltStorable
+  - type: MeleeWeapon
+    wideAnimationRotation: 90
+    resetOnHandSelected: false
+    animation: WeaponArcDisarm
+    damage:
+      types:
+        Blunt: 0
+  - type: UseDelay
+    delay: 1
+
+
+- type: entity
+  parent: BedsheetBase
+  id: BedsheetSomberMantis
+  name: mantis bedsheet
+  description: "A psionically-charged bedsheet that will make any garbage bed seem like the height of luxury."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Misc/bedsheets.rsi
+    state: sheetmantis
+  - type: Clothing
+    sprite: _DEN/Clothing/Neck/Bedsheets/mantis.rsi
+  - type: Tag
+    tags:
+    - Bedsheet
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: Candle
+  id: CandleSomberMantis
+  name: mnemolith candle
+  suffix: Magic
+  description: "A candle made with mnemolith powder. It doesn't want to go out."
+  components:
+    - type: Sprite
+      sprite: _DEN/Objects/Misc/candlesmantis.rsi
+      layers:
+        - state: candle-big
+          color: "#ffffff" # The sprite's multicolor, so this stays white
+    - type: Item
+      sprite: _DEN/Objects/Misc/candlesmantis.rsi
+      size: Tiny # So they fit nicely in their box
+      inhandVisuals:
+        left:
+        - state: inhand-left
+          color: "#ffffff"
+        right:
+        - state: inhand-right
+          color: "#ffffff"
+    - type: Flammable
+      firestackFade: 0.0 # They burn until you put them out
+      damage:
+        types:
+          Heat: 0.0
+    - type: FireVisuals
+      sprite: _DEN/Objects/Misc/candlesmantis.rsi
+      normalState: fire-big
+      lightColor: "#4dc4ff"
+    - type: Damageable
+      damageModifierSet: Wood
+    - type: Destructible
+      thresholds:
+      - trigger:
+          !type:DamageTrigger
+          damage: 100
+        behaviors:
+        - !type:DoActsBehavior
+          acts: [ "Destruction" ]
+      - trigger:
+          !type:DamageTrigger
+          damage: 5
+        behaviors:
+        - !type:PlaySoundBehavior
+          sound:
+            path: /Audio/Effects/drop.ogg
+        - !type:DoActsBehavior
+          acts: [ "Destruction" ]
+    - type: Tag
+      tags:
+      - MantisBeltStorable
+      - MantisBoxCandlesStorable
+
+
+- type: entity
+  parent: CandleSomberMantis
+  id: CandleSomberMantisSmall
+  name: mnemolith candle (small)
+  description: "A small candle made with mnemolith powder. It doesn't want to go out."
+  components:
+    - type: Sprite
+      layers:
+        - state: candle-small
+          color: "#ffffff"
+    - type: FireVisuals
+      normalState: fire-small
+
+
+- type: entity
+  parent: CandleSomberMantis
+  id: CandleSomberMantisCluster
+  name: mnemolith candle (cluster)
+  description: "A cluster of candles made with mnemolith powder. Not a birthday cake."
+  components:
+    - type: Sprite
+      layers:
+        - state: candle-cluster
+          color: "#ffffff"
+    - type: FireVisuals
+      normalState: fire-cluster
+
+
+- type: entity
+  parent: [HandLabeler] # Contraband so the mystagogue doesn't steal it
+  id: HandLabelerMantis
+  name: sigillator
+  suffix: Hand Labeler
+  description: "An ancient and mystical hand labeler wrought from slabs of mnemolith, used by turning the wheels and giving something a good smack. You wouldn't be caught dead with that blue plastic monstrosity."
+  components:
+    - type: Sprite
+      sprite: _DEN/Objects/Specific/Mantis/handlabelermantis.rsi
+    - type: Item
+      sprite: _DEN/Objects/Specific/Mantis/handlabelermantis.rsi
+      storedSprite:
+      storedRotation: -90
+    - type: MeleeWeapon # You can swing it like a weapon
+      attackRate: 0.6666
+      wideAnimationRotation: -90
+      soundHit:
+        path: /Audio/Weapons/block_metal1.ogg
+        params:
+          volume: -60 # Why is it so loud...
+          variation: 0.05
+      damage:
+        types:
+          Blunt: 5 # 7.5 DPS (same as Crowbar), or 9.38 DPS against psions
+          Holy: 2.5 # 14.1 total DPS against psionic supernaturals
+    - type: ThrowingAngle
+      angle: -90
+    - type: Tag
+      tags:
+      # - HandLabeler # tag not available
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: [BaseItem] # If I parented it to Lantern, it would have a battery slot...
+  id: LanternMantis
+  name: mantis lantern
+  description: "An ornate lantern housing an eidolite pyramid that draws power from the noosphere. Instead of merely casting light, it seems to declare it--an austere radiance that etches itself into whatever it touches. Stare too long and the gleam resolves into shapes you almost recognize, then promptly forget. For all its theatrics, the handle still hangs comfortably on your back."
+  components:
+    - type: Sprite
+      sprite: _DEN/Objects/Specific/Mantis/lanternmantis.rsi
+      layers:
+        - state: lantern
+        - state: crystal
+          shader: unshaded
+    - type: Item
+      sprite: _DEN/Objects/Specific/Mantis/lanternmantis.rsi
+      heldPrefix: off
+    #- type: EtherealLight # Dims around ethereal entities
+    - type: PointLight
+      enabled: false
+      radius: 3
+      energy: 4
+      color: "#d9418d"
+      netsync: false
+    - type: Appearance
+    - type: ToggleableVisuals
+      spriteLayer: light
+    - type: ItemTogglePointLight
+    - type: ItemToggle
+      predictable: false
+      soundActivate:
+        path: /Audio/_DEN/Effects/crystalshimmer1.ogg
+        params:
+          volume: -2
+          variation: 0.05
+      soundDeactivate:
+        path: /Audio/_DEN/Effects/crystalshimmer2.ogg
+        params:
+          volume: -2
+          variation: 0.05
+    - type: StealTarget
+      stealGroup: LAMP # The moths are coming the moths are coming
+    - type: Clothing
+      sprite: _DEN/Objects/Specific/Mantis/lanternmantis.rsi
+      equippedPrefix: off
+      quickEquip: false
+      slots:
+        - Belt
+        - suitStorage
+    - type: MeleeWeapon # You can swing it like a weapon
+      attackRate: 0.6666
+      soundHit:
+        path: /Audio/Weapons/block_metal1.ogg
+        params:
+          volume: -60 # Why is it so loud...
+          variation: 0.05
+      damage:
+        types:
+          Blunt: 5 # 7.5 DPS (same as Crowbar), or 9.38 DPS against psions
+          Holy: 2.5 # 14.1 total DPS against psionic supernaturals
+    - type: Tag
+      tags:
+      - Flashlight
+      - MantisBeltStorable
+
+
+- type: entity
+  parent: [FlippoLighter]
+  id: FlippoLighterMantis
+  name: mantis lighter
+  description: "A glossy lighter sculpted from chips of mnemolith, housing an eidolite pyramid that draws energy from the noosphere. The flame gutters strangely, as if aware of what it burns."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Specific/Mantis/lightermantis.rsi
+    layers:
+    - state: mantis_icon_base
+      map: ["base"]
+    - state: mantis_top
+      map: ["top"]
+      visible: false
+    - state: mantis_open
+      map: ["open"]
+      visible: false
+    - state: mantis_lighter_flame
+      map: ["flame"]
+      visible: false
+      shader: unshaded
+  - type: ItemToggle
+    predictable: false
+    soundActivate:
+      path: /Audio/_DEN/Effects/crystaltap1.ogg
+      params:
+        volume: -6
+        variation: 0.05
+    soundDeactivate:
+      path: /Audio/_DEN/Effects/crystaltap2.ogg
+      params:
+        volume: -6
+        variation: 0.05
+  - type: Item
+    sprite: _DEN/Objects/Specific/Mantis/lightermantis.rsi
+    heldPrefix: mantis
+  - type: Welder
+    fuelConsumption: 0 # Powered by the noosphere
+    fuelLitCost: 0 # Powered by the noosphere
+    tankSafe: true
+  - type: SolutionContainerManager
+    solutions:
+      Welder:
+        reagents:
+        - ReagentId: WeldingFuel
+          Quantity: 1
+        maxVol: 1
+  - type: ToggleableVisuals
+    spriteLayer: mantis_lighter_flame
+    inhandVisuals:
+      left:
+      - state: mantis-inhand-left-flame
+        shader: unshaded
+      right:
+      - state: mantis-inhand-right-flame
+        shader: unshaded
+  - type: PointLight
+    radius: 1.75
+    energy: 2
+    color: "#4dc4ff"
+  - type: MeleeWeapon
+    attackRate: .6666
+    wideAnimationRotation: 180
+    damage:
+      types:
+        Blunt: 2 # 3 DPS, or 3.75 DPS against psions
+        Holy: 1 # 5 total DPS against psionic supernaturals
+  - type: ItemToggleMeleeWeapon
+    activatedDamage:
+      types:
+        Heat: 2 # 3 DPS, or 3.75 DPS against psions
+        Holy: 1 # 5 total DPS against psionic supernaturals
+  #- type: ItemToggleDamageOtherOnHit # AS - doesn't exist here, yet, maybe later.
+  - type: ThrowingAngle
+    angle: 180
+  - type: Tag
+    tags:
+    - MantisBoxCandlesStorable # Why not
+    - MantisBeltStorable
+
+
+- type: entity
+  parent: Wrench
+  id: WrenchMantis
+  name: electrum spanner
+  description: "An unusual wrench made of exotic materials, given to mantes to anchor the graven chains of unruly psionic subjects."
+  components:
+  - type: Sprite
+    sprite: _DEN/Objects/Specific/Mantis/wrenchmantis.rsi
+    state: icon
+  - type: Item
+    sprite: _DEN/Objects/Specific/Mantis/wrenchmantis.rsi
+    storedSprite:
+      sprite: _DEN/Objects/Specific/Mantis/wrenchmantis.rsi
+      state: icon
+    storedRotation: 45
+    storedOffset: 0,9
+  - type: StaticPrice
+    price:  500
+  - type: Tag
+    tags:
+    - Wrench
+    - MantisBeltStorable
+    - MantisBoxRestraintsStorable
