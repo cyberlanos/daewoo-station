@@ -20,6 +20,12 @@
   - !type:PointsCostLoadoutEffect
     cost: 1
 
+- type: loadout
+  id: NoviceMark
+  storage:
+    back:
+    - ClothingNeckNoviceMark
+
 # Pillows
 - type: loadout
   id: Pillow
@@ -165,4 +171,3 @@
     back:
     - CardBoxNuno
   groupBy: "Gambling"
-

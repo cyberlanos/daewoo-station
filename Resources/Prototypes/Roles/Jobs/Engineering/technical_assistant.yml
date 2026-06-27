@@ -98,6 +98,7 @@
   equipment:
     shoes: ClothingShoesBootsWork
     id: TechnicalAssistantPDA
+    neck: ClothingNeckNoviceMark # Pirate: novice mark
     belt: ClothingBeltUtilityEngineering
     ears: ClothingHeadsetEngineering
     pocket2: BookEngineersHandbook
