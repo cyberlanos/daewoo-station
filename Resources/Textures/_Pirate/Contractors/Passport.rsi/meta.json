@@ -44,10 +44,10 @@
             "name": "passport_sol_open"
         },
         {
-            "name": "CardID_eridan_closed"
+            "name": "CorpID_eridan_closed"
         },
         {
-            "name": "CardID_eridan_open"
+            "name": "CorpID_eridan_open"
         }
     ]
 }
