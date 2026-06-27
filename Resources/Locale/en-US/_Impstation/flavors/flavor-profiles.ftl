@@ -28,7 +28,7 @@ flavor-complex-doublegreen = bitter and nauseating
 flavor-complex-liquidlunch = like a pureed rat
 flavor-complex-poormansfrezon = like a good time
 
-flavor-complex-breathoffreshair = like artifical air and soda
+flavor-complex-breathoffreshair = like artificial air and soda
 flavor-complex-burnchamber = a little too hot for consumption
 flavor-complex-lungclogger = like broken hearts and collapsed lungs
 flavor-complex-minotaurslament = like dead xenos and ammonia
