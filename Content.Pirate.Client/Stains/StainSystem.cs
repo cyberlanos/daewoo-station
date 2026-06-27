@@ -6,24 +6,46 @@ using Content.Pirate.Shared.Stains.Systems;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Clothing;
 using Content.Shared.Hands;
+using Content.Shared.Humanoid;
+using Content.Shared.Inventory;
 using Content.Goobstation.Maths.FixedPoint;
 using Robust.Client.GameObjects;
+using Robust.Shared.Maths;
 using Robust.Shared.Prototypes;
 
 namespace Content.Pirate.Client.Stains;
 
 public sealed class StainSystem : SharedStainSystem
 {
+    private const string BloodRsiPath = "_Pirate/Effects/blood.rsi";
+    private const string ItemBloodState = "itemblood";
+    private const string BareFeetLayerKey = "stain-bare-feet";
+    private const string BareHandsLayerKey = "stain-bare-hands";
+    private const string StainMaskShader = "StainItemMask";
+    private const string StainMaskTextureParam = "stainMask";
+    private const string StainMaskUvParam = "stainMaskUV";
+
     [Dependency] private readonly IPrototypeManager _prototypeManager = null!;
     [Dependency] private readonly SharedSolutionContainerSystem _solution = null!;
     [Dependency] private readonly SpriteSystem _sprite = null!;
+
+    // Last drawn stain state per entity. Kept on the system (not the component) so it survives prediction
+    // rollback, which re-applies appearance/solution state every tick and would otherwise rebuild sprites
+    // every frame.
+    private readonly Dictionary<EntityUid, (Color Color, SlotFlags Slots, bool HasStain)> _lastDrawn = new();
 
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<StainableComponent, AppearanceChangeEvent>(OnAppearanceChanged);
+        SubscribeLocalEvent<StainableComponent, ComponentShutdown>(OnShutdown);
         SubscribeLocalEvent<StainableComponent, GetEquipmentVisualsEvent>(OnEquipmentVisuals, after: [typeof(ClientClothingSystem)]);
         SubscribeLocalEvent<StainableComponent, GetInhandVisualsEvent>(OnInhandVisuals, after: [typeof(ItemSystem)]);
+    }
+
+    private void OnShutdown(Entity<StainableComponent> ent, ref ComponentShutdown args)
+    {
+        _lastDrawn.Remove(ent.Owner);
     }
 
     private void OnAppearanceChanged(Entity<StainableComponent> ent, ref AppearanceChangeEvent args)
@@ -31,24 +53,54 @@ public sealed class StainSystem : SharedStainSystem
         if (args.Sprite == null)
             return;
 
+        var hasStain = TryGetStainColor(ent, out var color);
+        var slots = ent.Comp.BodyStainSlots;
+        if (args.AppearanceData.TryGetValue(StainVisuals.BodySlots, out var bodySlotsData) && bodySlotsData is SlotFlags bodySlotFlags)
+            slots = bodySlotFlags;
+
+        // Prediction re-fires AppearanceChangeEvent every tick; skip the sprite rebuild when nothing visually
+        // changed since we last drew it.
+        var drawn = (color, slots, hasStain);
+        if (_lastDrawn.TryGetValue(ent.Owner, out var last) && last == drawn)
+            return;
+        _lastDrawn[ent.Owner] = drawn;
+
+        Log.Info($"[stains] redraw {ToPrettyString(ent.Owner)} hasStain={hasStain} slots={slots}");
+
         var spriteEnt = new Entity<SpriteComponent?>(ent.Owner, args.Sprite);
+
+        foreach (var key in ent.Comp.RevealedLayerKeys)
+        {
+            _sprite.RemoveLayer(spriteEnt, key, false);
+        }
+
+        ent.Comp.RevealedLayerKeys.Clear();
 
         var layers = new List<int>(ent.Comp.RevealedLayers);
         layers.Sort((a, b) => b.CompareTo(a));
 
         foreach (var layer in layers)
         {
-            _sprite.RemoveLayer(spriteEnt, layer);
+            _sprite.RemoveLayer(spriteEnt, layer, false);
         }
 
         ent.Comp.RevealedLayers.Clear();
 
-        foreach (var (_, layerData) in BuildVisuals(ent, ent.Comp.IconVisuals, "icon"))
+        if (!hasStain)
+            return;
+
+        var addedPrototypeVisuals = false;
+        foreach (var (key, layerData) in BuildVisuals(ent, ent.Comp.IconVisuals, "icon"))
         {
-#pragma warning disable CS0618
-            ent.Comp.RevealedLayers.Add(args.Sprite.AddLayer(layerData));
-#pragma warning restore CS0618
+            ent.Comp.RevealedLayerKeys.Add(key);
+            _sprite.AddLayer(spriteEnt, layerData, null);
+            addedPrototypeVisuals = true;
         }
+
+        if (HasComp<HumanoidAppearanceComponent>(ent.Owner))
+            AddBodyStainVisuals(ent, args, spriteEnt, color);
+        else if (!addedPrototypeVisuals)
+            AddItemBloodIconVisual(ent, spriteEnt, color);
     }
 
     private void OnEquipmentVisuals(Entity<StainableComponent> ent, ref GetEquipmentVisualsEvent args)
@@ -60,21 +112,172 @@ public sealed class StainSystem : SharedStainSystem
     private void OnInhandVisuals(Entity<StainableComponent> ent, ref GetInhandVisualsEvent args)
     {
         if (ent.Comp.ItemVisuals.TryGetValue(args.Location.ToString(), out var layers))
+        {
             args.Layers.AddRange(BuildVisuals(ent, layers, args.Location.ToString()));
+            return;
+        }
+
+        if (!TryGetStainColor(ent, out var color) || args.Layers.Count == 0)
+            return;
+
+        var bloodKey = $"stain-inhand-{args.Location}";
+        var source = args.Layers[0].Item2;
+
+        // Clip the blood splatter to the held sprite's silhouette instead of covering the whole in-hand box.
+        if (!string.IsNullOrEmpty(source.RsiPath) || !string.IsNullOrEmpty(source.TexturePath))
+        {
+            var maskKey = $"stain-inhand-mask-{args.Location}";
+            args.Layers.Add((maskKey, BuildMaskLayer(source, maskKey, bloodKey)));
+
+            var masked = BuildItemBloodLayer(bloodKey, source);
+            masked.Shader = StainMaskShader;
+            masked.Color = color;
+            args.Layers.Add((bloodKey, masked));
+            return;
+        }
+
+        var flat = BuildItemBloodLayer(bloodKey, source);
+        flat.Color = color;
+        args.Layers.Add((bloodKey, flat));
     }
 
     private IEnumerable<(string, PrototypeLayerData)> BuildVisuals(Entity<StainableComponent> ent, List<PrototypeLayerData> templates, string prefix)
     {
-        if (!_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out _, out var sol) || sol.Volume <= FixedPoint2.Zero)
+        if (!TryGetStainColor(ent, out var color))
             yield break;
 
-        var color = sol.GetColor(_prototypeManager);
         for (var i = 0; i < templates.Count; i++)
         {
             var layer = templates[i];
-            layer.Color = color;
-            yield return ($"stain-{prefix}-{i}", layer);
+            var key = $"stain-{prefix}-{i}";
+            yield return (key, CopyVisualLayer(layer, color, key));
         }
+    }
+
+    private bool TryGetStainColor(Entity<StainableComponent> ent, out Color color)
+    {
+        color = Color.White;
+
+        if (!_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out _, out var sol) || sol.Volume <= FixedPoint2.Zero)
+            return false;
+
+        color = sol.GetColor(_prototypeManager);
+        return true;
+    }
+
+    private void AddItemBloodIconVisual(Entity<StainableComponent> ent, Entity<SpriteComponent?> sprite, Color color)
+    {
+        const string bloodKey = "stain-icon";
+        const string maskKey = "stain-icon-mask";
+
+        // Clip the blood splatter to the item's own silhouette instead of covering the whole icon box.
+        var rsi = _sprite.LayerGetEffectiveRsi(sprite, 0);
+        var state = _sprite.LayerGetRsiState(sprite, 0);
+        if (rsi != null && state.IsValid)
+        {
+            var maskSource = new PrototypeLayerData { RsiPath = rsi.Path.ToString(), State = state.Name };
+            ent.Comp.RevealedLayerKeys.Add(maskKey);
+            _sprite.AddLayer(sprite, BuildMaskLayer(maskSource, maskKey, bloodKey), null);
+
+            var masked = BuildItemBloodLayer(bloodKey);
+            masked.Shader = StainMaskShader;
+            masked.Color = color;
+            ent.Comp.RevealedLayerKeys.Add(bloodKey);
+            _sprite.AddLayer(sprite, masked, null);
+            return;
+        }
+
+        var flat = BuildItemBloodLayer(bloodKey);
+        flat.Color = color;
+        ent.Comp.RevealedLayerKeys.Add(bloodKey);
+        _sprite.AddLayer(sprite, flat, null);
+    }
+
+    /// <summary>
+    /// Builds a non-rendered layer that feeds <paramref name="source"/>'s texture into the stain mask shader
+    /// of the layer keyed <paramref name="targetKey"/>, so the blood only draws over the source's pixels.
+    /// </summary>
+    private static PrototypeLayerData BuildMaskLayer(PrototypeLayerData source, string maskKey, string targetKey)
+    {
+        return new PrototypeLayerData
+        {
+            RsiPath = source.RsiPath,
+            TexturePath = source.TexturePath,
+            State = source.State,
+            Scale = source.Scale,
+            Rotation = source.Rotation,
+            Offset = source.Offset,
+            RenderingStrategy = source.RenderingStrategy,
+            MapKeys = new() { maskKey },
+            CopyToShaderParameters = new PrototypeCopyToShaderParameters
+            {
+                LayerKey = targetKey,
+                ParameterTexture = StainMaskTextureParam,
+                ParameterUV = StainMaskUvParam,
+            }
+        };
+    }
+
+    private void AddBodyStainVisuals(Entity<StainableComponent> ent, AppearanceChangeEvent args, Entity<SpriteComponent?> sprite, Color color)
+    {
+        var slots = ent.Comp.BodyStainSlots;
+        if (args.AppearanceData.TryGetValue(StainVisuals.BodySlots, out var bodySlots) &&
+            bodySlots is SlotFlags bodySlotFlags)
+        {
+            slots = bodySlotFlags;
+        }
+
+        if ((slots & SlotFlags.FEET) != 0)
+            AddBodyStainVisual(ent, sprite, color, BareFeetLayerKey, "shoeblood");
+
+        if ((slots & SlotFlags.GLOVES) != 0)
+            AddBodyStainVisual(ent, sprite, color, BareHandsLayerKey, "gloveblood");
+    }
+
+    private void AddBodyStainVisual(Entity<StainableComponent> ent, Entity<SpriteComponent?> sprite, Color color, string key, string state)
+    {
+        var layerData = new PrototypeLayerData
+        {
+            RsiPath = "_Pirate/Effects/blood.rsi",
+            State = state,
+            Color = color,
+            MapKeys = new() { key }
+        };
+
+        ent.Comp.RevealedLayerKeys.Add(key);
+        _sprite.AddLayer(sprite, layerData, null);
+    }
+
+    private static PrototypeLayerData BuildItemBloodLayer(string key, PrototypeLayerData? source = null)
+    {
+        return new PrototypeLayerData
+        {
+            RsiPath = BloodRsiPath,
+            State = ItemBloodState,
+            Scale = source?.Scale,
+            Rotation = source?.Rotation,
+            Offset = source?.Offset,
+            Visible = source?.Visible,
+            RenderingStrategy = source?.RenderingStrategy,
+            MapKeys = new() { key }
+        };
+    }
+
+    private static PrototypeLayerData CopyVisualLayer(PrototypeLayerData source, Color color, string key)
+    {
+        return new PrototypeLayerData
+        {
+            TexturePath = source.TexturePath,
+            RsiPath = source.RsiPath,
+            State = source.State,
+            Scale = source.Scale,
+            Rotation = source.Rotation,
+            Offset = source.Offset,
+            Visible = source.Visible,
+            RenderingStrategy = source.RenderingStrategy,
+            Color = color,
+            MapKeys = new() { key }
+        };
     }
 }
 #endregion

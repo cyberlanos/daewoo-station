@@ -1,0 +1,20 @@
+// Clips a stain (blood) layer to the silhouette of another layer (the stained item),
+// so the dedicated blood sprite only shows on the item's own pixels instead of the whole 32x32 box.
+// The mask texture/UVs are fed in from a CopyToShaderParameters layer (see StainSystem).
+
+uniform sampler2D stainMask;
+uniform highp vec4 stainMaskUV;
+
+varying highp vec2 stainMaskUVOut;
+
+void vertex()
+{
+    stainMaskUVOut = mix(stainMaskUV.xy, stainMaskUV.zw, tCoord2);
+}
+
+void fragment()
+{
+    highp float maskAlpha = texture2D(stainMask, stainMaskUVOut).a;
+    COLOR = zTexture(UV);
+    COLOR.a *= maskAlpha;
+}

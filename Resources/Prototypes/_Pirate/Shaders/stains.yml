@@ -1,0 +1,5 @@
+# Masks the dynamic item stain overlay to the stained item's silhouette.
+- type: shader
+  id: StainItemMask
+  kind: source
+  path: "/Textures/_Pirate/Shaders/stain_mask.swsl"

@@ -213,8 +213,9 @@
     iconVisuals:
     - sprite: _Pirate/Effects/blood.rsi
       state: suitbloodicon
+  # Only the chest/uniform is covered by an outer suit; feet and hands are not, so they can still stain.
   - type: StainBlocker
-    slots: [INNERCLOTHING, FEET, GLOVES]
+    slots: [INNERCLOTHING]
   #endregion Pirate: stains
 
 - type: entity

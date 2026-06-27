@@ -1,6 +1,7 @@
 #region Pirate: stains
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.DoAfter;
+using Content.Shared.Inventory;
 using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
 
@@ -32,8 +33,24 @@ public sealed partial class StainableComponent : Component
 
     [ViewVariables]
     public HashSet<int> RevealedLayers = new();
+
+    [ViewVariables]
+    public HashSet<string> RevealedLayerKeys = new();
+
+    [ViewVariables]
+    public SlotFlags BodyStainSlots = SlotFlags.NONE;
 }
 
 [Serializable, NetSerializable]
 public sealed partial class WringStainDoAfterEvent : SimpleDoAfterEvent;
+
+[Serializable, NetSerializable]
+public sealed partial class CleanStainsDoAfterEvent : SimpleDoAfterEvent;
+
+[RegisterComponent]
+public sealed partial class StainCleanerComponent : Component
+{
+    [DataField]
+    public float CleanDelay = 12f;
+}
 #endregion

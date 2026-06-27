@@ -509,20 +509,8 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
             }
             // Goobstation end
 
-            RaiseLocalEvent(ent.Owner, new SpilledOnEvent(ent.Owner, tempSolution)); // Pirate: stains
-
-            var xform = Transform(ent.Owner); // Pirate: stains
-            foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f)) // Pirate: stains
-            { // Pirate: stains
-                if (neighbor == ent.Owner || !HasComp<InventoryComponent>(neighbor)) // Pirate: stains
-                    continue; // Pirate: stains
-
-                RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSolution)); // Pirate: stains
-
-                if (tempSolution.Volume <= 0) // Pirate: stains
-                    break; // Pirate: stains
-            } // Pirate: stains
-
+            // Pirate: stains - tg only drips bleeding to the floor; clothing/shoes get bloody by stepping in
+            // the puddle (bloodysoles), not from the bleed itself. So just spill the puddle here.
             _puddle.TrySpillAt(ent.Owner, tempSolution, out _, sound: false);
 
             tempSolution.RemoveAllSolution();
