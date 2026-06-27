@@ -5,16 +5,16 @@ character-nationality-requirement = Ви повинні{$inverted ->
     *[other]{""}
 } мати одну з цих національностей: {$nationality}
 
-nationality_name_bieselite = Бізелітець
+nationality_name_bieselite = Республіки Бізеліт
 
-nationality_name_nralakk = Нраллакієць
+nationality_name_nralakk = Федерації Нраллак
 
-nationality_name_solarian = Соларіанин
+nationality_name_solarian = Солоріанського Альянсу
 
-nationality_name_izweski = Гегемонець
+nationality_name_izweski = Ізвескі-Гегемонії
 
-nationality_name_adhomai = Адхомаєць
+nationality_name_adhomai = Народної Республіки Адхомай
 
-nationality_name_goldendeep = Виходець із Золотої Глибини
+nationality_name_goldendeep = Золотої Глибини
 
-nationality_name_eridanian = Еріданець
+nationality_name_eridanian = Федерації Ерідану

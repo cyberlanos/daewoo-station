@@ -74,6 +74,7 @@
     - !type:IsNationalityCondition
       nationalities:
         - Eridanian
+      invert: true
   components:
   - type: LanguageSpeaker
   languagesSpoken:

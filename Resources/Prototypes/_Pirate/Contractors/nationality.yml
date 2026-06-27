@@ -35,6 +35,7 @@
       - HephaestusIndustries
       - IdrisIncorporated
       - ZengHuPharmaceuticals
+      - EinsteinEngines
     - !type:SpeciesRequirement
       inverted: true
       species:
