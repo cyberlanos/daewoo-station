@@ -74,12 +74,3 @@
       species:
         - IPC
   passportPrototype: GoldenDeepPassport
-
-- type: nationality
-  id: Flock
-  nameKey: nationality_name_flock
-  requirements:
-    - !type:SpeciesRequirement
-      species:
-        - Vox
-  passportPrototype: VoxWallet

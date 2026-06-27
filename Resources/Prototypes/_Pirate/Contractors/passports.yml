@@ -133,13 +133,3 @@
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
       - state: passport_goldendeep_open
-
-- type: entity
-  name: гаманець Вокса
-  parent: BasePassport
-  id: VoxWallet
-  components:
-    - type: Sprite
-      sprite: _Pirate/Contractors/Passport.rsi
-      layers:
-      - state: vox_wallet_open
