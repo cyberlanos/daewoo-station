@@ -6,6 +6,12 @@
   description: signal-port-description-remote-drone-sender
   defaultLinks: [ RemoteDroneReceiver ]
 
+- type: sourcePort
+  id: FpvDronePayloadDropSender
+  name: signal-port-name-fpv-drone-payload-drop-sender
+  description: signal-port-description-fpv-drone-payload-drop-sender
+  defaultLinks: [ FpvDroneTrigger ]
+
 - type: sinkPort
   id: RemoteDroneReceiver
   name: signal-port-name-remote-drone-receiver
@@ -40,7 +46,9 @@
     range: 150
     ports:
     - RemoteDroneSender
+    - FpvDronePayloadDropSender
   - type: SurveillanceCameraMonitor
+    neverAutomaticallyHeartbeat: true
 
   # UI
   - type: ActivatableUI

@@ -1,3 +1,6 @@
+signal-port-name-fpv-drone-payload-drop-sender = Кнопка скидання вмісту FPV-дрона
+signal-port-description-fpv-drone-payload-drop-sender = Надсилає сигнал для скидання вмісту сховища FPV-дрона.
+
 signal-port-name-fpv-drone-trigger = Скинути вміст
 signal-port-description-fpv-drone-trigger = Після отримання сигналу скидає вміст сховища дрона на землю.
 

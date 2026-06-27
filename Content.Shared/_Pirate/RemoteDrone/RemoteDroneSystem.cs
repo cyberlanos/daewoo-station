@@ -106,7 +106,8 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (args.SinkPort != entity.Comp.SinkPort.ToString())
             return;
 
-        if (HasComp<RemoteDroneControllerComponent>(args.Source))
+        if (TryComp<RemoteDroneControllerComponent>(args.Source, out var controllerComponent) &&
+            args.SourcePort == controllerComponent.SourcePort.ToString())
             return;
 
         args.Cancel();
@@ -118,7 +119,8 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (args.SourcePort != entity.Comp.SourcePort.ToString())
             return;
 
-        if (!_droneQuery.TryGetComponent(args.Sink, out var droneComponent))
+        if (!_droneQuery.TryGetComponent(args.Sink, out var droneComponent) ||
+            args.SinkPort != droneComponent.SinkPort.ToString())
         {
             args.Cancel();
             return;
@@ -133,9 +135,16 @@ public sealed class RemoteDroneSystem : EntitySystem
         if (args.SourcePort != entity.Comp.SourcePort.ToString())
             return;
 
+        if (!_droneQuery.TryGetComponent(args.Sink, out var droneComponent) ||
+            args.SinkPort != droneComponent.SinkPort.ToString())
+            return;
+
         // remove earlier link if it exists
-        if (entity.Comp.LinkedDroneUid is { } alreadyLinkedDroneUid)
+        if (entity.Comp.LinkedDroneUid is { } alreadyLinkedDroneUid &&
+            alreadyLinkedDroneUid != args.Sink)
+        {
             _sharedDeviceLinkSystem.RemoveSinkFromSource(entity.Owner, alreadyLinkedDroneUid);
+        }
 
         entity.Comp.LinkedDroneUid = args.Sink;
 
