@@ -1,0 +1,35 @@
+- type: entity
+  parent: BaseAction
+  id: ActionBloodBrotherConvert
+  name: blood-brother-action-convert-name
+  description: blood-brother-action-convert-description
+  components:
+  - type: Action
+    icon:
+      sprite: /Textures/Interface/Alerts/bleed.rsi
+      state: bleed10
+    itemIconStyle: BigAction
+  - type: TargetAction
+  - type: EntityTargetAction
+    event: !type:BloodBrotherConvertActionEvent
+    whitelist:
+      components:
+      - HumanoidAppearance
+    canTargetSelf: false
+
+- type: entity
+  parent: BaseAction
+  id: ActionBloodBrotherCheckConvert
+  name: blood-brother-action-check-convert-name
+  description: blood-brother-action-check-convert-description
+  components:
+  - type: Action
+    icon: Interface/VerbIcons/vv.svg.192dpi.png
+    itemIconStyle: BigAction
+  - type: TargetAction
+  - type: EntityTargetAction
+    event: !type:BloodBrotherCheckConvertActionEvent
+    whitelist:
+      components:
+      - HumanoidAppearance
+    canTargetSelf: false

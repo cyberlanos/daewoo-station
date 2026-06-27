@@ -49,6 +49,7 @@
     - Heretic # goob edit - heretics
     - Blob # Goobstation - Blob
     - Shadowling # Einstein Engines - Shadowlings
+    - BloodBrother # Pirate
   friendly: # Goobstation
     - Wizard
     - PirateFaction # goob - pirates
@@ -73,6 +74,7 @@
   - Xenoborg
   - Wraith # Goobstation - Wraith
   - Lavafauna # Goob - Lavaland
+  - BloodBrother # Pirate
 
 - type: npcFaction
   id: Mouse
@@ -112,6 +114,7 @@
   - Blob # Goobstation - Blob
   - PirateFaction # goob - pirates
   - Lavafauna # Goob - Lavaland
+  - BloodBrother # Pirate
   friendly: # Goobstation
   - Wizard
   - Shadowling # Einstein Engines - Shadowlings
@@ -194,6 +197,7 @@
   - Xenoborg
   - Wraith # Goobstation - Wraith
   - Lavafauna # Goob - Lavaland
+  - BloodBrother # Pirate
 
 - type: npcFaction
   id: Revolutionary
@@ -232,6 +236,7 @@
   - PirateFaction # goob - pirates
   - Wraith # Goobstation - Wraith
   - Lavafauna # Goob - Lavaland
+  - BloodBrother # Pirate
 
 # Balloons Factions Edit:
 - type: npcFaction
@@ -263,6 +268,7 @@
   - AllHostile
   - Blob # Goobstation - Blob
   - Shadowling # Einstein Engines - Shadowlings
+  - BloodBrother # Pirate
 
 - type: npcFaction
   id: Wraith # Goobstation
