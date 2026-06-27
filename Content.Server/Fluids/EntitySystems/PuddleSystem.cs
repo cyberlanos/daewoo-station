@@ -107,6 +107,7 @@ using Content.Server.Fluids.Components;
 using Content.Server.Spreader;
 using Content.Goobstation.Common.Footprints;
 using Content.Shared.ActionBlocker;
+using Content.Shared._Pirate.Fluids; // Pirate: stains
 using Content.Shared.Chemistry;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Components.SolutionManager;
@@ -427,6 +428,9 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
         }
         solution.AddSolution(splitSol.SplitSolutionWithOnly(splitSol.Volume, addBack.ToArray()), _prototypeManager);
         // </Goobstation>
+
+        if (splitSol.Volume > 0) // Pirate: stains
+            RaiseLocalEvent(args.Slipped, new SpilledOnEvent(entity.Owner, splitSol.Clone())); // Pirate: stains
     }
 
     /// <inheritdoc/>

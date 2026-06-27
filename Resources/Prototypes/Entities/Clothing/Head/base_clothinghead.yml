@@ -126,11 +126,26 @@
         reagents:
         - ReagentId: Fiber
           Quantity: 10
+      #region Pirate: stains
+      stain:
+        maxVol: 5
+      #endregion Pirate: stains
   - type: Tag
     tags:
     - ClothMade
     - WhitelistChameleon
     - DroneUsable # Goobstation
+  #region Pirate: stains
+  - type: Appearance
+  - type: Stainable
+    clothingVisuals:
+      head:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: helmetblood
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: helmetbloodicon
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true

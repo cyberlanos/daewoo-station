@@ -427,6 +427,10 @@
         reagents:
         - ReagentId: Water
           Quantity: 2
+      #region Pirate: stains
+      stain:
+        maxVol: 5
+      #endregion Pirate: stains
   - type: DamageOnHighSpeedImpact
     minimumSpeed: 0.1
     damage:
