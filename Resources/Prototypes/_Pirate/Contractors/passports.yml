@@ -94,14 +94,15 @@
 #          - Solarian
 
 - type: entity
-  name: паспорт Ерідану
+  name: корпоративна ID-картка Ерідану
+  description: ID-картка, що підтверджує інформацію особи.
   parent: BasePassport
-  id: EridanPassport
+  id: EridanCorpID
   components:
     - type: Sprite
       sprite: _Pirate/Contractors/Passport.rsi
       layers:
-      - state: passport_eridan_open
+      - state: CorpID_eridan_open
 
 - type: entity
   name: паспорт Адхомаі

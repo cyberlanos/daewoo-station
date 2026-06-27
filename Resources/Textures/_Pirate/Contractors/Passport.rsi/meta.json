@@ -20,12 +20,6 @@
             "name": "passport_biesel_open"
         },
         {
-            "name": "passport_eridan_closed"
-        },
-        {
-            "name": "passport_eridan_open"
-        },
-        {
             "name": "passport_goldendeep_closed"
         },
         {
@@ -48,6 +42,12 @@
         },
         {
             "name": "passport_sol_open"
+        },
+        {
+            "name": "CardID_eridan_closed"
+        },
+        {
+            "name": "CardID_eridan_open"
         },
         {
             "name": "vox_wallet_closed"
