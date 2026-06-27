@@ -1870,3 +1870,6 @@
       - !type:AdjustReagent
         reagent: MindbreakerToxin
         amount: -3.0
+      - !type:AdjustReagent
+        reagent: DoubleGreen # imp drinks
+        amount: -3.0
