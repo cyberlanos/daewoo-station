@@ -9,7 +9,7 @@ nationality_name_bieselite = Республіки Бізеліт
 
 nationality_name_nralakk = Федерації Нраллак
 
-nationality_name_solarian = Солоріанського Альянсу
+nationality_name_solarian = Соларіанського Альянсу
 
 nationality_name_izweski = Ізвескі-Гегемонії
 
