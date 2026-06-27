@@ -356,6 +356,7 @@ public abstract class SharedStationSpawningSystem : EntitySystem
                         // Pirate: cameras (photo persistence)
                         RaiseSelectedLoadoutEntitySpawned(spawnedEntity, entity, pirateFromSelectedLoadout);
                         ApplyLoadoutTint(spawnedEntity, pirateLoadoutTint); // Pirate: loadout
+                        ApplyLoadoutMetadata(spawnedEntity, pirateLoadoutName, pirateLoadoutDescription); // Pirate: loadout
 
                         _storage.Insert(slotEnt.Value, spawnedEntity, out _, storageComp: storage, playSound: false);
                     }

@@ -123,7 +123,8 @@
     FoodBoxDonkpocket: 1
     FoodFrozenSandwich: 2
     FoodFrozenSandwichStrawberry: 2
+    Uchigatana: 1 # Pirate: katana
   emaggedInventory: # Goobstation
-    Katana: 2 # Pirate: katana
     WeaponCroissant: 3
     WeaponBaguette: 2
+    Katana: 1 # Pirate: katana
