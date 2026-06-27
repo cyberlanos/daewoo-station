@@ -153,3 +153,21 @@
       - ContravendUplink # Pirate: follow local ally listing restrictions.
   - !type:ListingLimitedStockCondition
     stock: 1
+
+- type: listing
+  id: UplinkMobMothroachSyndicate
+  name: uplink-syndicate-mothroach-name
+  description: uplink-syndicate-mothroach-description
+  icon: { sprite: _Pirate/Objects/Devices/communication.rsi, state: old-radio-syndicate-mothroach }
+  productEntity: ReinforcementRadioSyndicateMothroachSyndicate
+  cost:
+    Telecrystal: 4
+  categories:
+  - UplinkAllies
+  conditions:
+  - !type:StoreWhitelistCondition
+    blacklist:
+      tags:
+      - ContractorUplink
+      - NukeOpsUplink
+      - ContravendUplink
