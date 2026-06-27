@@ -1,22 +1,18 @@
 using Content.Shared.Examine;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Inventory;
-using Robust.Shared.Containers;
 using Robust.Shared.Utility;
 
 namespace Content.Pirate.Shared.Clothing.ExaminableClothing;
 
 public sealed class ExaminableClothingSystem : EntitySystem
 {
-    [Dependency] private readonly InventorySystem _inventory = default!;
-    [Dependency] private readonly SharedContainerSystem _container = default!;
-
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<ExaminableClothingComponent, ExaminedEvent>(OnExamined);
-        SubscribeLocalEvent<ExaminableClothingComponent, InventoryRelayedEvent<ExaminedEvent>>(OnExaminedWorn);
+        SubscribeLocalEvent<InventoryComponent, ExaminedEvent>(OnWearerExamined);
     }
 
     private string ExamineText(Entity<ExaminableClothingComponent> ent, EntityUid wearer)
@@ -40,17 +36,16 @@ public sealed class ExaminableClothingSystem : EntitySystem
         args.PushMarkup(Loc.GetString("examinable-clothing-when-worn", ("message", ExamineText(ent, args.Examiner))));
     }
 
-    private void OnExaminedWorn(Entity<ExaminableClothingComponent> ent, ref InventoryRelayedEvent<ExaminedEvent> args)
+    private void OnWearerExamined(Entity<InventoryComponent> ent, ref ExaminedEvent args)
     {
-        if (!_inventory.TryGetContainingSlot(ent.Owner, out var slot) ||
-            (slot.SlotFlags & ent.Comp.AllowedSlots) == SlotFlags.NONE)
+        var enumerator = new InventorySystem.InventorySlotEnumerator(ent.Comp, SlotFlags.WITHOUT_POCKET);
+        while (enumerator.NextItem(out var item, out var slot))
         {
-            return;
+            if (!TryComp<ExaminableClothingComponent>(item, out var examinable) ||
+                (slot.SlotFlags & examinable.AllowedSlots) == SlotFlags.NONE)
+                continue;
+
+            args.PushMarkup(ExamineText(new Entity<ExaminableClothingComponent>(item, examinable), ent.Owner));
         }
-
-        if (!_container.TryGetContainingContainer((ent.Owner, null, null), out var container))
-            return;
-
-        args.Args.PushMarkup(ExamineText(ent, container.Owner));
     }
 }
