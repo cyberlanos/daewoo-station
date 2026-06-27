@@ -1,31 +1,27 @@
 - type: entity
-  parent: MarkerBaseStarcup
+  parent: MarkerBase
   id: SpawnMobPike
   name: Space Pike Spawner
   components:
   - type: Sprite
     layers:
-    - state: shadowgreen
     - state: green
     - state: icon
       sprite: _starcup/Mobs/Aliens/Pikes/space_pike.rsi
-    - state: ai
   - type: ConditionalSpawner
     prototypes:
     - MobPike
 
 - type: entity
-  parent: MarkerBaseStarcup
+  parent: MarkerBase
   id: SpawnMobDunklosteus
   name: Space Dunklosteus Spawner
   components:
   - type: Sprite
     layers:
-    - state: shadowgreen
     - state: green
     - state: icon
       sprite: _starcup/Mobs/Aliens/Pikes/dunklosteus.rsi
-    - state: ai
   - type: ConditionalSpawner
     prototypes:
     - MobDunklosteus

@@ -28,7 +28,7 @@
       0: Alive
       82: Dead
   - type: Stamina
-    baseCritThreshold: 150
+    critThreshold: 150
   - type: DamageStateVisuals
     states:
       Alive:
@@ -46,18 +46,9 @@
     damage:
       types:
         Piercing: 12
-  - type: Speech
-    speechVerb: LargeMob
-    speechSounds: SharkminnowSpeechSounds
-    allowedEmotes: ['CreatureGrowl']
-  - type: Vocal
-    sounds:
-      Unsexed: SharkminnowSpeechEmotes
-    screamId: CreatureGrowl
-    screamAction: ActionEmitSound
-  - type: AutoEmote
-    emotes:
-    - GrowlAutoEmote
+  # starcup TODO: Speech/Vocal/AutoEmote components removed - depends on starcup creature voice system
+  # (SharkminnowSpeechSounds, SharkminnowSpeechEmotes, CreatureGrowl, ActionEmitSound, GrowlAutoEmote)
+  # Re-add when pulling starcup Voice/ and Actions/ prototype files + associated audio/sprite assets
 
 - type: entity
   id: MobDunklosteus
