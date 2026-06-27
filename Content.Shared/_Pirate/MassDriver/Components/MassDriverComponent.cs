@@ -59,6 +59,12 @@ public sealed partial class MassDriverComponent : Component
     public TimeSpan ThrowDelay = TimeSpan.FromSeconds(2);
 
     /// <summary>
+    /// Time the launch animation and sound should stay active after a throw.
+    /// </summary>
+    [DataField]
+    public TimeSpan LaunchAnimationTime = TimeSpan.FromSeconds(1.1);
+
+    /// <summary>
     /// Current driver mode.
     /// </summary>
     [DataField]

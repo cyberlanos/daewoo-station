@@ -19,4 +19,8 @@ public sealed partial class ActiveMassDriverComponent : Component
     [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
     [AutoPausedField]
     public TimeSpan NextThrowTime;
+
+    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer))]
+    [AutoPausedField]
+    public TimeSpan LaunchEndTime;
 }

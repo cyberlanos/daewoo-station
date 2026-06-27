@@ -31,11 +31,15 @@ public abstract partial class SharedMassDriverSystem : EntitySystem
         if (component.Mode != MassDriverMode.Auto)
             return;
 
-        var active = HasComp<ActiveMassDriverComponent>(uid);
-        if (active && !args.Powered)
+        if (TryComp<ActiveMassDriverComponent>(uid, out var active) && !args.Powered)
+        {
+            StopLaunching(uid, component, active, true);
             RemComp<ActiveMassDriverComponent>(uid);
-        else if (!active && args.Powered)
+        }
+        else if (active == null && args.Powered)
+        {
             EnsureComp<ActiveMassDriverComponent>(uid);
+        }
     }
 
     public override void Update(float frameTime)
@@ -53,7 +57,21 @@ public abstract partial class SharedMassDriverSystem : EntitySystem
             }
 
             activeMassDriver.NextUpdateTime = _timing.CurTime + activeMassDriver.UpdateDelay;
-            Dirty(uid, massDriver);
+            Dirty(uid, activeMassDriver);
+
+            if (activeMassDriver.LaunchEndTime != TimeSpan.Zero)
+            {
+                if (_timing.CurTime < activeMassDriver.LaunchEndTime)
+                    continue;
+
+                StopLaunching(uid, massDriver, activeMassDriver);
+
+                if (massDriver.Mode == MassDriverMode.Manual)
+                {
+                    RemComp<ActiveMassDriverComponent>(uid);
+                    continue;
+                }
+            }
 
             _entities.Clear();
             _lookup.GetEntitiesIntersecting(uid, _entities, LookupFlags.Dynamic);
@@ -64,16 +82,7 @@ public abstract partial class SharedMassDriverSystem : EntitySystem
 
             if (entityCount == 0)
             {
-                if (activeMassDriver.NextThrowTime != TimeSpan.Zero)
-                {
-                    if (TryComp<AmbientSoundComponent>(uid, out var ambient))
-                        _audio.SetAmbience(uid, false, ambient);
-
-                    activeMassDriver.NextThrowTime = TimeSpan.Zero;
-                    _appearance.SetData(uid, MassDriverVisuals.Launching, false);
-                    ChangePowerLoad(uid, massDriver, massDriver.MassDriverPowerLoad);
-                    Dirty(uid, massDriver);
-                }
+                StopLaunching(uid, massDriver, activeMassDriver);
 
                 if (massDriver.Mode == MassDriverMode.Manual)
                     RemComp<ActiveMassDriverComponent>(uid);
@@ -84,12 +93,16 @@ public abstract partial class SharedMassDriverSystem : EntitySystem
             if (activeMassDriver.NextThrowTime == TimeSpan.Zero)
             {
                 activeMassDriver.NextThrowTime = _timing.CurTime + massDriver.ThrowDelay;
-                Dirty(uid, massDriver);
+                Dirty(uid, activeMassDriver);
                 continue;
             }
 
             ChangePowerLoad(uid, massDriver, massDriver.LaunchPowerLoad);
             _appearance.SetData(uid, MassDriverVisuals.Launching, true);
+            activeMassDriver.NextThrowTime = TimeSpan.Zero;
+            activeMassDriver.LaunchEndTime = _timing.CurTime + massDriver.LaunchAnimationTime;
+            activeMassDriver.NextUpdateTime = activeMassDriver.LaunchEndTime;
+            Dirty(uid, activeMassDriver);
 
             ThrowEntities(uid, massDriver, _entities, entityCount);
 
@@ -114,6 +127,40 @@ public abstract partial class SharedMassDriverSystem : EntitySystem
 
         foreach (var entity in targets)
             _throwing.TryThrow(entity, direction, speed);
+    }
+
+    protected void StopLaunching(
+        EntityUid uid,
+        MassDriverComponent massDriver,
+        ActiveMassDriverComponent activeMassDriver,
+        bool force = false)
+    {
+        if (!force &&
+            activeMassDriver.NextThrowTime == TimeSpan.Zero &&
+            activeMassDriver.LaunchEndTime == TimeSpan.Zero)
+        {
+            return;
+        }
+
+        if (TryComp<AmbientSoundComponent>(uid, out var ambient))
+            _audio.SetAmbience(uid, false, ambient);
+
+        activeMassDriver.NextThrowTime = TimeSpan.Zero;
+        activeMassDriver.LaunchEndTime = TimeSpan.Zero;
+        _appearance.SetData(uid, MassDriverVisuals.Launching, false);
+        ChangePowerLoad(uid, massDriver, massDriver.MassDriverPowerLoad);
+        Dirty(uid, activeMassDriver);
+    }
+
+    protected void StartManualLaunch(EntityUid uid, MassDriverComponent massDriver)
+    {
+        var activeMassDriver = EnsureComp<ActiveMassDriverComponent>(uid);
+        StopLaunching(uid, massDriver, activeMassDriver, true);
+
+        activeMassDriver.NextUpdateTime = TimeSpan.Zero;
+        activeMassDriver.NextThrowTime = TimeSpan.Zero;
+        activeMassDriver.LaunchEndTime = TimeSpan.Zero;
+        Dirty(uid, activeMassDriver);
     }
 
     public abstract void ChangePowerLoad(EntityUid uid, MassDriverComponent component, float powerLoad);

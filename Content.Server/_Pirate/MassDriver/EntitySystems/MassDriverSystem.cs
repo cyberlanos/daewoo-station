@@ -67,7 +67,7 @@ public sealed partial class MassDriverSystem : SharedMassDriverSystem
     private void OnSignalReceived(EntityUid uid, MassDriverComponent component, ref SignalReceivedEvent args)
     {
         if (args.Port == component.LaunchPort && component.Mode == MassDriverMode.Manual)
-            AddComp<ActiveMassDriverComponent>(uid);
+            StartManualLaunch(uid, component);
     }
 
     public override void ChangePowerLoad(EntityUid uid, MassDriverComponent component, float powerLoad)
@@ -92,9 +92,16 @@ public sealed partial class MassDriverSystem : SharedMassDriverSystem
             Dirty(massDriverUid, massDriverComponent);
 
             if (massDriverComponent.Mode == MassDriverMode.Auto)
+            {
                 EnsureComp<ActiveMassDriverComponent>(massDriverUid);
+            }
             else
+            {
+                if (TryComp<ActiveMassDriverComponent>(massDriverUid, out var activeMassDriver))
+                    StopLaunching(massDriverUid, massDriverComponent, activeMassDriver, true);
+
                 RemComp<ActiveMassDriverComponent>(massDriverUid);
+            }
         }
 
         SendState(uid, component);
@@ -103,7 +110,15 @@ public sealed partial class MassDriverSystem : SharedMassDriverSystem
     private void OnLaunch(EntityUid uid, MassDriverConsoleComponent component, MassDriverLaunchMessage args)
     {
         foreach (var massDriverUid in component.MassDrivers)
-            AddComp<ActiveMassDriverComponent>(massDriverUid);
+        {
+            if (!TryComp<MassDriverComponent>(massDriverUid, out var massDriverComponent) ||
+                massDriverComponent.Mode != MassDriverMode.Manual)
+            {
+                continue;
+            }
+
+            StartManualLaunch(massDriverUid, massDriverComponent);
+        }
     }
 
     private void OnThrowSpeedChanged(EntityUid uid, MassDriverConsoleComponent component, MassDriverThrowSpeedMessage args)

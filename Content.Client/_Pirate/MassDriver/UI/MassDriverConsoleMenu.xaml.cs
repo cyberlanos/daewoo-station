@@ -14,6 +14,8 @@ public sealed partial class MassDriverConsoleMenu : DefaultWindow
     public event Action<float>? OnThrowSpeed;
     public event Action<float>? OnThrowDistance;
 
+    private bool _updatingState;
+
     public MassDriverConsoleMenu()
     {
         RobustXamlLoader.Load(this);
@@ -38,21 +40,47 @@ public sealed partial class MassDriverConsoleMenu : DefaultWindow
 
         ThrowDistanceSlider.OnValueChanged += _ =>
         {
+            if (_updatingState)
+                return;
+
             var throwDistance = Normalize(ThrowDistanceSlider.Value);
-            OnThrowDistance?.Invoke(throwDistance);
             ThrowDistanceCurrentValue.Text = FormatDistance(throwDistance);
+        };
+        ThrowDistanceSlider.OnReleased += _ =>
+        {
+            if (_updatingState)
+                return;
+
+            var throwDistance = Normalize(ThrowDistanceSlider.Value);
+            ThrowDistanceSlider.SetValueWithoutEvent(throwDistance);
+            ThrowDistanceCurrentValue.Text = FormatDistance(throwDistance);
+            OnThrowDistance?.Invoke(throwDistance);
         };
 
         ThrowSpeedSlider.OnValueChanged += _ =>
         {
+            if (_updatingState)
+                return;
+
             var throwSpeed = Normalize(ThrowSpeedSlider.Value);
-            OnThrowSpeed?.Invoke(throwSpeed);
             ThrowSpeedCurrentValue.Text = FormatSpeed(throwSpeed);
+        };
+        ThrowSpeedSlider.OnReleased += _ =>
+        {
+            if (_updatingState)
+                return;
+
+            var throwSpeed = Normalize(ThrowSpeedSlider.Value);
+            ThrowSpeedSlider.SetValueWithoutEvent(throwSpeed);
+            ThrowSpeedCurrentValue.Text = FormatSpeed(throwSpeed);
+            OnThrowSpeed?.Invoke(throwSpeed);
         };
     }
 
     public void UpdateState(MassDriverComponentState state)
     {
+        _updatingState = true;
+
         if (state.Console != null)
         {
             DisabledPanel.Visible = false;
@@ -84,9 +112,6 @@ public sealed partial class MassDriverConsoleMenu : DefaultWindow
             LaunchButton.Disabled = false;
         }
 
-        ThrowDistanceCurrentValue.Text = FormatDistance(state.CurrentThrowDistance);
-        ThrowSpeedCurrentValue.Text = FormatSpeed(state.CurrentThrowSpeed);
-
         ThrowDistanceMaxValue.Text = state.MaxThrowDistance.ToString();
         ThrowDistanceMinValue.Text = state.MinThrowDistance.ToString();
         ThrowSpeedMaxValue.Text = state.MaxThrowSpeed.ToString();
@@ -94,11 +119,21 @@ public sealed partial class MassDriverConsoleMenu : DefaultWindow
 
         ThrowDistanceSlider.MaxValue = state.MaxThrowDistance;
         ThrowDistanceSlider.MinValue = state.MinThrowDistance;
-        ThrowDistanceSlider.Value = state.CurrentThrowDistance;
+        if (!ThrowDistanceSlider.Grabbed)
+        {
+            ThrowDistanceSlider.SetValueWithoutEvent(state.CurrentThrowDistance);
+            ThrowDistanceCurrentValue.Text = FormatDistance(state.CurrentThrowDistance);
+        }
 
         ThrowSpeedSlider.MaxValue = state.MaxThrowSpeed;
         ThrowSpeedSlider.MinValue = state.MinThrowSpeed;
-        ThrowSpeedSlider.Value = state.CurrentThrowSpeed;
+        if (!ThrowSpeedSlider.Grabbed)
+        {
+            ThrowSpeedSlider.SetValueWithoutEvent(state.CurrentThrowSpeed);
+            ThrowSpeedCurrentValue.Text = FormatSpeed(state.CurrentThrowSpeed);
+        }
+
+        _updatingState = false;
     }
 
     private static float Normalize(float value, int decimals = 1)
