@@ -374,6 +374,36 @@ public abstract class SharedStainSystem : EntitySystem
         return true;
     }
 
+    /// <summary>Whether the entity currently carries any stain.</summary>
+    public bool HasStain(EntityUid uid)
+    {
+        return TryComp<StainableComponent>(uid, out var stainable) &&
+               _solution.TryGetSolution(uid, stainable.SolutionName, out _, out var sol) &&
+               sol.Volume > FixedPoint2.Zero;
+    }
+
+    /// <summary>
+    /// Cleans the stain off a single bare-body slot (e.g. washing just your hands). The shared stain
+    /// solution is only emptied once no body slots remain stained.
+    /// </summary>
+    public bool TryCleanBodyStain(EntityUid uid, SlotFlags slot)
+    {
+        if (!TryComp<StainableComponent>(uid, out var stainable) || (stainable.BodyStainSlots & slot) == 0)
+            return false;
+
+        stainable.BodyStainSlots &= ~slot;
+
+        if (stainable.BodyStainSlots == SlotFlags.NONE &&
+            _solution.TryGetSolution(uid, stainable.SolutionName, out var solComp, out _))
+        {
+            _solution.RemoveAllSolution(solComp.Value);
+            OnCleaned((uid, stainable));
+        }
+
+        UpdateVisuals((uid, stainable));
+        return true;
+    }
+
     public bool CleanEntityAndEquipment(EntityUid uid)
     {
         var cleaned = false;

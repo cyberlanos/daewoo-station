@@ -165,6 +165,7 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
     [Dependency] private readonly TileFrictionController _tile = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly TurfSystem _turf = default!;
+    [Dependency] private readonly InventorySystem _inventory = default!; // Pirate: stains
 
 
     [ValidatePrototypeId<ReagentPrototype>]
@@ -461,8 +462,15 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
 
         if (hasFootprints)
         {
+            // Standing/walking only picks up floor blood on the feet (shoes, or bare feet if unshod).
             var targetSlots = SlotFlags.FEET;
-            if (TryComp<StandingStateComponent>(args.OtherEntity, out var standing) && !standing.Standing)
+
+            // Lying/crawling drags the body through the blood, staining contact slots too - but worn shoes
+            // intercept the floor contact and prevent that wider body staining (SS13 - see slip-requirements.txt).
+            // This also covers slipping: a slide into fresh blood while prone applies the same posture rules.
+            var lying = TryComp<StandingStateComponent>(args.OtherEntity, out var standing) && !standing.Standing;
+            var wearingShoes = _inventory.TryGetSlotEntity(args.OtherEntity, "shoes", out _);
+            if (lying && !wearingShoes)
                 targetSlots |= SpilledOnEvent.DefaultTargetSlots;
 
             RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol, targetSlots));
