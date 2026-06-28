@@ -82,9 +82,7 @@ public abstract class SharedStainSystem : EntitySystem
 
     private void OnMapInit(Entity<StainableComponent> ent, ref MapInitEvent args)
     {
-        // Don't eagerly create the stain solution: an empty one drives SolutionContainerVisuals on
-        // entities that share its appearance keys (e.g. soap, drinks) to fill level 0 and hides their
-        // sprite. The solution is created lazily in TryStain when the item is actually stained.
+        // Avoid empty stain solutions on items with solution-driven visuals.
         if (_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out var sol))
             sol.Value.Comp.Solution.CanReact = false;
     }
@@ -150,8 +148,7 @@ public abstract class SharedStainSystem : EntitySystem
         if ((args.TargetSlots & SlotFlags.FEET) == 0)
             return;
 
-        // Worn shoes are stained through the inventory relay (OnInventorySpilledOn); staining them here
-        // too would double-apply the spill for combined TargetSlots (e.g. FEET | INNERCLOTHING).
+        // Worn shoes are handled by the inventory relay.
         if (_inventory.TryGetSlotEntity(ent.Owner, ShoesSlot, out var shoes) &&
             HasComp<StainableComponent>(shoes))
         {
@@ -517,7 +514,6 @@ public abstract class SharedStainSystem : EntitySystem
         if (!_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out var solComp, out var sol))
             return;
 
-        // Only consume the stain once the spill is confirmed, so a failed spill doesn't void the contents.
         if (!_puddle.TrySpillAt(args.User, sol.Clone(), out _))
             return;
 

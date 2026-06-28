@@ -30,7 +30,6 @@ public abstract class SharedWashingMachineSystem : EntitySystem
 
     private void OnStorageOpenAttempt(Entity<WashingMachineComponent> ent, ref StorageOpenAttemptEvent args)
     {
-        // Only block opening mid-wash; a Broken machine must still open so trapped items can be retrieved.
         if (ent.Comp.State == WashingMachineState.Washing)
             args.Cancelled = true;
     }

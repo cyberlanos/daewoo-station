@@ -10,8 +10,7 @@ using Robust.Shared.Map;
 namespace Content.Pirate.Server.Stains;
 
 /// <summary>
-/// Cleans stains off anything sitting on a tile a cleaning reagent reacts with - cleaner foam, a
-/// space-cleaner spray puddle, a mopped floor, etc. Mobs also get their worn/held items cleaned.
+/// Cleans stains from entities touched by a cleaning tile reaction.
 /// </summary>
 [DataDefinition]
 public sealed partial class CleanStainsTileReaction : ITileReaction
@@ -33,7 +32,6 @@ public sealed partial class CleanStainsTileReaction : ITileReaction
                 stains.TryCleanStain(entity);
         }
 
-        // Cleaning stains is a free side effect; don't consume the reagent so it still does its main job.
         return FixedPoint2.Zero;
     }
 }

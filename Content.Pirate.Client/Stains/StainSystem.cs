@@ -64,8 +64,7 @@ public sealed class StainSystem : SharedStainSystem
 
         var spriteEnt = new Entity<SpriteComponent?>(ent.Owner, args.Sprite);
 
-        // Avoid rebuilding unchanged stain layers. The base frame is part of the key so dynamic icons
-        // (e.g. Soap fill levels) rebuild their mask when the underlying sprite changes.
+        // Include the base frame for dynamic silhouettes.
         var drawn = (color, slots, hasStain, BaseFrameFingerprint(spriteEnt));
         if (_lastDrawn.TryGetValue(ent.Owner, out var last) && last == drawn)
             return;
@@ -124,8 +123,7 @@ public sealed class StainSystem : SharedStainSystem
         if (!TryGetStainColor(ent, out var color) || args.Layers.Count == 0)
             return;
 
-        // Mask the blood to every visible held layer so composite sprites (e.g. winter coats) keep full
-        // coverage instead of only staining the first layer. Snapshot first since we append below.
+        // Snapshot before appending stain layers.
         var baseLayers = new List<(string, PrototypeLayerData)>(args.Layers);
         for (var i = 0; i < baseLayers.Count; i++)
         {
@@ -153,8 +151,7 @@ public sealed class StainSystem : SharedStainSystem
         }
     }
 
-    // Fingerprint of the base icon frame so the redraw cache invalidates when a dynamic sprite (e.g. Soap
-    // fill level) changes the silhouette the stain mask is built from. Empty for bodies/no sprite.
+    // Tracks dynamic icon silhouettes.
     private string BaseFrameFingerprint(Entity<SpriteComponent?> sprite)
     {
         if (HasComp<HumanoidAppearanceComponent>(sprite.Owner) || !_sprite.TryGetLayer(sprite, 0, out _, false))
@@ -190,8 +187,6 @@ public sealed class StainSystem : SharedStainSystem
 
     private void AddItemBloodIconVisual(Entity<StainableComponent> ent, Entity<SpriteComponent?> sprite, Color color)
     {
-        // Count the existing (base) layers before we start appending mask/blood layers, so composite
-        // icons get the blood masked to every visible layer instead of only the first one.
         var baseCount = 0;
         while (_sprite.TryGetLayer(sprite, baseCount, out _, false))
             baseCount++;
@@ -225,7 +220,6 @@ public sealed class StainSystem : SharedStainSystem
         if (added)
             return;
 
-        // No maskable layers (e.g. pure texture sprite) - fall back to a flat blood overlay.
         const string flatKey = "stain-icon";
         var flat = BuildItemBloodLayer(flatKey);
         flat.Color = color;

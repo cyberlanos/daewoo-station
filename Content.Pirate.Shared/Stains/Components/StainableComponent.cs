@@ -40,8 +40,7 @@ public sealed partial class StainableComponent : Component
     public SlotFlags BodyStainSlots = SlotFlags.NONE;
 
     /// <summary>
-    /// Whether the stain system added the DNASolutionScannable tag, so it only removes the tag it owns
-    /// and never strips one that was already present or added by another system.
+    /// Whether stains own the temporary DNA scan tag.
     /// </summary>
     [ViewVariables]
     public bool AddedDnaSolutionScannable;

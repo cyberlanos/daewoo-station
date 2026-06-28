@@ -595,8 +595,7 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         var xform = Transform(ent.Owner);
         foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f))
         {
-            // Splash mobs (their equipment relays the spill) and loose stainable items alike. StainableComponent
-            // lives in a downstream assembly, so ItemComponent is the accessible proxy for a stainable item.
+            // ItemComponent proxies loose stainables here.
             if (neighbor == ent.Owner ||
                 (!HasComp<InventoryComponent>(neighbor) && !HasComp<ItemComponent>(neighbor)))
                 continue;

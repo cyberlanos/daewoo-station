@@ -432,7 +432,6 @@
         maxVol: 5
       #endregion Pirate: stains
   #region Pirate: stains
-  # Parent is Clothing (not ClothingHeadBase), so add the head stain visuals to match other headgear.
   - type: Appearance
   - type: Stainable
     clothingVisuals:

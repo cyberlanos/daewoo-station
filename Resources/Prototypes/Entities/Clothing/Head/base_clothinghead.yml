@@ -331,7 +331,6 @@
     - HeadSide
   - type: FaceHuggerBlocker # Goobstation
   #region Pirate: stains
-  # This base has no parent so it misses ClothingHeadBase's stain setup; add it here (solution is created lazily on first stain).
   - type: Appearance
   - type: Stainable
     clothingVisuals:
@@ -430,7 +429,6 @@
     - HeadTop
     - HeadSide
   #region Pirate: stains
-  # This base has no parent so it misses ClothingHeadBase's stain setup; add it here (solution is created lazily on first stain).
   - type: Appearance
   - type: Stainable
     clothingVisuals:

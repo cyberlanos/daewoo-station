@@ -81,8 +81,7 @@ public sealed class WashingMachineSystem : SharedWashingMachineSystem
             if (sprayWater)
                 _reactive.DoEntityReaction(item, waterSpray, ReactionMethod.Touch);
 
-            // Only heavy (non-clothing) items tumble hard enough to take blunt damage; a clothing-only
-            // load shouldn't be damaged at all.
+            // Clothing does not take tumble damage.
             if (HasComp<ClothingComponent>(item))
                 continue;
 
