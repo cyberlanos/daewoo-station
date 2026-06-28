@@ -70,8 +70,6 @@ public sealed class StainSystem : SharedStainSystem
             return;
         _lastDrawn[ent.Owner] = drawn;
 
-        Log.Debug($"[stains] redraw {ToPrettyString(ent.Owner)} hasStain={hasStain} slots={slots}");
-
         foreach (var key in ent.Comp.RevealedLayerKeys)
         {
             _sprite.RemoveLayer(spriteEnt, key, false);

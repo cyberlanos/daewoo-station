@@ -204,26 +204,7 @@ public abstract class SharedStainSystem : EntitySystem
 
         UpdateVisuals(ent);
         OnStained(ent, stainSolution.Value);
-        LogStain($"stained {ToPrettyString(ent.Owner)} +{split.Volume}u [{Describe(split)}] total={stainSolution.Value.Comp.Solution.Volume}u");
         return true;
-    }
-
-    private void LogStain(string message)
-    {
-        if (_net.IsServer)
-            Log.Info($"[stains] {message}");
-    }
-
-    private static string Describe(Solution solution)
-    {
-        if (solution.Contents.Count == 0)
-            return "empty";
-
-        var parts = new List<string>(solution.Contents.Count);
-        foreach (var content in solution.Contents)
-            parts.Add($"{content.Reagent.Prototype}:{content.Quantity}");
-
-        return string.Join(",", parts);
     }
 
     protected virtual void OnStained(Entity<StainableComponent> ent, Entity<SolutionComponent> solution)
@@ -293,8 +274,6 @@ public abstract class SharedStainSystem : EntitySystem
             if (damage >= 30 && _random.Prob(0.33f))
                 bloodiedSlots |= SlotFlags.HEAD;
         }
-
-        LogStain($"melee: {ToPrettyString(args.User)} hit with {ToPrettyString(ent.Owner)} dmg={damage} attackerSlots={bloodiedSlots}");
 
         // Let empty hand/foot slots stain bare limbs.
         RaiseLocalEvent(args.User, new SpilledOnEvent(args.User, solution.Clone(), bloodiedSlots));
@@ -388,7 +367,6 @@ public abstract class SharedStainSystem : EntitySystem
             return false;
         }
 
-        LogStain($"cleaned {ToPrettyString(uid)} (was {sol.Volume}u)");
         stainable.BodyStainSlots = SlotFlags.NONE;
         _solution.RemoveAllSolution(solComp.Value);
         UpdateVisuals((uid, stainable));
