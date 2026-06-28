@@ -330,6 +330,18 @@
     - HeadTop
     - HeadSide
   - type: FaceHuggerBlocker # Goobstation
+  #region Pirate: stains
+  # This base has no parent so it misses ClothingHeadBase's stain setup; add it here (solution is created lazily on first stain).
+  - type: Appearance
+  - type: Stainable
+    clothingVisuals:
+      head:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: helmetblood
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: helmetbloodicon
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true
@@ -417,3 +429,15 @@
     - Hair
     - HeadTop
     - HeadSide
+  #region Pirate: stains
+  # This base has no parent so it misses ClothingHeadBase's stain setup; add it here (solution is created lazily on first stain).
+  - type: Appearance
+  - type: Stainable
+    clothingVisuals:
+      head:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: helmetblood
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: helmetbloodicon
+  #endregion Pirate: stains

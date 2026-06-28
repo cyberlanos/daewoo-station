@@ -452,7 +452,9 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
             return;
         }
 
-        var splitSol = _solutionContainerSystem.SplitSolution(entity.Comp.Solution.Value, FixedPoint2.Min(solution.Volume, 0.5f));
+        // Sample the puddle without draining it: contact only dirties the target, and TryStain may reject
+        // it (blocked/full), so we must not deduct volume up front for a spill that never lands.
+        var splitSol = solution.Clone().SplitSolution(FixedPoint2.Min(solution.Volume, 0.5f));
         if (splitSol.Volume <= 0)
             return;
 

@@ -150,15 +150,11 @@ public abstract class SharedStainSystem : EntitySystem
         if ((args.TargetSlots & SlotFlags.FEET) == 0)
             return;
 
+        // Worn shoes are stained through the inventory relay (OnInventorySpilledOn); staining them here
+        // too would double-apply the spill for combined TargetSlots (e.g. FEET | INNERCLOTHING).
         if (_inventory.TryGetSlotEntity(ent.Owner, ShoesSlot, out var shoes) &&
-            TryComp<StainableComponent>(shoes, out var shoeStainable))
+            HasComp<StainableComponent>(shoes))
         {
-            if (TryStain((shoes.Value, shoeStainable), args.TargetSlots == SlotFlags.FEET ? args.Solution : args.Solution.Clone()) &&
-                args.TargetSlots == SlotFlags.FEET)
-            {
-                args.Handled = true;
-            }
-
             return;
         }
 
@@ -521,10 +517,12 @@ public abstract class SharedStainSystem : EntitySystem
         if (!_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out var solComp, out var sol))
             return;
 
-        var split = _solution.SplitSolution(solComp.Value, sol.Volume);
-        UpdateVisuals(ent);
+        // Only consume the stain once the spill is confirmed, so a failed spill doesn't void the contents.
+        if (!_puddle.TrySpillAt(args.User, sol.Clone(), out _))
+            return;
 
-        if (_puddle.TrySpillAt(args.User, split, out _))
-            _popup.PopupEntity(Loc.GetString("stain-verb-wring-success"), args.User, args.User);
+        _solution.RemoveAllSolution(solComp.Value);
+        UpdateVisuals(ent);
+        _popup.PopupEntity(Loc.GetString("stain-verb-wring-success"), args.User, args.User);
     }
 }

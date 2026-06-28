@@ -21,6 +21,7 @@ using Content.Shared.Fluids;
 using Content.Shared.Forensics.Components;
 using Content.Shared.HealthExaminable;
 using Content.Shared.Inventory; // Pirate: stains
+using Content.Shared.Item; // Pirate: stains
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Random.Helpers;
@@ -594,7 +595,10 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         var xform = Transform(ent.Owner);
         foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f))
         {
-            if (neighbor == ent.Owner || !HasComp<InventoryComponent>(neighbor))
+            // Splash mobs (their equipment relays the spill) and loose stainable items alike. StainableComponent
+            // lives in a downstream assembly, so ItemComponent is the accessible proxy for a stainable item.
+            if (neighbor == ent.Owner ||
+                (!HasComp<InventoryComponent>(neighbor) && !HasComp<ItemComponent>(neighbor)))
                 continue;
 
             RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol));

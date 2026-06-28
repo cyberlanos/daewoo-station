@@ -13,13 +13,21 @@ public sealed class StainSystem : SharedStainSystem
     {
         base.OnStained(ent, solution);
 
+        if (_tag.HasTag(ent.Owner, "DNASolutionScannable"))
+            return;
+
         _tag.AddTag(ent.Owner, "DNASolutionScannable");
+        ent.Comp.AddedDnaSolutionScannable = true;
     }
 
     protected override void OnCleaned(Entity<StainableComponent> ent)
     {
         base.OnCleaned(ent);
 
+        if (!ent.Comp.AddedDnaSolutionScannable)
+            return;
+
         _tag.RemoveTag(ent.Owner, "DNASolutionScannable");
+        ent.Comp.AddedDnaSolutionScannable = false;
     }
 }

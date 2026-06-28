@@ -78,13 +78,16 @@ public sealed class WashingMachineSystem : SharedWashingMachineSystem
 
         foreach (var item in storage.Contents.ContainedEntities)
         {
-            _damageable.TryChangeDamage(item, damage, true);
-
             if (sprayWater)
                 _reactive.DoEntityReaction(item, waterSpray, ReactionMethod.Touch);
 
-            if (!hasHeavyItems && !HasComp<ClothingComponent>(item))
-                hasHeavyItems = true;
+            // Only heavy (non-clothing) items tumble hard enough to take blunt damage; a clothing-only
+            // load shouldn't be damaged at all.
+            if (HasComp<ClothingComponent>(item))
+                continue;
+
+            hasHeavyItems = true;
+            _damageable.TryChangeDamage(item, damage, true);
         }
 
         if (!hasHeavyItems)

@@ -153,7 +153,9 @@ public sealed class FootprintSystem : EntitySystem
         var addBack = puddleSolSol.SplitSolutionWithOnly(puddleSolSol.Volume, nonStickProtos.ToArray());
 
         _solution.TryTransferSolution(puddleSolution.Value, solution.Value.Comp.Solution, GetFootprintVolume(entity, solution.Value));
-        RaiseLocalEvent(entity.Owner, new SpilledOnEvent(puddle.Value.Owner, solution.Value.Comp.Solution.Clone(), SlotFlags.FEET)); // Pirate: stains
+        // Stain feet with the current puddle's skin-sticking contents, not the accumulated foot reservoir
+        // (which would re-apply reagents picked up from earlier puddles on every later step).
+        RaiseLocalEvent(entity.Owner, new SpilledOnEvent(puddle.Value.Owner, puddleSolSol.Clone(), SlotFlags.FEET)); // Pirate: stains
 
         // only make footprints if a puddle contains enough of a reagent that can form footprints
         if (puddleSolSol.Volume < _minimumPuddleSize)
