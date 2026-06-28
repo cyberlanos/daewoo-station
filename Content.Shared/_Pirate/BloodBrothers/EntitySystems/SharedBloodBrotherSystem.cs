@@ -20,12 +20,12 @@ public abstract partial class SharedBloodBrotherSystem : EntitySystem
     {
         base.Initialize();
 
-        SubscribeLocalEvent<InitialBloodBrotherComponent, MapInitEvent>(OnInitialBloodBrotherMapInit);
+        SubscribeLocalEvent<InitialBloodBrotherComponent, ComponentStartup>(OnInitialBloodBrotherStartup);
         SubscribeLocalEvent<InitialBloodBrotherComponent, ComponentShutdown>(OnInitialBloodBrotherShutdown);
         SubscribeLocalEvent<BloodBrotherComponent, ComponentGetStateAttemptEvent>(OnBloodBrotherAttemptGetState);
     }
 
-    private void OnInitialBloodBrotherMapInit(Entity<InitialBloodBrotherComponent> entity, ref MapInitEvent args)
+    private void OnInitialBloodBrotherStartup(Entity<InitialBloodBrotherComponent> entity, ref ComponentStartup args)
     {
         _actionsSystem.AddAction(entity, ref entity.Comp.ConvertActionEntity, entity.Comp.ConvertAction);
         _actionsSystem.AddAction(entity, ref entity.Comp.CheckConvertActionEntity, entity.Comp.CheckConvertAction);
@@ -42,7 +42,7 @@ public abstract partial class SharedBloodBrotherSystem : EntitySystem
         Entity<BloodBrotherComponent> entity,
         ref ComponentGetStateAttemptEvent args)
     {
-        args.Cancelled = !CanGetState(args.Player);
+        args.Cancelled = !CanGetState(entity, args.Player);
     }
 
     public void OnBloodBrotherMindshielded(Entity<MindShieldComponent> entity, ref ComponentStartup args)
@@ -63,12 +63,14 @@ public abstract partial class SharedBloodBrotherSystem : EntitySystem
             PopupType.MediumCaution);
     }
 
-    private bool CanGetState(ICommonSession? player)
+    private bool CanGetState(Entity<BloodBrotherComponent> entity, ICommonSession? player)
     {
         //Apparently this can be null in replays so I am just returning true.
         if (player?.AttachedEntity is not {} uid)
             return true;
 
-        return HasComp<BloodBrotherComponent>(uid) || HasComp<ShowAntagIconsComponent>(uid);
+        return uid == entity.Owner
+            || uid == entity.Comp.Brother
+            || HasComp<ShowAntagIconsComponent>(uid);
     }
 }

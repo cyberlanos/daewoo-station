@@ -35,6 +35,7 @@
   - type: TargetObjective
     title: objective-condition-blood-brother-progress-title
   - type: HelpProgressCondition
+  - type: BloodBrotherTarget
   - type: ConvertedBloodBrotherObjective
 
 - type: entity

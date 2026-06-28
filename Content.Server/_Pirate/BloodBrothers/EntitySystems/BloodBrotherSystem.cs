@@ -5,6 +5,7 @@ using Content.Server.Roles;
 using Content.Shared._Pirate.BloodBrothers.Components;
 using Content.Shared._Pirate.BloodBrothers.EntitySystems;
 using Content.Shared._Pirate.Roles.Components;
+using Content.Shared.Mind;
 using Content.Shared.Mindshield.Components;
 using Content.Shared.NPC.Systems;
 
@@ -42,35 +43,39 @@ public sealed partial class BloodBrotherSystem : SharedBloodBrotherSystem
         {
             // Initial no longer has to worry about keeping the converted alive or on the shuttle
             if (role.Value.Comp2.Brother != null &&
-                _mindSystem.TryGetMind(role.Value.Comp2.Brother.Value, out _, out var brotherMind))
+                _mindSystem.TryGetMind(role.Value.Comp2.Brother.Value, out var brotherMindId, out var brotherMind))
             {
-                foreach (var objective in brotherMind.Objectives)
-                {
-                    if (!HasComp<BloodBrotherTargetComponent>(objective))
-                        continue;
-
-                    _targetObjectiveSystem.SetTarget(objective, EntityUid.Invalid);
-                }
+                ClearPairedObjectives((brotherMindId, brotherMind));
             }
 
             _roleSystem.MindRemoveRole<BloodBrotherRoleComponent>(mindId);
         }
 
-        int? objectiveToRemove = null;
+        RemoveConvertedObjectives((mindId, mind));
+    }
 
-        var i = 0;
-        foreach (var objective in mind.Objectives)
+    private void ClearPairedObjectives(Entity<MindComponent> mind)
+    {
+        for (var i = mind.Comp.Objectives.Count - 1; i >= 0; i--)
         {
+            var objective = mind.Comp.Objectives[i];
             if (HasComp<ConvertedBloodBrotherObjectiveComponent>(objective))
             {
-                objectiveToRemove = i;
-                break;
+                _mindSystem.TryRemoveObjective(mind.Owner, mind.Comp, i);
+                continue;
             }
 
-            i++;
+            if (HasComp<BloodBrotherTargetComponent>(objective))
+                _targetObjectiveSystem.SetTarget(objective, EntityUid.Invalid);
         }
+    }
 
-        if (objectiveToRemove != null)
-            _mindSystem.TryRemoveObjective(mindId, mind, objectiveToRemove.Value);
+    private void RemoveConvertedObjectives(Entity<MindComponent> mind)
+    {
+        for (var i = mind.Comp.Objectives.Count - 1; i >= 0; i--)
+        {
+            if (HasComp<ConvertedBloodBrotherObjectiveComponent>(mind.Comp.Objectives[i]))
+                _mindSystem.TryRemoveObjective(mind.Owner, mind.Comp, i);
+        }
     }
 }
