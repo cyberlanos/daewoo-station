@@ -99,7 +99,7 @@
     - suitstorage
   - type: PhysicalComposition
     materialComposition:
-      Plastic: 500
+      Plastic: 25 # Pirate: converted from RMCPlastic to local material units.
 
 - type: entity
   parent: IVBloodPack

@@ -3,4 +3,4 @@
   result: IVBloodPack
   completetime: 4
   materials:
-    Plastic: 625
+    Plastic: 32 # Pirate: converted from RMCPlastic to local material units.
