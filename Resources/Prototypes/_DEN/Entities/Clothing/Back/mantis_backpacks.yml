@@ -96,27 +96,38 @@
   - type: Clothing
     equippedPrefix: flipped
 
-#- type: entity
-#  parent: [ClothingBackpackMessengerBase, BaseFoldable]
-#  id: ClothingBackpackMessengerMantis
-#  name: mantis messenger bag
-#  description: "A low-profile messenger bag for the mantis, within an electrum shell shaped like a watchful eye. The strap can be flipped to the other side."
-#  components:
-#  - type: Sprite
-#    sprite: _DEN/Clothing/Back/Messenger/mantis.rsi
-#    layers:
-#    - state: icon
-#      map: ["unfoldedLayer"]
-#    - state: icon-flipped
-#      map: ["foldedLayer"]
-#      visible: false
-#  - type: Appearance
-#  - type: Foldable
-#    canFoldInsideContainer: true
-#    foldVerbText: fold-flip-verb
-#    unfoldVerbText: fold-flip-verb
-#  - type: FoldableClothing
-#    foldedEquippedPrefix: flipped
+- type: entity
+  parent: [ClothingBackpackMessengerBase, BaseFoldable]
+  id: ClothingBackpackMessengerMantis
+  name: mantis messenger bag
+  description: "A low-profile messenger bag for the mantis, within an electrum shell shaped like a watchful eye. The strap can be flipped to the other side."
+  components:
+  - type: Sprite
+    sprite: _DEN/Clothing/Back/Messenger/mantis.rsi
+    layers:
+    - state: icon
+      map: ["unfoldedLayer"]
+    - state: icon-flipped
+      map: ["foldedLayer"]
+      visible: false
+  - type: Appearance
+  - type: Foldable
+    canFoldInsideContainer: true
+    foldVerbText: fold-verb
+    unfoldVerbText: unfold-verb
+  - type: FoldableClothing
+    foldedEquippedPrefix: flipped
+
+
+- type: entity # So chameleon clothes can select the folded sprite
+  parent: ClothingBackpackMessengerMantis
+  id: ClothingBackpackMessengerMantisFlipped
+  suffix: Flipped
+  components:
+  - type: Foldable
+    folded: true
+  - type: Clothing
+    equippedPrefix: flipped
 
 # Sarcophagus entities commented out - ClothingBackpackNapsack parent not available
 
@@ -161,6 +172,18 @@
   categories: [ HideSpawnMenu ]
   parent: ClothingBackpackSatchelMantisPurse
   id: ClothingBackpackSatchelMantisPurseFilled
+  components:
+    - type: StorageFill
+      contents:
+      - id: HandLabeler
+      - id: PillMindbreakerToxin
+      - id: BoxFolderGrey
+      - id: RubberStampMantis
+
+- type: entity
+  categories: [ HideSpawnMenu ]
+  parent: ClothingBackpackMessengerMantis
+  id: ClothingBackpackMessengerMantisFilled
   components:
     - type: StorageFill
       contents:

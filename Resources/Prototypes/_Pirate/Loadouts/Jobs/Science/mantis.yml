@@ -98,6 +98,10 @@
   id: MantisPurse
   equipment:
     back: ClothingBackpackSatchelMantisPurseFilled
+- type: loadout
+  id: MantisMessenger
+  equipment:
+    back: ClothingBackpackMessengerMantisFilled
 # OuterClothing
 - type: loadout
   id: MantisCoat
@@ -171,6 +175,10 @@
   id: MantisGlassesVeil
   equipment:
     eyes: ClothingEyesGlassesEpistemicsMantisVeil
+- type: loadout
+  id: MantisGlassesMirrored
+  equipment:
+    eyes: ClothingEyesGlassesEpistemicsMantisMirrored
 # Belt
 - type: loadout
   id: MantisBelt

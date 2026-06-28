@@ -808,6 +808,7 @@
   - MantisDuffel
   - MantisDuffelDEN
   - MantisPurse
+  - MantisMessenger
 
 - type: loadoutGroup
   id: MantisOuterClothing
@@ -845,6 +846,7 @@
   - MantisGlasses
   - MantisGlassesTinted
   - MantisGlassesVeil
+  - MantisGlassesMirrored
 
 - type: loadoutGroup
   id: MantisBelt
