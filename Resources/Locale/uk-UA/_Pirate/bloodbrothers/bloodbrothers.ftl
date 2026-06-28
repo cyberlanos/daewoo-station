@@ -26,10 +26,10 @@ blood-brother-role-greeting =
 blood-brother-briefing = Співпрацюйте зі своїм побратимом, щоб виконати всі ваші цілі.
 blood-brother-break-control = {CAPITALIZE(THE($name))} згадав свою справжню вірність!
 
-blood-brother-action-convert-name = Навернути
-blood-brother-action-convert-description = Наверніть члена екіпажу до вашої кровної клятви.
-blood-brother-action-check-convert-name = Перевірити навернення
-blood-brother-action-check-convert-description = Перевірте, чи член екіпажу піддається наверненню.
+ent-ActionBloodBrotherConvert = Навернути
+    .desc = Наверніть члена екіпажу до вашої кровної клятви.
+ent-ActionBloodBrotherCheckConvert = Перевірити навернення
+    .desc = Перевірте, чи член екіпажу піддається наверненню.
 
 blood-brother-convert-failed-no-mind = {CAPITALIZE(THE($converted))} не має свідомості
 blood-brother-convert-failed-already-brother = {CAPITALIZE(THE($converted))} вже пов'язаний кровною клятвою
