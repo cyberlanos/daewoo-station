@@ -22953,33 +22953,33 @@ Entries:
   changes:
     - type: Add
       message: >-
-        Amber alert level. It indicates that all crew must be armed to fight the
-        threats.
+        Додано бурштиновий рівень тривоги. Він означає, що весь екіпаж має
+        озброїтися для боротьби із загрозами.
   id: 2708
   time: '2026-06-21T13:10:29.0000000+00:00'
 - author: Beanyboi69
   changes:
     - type: Tweak
-      message: Desoxypehedrine poison 0.75 > 2
+      message: Отруєння дезоксиефедрином збільшено з 0.75 до 2.
     - type: Tweak
-      message: Desoxypehedrine OD poison 2 > 2.75
+      message: Отруєння від передозування дезоксиефедрином збільшено з 2 до 2.75.
   id: 2709
   time: '2026-06-21T13:12:48.0000000+00:00'
 - author: UmbiMax
   changes:
     - type: Fix
-      message: Emitter projectiles no longer pass through the supermatter crystal.
+      message: Снаряди емітера більше не проходять крізь кристал суперматерії.
   id: 2710
   time: '2026-06-21T13:55:57.0000000+00:00'
 - author: shoebill
   changes:
     - type: Add
-      message: Added a low blood alert to the health analyzer.
+      message: Додано попередження про низький рівень крові до аналізатора здоров'я.
   id: 2711
   time: '2026-06-23T12:32:06.0000000+00:00'
 - author: Rouden
   changes:
     - type: Fix
-      message: Fixed Artifact crusher spawning too much fragments.
+      message: Виправлено появу завеликої кількості уламків з дробарки артефактів.
   id: 2712
   time: '2026-06-26T19:27:30.0000000+00:00'

@@ -10,6 +10,8 @@ condition-body-pain-decreased = • Нерви {$woundable} знеболені.
 condition-body-pain-increased = • Нерви {$woundable} аномально чутливі.
 condition-body-unrevivable = • {$entity} має особливо слабку конституцію. Він/вона не витримає розряду дефібрилятора.
 condition-body-bleeding = • У {$entity} кровотеча.
+# Goobstation - low blood alert
+condition-body-low-blood = • У {$entity} [color=red]небезпечно низький[/color] рівень крові.
 
 condition-organ-damage-Normal = • {$organ} переважно в нормі.
 condition-organ-damage-Damaged = • {$organ} пошкоджений.
