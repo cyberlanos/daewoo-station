@@ -1,7 +1,7 @@
-signal-port-name-fpv-drone-payload-drop-sender = Кнопка скидання вмісту FPV-дрона
-signal-port-description-fpv-drone-payload-drop-sender = Надсилає сигнал для скидання вмісту сховища FPV-дрона.
-signal-port-name-fpv-drone-trigger = Скинути вміст
-signal-port-description-fpv-drone-trigger = Після отримання сигналу скидає вміст сховища дрона на землю.
+signal-port-name-fpv-drone-payload-drop-sender = Кнопка скидання предмета FPV-дрона
+signal-port-description-fpv-drone-payload-drop-sender = Надсилає сигнал для скидання одного предмета зі сховища FPV-дрона.
+signal-port-name-fpv-drone-trigger = Скинути предмет
+signal-port-description-fpv-drone-trigger = Після отримання сигналу скидає один предмет зі сховища дрона на землю.
 fpv-drone-payload-dropped = {$name} скидає щось зі свого сховища!
 ent-RemoteDroneLaptop = ноутбук керування дроном
     .desc = Керує дронами. Для роботи має бути прив'язаний до дрона.

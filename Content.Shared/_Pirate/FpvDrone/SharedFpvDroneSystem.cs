@@ -6,12 +6,15 @@ using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Input;
+using Content.Shared.Interaction;
 using Content.Shared.Item;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Content.Shared.Popups;
 using Content.Shared.PowerCell;
 using Content.Shared.PowerCell.Components;
+using Content.Shared.Trigger.Components;
+using Content.Shared.Trigger.Components.Triggers;
 using Content.Shared.Weapons.Ranged.Components;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
@@ -37,6 +40,7 @@ public abstract class SharedFpvDroneSystem : EntitySystem
     [Dependency] private readonly RemoteDroneSystem _droneControllerSystem = default!;
     [Dependency] private readonly ItemSlotsSystem _itemSlotsSystem = default!;
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
+    [Dependency] private readonly SharedInteractionSystem _interactionSystem = default!;
     [Dependency] private readonly INetManager _netManager = default!;
 
     public override void Initialize()
@@ -92,11 +96,67 @@ public abstract class SharedFpvDroneSystem : EntitySystem
         if (!_containerSystem.TryGetContainer(entity.Owner, entity.Comp.EmptiedContainerId, out var container))
             return false;
 
-        var removedEntities = _containerSystem.EmptyContainer(container, force: true);
-        if (removedEntities.Count == 0)
+        if (container.Count == 0)
             return false;
 
+        var payload = container.ContainedEntities[0];
+        if (!TryActivatePayload(entity.Owner, payload))
+            return false;
+
+        if (TerminatingOrDeleted(payload))
+            return false;
+
+        if (container.Contains(payload) &&
+            !_containerSystem.Remove(payload, container, force: true))
+        {
+            return false;
+        }
+
         _popupSystem.PopupEntity(Loc.GetString("fpv-drone-payload-dropped", ("name", Identity.Name(entity.Owner, EntityManager))), entity.Owner, PopupType.MediumCaution);
+        return true;
+    }
+
+    private bool TryActivatePayload(EntityUid user, EntityUid payload)
+    {
+        if (TerminatingOrDeleted(user) || TerminatingOrDeleted(payload))
+            return false;
+
+        var requiresActivation =
+            HasComp<TriggerOnUseComponent>(payload) ||
+            HasComp<TriggerOnActivateComponent>(payload);
+
+        if (_interactionSystem.UseInHandInteraction(user, payload, checkCanUse: false, checkCanInteract: false))
+            return PayloadActivationSucceeded(payload, requiresActivation);
+
+        if (TerminatingOrDeleted(payload))
+            return false;
+
+        var activated = _interactionSystem.InteractionActivate(
+            user,
+            payload,
+            checkCanInteract: false,
+            checkAccess: false,
+            complexInteractions: true);
+
+        return activated
+            ? PayloadActivationSucceeded(payload, requiresActivation)
+            : !requiresActivation;
+    }
+
+    private bool PayloadActivationSucceeded(EntityUid payload, bool requiresActivation)
+    {
+        if (!requiresActivation)
+            return true;
+
+        if (TerminatingOrDeleted(payload))
+            return false;
+
+        if (HasComp<TimerTriggerComponent>(payload) &&
+            !HasComp<ActiveTimerTriggerComponent>(payload))
+        {
+            return false;
+        }
+
         return true;
     }
 
