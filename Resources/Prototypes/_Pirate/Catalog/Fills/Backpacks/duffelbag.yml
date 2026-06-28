@@ -4,10 +4,6 @@
   name: FPV drone bundle
   description: A remote-controlled FPV drone bundled with its control laptop.
   components:
-  - type: Storage
-    maxItemSize: Ginormous
-    grid:
-    - 0,0,7,5
   - type: StorageFill
     contents:
       - id: RemoteDroneLaptop

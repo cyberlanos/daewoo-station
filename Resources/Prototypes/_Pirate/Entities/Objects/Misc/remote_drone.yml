@@ -165,7 +165,9 @@
   - type: SurveillanceCamera
     mobile: True # Pirate: FPV drone is a moving camera.
   - type: Item
-    size: Ginormous
+    size: Huge
+    shape:
+    - 0,0,1,1
 
   # Damage
   - type: Damageable
