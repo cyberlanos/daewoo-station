@@ -468,8 +468,7 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
 
         RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol.Clone(), SlotFlags.NONE));
     }
-#endregion
-
+#endregion Pirate: stains
     /// <inheritdoc/>
     public override void Update(float frameTime)
     {

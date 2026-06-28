@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Pirate.Shared.Stains.Components;
 using Content.Server.Forensics;
 using Content.Shared.DoAfter;
@@ -72,4 +71,3 @@ public sealed class StainCleaningSystem : EntitySystem
         _stains.CleanEntityAndEquipment(ent.Owner);
     }
 }
-#endregion

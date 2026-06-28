@@ -1,6 +1,4 @@
-# Masks the dynamic item stain overlay to the stained item's silhouette.
-# Numbered variants bake a small offset/rotation into the blood lookup so each stained item
-# looks slightly different; StainSystem picks one per item by a stable hash.
+# Stable stain mask variants.
 
 - type: shader
   id: StainItemMask0

@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
@@ -66,4 +65,3 @@ public enum WashingMachineVisuals : byte
 {
     State
 }
-#endregion

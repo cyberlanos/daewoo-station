@@ -1,11 +1,4 @@
-// Clips a stain (blood) layer to the silhouette of another layer (the stained item), so the dedicated
-// blood sprite only shows on the item's own pixels instead of the whole 32x32 box. The mask texture/UVs
-// are fed in from a CopyToShaderParameters layer (see StainSystem).
-//
-// stainOffsetX/Y (pixels) and stainAngle (radians) rotate/offset the blood texture *lookup* around the
-// sprite centre, so different per-item variants of this shader make each stained item look slightly
-// different. They default to 0 (no transform). The clip itself is unaffected, so the blood always stays
-// within the item's pixels.
+// Masks a blood layer to another sprite's silhouette.
 
 uniform sampler2D stainMask;
 uniform highp vec4 stainMaskUV;
@@ -19,7 +12,6 @@ varying highp vec2 stainFrameCoord;
 void vertex()
 {
     stainMaskUVOut = mix(stainMaskUV.xy, stainMaskUV.zw, tCoord2);
-    // tCoord2 is a vertex attribute; pass it through so the fragment stage can use it.
     stainFrameCoord = tCoord2;
 }
 
@@ -27,17 +19,16 @@ void fragment()
 {
     highp float maskAlpha = texture2D(stainMask, stainMaskUVOut).a;
 
-    // Transform the blood sample coordinate around the sprite centre, in 0..1 frame space.
+    // Rotate the blood sample without moving the mask.
     highp vec2 centered = stainFrameCoord - vec2(0.5);
     highp float c = cos(stainAngle);
     highp float s = sin(stainAngle);
     highp vec2 rotated = vec2(c * centered.x - s * centered.y, s * centered.x + c * centered.y);
     highp vec2 sampleCoord = rotated + vec2(0.5) + vec2(stainOffsetX, stainOffsetY) / 32.0;
 
-    // Convert the frame-space delta back into atlas-UV space (blood frames are 32x32).
     highp vec4 blood = zTexture(UV + (sampleCoord - stainFrameCoord) * TEXTURE_PIXEL_SIZE * 32.0);
 
-    // Drop anything that rotated/offset outside the frame so we don't bleed neighbouring atlas sprites.
+    // Avoid sampling adjacent atlas frames.
     if (sampleCoord.x < 0.0 || sampleCoord.x > 1.0 || sampleCoord.y < 0.0 || sampleCoord.y > 1.0)
         blood.a = 0.0;
 

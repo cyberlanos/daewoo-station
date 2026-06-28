@@ -3,9 +3,6 @@ using Content.Shared.Inventory;
 
 namespace Content.Shared._Pirate.Fluids;
 
-/// <summary>
-/// Raised when a fluid is spilled on an entity.
-/// </summary>
 public sealed class SpilledOnEvent(
     EntityUid source,
     Solution solution,

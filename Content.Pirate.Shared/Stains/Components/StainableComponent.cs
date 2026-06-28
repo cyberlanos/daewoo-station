@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.DoAfter;
 using Content.Shared.Inventory;
@@ -53,4 +52,3 @@ public sealed partial class StainCleanerComponent : Component
     [DataField]
     public float CleanDelay = 12f;
 }
-#endregion

@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Pirate.Shared.Stains.Components;
 using Content.Goobstation.Common.Footprints;
 using Content.Shared._Pirate.Fluids;
@@ -33,10 +32,8 @@ namespace Content.Pirate.Shared.Stains.Systems;
 [Serializable, NetSerializable]
 public enum StainVisuals : byte
 {
-    /// <summary>Current stain volume. Mirrored into appearance data so visuals refresh when it changes.</summary>
     Volume,
 
-    /// <summary>Exposed body slots (feet/gloves) that are stained, for bare-body humanoid overlays.</summary>
     BodySlots
 }
 
@@ -192,8 +189,7 @@ public abstract class SharedStainSystem : EntitySystem
             stainSolution.Value.Comp.Solution.CanReact = false;
         }
 
-        // Once an item is fully stained, stop re-staining it. Otherwise ambient sources (notably bleeding,
-        // which sprays self + neighbours every puddle tick) keep topping it up forever and flood events/logs.
+        // Stop repeat stain churn once the stain reservoir is full.
         if (stainSolution.Value.Comp.Solution.Volume >= ent.Comp.MaxStainVolume)
             return false;
 
@@ -219,7 +215,6 @@ public abstract class SharedStainSystem : EntitySystem
         return true;
     }
 
-    /// <summary>Server-side diagnostic logging for stains. Gated to the server to avoid client prediction spam.</summary>
     private void LogStain(string message)
     {
         if (_net.IsServer)
@@ -283,7 +278,7 @@ public abstract class SharedStainSystem : EntitySystem
             if (!TryComp<BloodstreamComponent>(target, out var bloodstream))
                 continue;
 
-            // Use the target's own blood reagent so e.g. slime people leave green stains, not red.
+            // Preserve the target's blood type.
             solution.AddReagent(new ReagentId(bloodstream.BloodReagent.Id, _bloodstream.GetEntityBloodData(target)), 0.5f);
         }
 
@@ -293,7 +288,7 @@ public abstract class SharedStainSystem : EntitySystem
         var stainable = EnsureComp<StainableComponent>(ent.Owner);
         TryStain((ent.Owner, stainable), solution.Clone());
 
-        // Gloves always; stronger hits progressively reach the suit/uniform, then shoes, mask and headwear.
+        // Stronger hits can splatter more attacker slots.
         var bloodiedSlots = SlotFlags.GLOVES;
         if (damage >= 20 || damage >= 15 && _random.Prob(0.25f))
         {
@@ -308,7 +303,7 @@ public abstract class SharedStainSystem : EntitySystem
 
         LogStain($"melee: {ToPrettyString(args.User)} hit with {ToPrettyString(ent.Owner)} dmg={damage} attackerSlots={bloodiedSlots}");
 
-        // Route the attacker splatter through a spill so bare hands/feet stain when the relevant slot is empty.
+        // Let empty hand/foot slots stain bare limbs.
         RaiseLocalEvent(args.User, new SpilledOnEvent(args.User, solution.Clone(), bloodiedSlots));
         StainVictimSlots(args.User, args.HitEntities, solution);
     }
@@ -459,17 +454,6 @@ public abstract class SharedStainSystem : EntitySystem
         return reagent is "Water" or "SoapReagent" or "SpaceCleaner";
     }
 
-    /// <summary>
-    /// Mirrors the current stain state (volume + body slots) into appearance data so the client rebuilds
-    /// visuals, but only when something actually changed.
-    /// </summary>
-    /// <remarks>
-    /// Stains are server-authoritative, so the client only acts on the leading predicted tick. The change
-    /// check compares against <see cref="AppearanceComponent"/> rather than the <see cref="StainableComponent"/>:
-    /// the latter is networked-but-stateless, so prediction rebuilds it with default fields every tick and any
-    /// guard stored on it never matches. Encoding the volume into appearance data also makes the SetData calls
-    /// no-ops when unchanged, so repeated triggers (prediction, bleeding, wearer re-renders) don't churn.
-    /// </remarks>
     public void UpdateVisuals(Entity<StainableComponent> ent)
     {
         if (!_timing.IsFirstTimePredicted)
@@ -544,4 +528,3 @@ public abstract class SharedStainSystem : EntitySystem
             _popup.PopupEntity(Loc.GetString("stain-verb-wring-success"), args.User, args.User);
     }
 }
-#endregion

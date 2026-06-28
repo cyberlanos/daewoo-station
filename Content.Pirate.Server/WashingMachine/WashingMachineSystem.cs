@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Pirate.Shared.Stains.Components;
 using Content.Pirate.Shared.Stains.Systems;
 using Content.Pirate.Shared.WashingMachine;
@@ -186,4 +185,3 @@ public sealed class WashingMachineSystem : SharedWashingMachineSystem
         Appearance.SetData(ent.Owner, WashingMachineVisuals.State, WashingMachineState.Broken);
     }
 }
-#endregion

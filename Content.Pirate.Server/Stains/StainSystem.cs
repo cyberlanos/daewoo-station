@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Pirate.Shared.Stains.Components;
 using Content.Pirate.Shared.Stains.Systems;
 using Content.Shared.Chemistry.Components;
@@ -24,4 +23,3 @@ public sealed class StainSystem : SharedStainSystem
         _tag.RemoveTag(ent.Owner, "DNASolutionScannable");
     }
 }
-#endregion

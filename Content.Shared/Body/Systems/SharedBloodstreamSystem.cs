@@ -509,8 +509,6 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
             }
             // Goobstation end
 
-            // Pirate: stains - tg only drips bleeding to the floor; clothing/shoes get bloody by stepping in
-            // the puddle (bloodysoles), not from the bleed itself. So just spill the puddle here.
             _puddle.TrySpillAt(ent.Owner, tempSolution, out _, sound: false);
 
             tempSolution.RemoveAllSolution();
@@ -590,20 +588,21 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
             SolutionContainer.RemoveAllSolution(ent.Comp.TemporarySolution.Value);
         }
 
-        RaiseLocalEvent(ent.Owner, new SpilledOnEvent(ent.Owner, tempSol)); // Pirate: stains
+#region Pirate: stains
+        RaiseLocalEvent(ent.Owner, new SpilledOnEvent(ent.Owner, tempSol));
 
-        var xform = Transform(ent.Owner); // Pirate: stains
-        foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f)) // Pirate: stains
-        { // Pirate: stains
-            if (neighbor == ent.Owner || !HasComp<InventoryComponent>(neighbor)) // Pirate: stains
-                continue; // Pirate: stains
+        var xform = Transform(ent.Owner);
+        foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f))
+        {
+            if (neighbor == ent.Owner || !HasComp<InventoryComponent>(neighbor))
+                continue;
 
-            RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol)); // Pirate: stains
+            RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol));
 
-            if (tempSol.Volume <= 0) // Pirate: stains
-                break; // Pirate: stains
-        } // Pirate: stains
-
+            if (tempSol.Volume <= 0)
+                break;
+        }
+#endregion Pirate: stains
         _puddle.TrySpillAt(ent, tempSol, out _);
     }
 

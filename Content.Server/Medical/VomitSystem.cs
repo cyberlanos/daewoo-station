@@ -198,7 +198,6 @@ namespace Content.Server.Medical
             }
 
             RaiseLocalEvent(uid, new SpilledOnEvent(uid, solution.Clone())); // Pirate: stains
-
             if (_puddle.TrySpillAt(uid, solution, out var puddle, false))
             {
                 _forensics.TransferDna(puddle, uid, false);

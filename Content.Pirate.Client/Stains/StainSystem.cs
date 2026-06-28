@@ -1,4 +1,3 @@
-#region Pirate: stains
 using Content.Client.Clothing;
 using Content.Client.Items.Systems;
 using Content.Pirate.Shared.Stains.Components;
@@ -26,8 +25,7 @@ public sealed class StainSystem : SharedStainSystem
     private const string StainMaskTextureParam = "stainMask";
     private const string StainMaskUvParam = "stainMaskUV";
 
-    // Pick a stain-mask shader variant deterministically per item so each one is offset/rotated a little
-    // differently, but stays stable across redraws.
+    // Stable per-item mask variation.
     private static string StainShaderFor(EntityUid uid)
     {
         return $"{StainMaskShaderPrefix}{(uid.Id % StainMaskVariants + StainMaskVariants) % StainMaskVariants}";
@@ -37,9 +35,7 @@ public sealed class StainSystem : SharedStainSystem
     [Dependency] private readonly SharedSolutionContainerSystem _solution = null!;
     [Dependency] private readonly SpriteSystem _sprite = null!;
 
-    // Last drawn stain state per entity. Kept on the system (not the component) so it survives prediction
-    // rollback, which re-applies appearance/solution state every tick and would otherwise rebuild sprites
-    // every frame.
+    // Cached across prediction rollbacks.
     private readonly Dictionary<EntityUid, (Color Color, SlotFlags Slots, bool HasStain)> _lastDrawn = new();
 
     public override void Initialize()
@@ -66,8 +62,7 @@ public sealed class StainSystem : SharedStainSystem
         if (args.AppearanceData.TryGetValue(StainVisuals.BodySlots, out var bodySlotsData) && bodySlotsData is SlotFlags bodySlotFlags)
             slots = bodySlotFlags;
 
-        // Prediction re-fires AppearanceChangeEvent every tick; skip the sprite rebuild when nothing visually
-        // changed since we last drew it.
+        // Avoid rebuilding unchanged stain layers.
         var drawn = (color, slots, hasStain);
         if (_lastDrawn.TryGetValue(ent.Owner, out var last) && last == drawn)
             return;
@@ -131,7 +126,7 @@ public sealed class StainSystem : SharedStainSystem
         var bloodKey = $"stain-inhand-{args.Location}";
         var source = args.Layers[0].Item2;
 
-        // Clip the blood splatter to the held sprite's silhouette instead of covering the whole in-hand box.
+        // Mask the blood to the held sprite.
         if (!string.IsNullOrEmpty(source.RsiPath) || !string.IsNullOrEmpty(source.TexturePath))
         {
             var maskKey = $"stain-inhand-mask-{args.Location}";
@@ -178,7 +173,7 @@ public sealed class StainSystem : SharedStainSystem
         const string bloodKey = "stain-icon";
         const string maskKey = "stain-icon-mask";
 
-        // Clip the blood splatter to the item's own silhouette instead of covering the whole icon box.
+        // Mask the blood to the item icon.
         var rsi = _sprite.LayerGetEffectiveRsi(sprite, 0);
         var state = _sprite.LayerGetRsiState(sprite, 0);
         if (rsi != null && state.IsValid)
@@ -201,10 +196,6 @@ public sealed class StainSystem : SharedStainSystem
         _sprite.AddLayer(sprite, flat, null);
     }
 
-    /// <summary>
-    /// Builds a non-rendered layer that feeds <paramref name="source"/>'s texture into the stain mask shader
-    /// of the layer keyed <paramref name="targetKey"/>, so the blood only draws over the source's pixels.
-    /// </summary>
     private static PrototypeLayerData BuildMaskLayer(PrototypeLayerData source, string maskKey, string targetKey)
     {
         return new PrototypeLayerData
@@ -288,4 +279,3 @@ public sealed class StainSystem : SharedStainSystem
         };
     }
 }
-#endregion

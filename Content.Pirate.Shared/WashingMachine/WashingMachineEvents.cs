@@ -1,4 +1,3 @@
-#region Pirate: stains
 namespace Content.Pirate.Shared.WashingMachine;
 
 public sealed class WashingMachineIsBeingWashed(EntityUid washingMachine, HashSet<EntityUid> items) : EntityEventArgs
@@ -22,4 +21,3 @@ public sealed class WashingMachineFinishedWashingEvent(HashSet<EntityUid> items)
 {
     public HashSet<EntityUid> Items = items;
 }
-#endregion

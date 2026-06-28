@@ -1,4 +1,3 @@
-#region Pirate: stains
 using System.Linq;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
@@ -121,4 +120,3 @@ public abstract class SharedWashingMachineSystem : EntitySystem
     {
     }
 }
-#endregion
