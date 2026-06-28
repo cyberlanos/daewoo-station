@@ -1,4 +1,5 @@
 using Content.Pirate.Shared.Showers;
+using Content.Pirate.Shared.Stains.Components;
 using Content.Pirate.Server.Stains;
 using Content.Shared.Inventory;
 
@@ -27,6 +28,13 @@ public sealed class ShowerSystem : SharedShowerSystem
 
             foreach (var (target, _) in _lookup.GetEntitiesInRange<InventoryComponent>(Transform(uid).Coordinates, shower.StainCleanRange))
                 _stains.CleanEntityAndEquipment(target);
+
+            // Rinse stains off loose items lying under the shower (mobs are handled above).
+            foreach (var (item, _) in _lookup.GetEntitiesInRange<StainableComponent>(Transform(uid).Coordinates, shower.StainCleanRange))
+            {
+                if (!HasComp<InventoryComponent>(item))
+                    _stains.TryCleanStain(item);
+            }
         }
     }
 }

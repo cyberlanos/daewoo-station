@@ -82,9 +82,9 @@ public abstract class SharedStainSystem : EntitySystem
 
     private void OnMapInit(Entity<StainableComponent> ent, ref MapInitEvent args)
     {
-        if (!_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out _) && _net.IsServer)
-            _solution.EnsureSolution(ent.Owner, ent.Comp.SolutionName, out _, ent.Comp.MaxStainVolume);
-
+        // Don't eagerly create the stain solution: an empty one drives SolutionContainerVisuals on
+        // entities that share its appearance keys (e.g. soap, drinks) to fill level 0 and hides their
+        // sprite. The solution is created lazily in TryStain when the item is actually stained.
         if (_solution.TryGetSolution(ent.Owner, ent.Comp.SolutionName, out var sol))
             sol.Value.Comp.Solution.CanReact = false;
     }
