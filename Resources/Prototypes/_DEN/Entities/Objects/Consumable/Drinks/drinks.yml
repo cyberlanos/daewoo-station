@@ -237,7 +237,7 @@
   - type: Icon
     sprite: _DEN/Objects/Consumable/Drinks/atlanticocean.rsi
     state: icon
-    
+
 - type: entity
   parent: DrinkGlass
   id: DrinkCafeCocktailGlass

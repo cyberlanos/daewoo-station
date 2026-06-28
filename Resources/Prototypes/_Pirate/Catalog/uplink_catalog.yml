@@ -1,4 +1,21 @@
 - type: listing
+  id: UplinkFpvDroneBundle
+  name: uplink-fpv-drone-bundle-name
+  description: uplink-fpv-drone-bundle-desc
+  icon: { sprite: _Pirate/Objects/Misc/fpv_drone.rsi, state: base }
+  productEntity: ClothingBackpackDuffelSyndicateFpvDroneBundle
+  cost:
+    Telecrystal: 15
+  categories:
+    - UplinkDisruption
+  conditions:
+    - !type:StoreWhitelistCondition
+      blacklist:
+        tags:
+          - ContractorUplink
+          - NukeOpsUplink
+
+- type: listing
   id: UplinkAdderBundle
   name: uplink-adder-name
   description: uplink-adder-desc
