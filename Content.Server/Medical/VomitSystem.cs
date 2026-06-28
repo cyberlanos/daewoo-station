@@ -100,6 +100,7 @@ using Content.Shared.Chemistry.EntitySystems;
 using Content.Server.Stunnable;
 using Content.Shared.Body.Components;
 using Content.Shared.Body.Systems;
+using Content.Shared._Pirate.Fluids; // Pirate: stains
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Reagent;
@@ -196,6 +197,7 @@ namespace Content.Server.Medical
                 solution.AddReagent(new ReagentId("Vomit", _bloodstream.GetEntityBloodData(uid)), vomitAmount); // TODO: Dehardcode vomit prototype
             }
 
+            RaiseLocalEvent(uid, new SpilledOnEvent(uid, solution.Clone())); // Pirate: stains
             if (_puddle.TrySpillAt(uid, solution, out var puddle, false))
             {
                 _forensics.TransferDna(puddle, uid, false);

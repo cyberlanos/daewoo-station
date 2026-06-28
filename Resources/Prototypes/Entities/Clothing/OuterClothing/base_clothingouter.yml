@@ -169,6 +169,23 @@
     unequipDelay: 1 # Pirate clothingDelay
   - type: Sprite
     state: icon
+  #region Pirate: stains
+  - type: Appearance
+  - type: SolutionContainerManager
+    solutions:
+      stain:
+        maxVol: 5
+  - type: Stainable
+    clothingVisuals:
+      outerClothing:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: outerclothing
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: outerclothing
+  - type: StainBlocker
+    slots: [INNERCLOTHING]
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true
@@ -187,6 +204,19 @@
   - type: Tag
     tags:
       - WhitelistChameleon
+  #region Pirate: stains
+  - type: Stainable
+    clothingVisuals:
+      outerClothing:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: suitblood
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: suitbloodicon
+  # Outer suits only block uniform stains.
+  - type: StainBlocker
+    slots: [INNERCLOTHING]
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true
@@ -206,6 +236,16 @@
         type: StorageBoundUserInterface
   - type: StaticPrice
     price: 70
+  #region Pirate: stains
+  - type: Stainable
+    clothingVisuals:
+      outerClothing:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: coatblood
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: coatbloodicon
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true
@@ -227,6 +267,16 @@
     - state: icon-open
       map: ["foldedLayer"]
       visible: false
+  #region Pirate: stains
+  - type: Stainable
+    clothingVisuals:
+      outerClothing:
+      - sprite: _Pirate/Effects/blood.rsi
+        state: outerclothing
+    iconVisuals:
+    - sprite: _Pirate/Effects/blood.rsi
+      state: outerclothing
+  #endregion Pirate: stains
 
 - type: entity
   abstract: true

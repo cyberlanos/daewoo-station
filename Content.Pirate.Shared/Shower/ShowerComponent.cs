@@ -24,6 +24,14 @@ namespace Content.Pirate.Shared.Showers
         [DataField("loopingSound")]
         public SoundSpecifier LoopingSound = new SoundPathSpecifier("/Audio/_Pirate/Ambience/Objects/shower_running.ogg");
 
+        [DataField]
+        public float StainCleanRange = 0.8f;
+
+        [DataField]
+        public float StainCleanInterval = 1f;
+
+        [ViewVariables]
+        public float StainCleanAccumulator;
     }
 
 
