@@ -2,32 +2,33 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Shared.Roles;
+using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared._Pirate.Ambience.Areas;
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class AreaComponent : Component;
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class StationAreaComponent : Component;
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class DepartmentAreaComponent : Component
 {
-    [DataField(required: true)]
+    [DataField(required: true), AutoNetworkedField]
     public ProtoId<DepartmentPrototype> Department;
 }
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class HolyAreaComponent : Component;
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class PrisonAreaComponent : Component;
 
 // Pirate: source area markers reference these components, but Pirate has no matching systems yet.
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class CarpMigrationTargetComponent : Component;
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class LuckyWinnerTargetComponent : Component;
