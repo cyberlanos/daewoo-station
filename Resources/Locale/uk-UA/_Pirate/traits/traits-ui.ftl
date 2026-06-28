@@ -50,6 +50,10 @@ trait-condition-any-of = Будь-що з наступного має бути �
 trait-condition-species-is = Ви повинні бути [color=yellow]{$species}[/color].
 trait-condition-species-not = Ви не повинні бути [color=yellow]{$species}[/color].
 
+## Nationality conditions
+trait-condition-nationality-is = Ви повинні мати національність [color=yellow]{$nationalities}[/color].
+trait-condition-nationality-not = Ви не повинні мати національність [color=yellow]{$nationalities}[/color].
+
 ## Job conditions
 trait-condition-job-is = Ваша посада має бути [color={$color}]{$job}[/color].
 trait-condition-job-not = Ваша посада не повинна бути [color={$color}]{$job}[/color].
@@ -64,4 +68,5 @@ trait-condition-borg-not = Ви не повинні бути [color=yellow]бо�
 # Antag conditions
 trait-condition-antag-is = Повинен мати змогу стати антагоністом: [color=red]{$antag}[/color].
 trait-condition-antag-not = Не повинен мати змогу стати антагоністом: [color=red]{$antag}[/color].
+
 trait-editor-show-unavailable = Показати недоступні

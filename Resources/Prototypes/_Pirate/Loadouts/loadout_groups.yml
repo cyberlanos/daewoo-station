@@ -6,9 +6,11 @@
   - TrinketsClothingHeadPaperSack
   - TrinketsPhotoAlbum
   - TrinketsPhotoCameraFilled
+  - NoviceMark
   - Pillow
   subgroups:
   - PiratePlushies
+  - PirateGambling
 
 
 - type: loadoutGroup
@@ -25,6 +27,18 @@
   - PlushieSkeleton
   - PlushieTayler
   - PlushiePocketAssistant
+
+- type: loadoutGroup
+  id: PirateGambling
+  name: loadout-group-trinkets
+  loadouts:
+  - CardBoxBlack
+  - CardBoxNanotrasen
+  - CardBoxTarot
+  - CardBoxSparot
+  - CardBoxTippyTrump
+  - TippyTrumpMysteryPack
+  - CardBoxNuno
 
 - type: loadoutGroup
   id: PirateEEGenericItems
@@ -246,6 +260,7 @@
   - LoadoutUniformJumpsuitSuitVictorianRedVest
   - LoadoutUniformJumpsuitSuitVictorianVest
   - LoadoutUniformJumpsuitWaiter
+  - LoadoutUniformJumpsuitWaitstaffFormal
   - LoadoutUniformJumpsuitYogaGymBra
   - LoadoutUniformJumpsuitBlackTurtleneck
   - LoadoutUniformJumpsuitBlackTurtleneckFlipped

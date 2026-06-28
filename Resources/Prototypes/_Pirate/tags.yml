@@ -48,3 +48,9 @@
 
 - type: Tag
   id: CoffeeCondimentChocolatePirate
+
+- type: Tag
+  id: MagazineLightRifleCaseless
+
+- type: Tag
+  id: CartridgeLightRifleCaseless
