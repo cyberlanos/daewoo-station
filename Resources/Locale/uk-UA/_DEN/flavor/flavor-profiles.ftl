@@ -1,5 +1,4 @@
 flavor-complex-jaegermister = як чорна лакриця
-
 flavor-complex-blood-moon = як спогад, давно забутий.
 flavor-complex-jaegerbomb = як фруктовий неспокій
 flavor-complex-jaegerita = як помаранчевий колір

@@ -23,11 +23,9 @@ flavor-complex-shimmeringblood = солодкий і злегка вершков
 flavor-complex-thavenbad = ніби треба вдавати, що подобається
 flavor-complex-thavenflesh = як сіль і страждання
 flavor-complex-zombieslushie = як обморожене м'ясо
-
 flavor-complex-doublegreen = гіркий і нудотний
 flavor-complex-liquidlunch = як перетушений щур
 flavor-complex-poormansfrezon = як гарний час
-
 flavor-complex-breathoffreshair = як штучне повітря та сода
 flavor-complex-burnchamber = трохи занадто гарячий для споживання
 flavor-complex-lungclogger = як розбиті серця та здуті легені
