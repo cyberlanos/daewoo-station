@@ -21,9 +21,17 @@ public sealed class StainSystem : SharedStainSystem
     private const string ItemBloodState = "itemblood";
     private const string BareFeetLayerKey = "stain-bare-feet";
     private const string BareHandsLayerKey = "stain-bare-hands";
-    private const string StainMaskShader = "StainItemMask";
+    private const string StainMaskShaderPrefix = "StainItemMask";
+    private const int StainMaskVariants = 8;
     private const string StainMaskTextureParam = "stainMask";
     private const string StainMaskUvParam = "stainMaskUV";
+
+    // Pick a stain-mask shader variant deterministically per item so each one is offset/rotated a little
+    // differently, but stays stable across redraws.
+    private static string StainShaderFor(EntityUid uid)
+    {
+        return $"{StainMaskShaderPrefix}{(uid.Id % StainMaskVariants + StainMaskVariants) % StainMaskVariants}";
+    }
 
     [Dependency] private readonly IPrototypeManager _prototypeManager = null!;
     [Dependency] private readonly SharedSolutionContainerSystem _solution = null!;
@@ -130,7 +138,7 @@ public sealed class StainSystem : SharedStainSystem
             args.Layers.Add((maskKey, BuildMaskLayer(source, maskKey, bloodKey)));
 
             var masked = BuildItemBloodLayer(bloodKey, source);
-            masked.Shader = StainMaskShader;
+            masked.Shader = StainShaderFor(ent.Owner);
             masked.Color = color;
             args.Layers.Add((bloodKey, masked));
             return;
@@ -180,7 +188,7 @@ public sealed class StainSystem : SharedStainSystem
             _sprite.AddLayer(sprite, BuildMaskLayer(maskSource, maskKey, bloodKey), null);
 
             var masked = BuildItemBloodLayer(bloodKey);
-            masked.Shader = StainMaskShader;
+            masked.Shader = StainShaderFor(ent.Owner);
             masked.Color = color;
             ent.Comp.RevealedLayerKeys.Add(bloodKey);
             _sprite.AddLayer(sprite, masked, null);

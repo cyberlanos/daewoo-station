@@ -280,10 +280,11 @@ public abstract class SharedStainSystem : EntitySystem
 
         foreach (var target in args.HitEntities)
         {
-            if (!HasComp<BloodstreamComponent>(target))
+            if (!TryComp<BloodstreamComponent>(target, out var bloodstream))
                 continue;
 
-            solution.AddReagent(new ReagentId("Blood", _bloodstream.GetEntityBloodData(target)), 0.5f);
+            // Use the target's own blood reagent so e.g. slime people leave green stains, not red.
+            solution.AddReagent(new ReagentId(bloodstream.BloodReagent.Id, _bloodstream.GetEntityBloodData(target)), 0.5f);
         }
 
         if (solution.Volume <= 0)
