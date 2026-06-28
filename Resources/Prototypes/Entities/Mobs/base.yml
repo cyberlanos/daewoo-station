@@ -337,3 +337,4 @@
     bloodlossHealDamage:
       types:
         Bloodloss: -1
+  - type: IVDripTarget # Pirate: IV drips
