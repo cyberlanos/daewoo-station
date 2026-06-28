@@ -63,7 +63,7 @@
   parent: [ BaseMob, BaseStructureDynamic ]
   id: RemoteDroneFpv
   name: fpv drone
-  description: A relic of a historic war. Must be linked to a drone controller to work. Uses about 8 joules of energy per second when active.
+  description: A relic of a historic war. Must be linked to a drone controller to work. Uses about 0.6 joules of energy per second when active.
   components:
   # Misc
   - type: Sprite
@@ -97,7 +97,7 @@
 
   # Cell
   - type: PowerCellDraw
-    drawRate: 8 # ~1.5 min flight time on medium cell (720J)
+    drawRate: 0.6 # Pirate: ~30 min flight time on high cell (1080J)
     enabled: false
   - type: PowerCellSlot
     cellSlotId: cell_slot
@@ -109,7 +109,7 @@
     slots:
       cell_slot:
         name: power-cell-slot-component-slot-name-default
-        startingItem: PowerCellSmall
+        startingItem: PowerCellHigh
         swap: false
 
   # Storage
@@ -175,7 +175,7 @@
     thresholds:
     - trigger:
         !type:DamageTrigger
-        damage: 60
+        damage: 200
       behaviors:
       - !type:EmptyContainersBehaviour
         containers:

@@ -7,11 +7,12 @@
   - type: Storage
     maxItemSize: Ginormous
     grid:
-    - 0,0,7,3
+    - 0,0,7,5
   - type: StorageFill
     contents:
       - id: RemoteDroneLaptop
       - id: RemoteDroneFpv
+      - id: Multitool
 
 - type: entity
   parent: ClothingBackpackDuffelSyndicateBundle

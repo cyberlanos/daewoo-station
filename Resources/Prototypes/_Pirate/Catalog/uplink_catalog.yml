@@ -5,9 +5,9 @@
   icon: { sprite: _Pirate/Objects/Misc/fpv_drone.rsi, state: base }
   productEntity: ClothingBackpackDuffelSyndicateFpvDroneBundle
   cost:
-    Telecrystal: 35
+    Telecrystal: 20
   categories:
-    - UplinkExplosives
+    - UplinkDisruption
   conditions:
     - !type:StoreWhitelistCondition
       blacklist:

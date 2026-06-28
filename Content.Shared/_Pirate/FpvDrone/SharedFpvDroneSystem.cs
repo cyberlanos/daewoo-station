@@ -157,14 +157,13 @@ public abstract class SharedFpvDroneSystem : EntitySystem
 
     private void TryUpdateFpvChargeState(EntityUid droneUid, bool hasSufficientCharge)
     {
-        if (!_droneControllerSystem.ResolveDroneAndController(droneUid, out _, out var controllerEntity))
+        if (TerminatingOrDeleted(droneUid) ||
+            !_droneControllerSystem.ResolveDroneAndController(droneUid, out _, out var controllerEntity) ||
+            TerminatingOrDeleted(controllerEntity.Value.Owner))
             return;
 
         if (!TryComp<FpvDroneControllerComponent>(controllerEntity, out var fpvControllerComponent))
-        {
-            DebugTools.Assert($"FPV drone's controller didnt have FpvDroneControllerComponent.");
             return;
-        }
 
         fpvControllerComponent.HasSufficientCharge = hasSufficientCharge;
         Dirty(controllerEntity.Value.Owner, fpvControllerComponent);
@@ -193,7 +192,6 @@ public abstract class SharedFpvDroneSystem : EntitySystem
     {
         if (!TryComp<FpvDroneControllerComponent>(args.ControllerEntity, out var fpvControllerComponent))
         {
-            DebugTools.Assert($"FPV drone's controller didnt have FpvDroneControllerComponent.");
             args.Cancelled = true;
             return;
         }
