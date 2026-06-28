@@ -12,18 +12,15 @@ condition-body-unrevivable = • {$entity} має особливо слабку 
 condition-body-bleeding = • У {$entity} кровотеча.
 # Goobstation - low blood alert
 condition-body-low-blood = • У {$entity} [color=red]небезпечно низький[/color] рівень крові.
-
 condition-organ-damage-Normal = • {$organ} переважно в нормі.
 condition-organ-damage-Damaged = • {$organ} пошкоджений.
 condition-organ-damage-Destroyed = • {$organ} зруйнований…
 condition-organ-rotting = • {$organ} гниє!
-
 condition-none = • Жодних станів не виявлено.
 group-organ-status = {$organ} функціонує на {$capacity}% від норми
 group-solution-name = {$solution}
 group-solution-unknown = Невідомо
 group-solution-contents = {$reagent}: {$quantity}
-
 condition-body-bleeding-Head = • У {$entity} кровотеча з голови.
 condition-body-bleeding-Chest = • У {$entity} кровотеча з тулуба.
 condition-body-bleeding-Groin = • У {$entity} кровотеча з паху.

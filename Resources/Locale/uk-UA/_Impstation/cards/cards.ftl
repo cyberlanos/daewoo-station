@@ -12,7 +12,6 @@ card-sc-page-cups = паж кубків
 card-sc-knight-cups = лицар кубків
 card-sc-queen-cups = королева кубків
 card-sc-king-cups = король кубків
-
 card-sc-ace-pentacles = туз пентаклів
 card-sc-two-pentacles = двійка пентаклів
 card-sc-three-pentacles = трійка пентаклів
@@ -27,7 +26,6 @@ card-sc-page-pentacles = паж пентаклів
 card-sc-knight-pentacles = лицар пентаклів
 card-sc-queen-pentacles = королева пентаклів
 card-sc-king-pentacles = король пентаклів
-
 card-sc-ace-swords = туз мечів
 card-sc-two-swords = двійка мечів
 card-sc-three-swords = трійка мечів
@@ -42,7 +40,6 @@ card-sc-page-swords = паж мечів
 card-sc-knight-swords = лицар мечів
 card-sc-queen-swords = королева мечів
 card-sc-king-swords = король мечів
-
 card-sc-ace-wands = туз жезлів
 card-sc-two-wands = двійка жезлів
 card-sc-three-wands = трійка жезлів
@@ -57,7 +54,6 @@ card-sc-page-wands = паж жезлів
 card-sc-knight-wands = лицар жезлів
 card-sc-queen-wands = королева жезлів
 card-sc-king-wands = король жезлів
-
 card-sc-the-fool = Шут
 card-sc-the-magician = Маг
 card-sc-the-high-priestess = Верховна Жриця

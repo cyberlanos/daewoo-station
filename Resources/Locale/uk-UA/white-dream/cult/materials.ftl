@@ -1,1 +1,1 @@
-materials-runed-metal = рунований метал  
+materials-runed-metal = рунований метал
