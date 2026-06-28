@@ -58,3 +58,6 @@ public sealed partial class FpvDroneControllerComponent : Component
 
 [Serializable, NetSerializable]
 public enum FpvDroneVisuals : byte { Active }
+
+[Serializable, NetSerializable]
+public sealed class FpvDroneDropPayloadRequest : EntityEventArgs;

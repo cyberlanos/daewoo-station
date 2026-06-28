@@ -11,10 +11,12 @@ public sealed class FpvDroneSystem : SharedFpvDroneSystem
     protected override void UpdateFpvSurveillance(Entity<FpvDroneComponent> entity)
     {
         base.UpdateFpvSurveillance(entity);
-        if (!TryComp<RemoteDroneComponent>(entity.Owner, out var remoteDroneComponent))
+        if (TerminatingOrDeleted(entity.Owner) ||
+            !TryComp<RemoteDroneComponent>(entity.Owner, out var remoteDroneComponent))
             return;
 
         if (remoteDroneComponent.LinkedControllerUid is not { } controllerUid ||
+            TerminatingOrDeleted(controllerUid) ||
             !TryComp<SurveillanceCameraMonitorComponent>(controllerUid, out var controllerSurveillanceMonitorComponent))
         {
             return;
@@ -27,6 +29,9 @@ public sealed class FpvDroneSystem : SharedFpvDroneSystem
     protected override void OnDroneDisabled(EntityUid uid)
     {
         base.OnDroneDisabled(uid);
+        if (TerminatingOrDeleted(uid))
+            return;
+
         _surveillanceMonitorSystem.DisconnectCamera(uid, true);
     }
 }

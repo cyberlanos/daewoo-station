@@ -5,6 +5,7 @@ using Content.Shared.DeviceLinking.Events;
 using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.IdentityManagement;
+using Content.Shared.Input;
 using Content.Shared.Item;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
@@ -14,6 +15,8 @@ using Content.Shared.PowerCell.Components;
 using Content.Shared.Weapons.Ranged.Components;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
+using Robust.Shared.Input;
+using Robust.Shared.Input.Binding;
 using Robust.Shared.Network;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
@@ -54,6 +57,18 @@ public abstract class SharedFpvDroneSystem : EntitySystem
         SubscribeLocalEvent<FpvDroneComponent, RemoteDroneControlStartedEvent>(OnFpvControlStarted);
         SubscribeLocalEvent<FpvDroneComponent, RemoteDroneControlEndedEvent>(OnFpvControlEnded);
         SubscribeLocalEvent<FpvDroneControllerComponent, RemoteDroneControlEndedEvent>(OnFpvControllerControlEnded);
+        SubscribeLocalEvent<FpvDroneComponent, ComponentShutdown>(OnFpvShutdown);
+        SubscribeAllEvent<FpvDroneDropPayloadRequest>(OnDropPayloadRequest);
+
+        CommandBinds.Builder
+            .BindBefore(ContentKeyFunctions.Drop, new PointerInputCmdHandler(HandlePayloadDropInput, outsidePrediction: true), new[] { typeof(SharedHandsSystem) })
+            .Register<SharedFpvDroneSystem>();
+    }
+
+    public override void Shutdown()
+    {
+        CommandBinds.Unregister<SharedFpvDroneSystem>();
+        base.Shutdown();
     }
 
     private void OnFpvMapInit(Entity<FpvDroneComponent> entity, ref MapInitEvent args)
@@ -66,12 +81,58 @@ public abstract class SharedFpvDroneSystem : EntitySystem
         if (args.Port != entity.Comp.DropStoragePort.ToString())
             return;
 
+        TryDropPayload(entity);
+    }
+
+    private bool TryDropPayload(Entity<FpvDroneComponent> entity)
+    {
+        if (TerminatingOrDeleted(entity.Owner))
+            return false;
+
         if (!_containerSystem.TryGetContainer(entity.Owner, entity.Comp.EmptiedContainerId, out var container))
-            return;
+            return false;
 
         var removedEntities = _containerSystem.EmptyContainer(container, force: true);
-        if (removedEntities.Count != 0)
-            _popupSystem.PopupEntity(Loc.GetString("fpv-drone-payload-dropped", ("name", Identity.Name(entity.Owner, EntityManager))), entity.Owner, PopupType.MediumCaution);
+        if (removedEntities.Count == 0)
+            return false;
+
+        _popupSystem.PopupEntity(Loc.GetString("fpv-drone-payload-dropped", ("name", Identity.Name(entity.Owner, EntityManager))), entity.Owner, PopupType.MediumCaution);
+        return true;
+    }
+
+    private bool HandlePayloadDropInput(in PointerInputCmdHandler.PointerInputCmdArgs args)
+    {
+        if (args.State != BoundKeyState.Down ||
+            args.Session?.AttachedEntity is not { } user ||
+            !TryComp<RelayInputMoverComponent>(user, out var relay) ||
+            relay.RelayEntity == EntityUid.Invalid ||
+            TerminatingOrDeleted(relay.RelayEntity) ||
+            !HasComp<FpvDroneComponent>(relay.RelayEntity))
+        {
+            return false;
+        }
+
+        RaisePredictiveEvent(new FpvDroneDropPayloadRequest());
+        return true;
+    }
+
+    private void OnDropPayloadRequest(FpvDroneDropPayloadRequest msg, EntitySessionEventArgs args)
+    {
+        if (!_netManager.IsServer ||
+            args.SenderSession.AttachedEntity is not { } user ||
+            TerminatingOrDeleted(user) ||
+            !TryComp<RelayInputMoverComponent>(user, out var relay) ||
+            relay.RelayEntity == EntityUid.Invalid ||
+            TerminatingOrDeleted(relay.RelayEntity) ||
+            !TryComp<FpvDroneComponent>(relay.RelayEntity, out var fpvComponent) ||
+            !_droneControllerSystem.ResolveDroneAndController(relay.RelayEntity, out _, out var controllerEntity) ||
+            !controllerEntity.Value.Comp.Controlling ||
+            controllerEntity.Value.Comp.UserUid != user)
+        {
+            return;
+        }
+
+        TryDropPayload((relay.RelayEntity, fpvComponent));
     }
 
     private void OnFpvLinked(Entity<FpvDroneComponent> entity, ref RemoteDroneLinkedEvent args)
@@ -192,6 +253,11 @@ public abstract class SharedFpvDroneSystem : EntitySystem
 
     private void OnFpvControlEnded(Entity<FpvDroneComponent> entity, ref RemoteDroneControlEndedEvent args)
     {
+        CleanupDroneFlightEffects(entity);
+
+        if (TerminatingOrDeleted(entity.Owner))
+            return;
+
         if (!TryComp<PhysicsComponent>(entity, out var physicsComponent))
         {
             DebugTools.Assert($"Tried to handle RemoteDroneControlEndedEvent for FpvDroneComponent on an entity {ToPrettyString(entity.Owner)} without PhysicsComponent.");
@@ -202,9 +268,6 @@ public abstract class SharedFpvDroneSystem : EntitySystem
         _physicsSystem.SetBodyStatus(entity.Owner, physicsComponent, BodyStatus.OnGround);
 
         RemCompDeferred<MovementRelayTargetComponent>(entity.Owner);
-
-        QueueDel(entity.Comp.AudioUid);
-        entity.Comp.AudioUid = null;
 
         if (TryComp<FlyBySoundComponent>(entity.Owner, out var flyBySoundComponent))
         {
@@ -226,10 +289,27 @@ public abstract class SharedFpvDroneSystem : EntitySystem
         OnDroneDisabled(args.ControllerEntity.Owner);
     }
 
+    private void OnFpvShutdown(Entity<FpvDroneComponent> entity, ref ComponentShutdown args)
+    {
+        CleanupDroneFlightEffects(entity);
+
+        if (TryComp<RemoteDroneComponent>(entity.Owner, out var remoteDrone) &&
+            remoteDrone.LinkedControllerUid is { } controller)
+        {
+            OnDroneDisabled(controller);
+        }
+    }
+
     private void CleanUpControllerControl(Entity<RemoteDroneControllerComponent> controllerEntity)
     {
         if (controllerEntity.Comp.UserUid is { } userUid &&
             !Deleted(userUid))
             RemCompDeferred<RelayInputMoverComponent>(userUid);
+    }
+
+    private void CleanupDroneFlightEffects(Entity<FpvDroneComponent> entity)
+    {
+        QueueDel(entity.Comp.AudioUid);
+        entity.Comp.AudioUid = null;
     }
 }
