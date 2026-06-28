@@ -21,7 +21,6 @@ using Content.Shared.Fluids;
 using Content.Shared.Forensics.Components;
 using Content.Shared.HealthExaminable;
 using Content.Shared.Inventory; // Pirate: stains
-using Content.Shared.Item; // Pirate: stains
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Random.Helpers;
@@ -595,12 +594,16 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
         var xform = Transform(ent.Owner);
         foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f))
         {
-            // ItemComponent proxies loose stainables here.
-            if (neighbor == ent.Owner ||
-                (!HasComp<InventoryComponent>(neighbor) && !HasComp<ItemComponent>(neighbor)))
+            if (neighbor == ent.Owner)
                 continue;
 
-            RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol));
+            // Mobs route the spill to their equipment slots; everything else takes it directly as a loose
+            // entity. StainableComponent lives in a downstream assembly, so we raise on all neighbours and
+            // let the stain handlers self-filter rather than guessing stainability from ItemComponent here.
+            if (HasComp<InventoryComponent>(neighbor))
+                RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol));
+            else
+                RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol, SlotFlags.NONE));
 
             if (tempSol.Volume <= 0)
                 break;

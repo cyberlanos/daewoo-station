@@ -131,32 +131,36 @@ public sealed class StainSystem : SharedStainSystem
 
             var bloodKey = $"stain-inhand-{args.Location}-{i}";
 
-            if (!string.IsNullOrEmpty(source.RsiPath) || !string.IsNullOrEmpty(source.TexturePath))
-            {
-                var maskKey = $"stain-inhand-mask-{args.Location}-{i}";
-                args.Layers.Add((maskKey, BuildMaskLayer(source, maskKey, bloodKey)));
+            // Always clip the blood to the held silhouette. Items (e.g. gloves) often define inhandVisuals with
+            // only a State and rely on the item's BaseRSI, leaving RsiPath empty; HandsSystem resolves that RSI
+            // for our mask layer the same way it does for the base layer. No flat fallback - never cover the
+            // whole in-hand sprite with blood.
+            var maskKey = $"stain-inhand-mask-{args.Location}-{i}";
+            args.Layers.Add((maskKey, BuildMaskLayer(source, maskKey, bloodKey)));
 
-                var masked = BuildItemBloodLayer(bloodKey, source);
-                masked.Shader = StainShaderFor(ent.Owner);
-                masked.Color = color;
-                args.Layers.Add((bloodKey, masked));
-                continue;
-            }
-
-            var flat = BuildItemBloodLayer(bloodKey, source);
-            flat.Color = color;
-            args.Layers.Add((bloodKey, flat));
+            var masked = BuildItemBloodLayer(bloodKey, source);
+            masked.Shader = StainShaderFor(ent.Owner);
+            masked.Color = color;
+            args.Layers.Add((bloodKey, masked));
         }
     }
 
     // Tracks dynamic icon silhouettes.
     private string BaseFrameFingerprint(Entity<SpriteComponent?> sprite)
     {
-        if (HasComp<HumanoidAppearanceComponent>(sprite.Owner) || !_sprite.TryGetLayer(sprite, 0, out _, false))
+        if (HasComp<HumanoidAppearanceComponent>(sprite.Owner))
             return string.Empty;
 
-        var state = _sprite.LayerGetRsiState(sprite, 0);
-        return state.IsValid ? state.Name ?? string.Empty : string.Empty;
+        // AddItemBloodIconVisual masks the blood onto every visible base layer, so the cache must
+        // invalidate when any of them changes state/visibility - not just layer 0 (e.g. Soap fill levels).
+        var fingerprint = string.Empty;
+        for (var i = 0; _sprite.TryGetLayer(sprite, i, out var layer, false); i++)
+        {
+            var state = _sprite.LayerGetRsiState(sprite, i);
+            fingerprint += $"{(_sprite.IsVisible(layer) ? 1 : 0)}:{(state.IsValid ? state.Name : string.Empty)}|";
+        }
+
+        return fingerprint;
     }
 
     private IEnumerable<(string, PrototypeLayerData)> BuildVisuals(Entity<StainableComponent> ent, List<PrototypeLayerData> templates, string prefix)
@@ -189,7 +193,6 @@ public sealed class StainSystem : SharedStainSystem
         while (_sprite.TryGetLayer(sprite, baseCount, out _, false))
             baseCount++;
 
-        var added = false;
         for (var i = 0; i < baseCount; i++)
         {
             if (!_sprite.TryGetLayer(sprite, i, out var layer, false) || !_sprite.IsVisible(layer))
@@ -212,17 +215,8 @@ public sealed class StainSystem : SharedStainSystem
             masked.Color = color;
             ent.Comp.RevealedLayerKeys.Add(bloodKey);
             _sprite.AddLayer(sprite, masked, null);
-            added = true;
         }
-
-        if (added)
-            return;
-
-        const string flatKey = "stain-icon";
-        var flat = BuildItemBloodLayer(flatKey);
-        flat.Color = color;
-        ent.Comp.RevealedLayerKeys.Add(flatKey);
-        _sprite.AddLayer(sprite, flat, null);
+        // No flat fallback: if nothing can be masked, draw no blood rather than a full-box overlay.
     }
 
     private static PrototypeLayerData BuildMaskLayer(PrototypeLayerData source, string maskKey, string targetKey)

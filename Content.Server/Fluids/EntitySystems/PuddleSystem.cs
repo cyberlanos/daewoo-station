@@ -452,7 +452,10 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
             return;
         }
 
-        var splitSol = solution.Clone().SplitSolution(FixedPoint2.Min(solution.Volume, 0.5f));
+        // Pull a sample out of the puddle and hand the real solution to the event; the stain handlers
+        // consume what they accept and we return the rest, so the puddle only loses the absorbed amount
+        // (and nothing when TryStain rejects it).
+        var splitSol = _solutionContainerSystem.SplitSolution(entity.Comp.Solution.Value, FixedPoint2.Min(solution.Volume, 0.5f));
         if (splitSol.Volume <= 0)
             return;
 
@@ -462,11 +465,15 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
             if (TryComp<StandingStateComponent>(args.OtherEntity, out var standing) && !standing.Standing)
                 targetSlots |= SpilledOnEvent.DefaultTargetSlots;
 
-            RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol.Clone(), targetSlots));
-            return;
+            RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol, targetSlots));
+        }
+        else
+        {
+            RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol, SlotFlags.NONE));
         }
 
-        RaiseLocalEvent(args.OtherEntity, new SpilledOnEvent(entity.Owner, splitSol.Clone(), SlotFlags.NONE));
+        if (splitSol.Volume > 0)
+            _solutionContainerSystem.TryAddSolution(entity.Comp.Solution.Value, splitSol);
     }
 #endregion Pirate: stains
     /// <inheritdoc/>
