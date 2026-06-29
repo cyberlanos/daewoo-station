@@ -1088,7 +1088,8 @@ namespace Content.Client.Lobby.UI
                     if (AbsorbedLoadoutGroups.Contains(groupId) ||
                         !shownGroups.Add(groupId) ||
                         !_prototypeManager.TryIndex(groupId, out LoadoutGroupPrototype? groupProto) ||
-                        groupProto.Hidden)
+                        groupProto.Hidden ||
+                        groupProto.Deprecated) // Pirate: loadout
                         continue;
 
                     var category = GetLoadoutGroupCategory(groupProto);

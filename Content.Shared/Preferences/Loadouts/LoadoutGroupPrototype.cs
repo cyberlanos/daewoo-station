@@ -70,6 +70,12 @@ public sealed partial class LoadoutGroupPrototype : IPrototype
     [DataField]
     public bool Hidden;
 
+    /// <summary>
+    /// Deprecated groups are kept only so existing profile data validates; their stored loadouts are never spawned.
+    /// </summary>
+    [DataField]
+    public bool Deprecated; // Pirate: loadout
+
     [DataField(required: true)]
     public List<ProtoId<LoadoutPrototype>> Loadouts = new();
 
