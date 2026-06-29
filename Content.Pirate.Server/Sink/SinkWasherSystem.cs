@@ -10,8 +10,7 @@ using Robust.Shared.Audio.Systems;
 namespace Content.Pirate.Server.Sink;
 
 /// <summary>
-/// Washing stains at a sink: click it with a stained item to wash that item, or with an empty hand to
-/// wash your gloves (or bare hands). Ported from tgstation's sink behaviour.
+/// Washes stained held items or gloves/bare hands at sinks.
 /// </summary>
 public sealed class SinkWasherSystem : EntitySystem
 {
@@ -34,7 +33,6 @@ public sealed class SinkWasherSystem : EntitySystem
 
     private void OnInteractUsing(Entity<SinkWasherComponent> ent, ref InteractUsingEvent args)
     {
-        // Only intercept stained items, so filling containers / other sink uses are untouched.
         if (args.Handled || !HasComp<StainableComponent>(args.Used) || !_stains.HasStain(args.Used))
             return;
 
@@ -43,7 +41,6 @@ public sealed class SinkWasherSystem : EntitySystem
 
     private void OnInteractHand(Entity<SinkWasherComponent> ent, ref InteractHandEvent args)
     {
-        // Only wash if the hands actually need it, otherwise leave the empty-hand interaction alone.
         if (args.Handled || !HandsNeedWashing(args.User))
             return;
 
@@ -90,8 +87,7 @@ public sealed class SinkWasherSystem : EntitySystem
 
     private bool WashHands(EntityUid user)
     {
-        // Worn gloves take the wash; otherwise clean the bare-hand stain.
-        if (_inventory.TryGetSlotEntity(user, GlovesSlot, out var gloves) && HasComp<StainableComponent>(gloves))
+        if (_inventory.TryGetSlotEntity(user, GlovesSlot, out var gloves) && _stains.HasStain(gloves.Value))
             return _stains.TryCleanStain(gloves.Value);
 
         return _stains.TryCleanBodyStain(user, SlotFlags.GLOVES);

@@ -585,9 +585,7 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
             SolutionContainer.RemoveAllSolution(ent.Comp.TemporarySolution.Value);
         }
 
-        // Pirate: stains - gibbing only spills blood to the floor (like tg); it does NOT directly splash
-        // bystanders. People get bloody by stepping/crawling through the resulting puddle (floor-blood rules).
-        // This keeps butchering (which gibs the target) from covering the butcher and onlookers in blood.
+        // Gibbing only spills blood to the floor; bystanders get bloody from the puddle. // Pirate: stains
         _puddle.TrySpillAt(ent, tempSol, out _);
     }
 

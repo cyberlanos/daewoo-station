@@ -1611,7 +1611,7 @@ namespace Content.Client.Lobby.UI
             if (key.Contains("jumpsuit") || key.Contains("jumpskirt") || key.Contains("uniform") || key.Contains("clothing"))
                 return "Uniform";
 
-            // Checked after slot-specific keywords: job names like "Head of Security" embed "head", so a HoS jumpsuit/neck/shoes must match its own slot first. // Pirate: loadout
+            // Job names like "Head of Security" contain "head"; let slot keywords win first.
             if (key.Contains("head"))
                 return "Head";
 

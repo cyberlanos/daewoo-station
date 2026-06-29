@@ -140,7 +140,7 @@ public abstract class SharedStationSpawningSystem : EntitySystem
         var selectedLoadouts = new List<(Loadout Loadout, LoadoutPrototype Prototype)>();
         foreach (var group in loadout.SelectedLoadouts.OrderBy(x => roleProto.Groups.FindIndex(e => e == x.Key)))
         {
-            // Deprecated groups linger in saved profiles only to validate; their items are never spawned.
+            // Deprecated groups validate saved profiles, but never spawn gear.
             if (group.Key.IsDeprecatedGroup(PrototypeManager))
                 continue;
 

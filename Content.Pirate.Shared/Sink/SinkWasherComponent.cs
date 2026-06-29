@@ -6,8 +6,7 @@ using Robust.Shared.Serialization;
 namespace Content.Pirate.Shared.Sink;
 
 /// <summary>
-/// Lets a sink wash stains off held items, or off the user's gloves/bare hands when clicked empty-handed.
-/// Ported behaviour from tgstation's sink.
+/// Lets sinks wash stained held items or gloves/bare hands.
 /// </summary>
 [RegisterComponent, NetworkedComponent]
 public sealed partial class SinkWasherComponent : Component

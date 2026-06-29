@@ -385,8 +385,7 @@ public abstract class SharedStainSystem : EntitySystem
     }
 
     /// <summary>
-    /// Cleans the stain off a single bare-body slot (e.g. washing just your hands). The shared stain
-    /// solution is only emptied once no body slots remain stained.
+    /// Cleans one bare-body stain slot, emptying the solution when no body stains remain.
     /// </summary>
     public bool TryCleanBodyStain(EntityUid uid, SlotFlags slot)
     {
@@ -512,8 +511,7 @@ public abstract class SharedStainSystem : EntitySystem
                         NeedHand = true
                     }))
                 {
-                    // Verb Acts run on both client (prediction) and server, so use PlayPredicted to avoid
-                    // the sound stacking/echoing - it plays once for the user and isn't re-sent by the server.
+                    // Verb Acts run predicted and server-side; play this once for the user.
                     _audio.PlayPredicted(ent.Comp.WringSound, ent.Owner, user);
                 }
             }

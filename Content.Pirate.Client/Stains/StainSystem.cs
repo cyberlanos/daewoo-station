@@ -71,9 +71,7 @@ public sealed class StainSystem : SharedStainSystem
             return;
         _lastDrawn[ent.Owner] = drawn;
 
-        // Refresh held/worn visuals on a real stain change. The shared UpdateVisuals gates this behind the
-        // networked appearance data, which the client receives already-updated, so its guard skips the call
-        // and a held item's in-hand sprite would stay stale (e.g. after wringing) until it leaves the hand.
+        // Appearance data may already match on the client, so notify item visuals directly.
         _item.VisualsChanged(ent.Owner);
 
         foreach (var key in ent.Comp.RevealedLayerKeys)
@@ -137,10 +135,7 @@ public sealed class StainSystem : SharedStainSystem
 
             var bloodKey = $"stain-inhand-{args.Location}-{i}";
 
-            // Always clip the blood to the held silhouette. Items (e.g. gloves) often define inhandVisuals with
-            // only a State and rely on the item's BaseRSI, leaving RsiPath empty; HandsSystem resolves that RSI
-            // for our mask layer the same way it does for the base layer. No flat fallback - never cover the
-            // whole in-hand sprite with blood.
+            // Mask even BaseRSI-only inhand layers; flat stains can cover the whole sprite.
             var maskKey = $"stain-inhand-mask-{args.Location}-{i}";
             args.Layers.Add((maskKey, BuildMaskLayer(source, maskKey, bloodKey)));
 
@@ -157,8 +152,7 @@ public sealed class StainSystem : SharedStainSystem
         if (HasComp<HumanoidAppearanceComponent>(sprite.Owner))
             return string.Empty;
 
-        // AddItemBloodIconVisual masks the blood onto every visible base layer, so the cache must
-        // invalidate when any of them changes state/visibility - not just layer 0 (e.g. Soap fill levels).
+        // Icon stains mask every visible base layer, so track visible state changes.
         var fingerprint = string.Empty;
         for (var i = 0; _sprite.TryGetLayer(sprite, i, out var layer, false); i++)
         {
@@ -222,7 +216,7 @@ public sealed class StainSystem : SharedStainSystem
             ent.Comp.RevealedLayerKeys.Add(bloodKey);
             _sprite.AddLayer(sprite, masked, null);
         }
-        // No flat fallback: if nothing can be masked, draw no blood rather than a full-box overlay.
+        // No maskable base layer means no stain overlay.
     }
 
     private static PrototypeLayerData BuildMaskLayer(PrototypeLayerData source, string maskKey, string targetKey)
@@ -255,9 +249,7 @@ public sealed class StainSystem : SharedStainSystem
             slots = bodySlotFlags;
         }
 
-        // Insert the bare-body stains just below the matching clothing slot's bookmark layer so worn gear
-        // (and its own stains) draws over them: body -> body stain -> gear -> gear stain. This keeps e.g.
-        // dirty bare feet hidden once boots are on, while still showing through where there's no gear.
+        // Put bare-body stains below matching gear so shoes/gloves hide them.
         if ((slots & SlotFlags.FEET) != 0)
             AddBodyStainVisual(ent, sprite, color, BareFeetLayerKey, "shoeblood", "shoes");
 
@@ -277,7 +269,6 @@ public sealed class StainSystem : SharedStainSystem
 
         ent.Comp.RevealedLayerKeys.Add(key);
 
-        // Below the slot's clothing bookmark (which sits above the bare body) when it exists; on top otherwise.
         if (_sprite.LayerMapTryGet(sprite, slotBookmark, out var index, false))
             _sprite.AddLayer(sprite, layerData, index);
         else

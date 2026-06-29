@@ -452,9 +452,7 @@ public sealed partial class PuddleSystem : SharedPuddleSystem
             return;
         }
 
-        // Pull a sample out of the puddle and hand the real solution to the event; the stain handlers
-        // consume what they accept and we return the rest, so the puddle only loses the absorbed amount
-        // (and nothing when TryStain rejects it).
+        // Split a real sample so rejected stain fluid can be returned to the puddle.
         var splitSol = _solutionContainerSystem.SplitSolution(entity.Comp.Solution.Value, FixedPoint2.Min(solution.Volume, 0.5f));
         if (splitSol.Volume <= 0)
             return;

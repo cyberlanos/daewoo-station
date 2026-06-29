@@ -65,7 +65,7 @@
     - HeadSide
   - type: FaceHuggerBlocker
   #region Pirate: stains
-  # This base has no parent so it misses ClothingHeadBase's stain setup; add it here (solution is created lazily on first stain).
+  # This base has no parent, so add stain visuals here.
   - type: Appearance
   - type: Stainable
     clothingVisuals:
