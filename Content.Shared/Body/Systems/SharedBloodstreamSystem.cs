@@ -1,7 +1,6 @@
 using Content.Goobstation.Common.Bloodstream;
 using Content.Goobstation.Common.CCVar; // Goobstation
 using Content.Goobstation.Maths.FixedPoint;
-using Content.Shared._Pirate.Fluids; // Pirate: stains
 using Content.Shared._Shitmed.Body;
 using Content.Shared._Shitmed.Damage;
 using Content.Shared._Shitmed.Medical.Surgery.Consciousness;
@@ -20,7 +19,6 @@ using Content.Shared.Drunk;
 using Content.Shared.Fluids;
 using Content.Shared.Forensics.Components;
 using Content.Shared.HealthExaminable;
-using Content.Shared.Inventory; // Pirate: stains
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Random.Helpers;
@@ -49,7 +47,6 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
     [Dependency] private readonly DamageableSystem _damageableSystem = default!;
     [Dependency] private readonly SharedDrunkSystem _drunkSystem = default!;
     [Dependency] private readonly SharedStutteringSystem _stutteringSystem = default!;
-    [Dependency] private readonly EntityLookupSystem _lookup = default!; // Pirate: stains
 
     private float _bloodlossMultiplier = 4f; // Goobstation
 
@@ -588,27 +585,9 @@ public abstract partial class SharedBloodstreamSystem : EntitySystem
             SolutionContainer.RemoveAllSolution(ent.Comp.TemporarySolution.Value);
         }
 
-#region Pirate: stains
-        RaiseLocalEvent(ent.Owner, new SpilledOnEvent(ent.Owner, tempSol));
-
-        var xform = Transform(ent.Owner);
-        foreach (var neighbor in _lookup.GetEntitiesInRange(xform.Coordinates, 1.5f))
-        {
-            if (neighbor == ent.Owner)
-                continue;
-
-            // Mobs route the spill to their equipment slots; everything else takes it directly as a loose
-            // entity. StainableComponent lives in a downstream assembly, so we raise on all neighbours and
-            // let the stain handlers self-filter rather than guessing stainability from ItemComponent here.
-            if (HasComp<InventoryComponent>(neighbor))
-                RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol));
-            else
-                RaiseLocalEvent(neighbor, new SpilledOnEvent(ent.Owner, tempSol, SlotFlags.NONE));
-
-            if (tempSol.Volume <= 0)
-                break;
-        }
-#endregion Pirate: stains
+        // Pirate: stains - gibbing only spills blood to the floor (like tg); it does NOT directly splash
+        // bystanders. People get bloody by stepping/crawling through the resulting puddle (floor-blood rules).
+        // This keeps butchering (which gibs the target) from covering the butcher and onlookers in blood.
         _puddle.TrySpillAt(ent, tempSol, out _);
     }
 

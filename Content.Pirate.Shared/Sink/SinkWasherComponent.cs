@@ -13,7 +13,7 @@ namespace Content.Pirate.Shared.Sink;
 public sealed partial class SinkWasherComponent : Component
 {
     [DataField]
-    public float WashDuration = 2f;
+    public float WashDuration = 6f;
 
     [DataField]
     public SoundSpecifier WashSound = new SoundPathSpecifier("/Audio/_Pirate/Machines/sink_faucet.ogg");

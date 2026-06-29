@@ -19,7 +19,7 @@ public sealed partial class StainableComponent : Component
     public FixedPoint2 SpillTransferAmount = 0.5f;
 
     [DataField]
-    public float WringDoAfterDuration = 15f;
+    public float WringDoAfterDuration = 10f;
 
     [DataField]
     public Dictionary<string, List<PrototypeLayerData>> ClothingVisuals = new();
