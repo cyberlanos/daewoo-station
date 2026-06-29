@@ -34,6 +34,7 @@ public sealed class StainSystem : SharedStainSystem
     [Dependency] private readonly IPrototypeManager _prototypeManager = null!;
     [Dependency] private readonly SharedSolutionContainerSystem _solution = null!;
     [Dependency] private readonly SpriteSystem _sprite = null!;
+    [Dependency] private readonly ItemSystem _item = null!;
 
     // Cached across prediction rollbacks.
     private readonly Dictionary<EntityUid, (Color Color, SlotFlags Slots, bool HasStain, string Frame)> _lastDrawn = new();
@@ -69,6 +70,11 @@ public sealed class StainSystem : SharedStainSystem
         if (_lastDrawn.TryGetValue(ent.Owner, out var last) && last == drawn)
             return;
         _lastDrawn[ent.Owner] = drawn;
+
+        // Refresh held/worn visuals on a real stain change. The shared UpdateVisuals gates this behind the
+        // networked appearance data, which the client receives already-updated, so its guard skips the call
+        // and a held item's in-hand sprite would stay stale (e.g. after wringing) until it leaves the hand.
+        _item.VisualsChanged(ent.Owner);
 
         foreach (var key in ent.Comp.RevealedLayerKeys)
         {
@@ -249,14 +255,17 @@ public sealed class StainSystem : SharedStainSystem
             slots = bodySlotFlags;
         }
 
+        // Insert the bare-body stains just below the matching clothing slot's bookmark layer so worn gear
+        // (and its own stains) draws over them: body -> body stain -> gear -> gear stain. This keeps e.g.
+        // dirty bare feet hidden once boots are on, while still showing through where there's no gear.
         if ((slots & SlotFlags.FEET) != 0)
-            AddBodyStainVisual(ent, sprite, color, BareFeetLayerKey, "shoeblood");
+            AddBodyStainVisual(ent, sprite, color, BareFeetLayerKey, "shoeblood", "shoes");
 
         if ((slots & SlotFlags.GLOVES) != 0)
-            AddBodyStainVisual(ent, sprite, color, BareHandsLayerKey, "gloveblood");
+            AddBodyStainVisual(ent, sprite, color, BareHandsLayerKey, "gloveblood", "gloves");
     }
 
-    private void AddBodyStainVisual(Entity<StainableComponent> ent, Entity<SpriteComponent?> sprite, Color color, string key, string state)
+    private void AddBodyStainVisual(Entity<StainableComponent> ent, Entity<SpriteComponent?> sprite, Color color, string key, string state, string slotBookmark)
     {
         var layerData = new PrototypeLayerData
         {
@@ -267,7 +276,12 @@ public sealed class StainSystem : SharedStainSystem
         };
 
         ent.Comp.RevealedLayerKeys.Add(key);
-        _sprite.AddLayer(sprite, layerData, null);
+
+        // Below the slot's clothing bookmark (which sits above the bare body) when it exists; on top otherwise.
+        if (_sprite.LayerMapTryGet(sprite, slotBookmark, out var index, false))
+            _sprite.AddLayer(sprite, layerData, index);
+        else
+            _sprite.AddLayer(sprite, layerData, null);
     }
 
     private static PrototypeLayerData BuildItemBloodLayer(string key, PrototypeLayerData? source = null)

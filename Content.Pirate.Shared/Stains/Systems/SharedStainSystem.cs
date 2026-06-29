@@ -20,6 +20,7 @@ using Content.Shared.Verbs;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Melee.Events;
 using Content.Goobstation.Maths.FixedPoint;
+using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
 using Robust.Shared.Network;
 using Robust.Shared.Random;
@@ -54,6 +55,7 @@ public abstract class SharedStainSystem : EntitySystem
     [Dependency] private readonly SharedDoAfterSystem _doAfter = null!;
     [Dependency] private readonly SharedPuddleSystem _puddle = null!;
     [Dependency] private readonly SharedPopupSystem _popup = null!;
+    [Dependency] private readonly SharedAudioSystem _audio = null!;
     [Dependency] private readonly IRobustRandom _random = null!;
     [Dependency] private readonly IGameTiming _timing = null!;
 
@@ -503,12 +505,17 @@ public abstract class SharedStainSystem : EntitySystem
             Icon = new SpriteSpecifier.Texture(new ResPath("/Textures/Interface/VerbIcons/bubbles.svg.192dpi.png")),
             Act = () =>
             {
-                _doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, user, ent.Comp.WringDoAfterDuration, new WringStainDoAfterEvent(), ent.Owner)
+                if (_doAfter.TryStartDoAfter(new DoAfterArgs(EntityManager, user, ent.Comp.WringDoAfterDuration, new WringStainDoAfterEvent(), ent.Owner)
+                    {
+                        BreakOnMove = true,
+                        BreakOnDamage = true,
+                        NeedHand = true
+                    }))
                 {
-                    BreakOnMove = true,
-                    BreakOnDamage = true,
-                    NeedHand = true
-                });
+                    // Verb Acts run on both client (prediction) and server, so use PlayPredicted to avoid
+                    // the sound stacking/echoing - it plays once for the user and isn't re-sent by the server.
+                    _audio.PlayPredicted(ent.Comp.WringSound, ent.Owner, user);
+                }
             }
         });
     }
